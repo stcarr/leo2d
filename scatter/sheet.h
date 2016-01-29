@@ -20,6 +20,7 @@ class Sheet {
         std::vector<std::vector<double> > atom_pos;
         std::vector<std::vector<std::vector<int> > > grid_array;
         std::vector<std::vector<int> > index_array;
+		bool ranSetup;
         void setIndex();
         
     public:

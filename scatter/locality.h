@@ -1,6 +1,6 @@
 
 /* 
- * File:   locality.hp
+ * File:   locality.h
  * Author: Stephen Carr
  *
  * Created on January 27, 2016, 2:39 PM
@@ -17,7 +17,6 @@ class Locality {
 		int max_index;
 		int root;
 		int** pairs;
-		int indexToGrid;
         
     public:
         Locality();

@@ -79,7 +79,11 @@ int main(int argc, char** argv) {
 	angles.push_back(0);
     angles.push_back(1);
     
-    Locality loc();
+    Locality loc(num_sheets,heights,angles);
+	
+	for (int i; i < num_sheets; ++i)
+		loc.addSheet(unitCell, types, pos, min, max);
+	
 	loc.setup();
 	loc.initMPI(argc, argv);
 	loc.constructGeom();
