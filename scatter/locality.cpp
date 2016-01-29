@@ -11,16 +11,7 @@
 
 #include <stdio.h>
 
-
-int main(int argc, char** argv) {
-	Locality loc;
-	loc.setup();
-	loc.initMPI(argc, argv);
-	loc.constructGeom();
-	loc.finMPI();
-}
-
-Locality::Locality() {
+Locality::Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>) {
     
 }
 

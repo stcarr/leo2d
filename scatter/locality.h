@@ -19,7 +19,7 @@ class Locality {
 		int** pairs;
         
     public:
-        Locality();
+        Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>);
         Locality(const Locality& orig);
         ~Locality();
 		void setup();

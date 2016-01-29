@@ -18,6 +18,16 @@ Sheet::Sheet(std::vector<std::vector<double> > _a, std::vector<int> _types, std:
            
 }
 
+Sheet::Sheet(Sdata input){
+	a = input.a;
+	min_shape = input.min_shape;
+	max_shape = input.max_shape;
+	atom_types = input.atom_types;
+	atom_pos = input.atom_pos;
+	setIndex();
+	
+}
+
 Sheet::Sheet(const Sheet& orig) {
     a = orig.a;
     max_shape = orig.max_shape;

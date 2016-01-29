@@ -70,8 +70,14 @@ int main(int argc, char** argv) {
     sheets.push_back(s1);
     sheets.push_back(s2);
     */
+	
+	Sdata s_in(unitCell,types,pos,min,max);
     
 	vector<double> heights, angles;
+	vector<Sdata> sheets;
+	
+	sheets.push_back(s_in);
+	sheets.push_back(s_in);
     
 	heights.push_back(0);
     heights.push_back(3);
@@ -79,10 +85,7 @@ int main(int argc, char** argv) {
 	angles.push_back(0);
     angles.push_back(1);
     
-    Locality loc(num_sheets,heights,angles);
-	
-	for (int i; i < num_sheets; ++i)
-		loc.addSheet(unitCell, types, pos, min, max);
+    Locality loc(sheets,heights,angles);
 	
 	loc.setup();
 	loc.initMPI(argc, argv);
@@ -90,12 +93,12 @@ int main(int argc, char** argv) {
 	loc.constructMatrix();
 	loc.solveMatrix();
 	loc.getRaw();
-	#loc.getProcessed();
+	//loc.getProcessed();
 	loc.plot();
-	#loc.save();
+	//loc.save();
 	loc.finMPI();
 	
-	#Hstruct h1(sheets, angles, heights);
-    #printf("s1: %d, s2: %d, h1: %d \n", s1.getMaxIndex(),s2.getMaxIndex(),h1.getMaxIndex());
+	//Hstruct h1(sheets, angles, heights);
+    //printf("s1: %d, s2: %d, h1: %d \n", s1.getMaxIndex(),s2.getMaxIndex(),h1.getMaxIndex());
     
 }

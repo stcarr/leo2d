@@ -9,6 +9,7 @@
 #define SHEET_H
 #include <vector>
 #include <string>
+#include "sdata.h"
 
 
 class Sheet {
@@ -25,6 +26,7 @@ class Sheet {
         
     public:
         Sheet(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>);
+		Sheet(Sdata);
         Sheet(const Sheet& orig);
         ~Sheet();
         bool checkShape(double (&pos)[3]);
