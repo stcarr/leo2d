@@ -93,6 +93,8 @@ void Locality::constructGeom(){
 		
 		
 		// Construct and prepare the pairs array for broadcasting
+		// !!!!! MISSING INTRALAYER PAIRS IN h.getPairs() !!!!!
+		
 		std::vector<std::vector<int> > pairs_vec = h.getPairs();
 		max_pairs = static_cast<int>(pairs_vec.size());
 		

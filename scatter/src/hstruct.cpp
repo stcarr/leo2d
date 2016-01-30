@@ -144,6 +144,8 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 
 std::vector<std::vector<int> > Hstruct::getPairs(){
 
+	// !!!!! NEED TO ADD INTRALAYER PAIRS (only interlayer pairs at the moment) !!!!!
+
 	int searchsize = 4;
 	std::vector<std::vector<int> > pair_array;
 	int pair_count = 0;
