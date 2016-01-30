@@ -1,1 +1,1 @@
-Source directory for parallel scatter method simulation for layered heterostructures (in C++ with MPI and ARPACK dependencies)
+Main folder for the scatter method. Source files can be found in /src/. Compile into an executable here by typing 'make'. If there are issues try 'make clean' first (will remove old objects and executables)
