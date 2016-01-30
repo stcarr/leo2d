@@ -26,4 +26,5 @@ Sdata::Sdata(const Sdata& orig) {
 }
 
 Sdata::~Sdata() {
+
 }
