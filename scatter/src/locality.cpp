@@ -10,8 +10,13 @@
 #include <mpi.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
-Locality::Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>) {
+Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
+
+	sdata = sdata_in;
+	heights = heights_in;
+	angles = angles_in;
     
 }
 
@@ -32,56 +37,141 @@ void Locality::initMPI(int argc, char** argv){
 	MPI::Init(argc, argv);
 	
 	root = 0;
+	print_rank = 1;
 	
 	size = MPI::COMM_WORLD.Get_size();
 	rank = MPI::COMM_WORLD.Get_rank();
 }
 
 void Locality::constructGeom(){
+	
+	if (rank == print_rank)
+		printf("rank %d entering constructGeom(). \n", rank);
+
+	int max_pairs;
+	
+	int* pairs_i;
+	int* pairs_j;
 		
+	int* index_to_grid_i;
+	int* index_to_grid_j;
+	int* index_to_grid_l;
+	int* index_to_grid_s;
+	
 	if (rank == root){
-		// construct sheet, hstruct objects
-		//
+	
+		// Build Hstruct object
+		std::vector<Sheet> sheets;
+		std::vector<int> vec_i;
+		std::vector<int> vec_j;
 		
-		// max_index = hstruct.getMaxIndex();
-		max_index = 1000;
-	}
-	
-	
-	MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, 0);
-	int pairs_i[max_index];
-	int pairs_j[max_index];
-	
-	if (rank == root){
-	
-		pairs = new int*[max_index];
-		
-		for(int k = 0; k < max_index; ++k){
-			pairs[k] = new int[2];
-			pairs[k][0] = 13;
-			pairs[k][1] = 25;
+		for (int i = 0; i < sdata.size(); ++i){
+			sheets.push_back(Sheet(sdata[i]));
 		}
 		
-		for(int k = 0; k < max_index; ++k){
-			pairs_i[k] = pairs[k][0];
-			pairs_j[k] = pairs[k][1];
+		Hstruct h(sheets,angles,heights);
+		
+		// Broadcast "index to grid" mapping information
+		max_index = h.getMaxIndex();
+		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
+		
+		std::vector<std::vector<int> > index_vec = h.getIndexArray();
+		
+		index_to_grid_i = new int[max_index];
+		index_to_grid_j = new int[max_index];
+		index_to_grid_l = new int[max_index];
+		index_to_grid_s = new int[max_index];
+		
+		for (int k = 0; k < max_index; ++k){
+		
+			index_to_grid_i[k] = index_vec[k][0];
+			index_to_grid_j[k] = index_vec[k][1];
+			index_to_grid_l[k] = index_vec[k][2];
+			index_to_grid_s[k] = index_vec[k][3];
+		
+		}
+		
+		
+		// Construct and prepare the pairs array for broadcasting
+		std::vector<std::vector<int> > pairs_vec = h.getPairs();
+		max_pairs = static_cast<int>(pairs_vec.size());
+		
+		MPI::COMM_WORLD.Bcast(&max_pairs, 1, MPI_INT, root);
+		
+		pairs_i = new int[max_pairs];
+		pairs_j = new int[max_pairs];
+		
+		for(int x = 0; x < max_pairs; ++x){
+			pairs_i[x] = pairs_vec[x][0];
+			pairs_j[x] = pairs_vec[x][1];
 		}
 		
 	}
 	
+	if (rank != root){
 	
-	MPI::COMM_WORLD.Bcast(pairs_i, max_index, MPI_INT, 0);
-	MPI::COMM_WORLD.Bcast(pairs_j, max_index, MPI_INT, 0);
+		// Allocate memory to receive pair and "index to grid" information
+		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
+		MPI::COMM_WORLD.Bcast(&max_pairs, 1, MPI_INT, root);
+		
+		pairs_i = new int[max_pairs];
+		pairs_j = new int[max_pairs];
+		
+		index_to_grid_i = new int[max_index];
+		index_to_grid_j = new int[max_index];
+		index_to_grid_l = new int[max_index];
+		index_to_grid_s = new int[max_index];
+	}
+		
 	
-	printf("rank %d recieved pairs variables! \n", rank);
+	MPI::COMM_WORLD.Bcast(pairs_i, max_pairs, MPI_INT, root);
+	MPI::COMM_WORLD.Bcast(pairs_j, max_pairs, MPI_INT, root);
+	
+	MPI::COMM_WORLD.Bcast(index_to_grid_i, max_index, MPI_INT, root);
+	MPI::COMM_WORLD.Bcast(index_to_grid_j, max_index, MPI_INT, root);
+	MPI::COMM_WORLD.Bcast(index_to_grid_l, max_index, MPI_INT, root);
+	MPI::COMM_WORLD.Bcast(index_to_grid_s, max_index, MPI_INT, root);
+	
+	// Some C code follows to allocate memory for our completed arrays
+	// Perhaps one can get MPI to take std::vector as a valid data type instead?
+	
+	index_to_grid = (int **) malloc(max_index * sizeof(int *));
+	
+	for (int k = 0; k < max_index; ++k){
+		index_to_grid[k] = (int *) malloc(4 * sizeof(int));
+		index_to_grid[k][0] = index_to_grid_i[k];
+		index_to_grid[k][1] = index_to_grid_j[k];
+		index_to_grid[k][2] = index_to_grid_l[k];
+		index_to_grid[k][3] = index_to_grid_s[k];
+	}
+	
+	pairs = (int **) malloc(max_pairs * sizeof(int *));
+	
+	for (int x = 0; x < max_pairs; ++x){
+		pairs[x] = (int *) malloc(2 * sizeof(int));
+		pairs[x][0] = pairs_i[x];
+		pairs[x][1] = pairs_j[x];
+	
+	}
+			
+	if (rank == print_rank){	
+		printf("Heterostructure has %d q points. \n", max_index);
+		printf("Sparse matrix with %d entries expected. \n", max_pairs);
+	}
+	
 
 }
 
 void Locality::constructMatrix(){ 
+	if (rank == print_rank)
+		printf("rank %d entering constructMatrix(). \n", rank);
 
 }
 
 void Locality::solveMatrix(){ 
+	if (rank == print_rank)
+		printf("rank %d entering solveMatrix(). \n", rank);
+
 
 }
 
@@ -102,6 +192,9 @@ void Locality::save(){
 }
 
 void Locality::finMPI(){ 
+	if (rank == print_rank)
+		printf("rank %d finalizing MPI. \n", rank);
+
 
 	MPI::Finalize();
 

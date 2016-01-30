@@ -19,6 +19,7 @@ class Hstruct {
         std::vector<double> angles;
         std::vector<double> heights;
         std::vector<std::vector<double> > shifts;
+		std::vector<std::vector<int> > index_array;
         void setIndex();
         
     public:
@@ -34,7 +35,8 @@ class Hstruct {
         double localitySweep(int, double, double);
         double hUpdate();
         int getMaxIndex();
-        
+        std::vector<std::vector<int> > getPairs();
+		std::vector<std::vector<int> > getIndexArray();
 
 };
 

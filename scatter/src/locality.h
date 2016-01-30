@@ -14,9 +14,15 @@ class Locality {
     private:
 		int size;
 		int rank;
+		int print_rank;
+		std::vector<Sdata> sdata;
+		std::vector<double> heights;
+		std::vector<double> angles;
 		int max_index;
+		int max_pairs;
 		int root;
 		int** pairs;
+		int** index_to_grid;
         
     public:
         Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>);

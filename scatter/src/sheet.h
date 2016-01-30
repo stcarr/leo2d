@@ -37,7 +37,8 @@ class Sheet {
         double intraHamiltonian();
         int getMaxIndex();
         double getUnit(int, int);
-        
+		int getShape(int, int);
+        int getNumAtoms();
 
 };
 
