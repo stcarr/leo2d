@@ -1,20 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /* 
- * File:   sheet.hpp
- * Author: Stephen
+ * File:   sheet.h
+ * Author: Stephen Carr
  *
- * Created on January 4, 2016, 4:32 PM
+ * Created on January 27, 2016, 2:42 PM
  */
 
 #ifndef SHEET_H
 #define SHEET_H
 #include <vector>
 #include <string>
+#include "sdata.h"
 
 
 class Sheet {
@@ -26,10 +21,12 @@ class Sheet {
         std::vector<std::vector<double> > atom_pos;
         std::vector<std::vector<std::vector<int> > > grid_array;
         std::vector<std::vector<int> > index_array;
+		bool ranSetup;
         void setIndex();
         
     public:
         Sheet(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>);
+		Sheet(Sdata);
         Sheet(const Sheet& orig);
         ~Sheet();
         bool checkShape(double (&pos)[3]);
@@ -40,7 +37,8 @@ class Sheet {
         double intraHamiltonian();
         int getMaxIndex();
         double getUnit(int, int);
-        
+		int getShape(int, int);
+        int getNumAtoms();
 
 };
 

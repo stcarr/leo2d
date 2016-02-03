@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /* 
  * File:   sheet.cpp
  * Author: Stephen
@@ -11,7 +5,7 @@
  * Created on January 4, 2016, 4:32 PM
  */
 
-#include "sheet.hpp"
+#include "sheet.h"
 #include <math.h>
 
 Sheet::Sheet(std::vector<std::vector<double> > _a, std::vector<int> _types, std::vector<std::vector<double> > _pos, std::vector<int> _min, std::vector<int> _max) {
@@ -22,6 +16,16 @@ Sheet::Sheet(std::vector<std::vector<double> > _a, std::vector<int> _types, std:
     atom_pos = _pos;
     setIndex();
            
+}
+
+Sheet::Sheet(Sdata input){
+	a = input.a;
+	min_shape = input.min_shape;
+	max_shape = input.max_shape;
+	atom_types = input.atom_types;
+	atom_pos = input.atom_pos;
+	setIndex();
+	
 }
 
 Sheet::Sheet(const Sheet& orig) {
@@ -44,7 +48,7 @@ void Sheet::setIndex(){
     int width = max_shape[1] - min_shape[1];
     int depth = atom_types.size();
   
-    int k = -1;
+    int k = 0;
   
     grid_array.resize(height);
     for (int i = 0; i < height; ++i) {
@@ -59,9 +63,9 @@ void Sheet::setIndex(){
                 for (int x =0; x < 3; ++x){
                     pos[x] = posAtomGrid(index_here,x);
                 }
-                if(checkShape(pos)) { 
+                if(checkShape(pos)) {
                     grid_array[i][j][l] = k;
-                    ++k;
+					++k;
                 } 
                 else {
                     grid_array[i][j][l] = -1;
@@ -150,4 +154,19 @@ int Sheet::getMaxIndex(){
 
 double Sheet::getUnit(int vec, int dim){
     return a[vec][dim];
+}
+
+int Sheet::getShape(int type, int dim){
+
+	if (type == 0)
+		return min_shape[dim];
+		
+	if (type == 1)
+		return max_shape[dim];
+		
+	return 0;
+}
+
+int Sheet::getNumAtoms(){
+	return atom_types.size();
 }
