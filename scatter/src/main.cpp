@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 	std::vector<int> max;
 	max.push_back(max_size);
 	max.push_back(max_size);
-	max.push_back(max_size);=
+	max.push_back(max_size);
 	
 	// Save all this info into a wrapper data type
 	Sdata s_in(unitCell,types,pos,min,max);
