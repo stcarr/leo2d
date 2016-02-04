@@ -10,6 +10,8 @@
 #include <math.h>
 #include "locality.h"
 
+#include <petscksp.h>
+
 using namespace std;
  
 int main(int argc, char** argv) {
