@@ -17,6 +17,7 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 	sdata = sdata_in;
 	heights = heights_in;
 	angles = angles_in;
+	num_eigs = 15;
     
 }
 
@@ -167,21 +168,146 @@ void Locality::constructGeom(){
 void Locality::constructMatrix(){ 
 	if (rank == print_rank)
 		printf("rank %d entering constructMatrix(). \n", rank);
+		
+	if (rank == root) {
+		rootMatrixSolve();
+	} else {
+		workerMatrixSolve();
+	}
 
 }
 
-void Locality::solveMatrix(){ 
-	if (rank == print_rank)
-		printf("rank %d entering solveMatrix(). \n", rank);
-
-
+void Locality::rootMatrixSolve() {
+	
+	int nShifts = 5;
+	int maxJobs = nShifts*nShifts;
+	int currentJob = 0;
+	double work[nShifts*nShifts][2];
+	double result[num_eigs];
+	
+	for (int i = 0; i < nShifts; ++i){
+		for (int j = 0; j < nShifts; ++j){
+			double x = 1.0/(double) i;
+			double y = 1.0/(double) j;
+			work[i*nShifts + j][0] = x;
+			work[i*nShifts + j][1] = y;
+		}
+	}
+	
+	MPI::Status status;
+	
+	// try to give each worker its first job
+	
+	for (int r = 1; r < size; ++r) {
+		if (currentJob < maxJobs) {
+		
+			MPI::COMM_WORLD.Send(	
+						&work[currentJob], 	// input buffer
+						2,					// size of buffer [x,y]
+						MPI::DOUBLE,		// type of buffer
+						r,					// worker to recieve
+						WORKTAG);			// tag as work
+						
+			
+			++currentJob;					// one more job sent out!
+		}
+		
+	}
+	
+	
+	printf("rank %d has sent first batch of work... \n", rank);
+	
+	// Receive results and dispense new work
+	
+	while (currentJob < maxJobs) {
+		
+		MPI::COMM_WORLD.Recv(	
+					result,					// get result from worker
+					1,
+					MPI::DOUBLE,
+					MPI::ANY_SOURCE,
+					MPI::ANY_TAG,
+					status);				// keeps tag and source information
+		
+		MPI::COMM_WORLD.Send(	
+					&work[currentJob],
+					2,
+					MPI::DOUBLE,
+					status.Get_source(),		// send to worker that just completed
+					WORKTAG);
+		
+		++currentJob;						// one more job sent out!
+		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
+	}
+	
+	// Receive final work
+	
+	for (int r = 1; r < size; ++r){
+		
+		MPI::COMM_WORLD.Recv(	
+					result,					// get result from worker
+					1,
+					MPI::DOUBLE,
+					r,
+					MPI::ANY_TAG,
+					status);				// keeps tag and source information
+	
+		printf("rank %d has received final work from rank %d. \n", rank, r);
+	}
+	
+	// Tell workers to exit workerMatrixSolve()
+	
+	for (int r = 1; r < size; ++r){
+		double temp[2];
+		temp[0] = 0.0;
+		temp[1] = 0.0;
+		MPI::COMM_WORLD.Send(	
+					&temp,
+					2, 
+					MPI::DOUBLE, 
+					r, 
+					STOPTAG);
+	}
+	
 }
 
-void Locality::getRaw(){ 
+void Locality::workerMatrixSolve() {
 
-}
-
-void Locality::getProcessed(){ 
+	double result[num_eigs];
+	double work[2];
+	MPI::Status status;
+	
+	while (1) {
+		MPI::COMM_WORLD.Recv( 
+						&work, 
+						2, 
+						MPI::DOUBLE, 
+						root, 
+						MPI::ANY_TAG, 
+						status);
+		
+		if (status.Get_tag() == STOPTAG) {
+			return;
+		}
+		
+		for (int i = 0; i < num_eigs; ++i){
+			result[i] = 12;
+		}
+		
+		MPI::COMM_WORLD.Send(	
+					result,
+					1,
+					MPI::DOUBLE,
+					root,
+					0);
+					
+					
+		if (rank == print_rank)
+			printf("rank %d finished 1 job! \n", rank);
+					
+		
+	
+	}
 
 }
 

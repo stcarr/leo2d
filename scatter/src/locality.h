@@ -20,9 +20,14 @@ class Locality {
 		std::vector<double> angles;
 		int max_index;
 		int max_pairs;
+		int num_eigs;
 		int root;
 		int** pairs;
 		int** index_to_grid;
+		void rootMatrixSolve();
+		void workerMatrixSolve();
+		static const int WORKTAG = 0;
+		static const int STOPTAG = 1;
         
     public:
         Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>);
@@ -32,9 +37,6 @@ class Locality {
 		void initMPI(int, char**);
 		void constructGeom();
 		void constructMatrix();
-		void solveMatrix();
-		void getRaw();
-		void getProcessed();
 		void plot();
 		void save();
 		void finMPI();
