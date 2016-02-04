@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
 	pos[0][2] = 0.0;
 
 	// Shape of the grid to sample for atom population
-	int min_size = -100;
-	int max_size = 100;
+	int min_size = -25;
+	int max_size = 25;
 	
 	std::vector<int> min;
 	min.push_back(min_size);
@@ -109,18 +109,6 @@ int main(int argc, char** argv) {
 	//
 	// !! NOT STARTED !!
 	loc.constructMatrix();
-	
-	// Uses ARPACK to solve for m eigenvalues on each worker
-	//
-	// !! NOT STARTED !!
-	loc.solveMatrix();
-	
-	// Root node receives results from each worker. Choose one type.
-	//
-	// !! NOT STARTED !!
-	
-	loc.getRaw();
-	//loc.getProcessed();
 	
 	// Post processing operations
 	//
