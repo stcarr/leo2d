@@ -6,8 +6,9 @@
  */
 
 #include "hstruct.h"
-#include<stdio.h>
+#include <stdio.h>
 #include <math.h>
+#include "intralayer_coupling.h"
 
 Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std::vector<double> heights_in) {
     std::vector<double> blank_shift;
@@ -43,8 +44,6 @@ void Hstruct::setIndex(){
 	index_array.resize(max_index);
 	
 	for(int k = 0; k < max_index; ++k){
-	
-		index_array[k].resize(4);
 		int i_here, j_here, l_here, s_here;
 		
 		int index_counter = 0;
@@ -142,9 +141,7 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 }
 
 
-std::vector<std::vector<int> > Hstruct::getPairs(){
-
-	// !!!!! NEED TO ADD INTRALAYER PAIRS (only interlayer pairs at the moment) !!!!!
+std::vector<std::vector<int> > Hstruct::getInterPairs(){
 
 	int searchsize = 4;
 	std::vector<std::vector<int> > pair_array;
@@ -212,3 +209,82 @@ std::vector<std::vector<int> > Hstruct::getPairs(){
 	return pair_array;
  
 }
+
+int Hstruct::gridToIndex(int (&grid_index)[4]) {
+	
+	int i = grid_index[0];
+	int j = grid_index[1];
+	int o = grid_index[2];
+	int s = grid_index[3];
+	
+	int sheet_grid[3] = {i,j,o};
+	
+	int temp_index = sheets[s].gridToIndex(sheet_grid);
+	
+	if (temp_index == -1)
+		return -1;
+	
+	for (int x = 0; x < s; ++x) {
+		temp_index += sheets[x].getMaxIndex();
+	}
+	
+	return temp_index;
+
+}
+
+std::vector<std::vector<double> > Hstruct::getIntraPairs() {
+	
+	std::vector<std::vector<double> > intra_pairs;
+	
+	for (int k = 0; k < max_index; ++k) {
+	
+		int grid_0[3];
+		
+		for (int x = 0; x < 3; ++x)
+			grid_0[x] = index_array[k][x];
+		
+			
+		int mat = 0; // !!! Force to graphene, fix by adding material variable to Sheet.cpp !!!
+		
+		std::vector<std::vector<double> > terms = intralayer_terms(grid_0,mat);
+		
+		for (int y = 0; y < static_cast<int>(terms.size()); ++y) {
+		
+			int new_grid[4];
+			new_grid[0] = int (terms[y][0]);
+			new_grid[1] = int (terms[y][1]);
+			new_grid[2] = int (terms[y][2]);
+			new_grid[3] = index_array[k][3];
+			
+			int new_k = gridToIndex(new_grid);
+			
+			if (new_k != -1) {
+			
+				std::vector<double> temp;
+				temp.push_back(double (k));					// current index in loop
+				temp.push_back(double (new_k));				// other index in interaction
+				temp.push_back(terms[y][3]);				// hopping term t
+				
+				intra_pairs.push_back(temp);
+			}
+		
+		
+		}
+
+	}
+	
+	return intra_pairs;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+

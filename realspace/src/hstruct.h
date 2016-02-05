@@ -35,8 +35,10 @@ class Hstruct {
         double localitySweep(int, double, double);
         double hUpdate();
         int getMaxIndex();
-        std::vector<std::vector<int> > getPairs();
+        std::vector<std::vector<int> > getInterPairs();
+		std::vector<std::vector<double> > getIntraPairs();
 		std::vector<std::vector<int> > getIndexArray();
+		int gridToIndex(int (&grid_index)[4]);
 
 };
 

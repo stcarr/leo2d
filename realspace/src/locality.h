@@ -19,11 +19,13 @@ class Locality {
 		std::vector<double> heights;
 		std::vector<double> angles;
 		int max_index;
-		int max_pairs;
+		int max_inter_pairs;
+		int max_intra_pairs;
 		int num_eigs;
 		int root;
-		int** pairs;
 		int** index_to_grid;
+		int** inter_pairs;
+		double** intra_pairs;
 		void rootMatrixSolve();
 		void workerMatrixSolve();
 		static const int WORKTAG = 0;

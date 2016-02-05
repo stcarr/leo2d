@@ -143,9 +143,14 @@ int Sheet::gridToIndex(int (&grid_index)[3]){
     int i = grid_index[0];
     int j = grid_index[1];
     int l = grid_index[2];
-        
-    int k = grid_array[i][j][l];
-    return k;
+	
+	
+    if (i >= 0 && i < max_shape[0] - min_shape[0])
+		if (j >= 0 && j < max_shape[1] - min_shape[1])
+			if (l >= 0 && l < atom_types.size())
+				return grid_array[i][j][l];
+    
+	return -1;
 }
 
 int Sheet::getMaxIndex(){

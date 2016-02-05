@@ -10,7 +10,6 @@
 #include <math.h>
 #include "locality.h"
 
-#include <petscksp.h>
 
 using namespace std;
  
@@ -26,7 +25,7 @@ int main(int argc, char** argv) {
 	std::vector<std::vector<double> > unitCell;
 	std::vector<double> a1,a2,a3;
 
-	double a = 2.46
+	double a = 2.46;
 	
 	double unitCell_in[3][3] = 
 	{
@@ -49,6 +48,7 @@ int main(int argc, char** argv) {
 	int num_atoms = 2;
 	vector<int> types;
 	types.push_back(6); // 6 is carbon (atomic #)
+	types.push_back(6);
 	
 	// Position of atoms in the Unit Cell
 	vector<vector<double> > pos;
@@ -94,6 +94,7 @@ int main(int argc, char** argv) {
 	
 	angles.push_back(0);
 	angles.push_back(1);
+	
 	
 	// Create the locality object with the input data
 	Locality loc(sdata,heights,angles);

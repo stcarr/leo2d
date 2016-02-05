@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// #include <petscksp.h>
+// #include <slepceps.h>
+
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
 	sdata = sdata_in;
@@ -51,8 +54,12 @@ void Locality::constructGeom(){
 
 	int max_pairs;
 	
-	int* pairs_i;
-	int* pairs_j;
+	int* inter_pairs_i;
+	int* inter_pairs_j;
+	
+	double* intra_pairs_i;
+	double* intra_pairs_j;
+	double* intra_pairs_t;
 		
 	int* index_to_grid_i;
 	int* index_to_grid_j;
@@ -63,8 +70,6 @@ void Locality::constructGeom(){
 	
 		// Build Hstruct object
 		std::vector<Sheet> sheets;
-		std::vector<int> vec_i;
-		std::vector<int> vec_j;
 		
 		for (int i = 0; i < sdata.size(); ++i){
 			sheets.push_back(Sheet(sdata[i]));
@@ -93,20 +98,36 @@ void Locality::constructGeom(){
 		}
 		
 		
-		// Construct and prepare the pairs array for broadcasting
-		// !!!!! MISSING INTRALAYER PAIRS IN h.getPairs() !!!!!
+		// Construct and prepare the pairs arrays for broadcasting
 		
-		std::vector<std::vector<int> > pairs_vec = h.getPairs();
-		max_pairs = static_cast<int>(pairs_vec.size());
+		std::vector<std::vector<int> > inter_pairs_vec = h.getInterPairs();
+		std::vector<std::vector<double> > intra_pairs_vec = h.getIntraPairs();
+		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
+		max_intra_pairs = static_cast<int>(intra_pairs_vec.size());
 		
-		MPI::COMM_WORLD.Bcast(&max_pairs, 1, MPI_INT, root);
+		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
+		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 		
-		pairs_i = new int[max_pairs];
-		pairs_j = new int[max_pairs];
+		inter_pairs_i = new int[max_inter_pairs];
+		inter_pairs_j = new int[max_inter_pairs];
 		
-		for(int x = 0; x < max_pairs; ++x){
-			pairs_i[x] = pairs_vec[x][0];
-			pairs_j[x] = pairs_vec[x][1];
+		for(int x = 0; x < max_inter_pairs; ++x){
+		
+			inter_pairs_i[x] = inter_pairs_vec[x][0];
+			inter_pairs_j[x] = inter_pairs_vec[x][1];
+			
+		}
+		
+		intra_pairs_i = new double[max_intra_pairs];
+		intra_pairs_j = new double[max_intra_pairs];
+		intra_pairs_t = new double[max_intra_pairs];
+		
+		for(int x = 0; x < max_intra_pairs; ++x){
+		
+			intra_pairs_i[x] = intra_pairs_vec[x][0];
+			intra_pairs_j[x] = intra_pairs_vec[x][1];
+			intra_pairs_t[x] = intra_pairs_vec[x][2];
+			
 		}
 		
 	}
@@ -115,25 +136,33 @@ void Locality::constructGeom(){
 	
 		// Allocate memory to receive pair and "index to grid" information
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(&max_pairs, 1, MPI_INT, root);
-		
-		pairs_i = new int[max_pairs];
-		pairs_j = new int[max_pairs];
+		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
+		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 		
 		index_to_grid_i = new int[max_index];
 		index_to_grid_j = new int[max_index];
 		index_to_grid_l = new int[max_index];
 		index_to_grid_s = new int[max_index];
+		
+		inter_pairs_i = new int[max_inter_pairs];
+		inter_pairs_j = new int[max_inter_pairs];
+		
+		intra_pairs_i = new double[max_intra_pairs];
+		intra_pairs_j = new double[max_intra_pairs];
+		intra_pairs_t = new double[max_intra_pairs];
 	}
 		
-	
-	MPI::COMM_WORLD.Bcast(pairs_i, max_pairs, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(pairs_j, max_pairs, MPI_INT, root);
-	
 	MPI::COMM_WORLD.Bcast(index_to_grid_i, max_index, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(index_to_grid_j, max_index, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(index_to_grid_l, max_index, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(index_to_grid_s, max_index, MPI_INT, root);
+	
+	MPI::COMM_WORLD.Bcast(inter_pairs_i, max_inter_pairs, MPI_INT, root);
+	MPI::COMM_WORLD.Bcast(inter_pairs_j, max_inter_pairs, MPI_INT, root);
+	
+	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_DOUBLE, root);
+	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_DOUBLE, root);
+	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
 	
 	// Some C code follows to allocate memory for our completed arrays
 	// Perhaps one can get MPI to take std::vector as a valid data type instead?
@@ -148,18 +177,29 @@ void Locality::constructGeom(){
 		index_to_grid[k][3] = index_to_grid_s[k];
 	}
 	
-	pairs = (int **) malloc(max_pairs * sizeof(int *));
+	inter_pairs = (int **) malloc(max_inter_pairs * sizeof(int *));
 	
-	for (int x = 0; x < max_pairs; ++x){
-		pairs[x] = (int *) malloc(2 * sizeof(int));
-		pairs[x][0] = pairs_i[x];
-		pairs[x][1] = pairs_j[x];
+	for (int x = 0; x < max_inter_pairs; ++x){
+		inter_pairs[x] = (int *) malloc(2 * sizeof(int));
+		inter_pairs[x][0] = inter_pairs_i[x];
+		inter_pairs[x][1] = inter_pairs_j[x];
+	
+	}
+	
+	intra_pairs = (double **) malloc(max_intra_pairs * sizeof(double *));
+	
+	for (int x = 0; x < max_intra_pairs; ++x){
+		intra_pairs[x] = (double *) malloc(3 * sizeof(double));
+		intra_pairs[x][0] = intra_pairs_i[x];
+		intra_pairs[x][1] = intra_pairs_j[x];
+		intra_pairs[x][2] = intra_pairs_t[x];
 	
 	}
 			
 	if (rank == print_rank){	
-		printf("Heterostructure has %d q points. \n", max_index);
-		printf("Sparse matrix with %d entries expected. \n", max_pairs);
+		printf("Heterostructure has %d atoms. \n", max_index);
+		printf("%d entries expected from intra. \n", max_intra_pairs);
+		printf("%d entries expected from inter. \n", max_inter_pairs);
 	}
 	
 
@@ -293,6 +333,63 @@ void Locality::workerMatrixSolve() {
 		for (int i = 0; i < num_eigs; ++i){
 			result[i] = 12;
 		}
+		
+		/*
+		
+		PetscErrorCode ierr;
+		PetscInt N = max_index;
+		Mat H;
+		PetscInt nnz[N];
+		
+		char help[] = "what this program does in brief can go here."
+		
+		PetscInitialize(nullptr, nullptr, (char*)0, help);
+		
+		ierr = MatCreate(PETSC_COMM_WORLD,&H);CHKERRQ(ierr);
+		ierr = MatSetType(H,MATSEQAIJ);CHKERRQ(ierr);
+		ierr = MatSetSizes(H,N,N,N,N);CHKERRQ(ierr);
+
+		ierr = MatSeqAIJSetPreallocation(H,NULL,nnz);
+
+
+		// ******
+
+		// some loop here . . .
+
+		PetscInt m = 1; // number of rows being added
+		PetscInt idxm = 1; // row index values
+		
+		for (int k = 0; k < max_index; ++k){
+		
+			PetscInt n; // number of cols being added
+			PetscInt idxn[n]; // col index values
+			PetscScalar v[n]; // entry values
+
+			// typically you want m = 1, because v corresponds to the columns
+			// from what I understand. So if you want the same row on several rows
+			// you can use m > 1, but otherwise just m = 1
+
+			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES); 
+			// loop ends
+
+			// *******
+		}
+
+
+		ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+		ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+		ierr = PetscLogStagePop();CHKERRQ(ierr);
+		
+		// slepc begins
+
+		
+		// slepc ends
+		
+		ierr = MatDestroy(&H);CHKERRQ(ierr);
+		// delete H matrix
+		
+		*/
+		
 		
 		MPI::COMM_WORLD.Send(	
 					result,
