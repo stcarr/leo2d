@@ -24,10 +24,12 @@ int main(int argc, char** argv) {
 	std::vector<std::vector<double> > unitCell;
 	std::vector<double> a1,a2,a3;
 
+	double a = 2.46
+	
 	double unitCell_in[3][3] = 
 	{
-		{1,0,0},
-		{0,1,0},
+		{a,0,0},
+		{a/2.0,a*sqrt(3)/2.0,0},
 		{0,0,1}
 	};
 	
@@ -42,7 +44,7 @@ int main(int argc, char** argv) {
 	unitCell.push_back(a3);
 	
 	// Number and atomic weight of atoms
-	int num_atoms = 1;
+	int num_atoms = 2;
 	vector<int> types;
 	types.push_back(6); // 6 is carbon (atomic #)
 	
@@ -55,6 +57,11 @@ int main(int argc, char** argv) {
 	pos[0][0] = 0.0;
 	pos[0][1] = 0.0;
 	pos[0][2] = 0.0;
+	
+	pos[1][0] = a/2.0;
+	pos[1][1] = a/(2.0*sqrt(3));
+	pos[1][2] = 0;
+	
 
 	// Shape of the grid to sample for atom population
 	int min_size = -25;
