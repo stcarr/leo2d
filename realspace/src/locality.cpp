@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// #include <petscksp.h>
-// #include <slepceps.h>
+#include <petscksp.h>
+#include <slepceps.h>
 
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
@@ -335,21 +335,23 @@ void Locality::workerMatrixSolve() {
 		}
 		
 		/*
+
+		// Build and solve TBH matrix
 		
 		PetscErrorCode ierr;
 		PetscInt N = max_index;
 		Mat H;
 		PetscInt nnz[N];
 		
-		char help[] = "what this program does in brief can go here."
+		char help[] = "what this program does in brief can go here.";
 		
-		PetscInitialize(nullptr, nullptr, (char*)0, help);
+		PetscInitialize(NULL, NULL, (char*)0, help);
 		
-		ierr = MatCreate(PETSC_COMM_WORLD,&H);CHKERRQ(ierr);
-		ierr = MatSetType(H,MATSEQAIJ);CHKERRQ(ierr);
-		ierr = MatSetSizes(H,N,N,N,N);CHKERRQ(ierr);
+		MatCreate(PETSC_COMM_WORLD,&H);
+		MatSetType(H,MATSEQAIJ);
+		MatSetSizes(H,N,N,N,N);
 
-		ierr = MatSeqAIJSetPreallocation(H,NULL,nnz);
+		MatSeqAIJSetPreallocation(H,NULL,nnz);
 
 
 		// ******
@@ -358,7 +360,8 @@ void Locality::workerMatrixSolve() {
 
 		PetscInt m = 1; // number of rows being added
 		PetscInt idxm = 1; // row index values
-		
+	
+			
 		for (int k = 0; k < max_index; ++k){
 		
 			PetscInt n; // number of cols being added
@@ -369,28 +372,29 @@ void Locality::workerMatrixSolve() {
 			// from what I understand. So if you want the same row on several rows
 			// you can use m > 1, but otherwise just m = 1
 
-			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES); 
+			//  ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES); 
+			
 			// loop ends
 
 			// *******
 		}
+		
 
 
-		ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-		ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-		ierr = PetscLogStagePop();CHKERRQ(ierr);
+		MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);
+		PetscLogStagePop();
 		
 		// slepc begins
 
 		
 		// slepc ends
 		
-		ierr = MatDestroy(&H);CHKERRQ(ierr);
+		MatDestroy(&H);
+		PetscFinalize();
 		// delete H matrix
-		
-		*/
-		
-		
+		*/		
+
 		MPI::COMM_WORLD.Send(	
 					result,
 					1,
