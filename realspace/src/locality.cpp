@@ -109,9 +109,9 @@ void Locality::constructGeom(){
 		
 		std::vector<std::vector<int> > inter_pairs_vec = h.getInterPairs();
 		
-		std::vector<std::vector<int> > intra_pairs_vec_i;
-		std::vector<std::vector<int> > intra_pairs_vec_j;
-		std::vector<std::vector<double> > intra_pairs_vec_t;
+		std::vector<int> intra_pairs_vec_i;
+		std::vector<int> intra_pairs_vec_j;
+		std::vector<double> intra_pairs_vec_t;
 		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t);
 		
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
