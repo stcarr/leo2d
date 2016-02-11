@@ -69,6 +69,10 @@ void Locality::constructGeom(){
 	int* index_to_grid_l;
 	int* index_to_grid_s;
 	
+	double* index_to_pos_x;
+	double* index_to_pos_y;
+	double* index_to_pos_z;
+	
 	if (rank == root){
 	
 		// Build Hstruct object
@@ -139,9 +143,9 @@ void Locality::constructGeom(){
 		index_to_pos_y = new double[max_index];
 		index_to_pos_z = new double[max_index];
 		
-		index_to_pos_x = h.getIndexToPos(0);
-		index_to_pos_y = h.getIndexToPos(1);
-		index_to_pos_z = h.getIndexToPos(2);
+		h.getIndexToPos(index_to_pos_x,0);
+		h.getIndexToPos(index_to_pos_y,1);
+		h.getIndexToPos(index_to_pos_z,2);
 		
 		
 	}
@@ -228,7 +232,7 @@ void Locality::constructGeom(){
 		index_to_pos[k][1] = index_to_pos_y[k];
 		index_to_pos[k][2] = index_to_pos_z[k];
 
-	{
+	}
 			
 	if (rank == print_rank){	
 		printf("Heterostructure has %d atoms. \n", max_index);

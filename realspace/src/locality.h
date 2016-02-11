@@ -24,7 +24,7 @@ class Locality {
 		int num_eigs;
 		int root;
 		int** index_to_grid;
-		double* index_to_pos;
+		double** index_to_pos;
 		int** inter_pairs;
 		double** intra_pairs;
 		void rootMatrixSolve();
