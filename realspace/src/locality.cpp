@@ -38,9 +38,12 @@ void Locality::setup() {
 
 void Locality::initMPI(int argc, char** argv){
 
-	MPI::Init(argc, argv);
-	
-	root = 0;
+	char help[] = "what this program does in brief can go here.";
+
+	PetscInitialize(&argc,&argv,(char*)0,help);
+ 
+
+        root = 0;
 	print_rank = 1;
 	
 	size = MPI::COMM_WORLD.Get_size();
@@ -263,7 +266,7 @@ void Locality::rootMatrixSolve() {
 		
 		MPI::COMM_WORLD.Recv(	
 					result,					// get result from worker
-					1,
+					num_eigs,
 					MPI::DOUBLE,
 					MPI::ANY_SOURCE,
 					MPI::ANY_TAG,
@@ -286,7 +289,7 @@ void Locality::rootMatrixSolve() {
 		
 		MPI::COMM_WORLD.Recv(	
 					result,					// get result from worker
-					1,
+					num_eigs,
 					MPI::DOUBLE,
 					r,
 					MPI::ANY_TAG,
@@ -334,23 +337,21 @@ void Locality::workerMatrixSolve() {
 			result[i] = 12;
 		}
 		
-		/*
+		
 
 		// Build and solve TBH matrix
+			
+	        printf("Entering PETSc code area. \n");
 		
 		PetscErrorCode ierr;
 		PetscInt N = max_index;
 		Mat H;
 		PetscInt nnz[N];
-		
-		char help[] = "what this program does in brief can go here.";
-		
-		PetscInitialize(NULL, NULL, (char*)0, help);
-		
-		MatCreate(PETSC_COMM_WORLD,&H);
+
+
+		MatCreate(PETSC_COMM_SELF,&H);
 		MatSetType(H,MATSEQAIJ);
 		MatSetSizes(H,N,N,N,N);
-
 		MatSeqAIJSetPreallocation(H,NULL,nnz);
 
 
@@ -361,7 +362,6 @@ void Locality::workerMatrixSolve() {
 		PetscInt m = 1; // number of rows being added
 		PetscInt idxm = 1; // row index values
 	
-			
 		for (int k = 0; k < max_index; ++k){
 		
 			PetscInt n; // number of cols being added
@@ -379,8 +379,6 @@ void Locality::workerMatrixSolve() {
 			// *******
 		}
 		
-
-
 		MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);
 		PetscLogStagePop();
@@ -390,14 +388,16 @@ void Locality::workerMatrixSolve() {
 		
 		// slepc ends
 		
+		printf("5~~ \n");
+
 		MatDestroy(&H);
-		PetscFinalize();
+		
 		// delete H matrix
-		*/		
+			
 
 		MPI::COMM_WORLD.Send(	
 					result,
-					1,
+					num_eigs,
 					MPI::DOUBLE,
 					root,
 					0);
