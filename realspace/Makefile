@@ -14,13 +14,13 @@ MPICC = mpicxx
 DEBUG = -g
 CFLAGS = -c
 MPIFLAGS = -c
-LFLAGS = 
+LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc 
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
 $(EXECUTABLE) : $(addprefix $(OUT_DIR)/,$(OBJS))
 	$(MPICC) $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -lm -lstdc++
-	
+ 	
 $(addprefix $(OUT_DIR)/,$(CC_OBJ)): COMP = $(CC)
 $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)
 $(addprefix $(OUT_DIR)/,$(OBJS)): TARGET = $@
