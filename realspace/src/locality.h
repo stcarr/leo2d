@@ -26,7 +26,8 @@ class Locality {
 		int** index_to_grid;
 		double** index_to_pos;
 		int** inter_pairs;
-		double** intra_pairs;
+		int** intra_pairs;
+		double* intra_pairs_t;
 		void rootMatrixSolve();
 		void workerMatrixSolve();
 		static const int WORKTAG = 0;

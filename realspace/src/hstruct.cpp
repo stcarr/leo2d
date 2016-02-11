@@ -232,9 +232,7 @@ int Hstruct::gridToIndex(int (&grid_index)[4]) {
 
 }
 
-std::vector<std::vector<double> > Hstruct::getIntraPairs() {
-	
-	std::vector<std::vector<double> > intra_pairs;
+void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t) {
 	
 	for (int k = 0; k < max_index; ++k) {
 	
@@ -261,19 +259,16 @@ std::vector<std::vector<double> > Hstruct::getIntraPairs() {
 			if (new_k != -1) {
 			
 				std::vector<double> temp;
-				temp.push_back(double (k));					// current index in loop
-				temp.push_back(double (new_k));				// other index in interaction
-				temp.push_back(terms[y][3]);				// hopping term t
+				array_i.push_back(k);						// current index in loop
+				array_j.push_back(new_k);					// other index in interaction
+				array_t.push_back(terms[y][3]);				// hopping term t
 				
-				intra_pairs.push_back(temp);
 			}
 		
 		
 		}
 
 	}
-	
-	return intra_pairs;
 
 }
 

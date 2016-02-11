@@ -60,8 +60,8 @@ void Locality::constructGeom(){
 	int* inter_pairs_i;
 	int* inter_pairs_j;
 	
-	double* intra_pairs_i;
-	double* intra_pairs_j;
+	int* intra_pairs_i;
+	int* intra_pairs_j;
 	double* intra_pairs_t;
 		
 	int* index_to_grid_i;
@@ -108,9 +108,14 @@ void Locality::constructGeom(){
 		// Construct and prepare the pairs arrays for broadcasting
 		
 		std::vector<std::vector<int> > inter_pairs_vec = h.getInterPairs();
-		std::vector<std::vector<double> > intra_pairs_vec = h.getIntraPairs();
+		
+		std::vector<std::vector<int> > intra_pairs_vec_i;
+		std::vector<std::vector<int> > intra_pairs_vec_j;
+		std::vector<std::vector<double> > intra_pairs_vec_t;
+		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t);
+		
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
-		max_intra_pairs = static_cast<int>(intra_pairs_vec.size());
+		max_intra_pairs = static_cast<int>(intra_pairs_vec_x.size());
 		
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
@@ -125,15 +130,15 @@ void Locality::constructGeom(){
 			
 		}
 		
-		intra_pairs_i = new double[max_intra_pairs];
-		intra_pairs_j = new double[max_intra_pairs];
+		intra_pairs_i = new int[max_intra_pairs];
+		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
 		for(int x = 0; x < max_intra_pairs; ++x){
 		
-			intra_pairs_i[x] = intra_pairs_vec[x][0];
-			intra_pairs_j[x] = intra_pairs_vec[x][1];
-			intra_pairs_t[x] = intra_pairs_vec[x][2];
+			intra_pairs_i[x] = intra_pairs_vec_i[x];
+			intra_pairs_j[x] = intra_pairs_vec_j[x];
+			intra_pairs_t[x] = intra_pairs_vec_t[x];
 			
 		}
 		
@@ -165,8 +170,8 @@ void Locality::constructGeom(){
 		inter_pairs_i = new int[max_inter_pairs];
 		inter_pairs_j = new int[max_inter_pairs];
 		
-		intra_pairs_i = new double[max_intra_pairs];
-		intra_pairs_j = new double[max_intra_pairs];
+		intra_pairs_i = new int[max_intra_pairs];
+		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
 		index_to_pos_x = new double[max_index];
@@ -183,8 +188,8 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(inter_pairs_i, max_inter_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(inter_pairs_j, max_inter_pairs, MPI_INT, root);
 	
-	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_DOUBLE, root);
-	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_DOUBLE, root);
+	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
+	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
 	
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
@@ -214,13 +219,14 @@ void Locality::constructGeom(){
 	
 	}
 	
-	intra_pairs = (double **) malloc(max_intra_pairs * sizeof(double *));
+	intra_pairs = (int **) malloc(max_intra_pairs * sizeof(int *));
+	intra_pairs_t = (double *) malloc(max_intra_pairs *sizeof(double));
 	
 	for (int x = 0; x < max_intra_pairs; ++x){
-		intra_pairs[x] = (double *) malloc(3 * sizeof(double));
+		intra_pairs[x] = (int *) malloc(2 * sizeof(int));
 		intra_pairs[x][0] = intra_pairs_i[x];
 		intra_pairs[x][1] = intra_pairs_j[x];
-		intra_pairs[x][2] = intra_pairs_t[x];
+		intra_pairs_t[x] = intra_pairs_t[x];
 	
 	}
 	
