@@ -278,7 +278,16 @@ std::vector<std::vector<double> > Hstruct::getIntraPairs() {
 }
 
 
+double * Hstruct::getIndexToPos(int dim) {
 
+	double temp_array[max_index];
+	
+	for (int k = 0; k < max_index; ++k)
+		temp_array[k] = posAtomIndex(k,dim);
+	
+	return temp_array;
+
+}
 
 
 

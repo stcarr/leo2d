@@ -133,6 +133,17 @@ void Locality::constructGeom(){
 			
 		}
 		
+		// Get the index_to_pos array
+		
+		index_to_pos_x = new double[max_index];
+		index_to_pos_y = new double[max_index];
+		index_to_pos_z = new double[max_index];
+		
+		index_to_pos_x = h.getIndexToPos(0);
+		index_to_pos_y = h.getIndexToPos(1);
+		index_to_pos_z = h.getIndexToPos(2);
+		
+		
 	}
 	
 	if (rank != root){
@@ -153,6 +164,11 @@ void Locality::constructGeom(){
 		intra_pairs_i = new double[max_intra_pairs];
 		intra_pairs_j = new double[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
+		
+		index_to_pos_x = new double[max_index];
+		index_to_pos_y = new double[max_index];
+		index_to_pos_z = new double[max_index];
+		
 	}
 		
 	MPI::COMM_WORLD.Bcast(index_to_grid_i, max_index, MPI_INT, root);
@@ -166,6 +182,11 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
+	
+	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
+	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
+	MPI::COMM_WORLD.Bcast(index_to_pos_z, max_index, MPI_DOUBLE, root);
+
 	
 	// Some C code follows to allocate memory for our completed arrays
 	// Perhaps one can get MPI to take std::vector as a valid data type instead?
@@ -198,6 +219,16 @@ void Locality::constructGeom(){
 		intra_pairs[x][2] = intra_pairs_t[x];
 	
 	}
+	
+	index_to_pos = (double **) malloc((max_index) * sizeof(double *));
+	
+	for (int k = 0; k < max_index; ++k){
+		index_to_pos[k] = (double *) malloc(3 * sizeof(double));
+		index_to_pos[k][0] = index_to_pos_x[k];
+		index_to_pos[k][1] = index_to_pos_y[k];
+		index_to_pos[k][2] = index_to_pos_z[k];
+
+	{
 			
 	if (rank == print_rank){	
 		printf("Heterostructure has %d atoms. \n", max_index);

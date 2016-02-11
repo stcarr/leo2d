@@ -39,6 +39,7 @@ class Hstruct {
 		std::vector<std::vector<double> > getIntraPairs();
 		std::vector<std::vector<int> > getIndexArray();
 		int gridToIndex(int (&grid_index)[4]);
+		double * getIndexToPos(int);
 
 };
 
