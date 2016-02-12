@@ -11,7 +11,7 @@ EXECUTABLE = main
 
 CC = gcc
 MPICC = mpicxx
-DEBUG = -g
+DEBUG = -g -O0
 CFLAGS = -c
 MPIFLAGS = -c
 LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc 
@@ -19,14 +19,14 @@ LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
 $(EXECUTABLE) : $(addprefix $(OUT_DIR)/,$(OBJS))
-	$(MPICC) $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -lm -lstdc++
+	$(MPICC) $(DEBUG) $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -lm -lstdc++
  	
 $(addprefix $(OUT_DIR)/,$(CC_OBJ)): COMP = $(CC)
 $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)
 $(addprefix $(OUT_DIR)/,$(OBJS)): TARGET = $@
 
 $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
-	$(COMP) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
+	$(COMP) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
 
 .PHONY: clean
 

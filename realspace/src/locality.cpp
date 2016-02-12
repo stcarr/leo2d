@@ -37,11 +37,12 @@ void Locality::setup() {
 }
 
 void Locality::initMPI(int argc, char** argv){
-
+	
 	char help[] = "what this program does in brief can go here.";
 
 	PetscInitialize(&argc,&argv,(char*)0,help);
- 
+ 	
+	// MPI_Init(&argc,&argv);
 
         root = 0;
 	print_rank = 1;
@@ -142,17 +143,19 @@ void Locality::constructGeom(){
 			
 		}
 		
+			
 		// figure out sparse matrix form (nnz per row)
 		
-		nnz = (int *) malloc(max_index * sizeof(int))
-		
+		//nnz = (int *) malloc(max_index * sizeof(int));
+		nnz = new int[max_index];		
+
 		int intra_counter = 0;
 		int inter_counter = 0;
 		
 		for (int k = 0; k < max_index; ++k) {
 			int nonzeros = 0;
 			
-			boolean same_index1 = true;
+			bool same_index1 = true;
 			while(same_index1) {
 				if (intra_pairs_i[intra_counter] != k) {
 					same_index1 = false;
@@ -165,7 +168,7 @@ void Locality::constructGeom(){
 				
 			}
 			
-			boolean same_index2 = true;
+			bool same_index2 = true;
 			while(same_index2) {
 				if (inter_pairs_i[inter_counter] != k) {
 					same_index2 = false;
@@ -180,8 +183,7 @@ void Locality::constructGeom(){
 			
 			nnz[k] = nonzeros;
 		}
-		
-		
+	
 		// Get and prepare the index_to_pos array for broadcasting
 		
 		index_to_pos_x = new double[max_index];
@@ -196,6 +198,8 @@ void Locality::constructGeom(){
 	}
 	
 	if (rank != root){
+		
+		printf("rank %d allocating memory in constructGeom(). \n", rank);
 	
 		// Allocate memory to receive pair and "index to grid" information
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
@@ -214,7 +218,7 @@ void Locality::constructGeom(){
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
-		nnz = (int *) malloc(max_index * sizeof(int));
+		nnz = new int[max_index];
 		
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -244,40 +248,59 @@ void Locality::constructGeom(){
 	// Some C code follows to allocate memory for our completed arrays
 	// Perhaps one can get MPI to take std::vector as a valid data type instead?
 	
-	index_to_grid = (int **) malloc(max_index * sizeof(int *));
+	if (rank == print_rank)
+		printf("rank %d attempting to allocate memory for its global variables. \n",rank);
+
+	int (*index_to_grid)[4] = new int[max_index][4];
 	
+	if (rank == print_rank)
+		printf("1~~ \n");
+	
+	printf("rank %d has max_index = %d \n", rank, max_index);
+
 	for (int k = 0; k < max_index; ++k){
-		index_to_grid[k] = (int *) malloc(4 * sizeof(int));
+		//if (rank == print_rank)
+		//	printf("attempting k = %d ... \n", k);
 		index_to_grid[k][0] = index_to_grid_i[k];
 		index_to_grid[k][1] = index_to_grid_j[k];
 		index_to_grid[k][2] = index_to_grid_l[k];
 		index_to_grid[k][3] = index_to_grid_s[k];
+		//if (rank == print_rank)
+		//	printf("success for k = %d ! \n", k);
 	}
 	
-	inter_pairs = (int **) malloc(max_inter_pairs * sizeof(int *));
+	int (*inter_pairs)[2] = new int[max_inter_pairs][2];
+	
+	if (rank == print_rank)
+		printf("2~~ \n");
 	
 	for (int x = 0; x < max_inter_pairs; ++x){
-		inter_pairs[x] = (int *) malloc(2 * sizeof(int));
 		inter_pairs[x][0] = inter_pairs_i[x];
 		inter_pairs[x][1] = inter_pairs_j[x];
 	
 	}
 	
-	intra_pairs = (int **) malloc(max_intra_pairs * sizeof(int *));
-	intra_pairs_t = (double *) malloc(max_intra_pairs *sizeof(double));
+	int (*intra_pairs)[2] = new int[max_intra_pairs][2];
+	intra_pairs_t = new double[max_intra_pairs];
 	
+	if (rank == print_rank)
+		printf("3~~ (max_intra_pairs = %d on rank %d.) \n", max_intra_pairs, rank);	
+
 	for (int x = 0; x < max_intra_pairs; ++x){
-		intra_pairs[x] = (int *) malloc(2 * sizeof(int));
 		intra_pairs[x][0] = intra_pairs_i[x];
 		intra_pairs[x][1] = intra_pairs_j[x];
 		intra_pairs_t[x] = intra_pairs_t[x];
-	
+		printf("!! rank %d has intra_pairs[%d][0] = %d. \n", rank,x, intra_pairs[0][x]);
 	}
 	
-	index_to_pos = (double **) malloc((max_index) * sizeof(double *));
+	printf("~!! rank %d has intra_pairs[0][0] = %d. \n", rank, intra_pairs[0][0]);
+	
+	if (rank == print_rank)
+		printf("4~~ \n");
+
+	double (*index_to_pos)[3] = new double[max_index][3];
 	
 	for (int k = 0; k < max_index; ++k){
-		index_to_pos[k] = (double *) malloc(3 * sizeof(double));
 		index_to_pos[k][0] = index_to_pos_x[k];
 		index_to_pos[k][1] = index_to_pos_y[k];
 		index_to_pos[k][2] = index_to_pos_z[k];
@@ -300,6 +323,7 @@ void Locality::constructMatrix(){
 	if (rank == root) {
 		rootMatrixSolve();
 	} else {
+		printf("rank %d about to enter workerMatrixSolve();",rank);
 		workerMatrixSolve();
 	}
 
@@ -319,6 +343,7 @@ void Locality::rootMatrixSolve() {
 			double y = 1.0/(double) j;
 			work[i*nShifts + j][0] = x;
 			work[i*nShifts + j][1] = y;
+
 		}
 	}
 	
@@ -400,6 +425,8 @@ void Locality::rootMatrixSolve() {
 }
 
 void Locality::workerMatrixSolve() {
+	
+	printf("rank %d entered workerMatrixSolve(). \n", rank);
 
 	double result[num_eigs];
 	double work[2];
@@ -414,6 +441,7 @@ void Locality::workerMatrixSolve() {
 						MPI::ANY_TAG, 
 						status);
 		
+		printf("rank %d recieved a shift. \n", rank);
 		if (status.Get_tag() == STOPTAG) {
 			return;
 		}
@@ -426,7 +454,7 @@ void Locality::workerMatrixSolve() {
 
 		// Build and solve TBH matrix
 			
-	    printf("Entering PETSc code area. \n");
+	    	printf("Entering PETSc code area. \n");
 		
 		PetscErrorCode ierr;
 		Mat H;
@@ -437,10 +465,14 @@ void Locality::workerMatrixSolve() {
 		MatSetType(H,MATSEQAIJ);
 		MatSetSizes(H,N,N,N,N);
 		
-		PetscInt petsc_nnz[N]
+		PetscInt petsc_nnz[N];
 		
-		for (int k = 0; k < N; ++k)
+		for (int k = 0; k < N; ++k) {
+			//if (rank == print_rank)
+			//	printf("rank %d with nnz[%d] = %d. \n",rank,k,nnz[k]);
 			petsc_nnz[k] = nnz[k];
+		}
+
 		
 		MatSeqAIJSetPreallocation(H,NULL,petsc_nnz);
 
@@ -457,32 +489,39 @@ void Locality::workerMatrixSolve() {
 		
 		int intra_counter = 0;
 		int inter_counter = 0;
-		
+	
+		printf("rank %d trying to build PETSc Matrix! \n",rank);
+	
 		for (int k = 0; k < max_index; ++k){
 		
 			PetscInt idxm = k;
-			n = nnz[k]; // number of cols being added
+			int n = nnz[k]; // number of cols being added
 			PetscInt idxn[n]; // col index values
 			PetscScalar v[n]; // entry values
-			
+
+			printf("rank %d entering construction loops. \n", rank);			
+
 			int input_counter = 0;
 			
-			boolean same_index1 = true;
+			bool same_index1 = true;
 			while(same_index1) {
+				printf("rank %d starting intra_pairs[%d][0] query... \n", rank, intra_counter);
+				int trash = intra_pairs[intra_counter][0];
+				printf("rank %d success in query! \n", rank);
 				if (intra_pairs[intra_counter][0] != k) {
 					same_index1 = false;
 				}
-				
 				else {
 					idxn[input_counter] = intra_pairs[intra_counter][1];
 					v[input_counter] = intra_pairs_t[intra_counter];
 					++input_counter;
 					++intra_counter;
+					printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter][0], intra_pairs[intra_counter][1]);
 				}
 				
 			}
 			
-			boolean same_index2 = true;
+			bool same_index2 = true;
 			while(same_index2) {
 				if (inter_pairs[inter_counter][0] != k) {
 					same_index2 = false;
