@@ -220,7 +220,7 @@ void Locality::constructGeom(){
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
-		int nnz = new int[max_index];
+		nnz = new int[max_index];
 		
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -283,7 +283,7 @@ void Locality::constructGeom(){
 	}
 	
 	int intra_pairs[2*max_intra_pairs];
-	double intra_pairs_t[max_intra_pairs];
+
 	
 	if (rank == print_rank)
 		printf("3~~ (max_intra_pairs = %d on rank %d.) \n", max_intra_pairs, rank);	
@@ -291,11 +291,9 @@ void Locality::constructGeom(){
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
 		intra_pairs[x*2 + 1] = intra_pairs_j[x];
-		intra_pairs_t[x] = intra_pairs_t[x];
-		printf("!! rank %d has intra_pairs[%d][0] = %d. \n", rank,x, intra_pairs[0][x]);
 	}
 	
-	printf("~!! rank %d has intra_pairs[0][0] = %d. \n", rank, intra_pairs[0][0]);
+	printf("~!! rank %d has intra_pairs[0][0] = %d. \n", rank, intra_pairs[0*2 + 0]);
 	
 	if (rank == print_rank)
 		printf("4~~ \n");
@@ -319,7 +317,7 @@ void Locality::constructGeom(){
 
 }
 
-void Locality::constructMatrix(int* &index_to_grid, double* &index_to_pos, int* &inter_pairs, int* &intra_pairs, double* &intra_pairs_t, int* nnz){ 
+void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz){ 
 	if (rank == print_rank)
 		printf("rank %d entering constructMatrix(). \n", rank);
 		
@@ -332,9 +330,9 @@ void Locality::constructMatrix(int* &index_to_grid, double* &index_to_pos, int* 
 
 }
 
-void Locality::rootMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* &inter_pairs, int* &intra_pairs, double* &intra_pairs_t, int* nnz) {
+void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz) {
 	
-	int nShifts = 5;
+	int nShifts = 2;
 	int maxJobs = nShifts*nShifts;
 	int currentJob = 0;
 	double work[nShifts*nShifts][2];
@@ -358,7 +356,7 @@ void Locality::rootMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* 
 		if (currentJob < maxJobs) {
 		
 			MPI::COMM_WORLD.Send(	
-						&work[currentJob], 	// input buffer
+						work[currentJob], 	// input buffer
 						2,					// size of buffer [x,y]
 						MPI::DOUBLE,		// type of buffer
 						r,					// worker to recieve
@@ -386,7 +384,7 @@ void Locality::rootMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* 
 					status);				// keeps tag and source information
 		
 		MPI::COMM_WORLD.Send(	
-					&work[currentJob],
+					work[currentJob],
 					2,
 					MPI::DOUBLE,
 					status.Get_source(),		// send to worker that just completed
@@ -414,20 +412,22 @@ void Locality::rootMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* 
 	// Tell workers to exit workerMatrixSolve()
 	
 	for (int r = 1; r < size; ++r){
+		printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
 		double temp[2];
 		temp[0] = 0.0;
 		temp[1] = 0.0;
 		MPI::COMM_WORLD.Send(	
-					&temp,
+					temp,
 					2, 
 					MPI::DOUBLE, 
 					r, 
 					STOPTAG);
+		printf("rank %d sent STOPTAG succesfuly. \n", rank);
 	}
 	
 }
 
-void Locality::workerMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* &inter_pairs, int* &intra_pairs, double* &intra_pairs_t, int* nnz) {
+void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz) {
 	
 	printf("rank %d entered workerMatrixSolve(). \n", rank);
 
@@ -437,18 +437,19 @@ void Locality::workerMatrixSolve(int* &index_to_grid, double* &index_to_pos, int
 	
 	while (1) {
 		MPI::COMM_WORLD.Recv( 
-						&work, 
+						work, 
 						2, 
 						MPI::DOUBLE, 
 						root, 
 						MPI::ANY_TAG, 
 						status);
 		
-		printf("rank %d recieved a shift. \n", rank);
 		if (status.Get_tag() == STOPTAG) {
+			printf("rank %d recieved STOPTAG. \n", rank);
 			return;
 		}
-		
+
+		printf("rank %d recieved a shift job! \n", rank);		
 		for (int i = 0; i < num_eigs; ++i){
 			result[i] = 12;
 		}
@@ -502,48 +503,48 @@ void Locality::workerMatrixSolve(int* &index_to_grid, double* &index_to_pos, int
 			PetscInt idxn[n]; // col index values
 			PetscScalar v[n]; // entry values
 
-			printf("rank %d entering construction loops. \n", rank);			
+			// printf("rank %d entering construction loops. \n", rank);			
 
 			int input_counter = 0;
 			
 			bool same_index1 = true;
 			while(same_index1) {
-				printf("rank %d starting intra_pairs[%d][0] query... \n", rank, intra_counter);
-				int trash = intra_pairs[intra_counter][0];
-				printf("rank %d success in query! \n", rank);
-				if (intra_pairs[intra_counter][0] != k) {
+				if (intra_pairs[intra_counter*2 + 0] != k) {
 					same_index1 = false;
 				}
 				else {
-					idxn[input_counter] = intra_pairs[intra_counter][1];
+					idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
 					v[input_counter] = intra_pairs_t[intra_counter];
+					//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
 					++input_counter;
 					++intra_counter;
-					printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter][0], intra_pairs[intra_counter][1]);
 				}
 				
 			}
 			
 			bool same_index2 = true;
 			while(same_index2) {
-				if (inter_pairs[inter_counter][0] != k) {
+				if (inter_pairs[inter_counter*2 + 0] != k) {
 					same_index2 = false;
 				}
 				
 				else {
-					idxn[input_counter] = inter_pairs[inter_counter][1];
+					idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
 					v[input_counter] = 0.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
+					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 					++input_counter;
 					++inter_counter;
 				}
 				
 			}
 			
-			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES); 
+			printf("rank %d attempting to add row to H matrix \n", rank);
+			if (m == NULL || &idxm == NULL || n == NULL || idxn == NULL || v == NULL)
+				printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
+			if (H == NULL)
+				printf("H is null :( \n \n \n");
+			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
 			
-			// loop ends
-
-			// *******
 		}
 		
 		MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);
@@ -557,7 +558,7 @@ void Locality::workerMatrixSolve(int* &index_to_grid, double* &index_to_pos, int
 		
 		printf("5~~ \n");
 
-		MatDestroy(&H);
+		MatDestroy(H);
 		
 		// delete H matrix
 			
@@ -592,7 +593,7 @@ void Locality::finMPI(){
 		printf("rank %d finalizing MPI. \n", rank);
 
 
-	MPI::Finalize();
+	PetscFinalize();
 
 }
 

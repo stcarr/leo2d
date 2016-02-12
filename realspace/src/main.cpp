@@ -66,8 +66,8 @@ int main(int argc, char** argv) {
 	
 
 	// Shape of the grid to sample for atom population
-	int min_size = -25;
-	int max_size = 25;
+	int min_size = -2;
+	int max_size = 2;
 	
 	std::vector<int> min;
 	min.push_back(min_size);
@@ -123,4 +123,6 @@ int main(int argc, char** argv) {
 	
 	// End MPI processes and finish
 	loc.finMPI();
+	return 0;
+
 }
