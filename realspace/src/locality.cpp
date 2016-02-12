@@ -115,7 +115,7 @@ void Locality::constructGeom(){
 		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t);
 		
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
-		max_intra_pairs = static_cast<int>(intra_pairs_vec_x.size());
+		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 		
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
