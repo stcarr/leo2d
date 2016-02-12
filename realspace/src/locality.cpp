@@ -142,7 +142,47 @@ void Locality::constructGeom(){
 			
 		}
 		
-		// Get the index_to_pos array
+		// figure out sparse matrix form (nnz per row)
+		
+		nnz = (int *) malloc(max_index * sizeof(int))
+		
+		int intra_counter = 0;
+		int inter_counter = 0;
+		
+		for (int k = 0; k < max_index; ++k) {
+			int nonzeros = 0;
+			
+			boolean same_index1 = true;
+			while(same_index1) {
+				if (intra_pairs_i[intra_counter] != k) {
+					same_index1 = false;
+				}
+				
+				else {
+					++nonzeros;
+					++intra_counter;
+				}
+				
+			}
+			
+			boolean same_index2 = true;
+			while(same_index2) {
+				if (inter_pairs_i[inter_counter] != k) {
+					same_index2 = false;
+				}
+				
+				else {
+					++nonzeros;
+					++inter_counter;
+				}
+				
+			}
+			
+			nnz[k] = nonzeros;
+		}
+		
+		
+		// Get and prepare the index_to_pos array for broadcasting
 		
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -174,6 +214,8 @@ void Locality::constructGeom(){
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
+		nnz = (int *) malloc(max_index * sizeof(int));
+		
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
 		index_to_pos_z = new double[max_index];
@@ -191,6 +233,8 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
+	
+	MPI::COMM_WORLD.Bcast(nnz, max_index, MPI_DOUBLE, root);
 	
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
@@ -382,38 +426,78 @@ void Locality::workerMatrixSolve() {
 
 		// Build and solve TBH matrix
 			
-	        printf("Entering PETSc code area. \n");
+	    printf("Entering PETSc code area. \n");
 		
 		PetscErrorCode ierr;
-		PetscInt N = max_index;
 		Mat H;
-		PetscInt nnz[N];
-
-
+		
+		PetscInt N = max_index;
+		
 		MatCreate(PETSC_COMM_SELF,&H);
 		MatSetType(H,MATSEQAIJ);
 		MatSetSizes(H,N,N,N,N);
-		MatSeqAIJSetPreallocation(H,NULL,nnz);
+		
+		PetscInt petsc_nnz[N]
+		
+		for (int k = 0; k < N; ++k)
+			petsc_nnz[k] = nnz[k];
+		
+		MatSeqAIJSetPreallocation(H,NULL,petsc_nnz);
 
 
 		// ******
+		// loop to build our sparse H matrix row-by-row
 
-		// some loop here . . .
+		// typically you want m = 1, because v corresponds to the columns
+		// from what I understand. So if you want the same row on several rows
+		// you can use m > 1, but otherwise just m = 1
+
 
 		PetscInt m = 1; // number of rows being added
-		PetscInt idxm = 1; // row index values
-	
+		
+		int intra_counter = 0;
+		int inter_counter = 0;
+		
 		for (int k = 0; k < max_index; ++k){
 		
-			PetscInt n; // number of cols being added
+			PetscInt idxm = k;
+			n = nnz[k]; // number of cols being added
 			PetscInt idxn[n]; // col index values
 			PetscScalar v[n]; // entry values
-
-			// typically you want m = 1, because v corresponds to the columns
-			// from what I understand. So if you want the same row on several rows
-			// you can use m > 1, but otherwise just m = 1
-
-			//  ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES); 
+			
+			int input_counter = 0;
+			
+			boolean same_index1 = true;
+			while(same_index1) {
+				if (intra_pairs[intra_counter][0] != k) {
+					same_index1 = false;
+				}
+				
+				else {
+					idxn[input_counter] = intra_pairs[intra_counter][1];
+					v[input_counter] = intra_pairs_t[intra_counter];
+					++input_counter;
+					++intra_counter;
+				}
+				
+			}
+			
+			boolean same_index2 = true;
+			while(same_index2) {
+				if (inter_pairs[inter_counter][0] != k) {
+					same_index2 = false;
+				}
+				
+				else {
+					idxn[input_counter] = inter_pairs[inter_counter][1];
+					v[input_counter] = 0.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
+					++input_counter;
+					++inter_counter;
+				}
+				
+			}
+			
+			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES); 
 			
 			// loop ends
 
