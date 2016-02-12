@@ -58,6 +58,8 @@ void Locality::constructGeom(){
 
 	int max_pairs;
 	
+	int* nnz;
+	
 	int* inter_pairs_i;
 	int* inter_pairs_j;
 	
@@ -218,7 +220,7 @@ void Locality::constructGeom(){
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
-		nnz = new int[max_index];
+		int nnz = new int[max_index];
 		
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -251,7 +253,7 @@ void Locality::constructGeom(){
 	if (rank == print_rank)
 		printf("rank %d attempting to allocate memory for its global variables. \n",rank);
 
-	int (*index_to_grid)[4] = new int[max_index][4];
+	int index_to_grid[max_index*4];
 	
 	if (rank == print_rank)
 		printf("1~~ \n");
@@ -261,34 +263,34 @@ void Locality::constructGeom(){
 	for (int k = 0; k < max_index; ++k){
 		//if (rank == print_rank)
 		//	printf("attempting k = %d ... \n", k);
-		index_to_grid[k][0] = index_to_grid_i[k];
-		index_to_grid[k][1] = index_to_grid_j[k];
-		index_to_grid[k][2] = index_to_grid_l[k];
-		index_to_grid[k][3] = index_to_grid_s[k];
+		index_to_grid[k*4 + 0] = index_to_grid_i[k];
+		index_to_grid[k*4 + 1] = index_to_grid_j[k];
+		index_to_grid[k*4 + 2] = index_to_grid_l[k];
+		index_to_grid[k*4 + 3] = index_to_grid_s[k];
 		//if (rank == print_rank)
 		//	printf("success for k = %d ! \n", k);
 	}
 	
-	int (*inter_pairs)[2] = new int[max_inter_pairs][2];
+	int inter_pairs[2*max_inter_pairs];
 	
 	if (rank == print_rank)
 		printf("2~~ \n");
 	
 	for (int x = 0; x < max_inter_pairs; ++x){
-		inter_pairs[x][0] = inter_pairs_i[x];
-		inter_pairs[x][1] = inter_pairs_j[x];
+		inter_pairs[x*2 + 0] = inter_pairs_i[x];
+		inter_pairs[x*2 + 1] = inter_pairs_j[x];
 	
 	}
 	
-	int (*intra_pairs)[2] = new int[max_intra_pairs][2];
-	intra_pairs_t = new double[max_intra_pairs];
+	int intra_pairs[2*max_intra_pairs];
+	double intra_pairs_t[max_intra_pairs];
 	
 	if (rank == print_rank)
 		printf("3~~ (max_intra_pairs = %d on rank %d.) \n", max_intra_pairs, rank);	
 
 	for (int x = 0; x < max_intra_pairs; ++x){
-		intra_pairs[x][0] = intra_pairs_i[x];
-		intra_pairs[x][1] = intra_pairs_j[x];
+		intra_pairs[x*2 + 0] = intra_pairs_i[x];
+		intra_pairs[x*2 + 1] = intra_pairs_j[x];
 		intra_pairs_t[x] = intra_pairs_t[x];
 		printf("!! rank %d has intra_pairs[%d][0] = %d. \n", rank,x, intra_pairs[0][x]);
 	}
@@ -298,12 +300,12 @@ void Locality::constructGeom(){
 	if (rank == print_rank)
 		printf("4~~ \n");
 
-	double (*index_to_pos)[3] = new double[max_index][3];
+	double index_to_pos[3*max_index];
 	
 	for (int k = 0; k < max_index; ++k){
-		index_to_pos[k][0] = index_to_pos_x[k];
-		index_to_pos[k][1] = index_to_pos_y[k];
-		index_to_pos[k][2] = index_to_pos_z[k];
+		index_to_pos[k*3 + 0] = index_to_pos_x[k];
+		index_to_pos[k*3 + 1] = index_to_pos_y[k];
+		index_to_pos[k*3 + 2] = index_to_pos_z[k];
 
 	}
 			
@@ -313,23 +315,24 @@ void Locality::constructGeom(){
 		printf("%d entries expected from inter. \n", max_inter_pairs);
 	}
 	
+	constructMatrix(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
 
 }
 
-void Locality::constructMatrix(){ 
+void Locality::constructMatrix(int* &index_to_grid, double* &index_to_pos, int* &inter_pairs, int* &intra_pairs, double* &intra_pairs_t, int* nnz){ 
 	if (rank == print_rank)
 		printf("rank %d entering constructMatrix(). \n", rank);
 		
 	if (rank == root) {
-		rootMatrixSolve();
+		rootMatrixSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
 	} else {
 		printf("rank %d about to enter workerMatrixSolve();",rank);
-		workerMatrixSolve();
+		workerMatrixSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
 	}
 
 }
 
-void Locality::rootMatrixSolve() {
+void Locality::rootMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* &inter_pairs, int* &intra_pairs, double* &intra_pairs_t, int* nnz) {
 	
 	int nShifts = 5;
 	int maxJobs = nShifts*nShifts;
@@ -424,7 +427,7 @@ void Locality::rootMatrixSolve() {
 	
 }
 
-void Locality::workerMatrixSolve() {
+void Locality::workerMatrixSolve(int* &index_to_grid, double* &index_to_pos, int* &inter_pairs, int* &intra_pairs, double* &intra_pairs_t, int* nnz) {
 	
 	printf("rank %d entered workerMatrixSolve(). \n", rank);
 

@@ -115,11 +115,6 @@ int main(int argc, char** argv) {
 	// !! Need to also make it send b-shift information to each worker !!
 	loc.constructGeom();
 	
-	// Populates matrix entries on each worker
-	//
-	// !! NOT STARTED !!
-	loc.constructMatrix();
-	
 	// Post processing operations
 	//
 	// !! NOT STARTED !!

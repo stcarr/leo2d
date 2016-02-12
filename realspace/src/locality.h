@@ -23,14 +23,8 @@ class Locality {
 		int max_intra_pairs;
 		int num_eigs;
 		int root;
-		int** index_to_grid;
-		double** index_to_pos;
-		int** inter_pairs;
-		int** intra_pairs;
-		double* intra_pairs_t;
-		int* nnz;
-		void rootMatrixSolve();
-		void workerMatrixSolve();
+		void rootMatrixSolve(int*,double*,int*,int*,double*,int*);
+		void workerMatrixSolve(int*,double*,int*,int*,double*,int*);
 		static const int WORKTAG = 0;
 		static const int STOPTAG = 1;
         
@@ -41,7 +35,7 @@ class Locality {
 		void setup();
 		void initMPI(int, char**);
 		void constructGeom();
-		void constructMatrix();
+		void constructMatrix(int*,double*,int*,int*,double*,int*);
 		void plot();
 		void save();
 		void finMPI();
