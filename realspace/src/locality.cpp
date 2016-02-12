@@ -435,6 +435,10 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	double work[2];
 	MPI::Status status;
 	
+	PetscErrorCode ierr;
+	Mat H;
+	ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
+
 	while (1) {
 		MPI::COMM_WORLD.Recv( 
 						work, 
@@ -460,12 +464,12 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			
 	    	printf("Entering PETSc code area. \n");
 		
-		PetscErrorCode ierr;
-		Mat H;
+		// PetscErrorCode ierr;
+		// Mat H;
 		
 		PetscInt N = max_index;
 		
-		MatCreate(PETSC_COMM_SELF,&H);
+		// ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
 		MatSetType(H,MATSEQAIJ);
 		MatSetSizes(H,N,N,N,N);
 		
@@ -547,9 +551,9 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			
 		}
 		
-		MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);
-		PetscLogStagePop();
+		ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+		ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+		ierr = PetscLogStagePop();CHKERRV(ierr);
 		
 		// slepc begins
 
@@ -558,7 +562,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		
 		printf("5~~ \n");
 
-		MatDestroy(H);
+		// ierr = MatDestroy(&H);CHKERRV(ierr);
 		
 		// delete H matrix
 			
@@ -577,6 +581,8 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		
 	
 	}
+
+	ierr = MatDestroy(&H);CHKERRV(ierr);
 
 }
 
