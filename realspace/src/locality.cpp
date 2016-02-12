@@ -439,6 +439,95 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	Mat H;
 	ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
 
+	// Build and solve TBH matrix
+		
+	PetscInt N = max_index;
+	
+	MatSetType(H,MATSEQAIJ);
+	MatSetSizes(H,N,N,N,N);
+	
+	PetscInt petsc_nnz[N];
+	
+	for (int k = 0; k < N; ++k) {
+		//if (rank == print_rank)
+		//	printf("rank %d with nnz[%d] = %d. \n",rank,k,nnz[k]);
+		petsc_nnz[k] = nnz[k];
+	}
+
+	
+	MatSeqAIJSetPreallocation(H,NULL,petsc_nnz);
+
+
+	// ******
+	// loop to build our sparse H matrix row-by-row
+
+	// typically you want m = 1, because v corresponds to the columns
+	// from what I understand. So if you want the same row on several rows
+	// you can use m > 1, but otherwise just m = 1
+
+
+	PetscInt m = 1; // number of rows being added
+	
+	int intra_counter = 0;
+	int inter_counter = 0;
+
+	printf("rank %d trying to build PETSc Matrix! \n",rank);
+
+	for (int k = 0; k < max_index; ++k){
+	
+		PetscInt idxm = k;
+		int n = nnz[k]; // number of cols being added
+		PetscInt idxn[n]; // col index values
+		PetscScalar v[n]; // entry values
+
+		// printf("rank %d entering construction loops. \n", rank);			
+
+		int input_counter = 0;
+		
+		bool same_index1 = true;
+		while(same_index1) {
+			if (intra_pairs[intra_counter*2 + 0] != k) {
+				same_index1 = false;
+			}
+			else {
+				idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
+				v[input_counter] = intra_pairs_t[intra_counter];
+				//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
+				++input_counter;
+				++intra_counter;
+			}
+			
+		}
+		
+		bool same_index2 = true;
+		while(same_index2) {
+			if (inter_pairs[inter_counter*2 + 0] != k) {
+				same_index2 = false;
+			}
+			
+			else {
+				idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
+				v[input_counter] = 0.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
+				//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+				++input_counter;
+				++inter_counter;
+			}
+			
+		}
+		
+		printf("rank %d attempting to add row to H matrix \n", rank);
+		if (m == NULL || &idxm == NULL || n == NULL || idxn == NULL || v == NULL)
+			printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
+		if (H == NULL)
+			printf("H is null!! \n \n \n");
+		ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
+		
+	}
+	
+	ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+	ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+	ierr = PetscLogStagePop();CHKERRV(ierr);
+
 	while (1) {
 		MPI::COMM_WORLD.Recv( 
 						work, 
@@ -501,31 +590,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		printf("rank %d trying to build PETSc Matrix! \n",rank);
 	
 		for (int k = 0; k < max_index; ++k){
-		
-			PetscInt idxm = k;
-			int n = nnz[k]; // number of cols being added
-			PetscInt idxn[n]; // col index values
-			PetscScalar v[n]; // entry values
 
-			// printf("rank %d entering construction loops. \n", rank);			
-
-			int input_counter = 0;
-			
-			bool same_index1 = true;
-			while(same_index1) {
-				if (intra_pairs[intra_counter*2 + 0] != k) {
-					same_index1 = false;
-				}
-				else {
-					idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
-					v[input_counter] = intra_pairs_t[intra_counter];
-					//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
-					++input_counter;
-					++intra_counter;
-				}
-				
-			}
-			
 			bool same_index2 = true;
 			while(same_index2) {
 				if (inter_pairs[inter_counter*2 + 0] != k) {
@@ -534,7 +599,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				
 				else {
 					idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
-					v[input_counter] = 0.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
+					v[input_counter] = 69.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
 					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 					++input_counter;
 					++inter_counter;
@@ -550,10 +615,6 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
 			
 		}
-		
-		ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-		ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-		ierr = PetscLogStagePop();CHKERRV(ierr);
 		
 		// slepc begins
 
