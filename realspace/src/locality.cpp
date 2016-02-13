@@ -556,25 +556,6 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		// PetscErrorCode ierr;
 		// Mat H;
 		
-		PetscInt N = max_index;
-		
-		// ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
-		MatSetType(H,MATSEQAIJ);
-		MatSetSizes(H,N,N,N,N);
-		
-		PetscInt petsc_nnz[N];
-		
-		for (int k = 0; k < N; ++k) {
-			//if (rank == print_rank)
-			//	printf("rank %d with nnz[%d] = %d. \n",rank,k,nnz[k]);
-			petsc_nnz[k] = nnz[k];
-		}
-
-		
-		MatSeqAIJSetPreallocation(H,NULL,petsc_nnz);
-
-
-		// ******
 		// loop to build our sparse H matrix row-by-row
 
 		// typically you want m = 1, because v corresponds to the columns
@@ -582,14 +563,19 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		// you can use m > 1, but otherwise just m = 1
 
 
-		PetscInt m = 1; // number of rows being added
+		m = 1; // number of rows being added
 		
-		int intra_counter = 0;
-		int inter_counter = 0;
+		inter_counter = 0;
 	
 		printf("rank %d trying to build PETSc Matrix! \n",rank);
 	
 		for (int k = 0; k < max_index; ++k){
+			
+			PetscInt idxm = k;
+                	int n = nnz[k]; // number of cols being added
+                	PetscInt idxn[n]; // col index values
+                	PetscScalar v[n]; // entry values
+			int input_counter = 0;
 
 			bool same_index2 = true;
 			while(same_index2) {
