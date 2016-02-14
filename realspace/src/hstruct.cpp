@@ -244,7 +244,10 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 			
 		int mat = 0; // !!! Force to graphene, fix by adding material variable to Sheet.cpp !!!
 		
-		std::vector<std::vector<double> > terms = intralayer_terms(grid_0,mat);
+		std::vector<int> temp_i;
+		std::vector<int> temp_j;
+		std::vector<double> temp_t; 
+		intralayer_terms(grid_0,mat,temp_i,temp_j,temp_t);
 		
 		for (int y = 0; y < static_cast<int>(terms.size()); ++y) {
 		

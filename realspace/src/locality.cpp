@@ -123,7 +123,7 @@ void Locality::constructGeom(){
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 		
 		for(int x = 0; x < max_intra_pairs; ++x)
-			printf("intra: [%d,%d] = %d \n", intra_pairs_vec_i[x],intra_pairs_vec_j[x], intra_pairs_vec_t[x]);
+			printf("intra: [%d,%d] = %f \n", intra_pairs_vec_i[x],intra_pairs_vec_j[x], intra_pairs_vec_t[x]);
 		for(int x = 0; x < max_inter_pairs; ++x)
 			printf("inter: [%d, %d] \n", inter_pairs_vec[x][0], inter_pairs_vec[x][1]);
 
