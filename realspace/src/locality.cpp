@@ -486,8 +486,6 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			else {
 				idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
 				v[input_counter] = intra_pairs_t[intra_counter];
-if (k == idxn[input_counter])
-	printf("intra val: (%d,%d,%lf)\n",k,idxn[input_counter],intra_pairs_t[intra_counter]);
 				//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
 				++input_counter;
 				++intra_counter;
