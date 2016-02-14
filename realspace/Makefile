@@ -14,7 +14,7 @@ MPICC = mpicxx
 DEBUG = -g -O0
 CFLAGS = -c
 MPIFLAGS = -c
-LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc 
+LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc -lslepc 
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 

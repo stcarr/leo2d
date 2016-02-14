@@ -21,6 +21,7 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 	heights = heights_in;
 	angles = angles_in;
 	num_eigs = 15;
+	max_num_local_jobs = 4;
     
 }
 
@@ -40,7 +41,8 @@ void Locality::initMPI(int argc, char** argv){
 	
 	char help[] = "what this program does in brief can go here.";
 
-	PetscInitialize(&argc,&argv,(char*)0,help);
+//	PetscInitialize(&argc,&argv,(char*)0,help);
+	SlepcInitialize(&argc,&argv,(char*)0,help);
  	
 	// MPI_Init(&argc,&argv);
 
@@ -331,8 +333,8 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 }
 
 void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz) {
-	
-	int nShifts = 2;
+
+	int nShifts = 2;	
 	int maxJobs = nShifts*nShifts;
 	int currentJob = 0;
 	double work[nShifts*nShifts][2];
@@ -436,7 +438,14 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	MPI::Status status;
 	
 	PetscErrorCode ierr;
-	Mat H;
+	Mat H,A;
+	// int curr_mat = 0;
+        EPS 	eps;
+	ST 	st;
+	KSP	ksp;
+	PC 	pc;
+
+	ierr = EPSCreate(PETSC_COMM_SELF,&eps);CHKERRV(ierr);
 	ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
 
 	// Build and solve TBH matrix
@@ -526,7 +535,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	
 	ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
 	ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-	ierr = PetscLogStagePop();CHKERRV(ierr);
+//	ierr = PetscLogStagePop();CHKERRV(ierr);
 
 	while (1) {
 		MPI::COMM_WORLD.Recv( 
@@ -552,17 +561,25 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		// Build and solve TBH matrix
 			
 	    	printf("Entering PETSc code area. \n");
-		
+	
+	
 		// PetscErrorCode ierr;
 		// Mat H;
+
+		ierr = MatDuplicate(H,MAT_DO_NOT_COPY_VALUES,&A);CHKERRV(ierr);
+
+                PetscBool assembly_check;
+                ierr = MatAssembled(H,&assembly_check);CHKERRV(ierr);
+		printf("H is assembled: %d\n",assembly_check);
+		ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
+		printf("A is assembled: %d\n",assembly_check);
 		
 		// loop to build our sparse H matrix row-by-row
 
 		// typically you want m = 1, because v corresponds to the columns
 		// from what I understand. So if you want the same row on several rows
 		// you can use m > 1, but otherwise just m = 1
-
-
+	
 		m = 1; // number of rows being added
 		
 		inter_counter = 0;
@@ -586,7 +603,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				else {
 					idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
 					v[input_counter] = intra_pairs_t[intra_counter];
-					//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
+					printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
 					++input_counter;
 					++intra_counter;
 				}
@@ -602,7 +619,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				else {
 					idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
 					v[input_counter] = 69.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
-					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+					printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 					++input_counter;
 					++inter_counter;
 				}
@@ -614,13 +631,66 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
 			if (H == NULL)
 				printf("H is null :( \n \n \n");
-			ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
+			ierr = MatSetValues(A, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
 			
 		}
 		
 		// slepc begins
 
+                ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
+                printf("A is assembled after insert: %d\n",assembly_check);
+
+
+        	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+	        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
 		
+                ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
+		printf("A is assembled after Assembly: %d\n", assembly_check);
+
+		PetscScalar value_check;
+		PetscInt index_diag = 4;
+		MatGetValues(A,1,&index_diag,1,&index_diag,&value_check);
+		printf("checking (4,4): %lf\n", value_check);
+
+/*		ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
+
+
+
+
+		PetscReal E1 = -1;
+		PetscReal E2 =  1; // energy range of interest
+
+		ierr = EPSSetInterval(eps,E1,E2);CHKERRV(ierr);
+	        ierr = EPSSetWhichEigenpairs(eps, EPS_ALL);CHKERRV(ierr);
+		// ierr = EPSSetType(eps,EPSKRYLOVSCHUR);CHKERRV(ierr);
+        	ierr = EPSGetST(eps,&st);CHKERRV(ierr);
+        	ierr = STSetType(st,STSINVERT);CHKERRV(ierr);
+        	ierr = STGetKSP(st,&ksp);CHKERRV(ierr);
+        	ierr = KSPGetPC(ksp,&pc);CHKERRV(ierr);
+        	ierr = KSPSetType(ksp,  KSPPREONLY);CHKERRV(ierr);
+        	ierr = PCSetType(pc,PCCHOLESKY);CHKERRV(ierr);
+        	ierr = EPSSetFromOptions(eps);CHKERRV(ierr);
+        	ierr = EPSSetProblemType(eps,EPS_HEP);CHKERRV(ierr); // sets as hermitian
+		PetscInt nconv;
+
+		ierr = EPSSolve(eps);CHKERRV(ierr);
+
+		ierr = EPSGetConverged(eps,&nconv);CHKERRV(ierr); // how many converged eigenpairs
+
+		Vec xr,xi; // real part and imaginary part of eigenvector
+		PetscScalar *ki; // real part, imaginary part of eigenvalue
+		PetscScalar *kr;
+		ki = new PetscScalar[nconv];
+		kr = new PetscScalar[nconv];
+		PetscInt i; // which eigenpair
+
+		for (int i = 0; i < nconv; i++)
+			ierr = EPSGetEigenpair(eps,i,&kr[i],&ki[i],xr,xi);CHKERRV(ierr);
+
+		printf("Beginning eigenvalue printing: \n");
+		for (int i = 0; i < nconv; i++)
+			printf("%lf + i %lf\n", kr[i],ki[i]);
+*/
 		// slepc ends
 		
 		printf("5~~ \n");
@@ -644,8 +714,9 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		
 	
 	}
-
+	ierr = EPSDestroy(&eps);CHKERRV(ierr);
 	ierr = MatDestroy(&H);CHKERRV(ierr);
+	ierr = MatDestroy(&A);CHKERRV(ierr);
 
 }
 
