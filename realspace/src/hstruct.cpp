@@ -47,14 +47,16 @@ void Hstruct::setIndex(){
 		int i_here, j_here, l_here, s_here;
 		
 		int index_counter = 0;
-		
+		s_here = 0;	
 		for(int s = 0; s < sheets.size(); ++s) {
-			if (k < index_counter + sheets[s].getMaxIndex())
+			if (k < index_counter + sheets[s].getMaxIndex()){
 				s_here = s;
-			else
-				index_counter += sheets[s].getMaxIndex();
+				break;
+			}
+
+			index_counter += sheets[s].getMaxIndex();
 		}
-		
+
 		i_here = sheets[s_here].indexToGrid(k - index_counter, 0);
 		j_here = sheets[s_here].indexToGrid(k - index_counter, 1);
 		l_here = sheets[s_here].indexToGrid(k - index_counter, 2);
@@ -63,7 +65,7 @@ void Hstruct::setIndex(){
 		index_array[k].push_back(j_here);
 		index_array[k].push_back(l_here);
 		index_array[k].push_back(s_here);
-	
+		
 	}
 	
 }
@@ -141,12 +143,10 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 }
 
 
-std::vector<std::vector<int> > Hstruct::getInterPairs(){
+void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array){
 
 	int searchsize = 4;
-	std::vector<std::vector<int> > pair_array;
-	int pair_count = 0;
-	
+		
 	for (int kh = 0; kh < max_index; ++kh){
 		
 		
@@ -159,13 +159,17 @@ std::vector<std::vector<int> > Hstruct::getInterPairs(){
 		pos_here[0] = posAtomIndex(kh,0);
 		pos_here[1] = posAtomIndex(kh,1);
 		pos_here[2] = posAtomIndex(kh,2);
-		
+	
 		if (sh > 0) {
 		
 			int i0 = findNearest(pos_here, sh - 1, 0);
 			int j0 = findNearest(pos_here, sh - 1, 1);
 			int s0 = sh - 1;
-			
+
+			int base_index =0;
+			for(int s = 0; s < s0; ++s)
+				base_index += sheets[s].getMaxIndex();
+
 			for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
 				for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
 					for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
@@ -174,9 +178,8 @@ std::vector<std::vector<int> > Hstruct::getInterPairs(){
 						if (k2 != -1){
 							std::vector<int> pair_here;
 							pair_here.push_back(kh);
-							pair_here.push_back(k2);
+							pair_here.push_back(k2 + base_index);
 							pair_array.push_back(pair_here);
-							++pair_count;
 						}
 					}
 				}
@@ -187,7 +190,11 @@ std::vector<std::vector<int> > Hstruct::getInterPairs(){
 			int i0 = findNearest(pos_here, sh + 1, 0);
 			int j0 = findNearest(pos_here, sh + 1, 1);
 			int s0 = sh + 1;
-			
+		
+			int base_index = 0;
+			for(int s = 0; s < s0; ++s)
+				base_index += sheets[s].getMaxIndex();
+				
 			for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
 				for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
 					for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
@@ -196,17 +203,14 @@ std::vector<std::vector<int> > Hstruct::getInterPairs(){
 						if (k2 != -1){
 							std::vector<int> pair_here;
 							pair_here.push_back(kh);
-							pair_here.push_back(k2);
+							pair_here.push_back(k2 + base_index);
 							pair_array.push_back(pair_here);
-							++pair_count;
 						}
 					}
 				}
 			}
 		}
 	}
-
-	return pair_array;
  
 }
 
@@ -259,8 +263,6 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 			int new_k = gridToIndex(new_grid);
 			
 			if (new_k != -1) {
-			
-				std::vector<double> temp;
 				array_i.push_back(k);						// current index in loop
 				array_j.push_back(new_k);					// other index in interaction
 				array_t.push_back(temp_t[y]);				// hopping term t

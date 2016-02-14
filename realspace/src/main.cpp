@@ -10,6 +10,12 @@
 #include <math.h>
 #include "locality.h"
 
+#include <mpi.h>
+
+#include <petscksp.h>
+#include <slepceps.h>
+
+
 
 using namespace std;
  

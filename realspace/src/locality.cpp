@@ -87,6 +87,7 @@ void Locality::constructGeom(){
 			sheets.push_back(Sheet(sdata[i]));
 		}
 		
+		printf("rank %d building Hstruct. \n", rank);	
 		Hstruct h(sheets,angles,heights);
 		
 		// Broadcast "index to grid" mapping information
@@ -112,7 +113,8 @@ void Locality::constructGeom(){
 		
 		// Construct and prepare the pairs arrays for broadcasting
 		
-		std::vector<std::vector<int> > inter_pairs_vec = h.getInterPairs();
+		std::vector<std::vector<int> > inter_pairs_vec;
+		h.getInterPairs(inter_pairs_vec);
 		
 		std::vector<int> intra_pairs_vec_i;
 		std::vector<int> intra_pairs_vec_j;
@@ -122,11 +124,6 @@ void Locality::constructGeom(){
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 		
-		for(int x = 0; x < max_intra_pairs; ++x)
-			printf("intra: [%d,%d] = %f \n", intra_pairs_vec_i[x],intra_pairs_vec_j[x], intra_pairs_vec_t[x]);
-		for(int x = 0; x < max_inter_pairs; ++x)
-			printf("inter: [%d, %d] \n", inter_pairs_vec[x][0], inter_pairs_vec[x][1]);
-
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 		
@@ -259,11 +256,9 @@ void Locality::constructGeom(){
 	
 	if (rank == print_rank)
 		printf("rank %d attempting to allocate memory for its global variables. \n",rank);
-
-	int index_to_grid[max_index*4];
 	
-	if (rank == print_rank)
-		printf("1~~ \n");
+	printf("rank %d has max index = %d (pre allocation) \n", rank, max_index);
+	int index_to_grid[max_index*4];
 	
 	printf("rank %d has max_index = %d \n", rank, max_index);
 
@@ -280,9 +275,6 @@ void Locality::constructGeom(){
 	
 	int inter_pairs[2*max_inter_pairs];
 	
-	if (rank == print_rank)
-		printf("2~~ \n");
-	
 	for (int x = 0; x < max_inter_pairs; ++x){
 		inter_pairs[x*2 + 0] = inter_pairs_i[x];
 		inter_pairs[x*2 + 1] = inter_pairs_j[x];
@@ -291,20 +283,11 @@ void Locality::constructGeom(){
 	
 	int intra_pairs[2*max_intra_pairs];
 
-	
-	if (rank == print_rank)
-		printf("3~~ (max_intra_pairs = %d on rank %d.) \n", max_intra_pairs, rank);	
-
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
 		intra_pairs[x*2 + 1] = intra_pairs_j[x];
 	}
 	
-	printf("~!! rank %d has intra_pairs[0][0] = %d. \n", rank, intra_pairs[0*2 + 0]);
-	
-	if (rank == print_rank)
-		printf("4~~ \n");
-
 	double index_to_pos[3*max_index];
 	
 	for (int k = 0; k < max_index; ++k){
@@ -331,7 +314,6 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	if (rank == root) {
 		rootMatrixSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
 	} else {
-		printf("rank %d about to enter workerMatrixSolve();",rank);
 		workerMatrixSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
 	}
 
@@ -436,8 +418,6 @@ void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* in
 
 void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz) {
 	
-	printf("rank %d entered workerMatrixSolve(). \n", rank);
-
 	double result[num_eigs];
 	double work[2];
 	MPI::Status status;
@@ -608,7 +588,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				else {
 					idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
 					v[input_counter] = intra_pairs_t[intra_counter];
-					printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
+					// printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
 					++input_counter;
 					++intra_counter;
 				}
@@ -624,7 +604,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				else {
 					idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
 					v[input_counter] = 69.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
-					printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+					// printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 					++input_counter;
 					++inter_counter;
 				}
@@ -652,10 +632,17 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
                 ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
 		printf("A is assembled after Assembly: %d\n", assembly_check);
 
+		/*
+ 		// Old Debug Code
+
 		PetscScalar value_check;
 		PetscInt index_diag = 4;
 		MatGetValues(A,1,&index_diag,1,&index_diag,&value_check);
 		printf("checking (4,4): %lf\n", value_check);
+		
+		//
+		*/
+
 
 /*		ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
 
@@ -698,8 +685,6 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 */
 		// slepc ends
 		
-		printf("5~~ \n");
-
 		// ierr = MatDestroy(&H);CHKERRV(ierr);
 		
 		// delete H matrix
@@ -734,11 +719,12 @@ void Locality::save(){
 }
 
 void Locality::finMPI(){ 
+	printf("rank %d finalizing MPI. \n", rank);
 	if (rank == print_rank)
 		printf("rank %d finalizing MPI. \n", rank);
 
-
-	PetscFinalize();
+	PetscErrorCode ierr;
+	ierr = SlepcFinalize();CHKERRV(ierr);
 
 }
 

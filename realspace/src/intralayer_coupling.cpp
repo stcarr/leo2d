@@ -7,7 +7,6 @@
 
  
 #include "intralayer_coupling.h"
-#include <stdio.h>
 
 void intralayer_terms(int (&grid_index)[3],int mat,std::vector< std::vector<int> > &temp_grid, std::vector<double> &temp_t){
 	
@@ -30,9 +29,7 @@ void intralayer_graphene(int (&grid_index)[3],std::vector< std::vector<int> > &t
 	double t7 = -0.015;
 	double t8 = -0.021;
 	double t[8] = {t1,t2,t3,t4,t5,t6,t7,t8};
-	
-	printf("first term: [%d,%d,s,%f]. \n",i,j,t1);
-            
+		       
 	if (s == 0) {
                 int temp_array[39][4] = 
 					{	{i  ,j  ,1,1},

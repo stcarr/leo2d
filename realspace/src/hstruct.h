@@ -19,7 +19,7 @@ class Hstruct {
         std::vector<double> angles;
         std::vector<double> heights;
         std::vector<std::vector<double> > shifts;
-		std::vector<std::vector<int> > index_array;
+	std::vector<std::vector<int> > index_array;
         void setIndex();
         
     public:
@@ -35,11 +35,11 @@ class Hstruct {
         double localitySweep(int, double, double);
         double hUpdate();
         int getMaxIndex();
-        std::vector<std::vector<int> > getInterPairs();
-		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&);
-		std::vector<std::vector<int> > getIndexArray();
-		int gridToIndex(int (&grid_index)[4]);
-		void getIndexToPos(double*,int);
+        void getInterPairs(std::vector<std::vector<int> >&);
+	void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&);
+	std::vector<std::vector<int> > getIndexArray();
+	int gridToIndex(int (&grid_index)[4]);
+	void getIndexToPos(double*,int);
 
 };
 
