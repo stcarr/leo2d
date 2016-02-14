@@ -12,7 +12,7 @@
 
 #include <mpi.h>
 
-#include <petscksp.h>
+// #include <petscksp.h>
 #include <slepceps.h>
 
 
@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
 	
 
 	// Shape of the grid to sample for atom population
-	int min_size = -200;
-	int max_size = 200;
+	int min_size = -50;
+	int max_size = 50;
 	
 	std::vector<int> min;
 	min.push_back(min_size);

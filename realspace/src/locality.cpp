@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <petscksp.h>
+// #include <petscksp.h>
 #include <slepceps.h>
 
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
@@ -501,7 +501,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			
 			else {
 				idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
-				v[input_counter] = -123.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
+				v[input_counter] = 0.100; // NEED TO ADD IN INTERLAYER INTERACTION!!
 				//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 				++input_counter;
 				++inter_counter;
@@ -588,7 +588,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				else {
 					idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
 					v[input_counter] = intra_pairs_t[intra_counter];
-					// printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
+					//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
 					++input_counter;
 					++intra_counter;
 				}
@@ -603,8 +603,8 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				
 				else {
 					idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
-					v[input_counter] = 69.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
-					// printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+					v[input_counter] = 0.200; // NEED TO ADD IN INTERLAYER INTERACTION!!
+					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 					++input_counter;
 					++inter_counter;
 				}
@@ -643,8 +643,8 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		//
 		*/
 
-
-/*		ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
+		
+		ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
 
 
 
@@ -664,11 +664,14 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
         	ierr = EPSSetFromOptions(eps);CHKERRV(ierr);
         	ierr = EPSSetProblemType(eps,EPS_HEP);CHKERRV(ierr); // sets as hermitian
 		PetscInt nconv;
-
+		
+		printf("rank %d starting EPSSolve... \n", rank);
 		ierr = EPSSolve(eps);CHKERRV(ierr);
+		printf("rank %d finished EPSSolve! \n", rank);
 
 		ierr = EPSGetConverged(eps,&nconv);CHKERRV(ierr); // how many converged eigenpairs
 
+		printf("rank %d got nconv for EPSSolve. \n", rank);
 		Vec xr,xi; // real part and imaginary part of eigenvector
 		PetscScalar *ki; // real part, imaginary part of eigenvalue
 		PetscScalar *kr;
@@ -676,13 +679,17 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		kr = new PetscScalar[nconv];
 		PetscInt i; // which eigenpair
 
-		for (int i = 0; i < nconv; i++)
-			ierr = EPSGetEigenpair(eps,i,&kr[i],&ki[i],xr,xi);CHKERRV(ierr);
+		// Solving for Eigenvector (xr,xi) is causing PETSc error ("wrong object type")?
+		//for (int i = 0; i < nconv; i++)
+			//ierr = EPSGetEigenpair(eps,i,&kr[i],&ki[i],xr,xi);CHKERRV(ierr);
+
+		for (int i = 0; i < nconv; ++i)
+			ierr = EPSGetEigenpair(eps,i,&kr[i],&ki[i],NULL,NULL);CHKERRV(ierr);
 
 		printf("Beginning eigenvalue printing: \n");
 		for (int i = 0; i < nconv; i++)
 			printf("%lf + i %lf\n", kr[i],ki[i]);
-*/
+
 		// slepc ends
 		
 		// ierr = MatDestroy(&H);CHKERRV(ierr);
