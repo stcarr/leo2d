@@ -509,7 +509,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			
 		}
 		
-		printf("rank %d attempting to add row to H matrix \n", rank);
+		//printf("rank %d attempting to add row to H matrix \n", rank);
 		if (m == NULL || &idxm == NULL || n == NULL || idxn == NULL || v == NULL)
 			printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
 		if (H == NULL)
@@ -611,7 +611,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				
 			}
 			
-			printf("rank %d attempting to add row to H matrix \n", rank);
+			// printf("rank %d attempting to add row to H matrix \n", rank);
 			if (m == NULL || &idxm == NULL || n == NULL || idxn == NULL || v == NULL)
 				printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
 			if (H == NULL)

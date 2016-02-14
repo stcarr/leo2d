@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 	char help[] = "what this program does in brief can go here.";
 
 	//PetscInitialize(&argc,&argv,(char*)0,help);
-	SlepcInitialize(&argc,&argv,(char*)0,help)
+	SlepcInitialize(&argc,&argv,(char*)0,help);
 
 	// Generate input for simulation.
 	//
@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
 	
 
 	// Shape of the grid to sample for atom population
-	int min_size = -2;
-	int max_size = 2;
+	int min_size = -200;
+	int max_size = 200;
 	
 	std::vector<int> min;
 	min.push_back(min_size);
