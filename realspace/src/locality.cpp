@@ -486,6 +486,8 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			else {
 				idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
 				v[input_counter] = intra_pairs_t[intra_counter];
+if (k == idxn[input_counter])
+	printf("intra val: (%d,%d,%lf)\n",k,idxn[input_counter],intra_pairs_t[intra_counter]);
 				//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
 				++input_counter;
 				++intra_counter;
@@ -632,20 +634,18 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
                 ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
 		printf("A is assembled after Assembly: %d\n", assembly_check);
 
-		/*
  		// Old Debug Code
-
-		PetscScalar value_check;
-		PetscInt index_diag = 4;
-		MatGetValues(A,1,&index_diag,1,&index_diag,&value_check);
-		printf("checking (4,4): %lf\n", value_check);
-		
-		//
-		*/
-
-		
+ 		//
+ 		/*
+		for (int i = 0; i < max_index; i++)
+		{
+			PetscScalar value_check;
+			PetscInt index_diag = i;
+			MatGetValues(A,1,&index_diag,1,&index_diag,&value_check);
+			printf("checking (%d,%d): %lf\n", i,i,value_check);
+		}
+		*/	
 		ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
-
 
 
 
