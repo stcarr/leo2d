@@ -1,6 +1,6 @@
 #include "interlayer_coupling.h"
 #include <cmath>
-
+#include <stdio.h>
 // assumes sheet 1 to sheet 2 orientation, and sheet 2 is rotated by theta
 
 const double pi2o3 	= M_PI*2/3;
@@ -21,6 +21,11 @@ double theta21 = 0;
 
 double r = sqrt(x*x+y*y);
 double t = 0;
+
+// deal with r = 0 case first (causes problems with theta computation)
+if (x == 0.0 && y == 0.0)
+	return 0.3155;
+
 if (r < r_cut_graphene)
 {
 double ac = acos(x/r);
@@ -66,5 +71,9 @@ while (theta12 <= -pi2o3)
 	}
 
 }
+
+//printf("interlayer_coupling input = %f, %f, %d, %d, %f \n", x, y, orbit1, orbit2, theta);
+//printf("%f inter-term computed. \n",t);
+
 return t;
 }

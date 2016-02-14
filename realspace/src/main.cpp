@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
 	
 
 	// Shape of the grid to sample for atom population
-	int min_size = -20;
-	int max_size = 20;
+	int min_size = -50;
+	int max_size = 50;
 	
 	std::vector<int> min;
 	min.push_back(min_size);
@@ -101,10 +101,10 @@ int main(int argc, char** argv) {
 	sdata.push_back(s_in);
 	
 	heights.push_back(0);
-	heights.push_back(3);
+	heights.push_back(6);
 	
 	angles.push_back(0);
-	angles.push_back(1);
+	angles.push_back(0.1); // roughly 6 degree angle
 	
 	
 	// Create the locality object with the input data

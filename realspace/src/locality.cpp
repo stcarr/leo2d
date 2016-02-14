@@ -602,8 +602,15 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				}
 				
 				else {
-					idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
-					v[input_counter] = 0.200; // NEED TO ADD IN INTERLAYER INTERACTION!!
+					int new_k = inter_pairs[inter_counter*2 + 1];	
+					idxn[input_counter] = new_k;
+					double x = index_to_pos[new_k*3 + 0] - index_to_pos[k*3 + 0];
+					double y = index_to_pos[new_k*3 + 1] - index_to_pos[k*3 + 1];
+					int orbit1 = index_to_grid[k*4 + 2];
+					int orbit2 = index_to_grid[new_k*4 + 2];
+					double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];					
+
+					v[input_counter] = inter_graphene(x, y, orbit1, orbit2, theta);
 					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 					++input_counter;
 					++inter_counter;

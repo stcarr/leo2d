@@ -9,6 +9,7 @@
 #ifndef LOCALITY_H
 #define LOCALITY_H
 #include "hstruct.h"
+#include "interlayer_coupling.h"
 
 class Locality {
     private:
