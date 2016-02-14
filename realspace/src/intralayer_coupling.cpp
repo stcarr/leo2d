@@ -7,6 +7,7 @@
 
  
 #include "intralayer_coupling.h"
+#include <stdio.h>
 
 std::vector<std::vector<double> > intralayer_terms(int (&grid_index)[3],int mat){
 	
@@ -26,7 +27,7 @@ std::vector<std::vector<double> > intralayer_terms(int (&grid_index)[3],int mat)
 
 std::vector<std::vector<double> > intralayer_graphene(int (&grid_index)[3]){
 
-			double i = (double) grid_index[0];
+	    double i = (double) grid_index[0];
             double j = (double) grid_index[1];
             double s = (double) grid_index[2];
             
@@ -87,8 +88,9 @@ std::vector<std::vector<double> > intralayer_graphene(int (&grid_index)[3]){
 							};
 							
 				for (int x = 0; x < 39; ++x)
-					for (int y = 0; y < 4; ++y)
+					for (int y = 0; y < 4; ++y){
 						c_array[x][y] = temp_array[x][y];
+						printf("temp_array[%d][%d] = %d \n",x,y,temp_array[x][y]);}
 			}
                 
             if (s == 1) {
@@ -150,7 +152,8 @@ std::vector<std::vector<double> > intralayer_graphene(int (&grid_index)[3]){
 				outarray.push_back(temp);
 				
 			}
-			
+			printf("c_array[5] = [%d,%d,%d,%d] \n", c_array[5][0], c_array[5][1], c_array[5][2], c_array[5][3]);
+			printf("outarray[5] = [%d,%d,%d,%d] \n", outarray[5][0],outarray[5][1],outarray[5][2],outarray[5][3]);	
 			return outarray;
 			
 }

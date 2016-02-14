@@ -22,6 +22,7 @@ class Locality {
 		int max_inter_pairs;
 		int max_intra_pairs;
 		int num_eigs;
+		int max_num_local_jobs;
 		int root;
 		void rootMatrixSolve(int*,double*,int*,int*,double*,int*);
 		void workerMatrixSolve(int*,double*,int*,int*,double*,int*);

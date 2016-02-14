@@ -1,4 +1,4 @@
-CC_OBJ = main.o sheet.o hstruct.o sdata.o intralayer_coupling.o
+CC_OBJ = main.o sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o
 MPI_OBJ = locality.o
 
 OBJS = $(CC_OBJ) $(MPI_OBJ)

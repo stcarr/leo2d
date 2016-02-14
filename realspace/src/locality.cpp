@@ -118,10 +118,15 @@ void Locality::constructGeom(){
 		std::vector<int> intra_pairs_vec_j;
 		std::vector<double> intra_pairs_vec_t;
 		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t);
-		
+	
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 		
+		for(int x = 0; x < max_intra_pairs; ++x)
+			printf("intra: [%d,%d] = %d \n", intra_pairs_vec_i[x],intra_pairs_vec_j[x], intra_pairs_vec_t[x]);
+		for(int x = 0; x < max_inter_pairs; ++x)
+			printf("inter: [%d, %d] \n", inter_pairs_vec[x][0], inter_pairs_vec[x][1]);
+
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 		
@@ -516,7 +521,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			
 			else {
 				idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
-				v[input_counter] = 0.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
+				v[input_counter] = -123.0; // NEED TO ADD IN INTERLAYER INTERACTION!!
 				//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
 				++input_counter;
 				++inter_counter;
