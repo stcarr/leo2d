@@ -244,17 +244,16 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 			
 		int mat = 0; // !!! Force to graphene, fix by adding material variable to Sheet.cpp !!!
 		
-		std::vector<int> temp_i;
-		std::vector<int> temp_j;
+		std::vector< std::vector<int> > temp_grid;
 		std::vector<double> temp_t; 
-		intralayer_terms(grid_0,mat,temp_i,temp_j,temp_t);
+		intralayer_terms(grid_0,mat,temp_grid,temp_t);
 		
-		for (int y = 0; y < static_cast<int>(terms.size()); ++y) {
+		for (int y = 0; y < static_cast<int>(temp_grid.size()); ++y) {
 		
 			int new_grid[4];
-			new_grid[0] = int (terms[y][0]);
-			new_grid[1] = int (terms[y][1]);
-			new_grid[2] = int (terms[y][2]);
+			new_grid[0] = temp_grid[y][0];
+			new_grid[1] = temp_grid[y][1];
+			new_grid[2] = temp_grid[y][2];
 			new_grid[3] = index_array[k][3];
 			
 			int new_k = gridToIndex(new_grid);
@@ -264,7 +263,7 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 				std::vector<double> temp;
 				array_i.push_back(k);						// current index in loop
 				array_j.push_back(new_k);					// other index in interaction
-				array_t.push_back(terms[y][3]);				// hopping term t
+				array_t.push_back(temp_t[y]);				// hopping term t
 				
 			}
 		
