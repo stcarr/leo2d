@@ -39,10 +39,10 @@ void Locality::setup() {
 
 void Locality::initMPI(int argc, char** argv){
 	
-	char help[] = "what this program does in brief can go here.";
+//	char help[] = "what this program does in brief can go here.";
 
 //	PetscInitialize(&argc,&argv,(char*)0,help);
-	SlepcInitialize(&argc,&argv,(char*)0,help);
+//	SlepcInitialize(&argc,&argv,(char*)0,help);
  	
 	// MPI_Init(&argc,&argv);
 

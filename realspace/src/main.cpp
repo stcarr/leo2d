@@ -21,6 +21,11 @@ using namespace std;
  
 int main(int argc, char** argv) {
 
+	char help[] = "what this program does in brief can go here.";
+
+	//PetscInitialize(&argc,&argv,(char*)0,help);
+	SlepcInitialize(&argc,&argv,(char*)0,help)
+
 	// Generate input for simulation.
 	//
 	// Eventually will want this read from an input file
