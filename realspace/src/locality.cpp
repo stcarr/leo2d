@@ -429,7 +429,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	ST 	st;
 	KSP	ksp;
 	PC 	pc;
-
+	
 	ierr = EPSCreate(PETSC_COMM_SELF,&eps);CHKERRV(ierr);
 	ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
 
@@ -657,8 +657,9 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		PetscReal E1 = -1;
 		PetscReal E2 =  1; // energy range of interest
 
-		ierr = EPSSetInterval(eps,E1,E2);CHKERRV(ierr);
-	        ierr = EPSSetWhichEigenpairs(eps, EPS_ALL);CHKERRV(ierr);
+		//ierr = EPSSetInterval(eps,E1,E2);CHKERRV(ierr);
+	        ierr = EPSSetTarget(eps, -0.6);CHKERRV(ierr);
+		ierr = EPSSetWhichEigenpairs(eps, EPS_TARGET_REAL);CHKERRV(ierr);
 		// ierr = EPSSetType(eps,EPSKRYLOVSCHUR);CHKERRV(ierr);
         	ierr = EPSGetST(eps,&st);CHKERRV(ierr);
         	ierr = STSetType(st,STSINVERT);CHKERRV(ierr);
@@ -669,7 +670,23 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
         	ierr = EPSSetFromOptions(eps);CHKERRV(ierr);
         	ierr = EPSSetProblemType(eps,EPS_HEP);CHKERRV(ierr); // sets as hermitian
 		PetscInt nconv;
+	
+		//EPSSetTolerances(eps,0.000001,100);
+		ierr = EPSSetFromOptions(eps);CHKERRV(ierr);
+		ierr = STSetFromOptions(st);CHKERRV(ierr);
+		ierr = KSPSetFromOptions(ksp);CHKERRV(ierr);
+		ierr = PCSetFromOptions(pc);CHKERRV(ierr);
 		
+
+		EPSType type;
+		ierr = EPSGetType(eps,&type);CHKERRV(ierr);
+		printf("Solution method: %s\n",type);
+		
+		PetscReal tol;
+		PetscInt maxit;
+		ierr = EPSGetTolerances(eps,&tol,&maxit);CHKERRV(ierr);
+ 		printf("Stopping condition: tol=%.4g, maxit=%d\n",(double)tol,maxit);
+
 		printf("rank %d starting EPSSolve... \n", rank);
 		ierr = EPSSolve(eps);CHKERRV(ierr);
 		printf("rank %d finished EPSSolve! \n", rank);

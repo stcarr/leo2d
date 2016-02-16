@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
 	
 
 	// Shape of the grid to sample for atom population
-	int min_size = -50;
-	int max_size = 50;
+	int min_size = -20;
+	int max_size = 20;
 	
 	std::vector<int> min;
 	min.push_back(min_size);
