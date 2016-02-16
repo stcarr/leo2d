@@ -11,7 +11,9 @@ EXECUTABLE = main
 
 CC = gcc
 MPICC = mpicxx
-DEBUG = -g -O0
+#DEBUG = -g -O0
+DEBUG = 
+
 CFLAGS = -c
 MPIFLAGS = -c
 LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc -lslepc 
