@@ -12,8 +12,8 @@
 
 #include <mpi.h>
 
-// #include <petscksp.h>
-#include <slepceps.h>
+#include <petscksp.h>
+//#include <slepceps.h>
 
 
 
@@ -23,8 +23,8 @@ int main(int argc, char** argv) {
 
 	char help[] = "what this program does in brief can go here.";
 
-	//PetscInitialize(&argc,&argv,(char*)0,help);
-	SlepcInitialize(&argc,&argv,(char*)0,help);
+	PetscInitialize(&argc,&argv,(char*)0,help);
+	//SlepcInitialize(&argc,&argv,(char*)0,help);
 
 	// Generate input for simulation.
 	//
@@ -77,8 +77,8 @@ int main(int argc, char** argv) {
 	
 
 	// Shape of the grid to sample for atom population
-	int min_size = -20;
-	int max_size = 20;
+	int min_size = -2;
+	int max_size = 2;
 	
 	std::vector<int> min;
 	min.push_back(min_size);

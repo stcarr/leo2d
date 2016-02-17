@@ -16,19 +16,19 @@ DEBUG =
 
 CFLAGS = -c
 MPIFLAGS = -c
-LFLAGS = -L$(PETSC_DIR)/lib/ -lpetsc -lslepc 
+LFLAGS = -L/n/home12/stcarr/soft/petsc/linux-c-debug/lib/ -lpetsc 
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
 $(EXECUTABLE) : $(addprefix $(OUT_DIR)/,$(OBJS))
-	$(MPICC) $(DEBUG) $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -lm -lstdc++
+	$(MPICC) $(DEBUG)  $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -L. -lm
  	
 $(addprefix $(OUT_DIR)/,$(CC_OBJ)): COMP = $(CC)
 $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)
 $(addprefix $(OUT_DIR)/,$(OBJS)): TARGET = $@
 
 $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
-	$(COMP) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
+	$(COMP) -I/n/home12/stcarr/soft/petsc/linux-c-debug/include/  $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
 
 .PHONY: clean
 

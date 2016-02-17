@@ -12,8 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// #include <petscksp.h>
-#include <slepceps.h>
+#include <petscksp.h>
+//#include <slepceps.h>
+#include <petscmatlab.h>
 
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
@@ -425,12 +426,12 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	PetscErrorCode ierr;
 	Mat H,A;
 	// int curr_mat = 0;
-        EPS 	eps;
-	ST 	st;
+        //EPS 	eps;
+	//ST 	st;
 	KSP	ksp;
 	PC 	pc;
 	
-	ierr = EPSCreate(PETSC_COMM_SELF,&eps);CHKERRV(ierr);
+	//ierr = EPSCreate(PETSC_COMM_SELF,&eps);CHKERRV(ierr);
 	ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
 
 	// Build and solve TBH matrix
@@ -626,6 +627,20 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			ierr = MatSetValues(A, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
 			
 		}
+
+		/*
+		
+		MPI_Comm comm;
+		PetscMatlabEngine e;
+
+                PetscObjectGetComm((PetscObject)A,&comm);
+
+		PetscMatlabEngineCreate(comm,PETSC_NULL, &e);
+
+		PetscMatlabEnginePut(PETSC_MATLAB_ENGINE_(comm),(PetscObject)A);
+		PetscMatlabEngineEvaluate(PETSC_MATLAB_ENGINE_(comm),"");
+		
+		*/
 		
 		// slepc begins
 
@@ -638,29 +653,25 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		
                 ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
 		printf("A is assembled after Assembly: %d\n", assembly_check);
+	
 
- 		// Old Debug Code
- 		//
- 		/*
-		for (int i = 0; i < max_index; i++)
-		{
-			PetscScalar value_check;
-			PetscInt index_diag = i;
-			MatGetValues(A,1,&index_diag,1,&index_diag,&value_check);
-			printf("checking (%d,%d): %lf\n", i,i,value_check);
-		}
-		*/	
-		ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
+		PetscMatlabEngine matengine;
+		MPI_Comm comm;
+		PetscObjectGetComm((PetscObject)A,&comm);
+		PetscMatlabEngineCreate(comm,NULL,&matengine);
 
 
+		// ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
 
+
+		/*
 		PetscReal E1 = -1;
 		PetscReal E2 =  1; // energy range of interest
 
 		//ierr = EPSSetInterval(eps,E1,E2);CHKERRV(ierr);
 	        ierr = EPSSetTarget(eps, -0.6);CHKERRV(ierr);
 		ierr = EPSSetWhichEigenpairs(eps, EPS_TARGET_REAL);CHKERRV(ierr);
-		// ierr = EPSSetType(eps,EPSKRYLOVSCHUR);CHKERRV(ierr);
+		ierr = EPSSetType(eps,EPSLANCZOS);CHKERRV(ierr);
         	ierr = EPSGetST(eps,&st);CHKERRV(ierr);
         	ierr = STSetType(st,STSINVERT);CHKERRV(ierr);
         	ierr = STGetKSP(st,&ksp);CHKERRV(ierr);
@@ -676,6 +687,8 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		ierr = STSetFromOptions(st);CHKERRV(ierr);
 		ierr = KSPSetFromOptions(ksp);CHKERRV(ierr);
 		ierr = PCSetFromOptions(pc);CHKERRV(ierr);
+
+		ierr = PCFactorSetColumnPivot(pc,0.8);CHKERRV(ierr);
 		
 
 		EPSType type;
@@ -694,11 +707,13 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		ierr = EPSGetConverged(eps,&nconv);CHKERRV(ierr); // how many converged eigenpairs
 
 		printf("rank %d got nconv for EPSSolve. \n", rank);
-		Vec xr,xi; // real part and imaginary part of eigenvector
+		Vec *xr,*xi; // real part and imaginary part of eigenvector
 		PetscScalar *ki; // real part, imaginary part of eigenvalue
 		PetscScalar *kr;
 		ki = new PetscScalar[nconv];
 		kr = new PetscScalar[nconv];
+		xi = new Vec[nconv];
+		xr = new Vec[nconv];
 		PetscInt i; // which eigenpair
 
 		// Solving for Eigenvector (xr,xi) is causing PETSc error ("wrong object type")?
@@ -711,6 +726,8 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		printf("Beginning eigenvalue printing: \n");
 		for (int i = 0; i < nconv; i++)
 			printf("%lf + i %lf\n", kr[i],ki[i]);
+		
+		*/
 
 		// slepc ends
 		
@@ -733,7 +750,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		
 	
 	}
-	ierr = EPSDestroy(&eps);CHKERRV(ierr);
+	// ierr = EPSDestroy(&eps);CHKERRV(ierr);
 	ierr = MatDestroy(&H);CHKERRV(ierr);
 	ierr = MatDestroy(&A);CHKERRV(ierr);
 
@@ -753,7 +770,7 @@ void Locality::finMPI(){
 		printf("rank %d finalizing MPI. \n", rank);
 
 	PetscErrorCode ierr;
-	ierr = SlepcFinalize();CHKERRV(ierr);
+	ierr = PetscFinalize();CHKERRV(ierr);
 
 }
 
