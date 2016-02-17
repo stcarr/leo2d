@@ -1,0 +1,6 @@
+in /n/sw/matlab-R2015b/bin/glnxa64 symlink for libicudata, libicui18n, libicuio, libicuuc from the .so.54 to just .so
+
+in /n/sw/matlab-R2015/sys/os/glnxa64 symlink for libstdc++.so.6 to just .so
+
+
+
