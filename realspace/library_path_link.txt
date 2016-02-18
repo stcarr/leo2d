@@ -1,0 +1,1 @@
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/lib

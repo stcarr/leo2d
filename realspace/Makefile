@@ -16,19 +16,19 @@ DEBUG =
 
 CFLAGS = -c
 MPIFLAGS = -c
-LFLAGS = -L/n/home12/stcarr/soft/petsc/linux-c-debug/lib/ -lpetsc 
+LFLAGS = -L/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/lib -L/n/regal/kaxiras_lab/locality_code/lib -lpetsc
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
 $(EXECUTABLE) : $(addprefix $(OUT_DIR)/,$(OBJS))
-	$(MPICC) $(DEBUG)  $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -L. -lm
+	$(MPICC) $(DEBUG)  $(LFLAGS) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ -lm
  	
 $(addprefix $(OUT_DIR)/,$(CC_OBJ)): COMP = $(CC)
 $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)
 $(addprefix $(OUT_DIR)/,$(OBJS)): TARGET = $@
 
 $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
-	$(COMP) -I/n/home12/stcarr/soft/petsc/linux-c-debug/include/  $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
+	$(COMP) -I/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/include/  $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
 
 .PHONY: clean
 
