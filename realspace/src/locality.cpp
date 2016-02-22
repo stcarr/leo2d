@@ -12,9 +12,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <petscksp.h>
+#include <iostream>
+#include <matkit.h>
+#include <filtlan.h>
+//#include <spmatrix.h>
+
+//#include <petscksp.h>
 //#include <slepceps.h>
-#include <petscmatlab.h>
+//#include <petscmatlab.h>
+
+#ifdef USE_NAMESPACE
+using namespace MATKIT;
+#endif
+
+
 
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
@@ -45,7 +56,7 @@ void Locality::initMPI(int argc, char** argv){
 //	PetscInitialize(&argc,&argv,(char*)0,help);
 //	SlepcInitialize(&argc,&argv,(char*)0,help);
  	
-	// MPI_Init(&argc,&argv);
+	MPI_Init(&argc,&argv);
 
         root = 0;
 	print_rank = 1;
@@ -150,47 +161,6 @@ void Locality::constructGeom(){
 			
 		}
 		
-			
-		// figure out sparse matrix form (nnz per row)
-		
-		//nnz = (int *) malloc(max_index * sizeof(int));
-		nnz = new int[max_index];		
-
-		int intra_counter = 0;
-		int inter_counter = 0;
-		
-		for (int k = 0; k < max_index; ++k) {
-			int nonzeros = 0;
-			
-			bool same_index1 = true;
-			while(same_index1) {
-				if (intra_pairs_i[intra_counter] != k) {
-					same_index1 = false;
-				}
-				
-				else {
-					++nonzeros;
-					++intra_counter;
-				}
-				
-			}
-			
-			bool same_index2 = true;
-			while(same_index2) {
-				if (inter_pairs_i[inter_counter] != k) {
-					same_index2 = false;
-				}
-				
-				else {
-					++nonzeros;
-					++inter_counter;
-				}
-				
-			}
-			
-			nnz[k] = nonzeros;
-		}
-	
 		// Get and prepare the index_to_pos array for broadcasting
 		
 		index_to_pos_x = new double[max_index];
@@ -225,8 +195,6 @@ void Locality::constructGeom(){
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
 		
-		nnz = new int[max_index];
-		
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
 		index_to_pos_z = new double[max_index];
@@ -244,8 +212,6 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
-	
-	MPI::COMM_WORLD.Bcast(nnz, max_index, MPI_DOUBLE, root);
 	
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
@@ -422,108 +388,11 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 	double result[num_eigs];
 	double work[2];
 	MPI::Status status;
-	
-	PetscErrorCode ierr;
-	Mat H,A;
-	// int curr_mat = 0;
-        //EPS 	eps;
-	//ST 	st;
-	KSP	ksp;
-	PC 	pc;
-	
-	//ierr = EPSCreate(PETSC_COMM_SELF,&eps);CHKERRV(ierr);
-	ierr = MatCreate(PETSC_COMM_SELF,&H);CHKERRV(ierr);
-
-	// Build and solve TBH matrix
-		
-	PetscInt N = max_index;
-	
-	MatSetType(H,MATSEQAIJ);
-	MatSetSizes(H,N,N,N,N);
-	
-	PetscInt petsc_nnz[N];
-	
-	for (int k = 0; k < N; ++k) {
-		//if (rank == print_rank)
-		//	printf("rank %d with nnz[%d] = %d. \n",rank,k,nnz[k]);
-		petsc_nnz[k] = nnz[k];
-	}
-
-	
-	MatSeqAIJSetPreallocation(H,NULL,petsc_nnz);
-
-
-	// ******
-	// loop to build our sparse H matrix row-by-row
-
-	// typically you want m = 1, because v corresponds to the columns
-	// from what I understand. So if you want the same row on several rows
-	// you can use m > 1, but otherwise just m = 1
-
-
-	PetscInt m = 1; // number of rows being added
-	
-	int intra_counter = 0;
-	int inter_counter = 0;
-
-	printf("rank %d trying to build PETSc Matrix! \n",rank);
-
-	for (int k = 0; k < max_index; ++k){
-	
-		PetscInt idxm = k;
-		int n = nnz[k]; // number of cols being added
-		PetscInt idxn[n]; // col index values
-		PetscScalar v[n]; // entry values
-
-		// printf("rank %d entering construction loops. \n", rank);			
-
-		int input_counter = 0;
-		
-		bool same_index1 = true;
-		while(same_index1) {
-			if (intra_pairs[intra_counter*2 + 0] != k) {
-				same_index1 = false;
-			}
-			else {
-				idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
-				v[input_counter] = intra_pairs_t[intra_counter];
-				//printf("rank %d added intra_pair for index %d: [%d,%d] \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1]);
-				++input_counter;
-				++intra_counter;
-			}
-			
-		}
-		
-		bool same_index2 = true;
-		while(same_index2) {
-			if (inter_pairs[inter_counter*2 + 0] != k) {
-				same_index2 = false;
-			}
-			
-			else {
-				idxn[input_counter] = inter_pairs[inter_counter*2 + 1];
-				v[input_counter] = 0.100; // NEED TO ADD IN INTERLAYER INTERACTION!!
-				//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
-				++input_counter;
-				++inter_counter;
-			}
-			
-		}
-		
-		//printf("rank %d attempting to add row to H matrix \n", rank);
-		if (m == NULL || &idxm == NULL || n == NULL || idxn == NULL || v == NULL)
-			printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
-		if (H == NULL)
-			printf("H is null!! \n \n \n");
-		ierr = MatSetValues(H, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
-		
-	}
-	
-	ierr = MatAssemblyBegin(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-	ierr = MatAssemblyEnd(H,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-//	ierr = PetscLogStagePop();CHKERRV(ierr);
 
 	while (1) {
+
+		if (rank == print_rank)
+			printf("rank %d waiting for new job... \n",rank);
 		MPI::COMM_WORLD.Recv( 
 						work, 
 						2, 
@@ -542,44 +411,21 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 			result[i] = 12;
 		}
 		
+
+		int inter_counter = 0;
+		int intra_counter = 0;
+	
+		printf("rank %d trying to build Sparse MATKIT Matrix! \n",rank);
 		
+		mkIndex max_nnz = max_intra_pairs + max_inter_pairs;
+		mkIndex* row_index = new mkIndex[max_nnz];
+		Real* v = new Real[max_nnz];
+		mkIndex* col_pointer = new mkIndex[max_index+1];
+		int input_counter = 0;
 
-		// Build and solve TBH matrix
-			
-	    	printf("Entering PETSc code area. \n");
-	
-	
-		// PetscErrorCode ierr;
-		// Mat H;
-
-		ierr = MatDuplicate(H,MAT_DO_NOT_COPY_VALUES,&A);CHKERRV(ierr);
-
-                PetscBool assembly_check;
-                ierr = MatAssembled(H,&assembly_check);CHKERRV(ierr);
-		printf("H is assembled: %d\n",assembly_check);
-		ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
-		printf("A is assembled: %d\n",assembly_check);
-		
-		// loop to build our sparse H matrix row-by-row
-
-		// typically you want m = 1, because v corresponds to the columns
-		// from what I understand. So if you want the same row on several rows
-		// you can use m > 1, but otherwise just m = 1
-	
-		m = 1; // number of rows being added
-		
-		inter_counter = 0;
-		intra_counter = 0;
-	
-		printf("rank %d trying to build PETSc Matrix! \n",rank);
-	
 		for (int k = 0; k < max_index; ++k){
 			
-			PetscInt idxm = k;
-                	int n = nnz[k]; // number of cols being added
-                	PetscInt idxn[n]; // col index values
-                	PetscScalar v[n]; // entry values
-			int input_counter = 0;
+			col_pointer[k] = input_counter;
 			
 			bool same_index1 = true;
 			while(same_index1) {
@@ -587,7 +433,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 					same_index1 = false;
 				}
 				else {
-					idxn[input_counter] = intra_pairs[intra_counter*2 + 1];
+					row_index[input_counter] = intra_pairs[intra_counter*2 + 1];
 					v[input_counter] = intra_pairs_t[intra_counter];
 					//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
 					++input_counter;
@@ -604,7 +450,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				
 				else {
 					int new_k = inter_pairs[inter_counter*2 + 1];	
-					idxn[input_counter] = new_k;
+					row_index[input_counter] = new_k;
 					double x = index_to_pos[new_k*3 + 0] - index_to_pos[k*3 + 0];
 					double y = index_to_pos[new_k*3 + 1] - index_to_pos[k*3 + 1];
 					int orbit1 = index_to_grid[k*4 + 2];
@@ -618,123 +464,52 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 				}
 				
 			}
-			
-			// printf("rank %d attempting to add row to H matrix \n", rank);
-			if (m == NULL || &idxm == NULL || n == NULL || idxn == NULL || v == NULL)
-				printf("NULL PTR FOUND!! \n \n \n \n ----------------- \n \n \n -------------- \n ");
-			if (H == NULL)
-				printf("H is null :( \n \n \n");
-			ierr = MatSetValues(A, m, &idxm, n, idxn, v, INSERT_VALUES);CHKERRV(ierr); 
-			
 		}
 
-		/*
-		
-		MPI_Comm comm;
-		PetscMatlabEngine e;
-
-                PetscObjectGetComm((PetscObject)A,&comm);
-
-		PetscMatlabEngineCreate(comm,PETSC_NULL, &e);
-
-		PetscMatlabEnginePut(PETSC_MATLAB_ENGINE_(comm),(PetscObject)A);
-		PetscMatlabEngineEvaluate(PETSC_MATLAB_ENGINE_(comm),"");
-		
-		*/
-		
-		// slepc begins
-
-                ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
-                printf("A is assembled after insert: %d\n",assembly_check);
-
-
-        	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-	        ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-		
-                ierr = MatAssembled(A,&assembly_check);CHKERRV(ierr);
-		printf("A is assembled after Assembly: %d\n", assembly_check);
-	
-
-		PetscMatlabEngine matengine;
-		MPI_Comm comm;
-		PetscObjectGetComm((PetscObject)A,&comm);
-		PetscMatlabEngineCreate(comm,NULL,&matengine);
-
-
-		// ierr = EPSSetOperators(eps,A,NULL);CHKERRV(ierr);
-
-
-		/*
-		PetscReal E1 = -1;
-		PetscReal E2 =  1; // energy range of interest
-
-		//ierr = EPSSetInterval(eps,E1,E2);CHKERRV(ierr);
-	        ierr = EPSSetTarget(eps, -0.6);CHKERRV(ierr);
-		ierr = EPSSetWhichEigenpairs(eps, EPS_TARGET_REAL);CHKERRV(ierr);
-		ierr = EPSSetType(eps,EPSLANCZOS);CHKERRV(ierr);
-        	ierr = EPSGetST(eps,&st);CHKERRV(ierr);
-        	ierr = STSetType(st,STSINVERT);CHKERRV(ierr);
-        	ierr = STGetKSP(st,&ksp);CHKERRV(ierr);
-        	ierr = KSPGetPC(ksp,&pc);CHKERRV(ierr);
-        	ierr = KSPSetType(ksp,  KSPPREONLY);CHKERRV(ierr);
-        	ierr = PCSetType(pc,PCCHOLESKY);CHKERRV(ierr);
-        	ierr = EPSSetFromOptions(eps);CHKERRV(ierr);
-        	ierr = EPSSetProblemType(eps,EPS_HEP);CHKERRV(ierr); // sets as hermitian
-		PetscInt nconv;
-	
-		//EPSSetTolerances(eps,0.000001,100);
-		ierr = EPSSetFromOptions(eps);CHKERRV(ierr);
-		ierr = STSetFromOptions(st);CHKERRV(ierr);
-		ierr = KSPSetFromOptions(ksp);CHKERRV(ierr);
-		ierr = PCSetFromOptions(pc);CHKERRV(ierr);
-
-		ierr = PCFactorSetColumnPivot(pc,0.8);CHKERRV(ierr);
-		
-
-		EPSType type;
-		ierr = EPSGetType(eps,&type);CHKERRV(ierr);
-		printf("Solution method: %s\n",type);
-		
-		PetscReal tol;
-		PetscInt maxit;
-		ierr = EPSGetTolerances(eps,&tol,&maxit);CHKERRV(ierr);
- 		printf("Stopping condition: tol=%.4g, maxit=%d\n",(double)tol,maxit);
-
-		printf("rank %d starting EPSSolve... \n", rank);
-		ierr = EPSSolve(eps);CHKERRV(ierr);
-		printf("rank %d finished EPSSolve! \n", rank);
-
-		ierr = EPSGetConverged(eps,&nconv);CHKERRV(ierr); // how many converged eigenpairs
-
-		printf("rank %d got nconv for EPSSolve. \n", rank);
-		Vec *xr,*xi; // real part and imaginary part of eigenvector
-		PetscScalar *ki; // real part, imaginary part of eigenvalue
-		PetscScalar *kr;
-		ki = new PetscScalar[nconv];
-		kr = new PetscScalar[nconv];
-		xi = new Vec[nconv];
-		xr = new Vec[nconv];
-		PetscInt i; // which eigenpair
-
-		// Solving for Eigenvector (xr,xi) is causing PETSc error ("wrong object type")?
-		//for (int i = 0; i < nconv; i++)
-			//ierr = EPSGetEigenpair(eps,i,&kr[i],&ki[i],xr,xi);CHKERRV(ierr);
-
-		for (int i = 0; i < nconv; ++i)
-			ierr = EPSGetEigenpair(eps,i,&kr[i],&ki[i],NULL,NULL);CHKERRV(ierr);
-
-		printf("Beginning eigenvalue printing: \n");
-		for (int i = 0; i < nconv; i++)
-			printf("%lf + i %lf\n", kr[i],ki[i]);
-		
-		*/
-
-		// slepc ends
-		
-		// ierr = MatDestroy(&H);CHKERRV(ierr);
-		
-		// delete H matrix
+		col_pointer[max_index] = input_counter;
 			
+
+		SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
+
+		FilteredLanczosInfo info;
+		FilteredLanczosOptions opts;	
+		Vector eigs;
+		Matrix vecs;
+		Vector interval(2);
+		interval(1) = -1;  
+		interval(2) = 1;
+
+		opts.neigWanted = 5;
+		opts.numIterForEigenRange = 30;
+		opts.minIter = 10;
+		opts.maxIter = 500;
+		opts.extraIter = 100;
+		opts.stride = 5;
+		opts.tol = 0.0000000001;
+		mkIndex baseDeg = 10; 
+		mkIndex polyDeg = 10;
+		opts.reorth = 0;
+		opts.disp = 3;		
+
+
+		opts.intervalOpts.intervalWeights(1) = 100;
+		opts.intervalOpts.intervalWeights(2) = 1;
+		opts.intervalOpts.intervalWeights(3) = 1;
+		opts.intervalOpts.intervalWeights(4) = 1;
+		opts.intervalOpts.intervalWeights(5) = 1;
+		opts.intervalOpts.numGridPoints = 10;
+		opts.intervalOpts.initialShiftStep = 0.01;
+		opts.intervalOpts.maxOuterIter = 50;
+		opts.intervalOpts.yBottomLine = 0.001;
+		opts.intervalOpts.yRippleLimit = 100;
+		opts.intervalOpts.transitionIntervalRatio = 0.6;
+		opts.intervalOpts.initialPlateau = 0.1;
+		opts.intervalOpts.yLimitTol = 0.0001;
+		opts.intervalOpts.maxInnerIter = 30;
+
+		printf("rank %d entering eigensolver... \n",rank);
+
+		info = FilteredLanczosEigenSolver(eigs, vecs, H, interval, polyDeg, baseDeg, opts);
 
 		MPI::COMM_WORLD.Send(	
 					result,
@@ -747,12 +522,7 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		if (rank == print_rank)
 			printf("rank %d finished 1 job! \n", rank);
 					
-		
-	
-	}
-	// ierr = EPSDestroy(&eps);CHKERRV(ierr);
-	ierr = MatDestroy(&H);CHKERRV(ierr);
-	ierr = MatDestroy(&A);CHKERRV(ierr);
+		}
 
 }
 
@@ -769,8 +539,10 @@ void Locality::finMPI(){
 	if (rank == print_rank)
 		printf("rank %d finalizing MPI. \n", rank);
 
-	PetscErrorCode ierr;
-	ierr = PetscFinalize();CHKERRV(ierr);
+	//PetscErrorCode ierr;
+	//ierr = PetscFinalize();CHKERRV(ierr);
+
+	MPI_Finalize();
 
 }
 

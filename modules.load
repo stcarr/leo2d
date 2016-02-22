@@ -1,4 +1,2 @@
-module load intel/15.0.0-fasrc01
-module load matlab/R2015b-fasrc01
+module load gcc/4.8.2-fasrc01 acml/5.3.1-fasrc01
 module load mvapich2/2.0-fasrc03 
-module load cmake/2.8.12.2-fasrc01

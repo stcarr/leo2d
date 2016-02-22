@@ -1,7 +1,7 @@
 
 Currently Loaded Modules:
-  1) intel/15.0.0-fasrc01   3) matlab/R2015b-fasrc01
-  2) mvapich2/2.0-fasrc03   4) cmake/2.8.12.2-fasrc01
+  1) gmp/6.0.0-fasrc01    3) mpc/1.0.1-fasrc01   5) acml/5.3.1-fasrc01
+  2) mpfr/3.1.2-fasrc02   4) gcc/4.8.2-fasrc01   6) mvapich2/2.0-fasrc03
 
 
 
