@@ -17,6 +17,7 @@ class Sdata {
     public:
         Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>);
         Sdata(const Sdata& orig);
+		Sdata();
         ~Sdata();
 		std::vector<std::vector<double> > a;
         std::vector<int> max_shape, min_shape;

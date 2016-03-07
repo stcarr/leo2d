@@ -223,6 +223,9 @@ int Hstruct::gridToIndex(int (&grid_index)[4]) {
 	
 	int sheet_grid[3] = {i,j,o};
 	
+	if (s < 0 || s >= max_sheets)
+		return -1;
+		
 	int temp_index = sheets[s].gridToIndex(sheet_grid);
 	
 	if (temp_index == -1)
@@ -283,8 +286,6 @@ void Hstruct::getIndexToPos(double* array_in,int dim){
 		array_in[k] = posAtomIndex(k,dim);
 
 }
-
-
 
 
 

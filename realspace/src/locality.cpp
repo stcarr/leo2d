@@ -6,13 +6,13 @@
  */
 
 #include "locality.h"
+
 #include <math.h>
 #include <mpi.h>
-
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <iostream>
+
 #include <matkit.h>
 #include <filtlan.h>
 //#include <spmatrix.h>
@@ -32,8 +32,12 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 	sdata = sdata_in;
 	heights = heights_in;
 	angles = angles_in;
-	num_eigs = 15;
-	max_num_local_jobs = 4;
+	
+	nShifts = 2;
+	num_eigs = 5;
+	interval_start = -1;
+	interval_end = 1;
+
     
 }
 
@@ -45,8 +49,13 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup() {
-
+void Locality::setup(int shifts, int eigs, int samples,double start, double end, int solver) {
+	nShifts = shifts;
+	num_eigs = eigs;
+	num_samples = samples;
+	interval_start = start;
+	interval_end = end;
+	solver_type = solver;
 }
 
 void Locality::initMPI(int argc, char** argv){
@@ -71,8 +80,6 @@ void Locality::constructGeom(){
 		printf("rank %d entering constructGeom(). \n", rank);
 
 	int max_pairs;
-	
-	int* nnz;
 	
 	int* inter_pairs_i;
 	int* inter_pairs_j;
@@ -104,7 +111,15 @@ void Locality::constructGeom(){
 		
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();
+		
+		int stationary_sheet = 0;
+		int stationary_x_offset = ( sheets[stationary_sheet].getShape(1,0) - sheets[stationary_sheet].getShape(0,0) ) / 2;
+		int stationary_y_offset = ( sheets[stationary_sheet].getShape(1,1) - sheets[stationary_sheet].getShape(0,1) ) / 2;
+		int center_grid[4] = {stationary_x_offset,stationary_y_offset,0,stationary_sheet};
+		center_index = h.gridToIndex(center_grid);
+		
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
+		MPI::COMM_WORLD.Bcast(&center_index, 1, MPI_INT, root);
 		
 		std::vector<std::vector<int> > index_vec = h.getIndexArray();
 		
@@ -180,6 +195,7 @@ void Locality::constructGeom(){
 	
 		// Allocate memory to receive pair and "index to grid" information
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
+		MPI::COMM_WORLD.Bcast(&center_index, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 		
@@ -224,23 +240,30 @@ void Locality::constructGeom(){
 	if (rank == print_rank)
 		printf("rank %d attempting to allocate memory for its global variables. \n",rank);
 	
-	printf("rank %d has max index = %d (pre allocation) \n", rank, max_index);
-	int index_to_grid[max_index*4];
+	int* index_to_grid = new int[max_index*4];
 	
 	printf("rank %d has max_index = %d \n", rank, max_index);
 
 	for (int k = 0; k < max_index; ++k){
 		//if (rank == print_rank)
-		//	printf("attempting k = %d ... \n", k);
+			//printf("attempting k = %d ... \n", k);
 		index_to_grid[k*4 + 0] = index_to_grid_i[k];
 		index_to_grid[k*4 + 1] = index_to_grid_j[k];
 		index_to_grid[k*4 + 2] = index_to_grid_l[k];
 		index_to_grid[k*4 + 3] = index_to_grid_s[k];
 		//if (rank == print_rank)
-		//	printf("success for k = %d ! \n", k);
+			//printf("success for k = %d ! \n", k);
 	}
 	
-	int inter_pairs[2*max_inter_pairs];
+	delete index_to_grid_i;
+	delete index_to_grid_j;
+	delete index_to_grid_l;
+	delete index_to_grid_s;
+	
+	
+	printf("rank %d finished index_to_grid creation \n", rank);
+	
+	int* inter_pairs = new int[2*max_inter_pairs];
 	
 	for (int x = 0; x < max_inter_pairs; ++x){
 		inter_pairs[x*2 + 0] = inter_pairs_i[x];
@@ -248,14 +271,26 @@ void Locality::constructGeom(){
 	
 	}
 	
-	int intra_pairs[2*max_intra_pairs];
+	delete inter_pairs_i;
+	delete inter_pairs_j;
+	
+	printf("inter_pairs size = %d \n", max_inter_pairs);
+	printf("rank %d finished inter_pairs creation \n", rank);
+
+	printf("allocating memory for intra pairs on rank %d \n", rank);
+	printf("intra_pairs size = %d \n", max_intra_pairs);
+	int* intra_pairs = new int[2*max_intra_pairs];
+	printf("allocated memory for intra pairs on rank %d \n", rank);
+
 
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
 		intra_pairs[x*2 + 1] = intra_pairs_j[x];
 	}
 	
-	double index_to_pos[3*max_index];
+	printf("rank %d finished intra_pairs creation \n", rank);
+	
+	double* index_to_pos = new double[3*max_index];
 	
 	for (int k = 0; k < max_index; ++k){
 		index_to_pos[k*3 + 0] = index_to_pos_x[k];
@@ -270,34 +305,48 @@ void Locality::constructGeom(){
 		printf("%d entries expected from inter. \n", max_inter_pairs);
 	}
 	
-	constructMatrix(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
+	constructMatrix(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+	
+	delete index_to_grid;
+	delete index_to_pos;
+	delete inter_pairs;
+	delete intra_pairs;
+	delete intra_pairs_t;
 
 }
 
-void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz){ 
+void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t){ 
 	if (rank == print_rank)
 		printf("rank %d entering constructMatrix(). \n", rank);
-		
-	if (rank == root) {
-		rootMatrixSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
-	} else {
-		workerMatrixSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,nnz);
+	if(solver_type == 0){
+		if (rank == root) {
+			rootEigenSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+		} else {
+			workerEigenSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+		}
 	}
-
+	if(solver_type == 1){
+		if (rank == root) {
+			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+		} else {
+			workerChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+		}	
+	}
+	
 }
 
-void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz) {
-
-	int nShifts = 2;	
+void Locality::rootEigenSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
+	
 	int maxJobs = nShifts*nShifts;
 	int currentJob = 0;
+	int eigs_count;
 	double work[nShifts*nShifts][2];
-	double result[num_eigs];
+	std::vector<std::vector<std::vector<double> > > result_array;
 	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
-			double x = 1.0/(double) i;
-			double y = 1.0/(double) j;
+			double x = (1.0/(double) maxJobs)*i;
+			double y = (1.0/(double) maxJobs)*j;
 			work[i*nShifts + j][0] = x;
 			work[i*nShifts + j][1] = y;
 
@@ -330,14 +379,38 @@ void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* in
 	// Receive results and dispense new work
 	
 	while (currentJob < maxJobs) {
-		
-		MPI::COMM_WORLD.Recv(	
-					result,					// get result from worker
-					num_eigs,
-					MPI::DOUBLE,
+	
+				
+		MPI::COMM_WORLD.Recv(				// get size of incoming work
+					&eigs_count,
+					1,
+					MPI::INT,
 					MPI::ANY_SOURCE,
 					MPI::ANY_TAG,
 					status);				// keeps tag and source information
+		
+		double result[eigs_count*2];
+		
+		MPI::COMM_WORLD.Recv(	
+					result,					// get result from worker
+					eigs_count*2,
+					MPI::DOUBLE,
+					status.Get_source(),
+					MPI::ANY_TAG);	
+
+		std::vector<double> temp_eigs;
+		std::vector<double> temp_weights;
+		std::vector<std::vector<double> > temp_result;
+		for (int i = 0; i < eigs_count; ++i){
+			//printf("eigenvalue check: %lf \n", result[i]);
+			temp_eigs.push_back(result[i*2 + 0]);
+			temp_weights.push_back(result[i*2 + 1]);
+			}
+			
+		temp_result.push_back(temp_eigs);
+		temp_result.push_back(temp_weights);
+			
+		result_array.push_back(temp_result);
 		
 		MPI::COMM_WORLD.Send(	
 					work[currentJob],
@@ -354,13 +427,37 @@ void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* in
 	
 	for (int r = 1; r < size; ++r){
 		
-		MPI::COMM_WORLD.Recv(	
-					result,					// get result from worker
-					num_eigs,
-					MPI::DOUBLE,
-					r,
+		MPI::COMM_WORLD.Recv(				// get size of incoming work
+					&eigs_count,
+					1,
+					MPI::INT,
+					MPI::ANY_SOURCE,
 					MPI::ANY_TAG,
 					status);				// keeps tag and source information
+		
+		double result[eigs_count*2];
+		
+		MPI::COMM_WORLD.Recv(	
+					result,					// get result from worker
+					eigs_count*2,
+					MPI::DOUBLE,
+					status.Get_source(),
+					MPI::ANY_TAG);
+					
+		std::vector<double> temp_eigs;
+		std::vector<double> temp_weights;
+		std::vector<std::vector<double> > temp_result;
+		
+		for (int i = 0; i < eigs_count; ++i){
+			//printf("eigenvalue check: %lf \n", result[i]);
+			temp_eigs.push_back(result[i*2 + 0]);
+			temp_weights.push_back(result[i*2 + 1]);
+			}
+			
+		temp_result.push_back(temp_eigs);
+		temp_result.push_back(temp_weights);
+			
+		result_array.push_back(temp_result);
 	
 		printf("rank %d has received final work from rank %d. \n", rank, r);
 	}
@@ -381,11 +478,14 @@ void Locality::rootMatrixSolve(int* index_to_grid, double* index_to_pos, int* in
 		printf("rank %d sent STOPTAG succesfuly. \n", rank);
 	}
 	
+	for (int i = 0; i < nShifts*nShifts; ++i)
+		for (int j = 0; j < result_array[i][0].size(); ++j)
+			printf("%lf , %lf\n", result_array[i][0][j],result_array[i][1][j]);
+	
 }
 
-void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, int* nnz) {
+void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
 	
-	double result[num_eigs];
 	double work[2];
 	MPI::Status status;
 
@@ -402,16 +502,28 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 						status);
 		
 		if (status.Get_tag() == STOPTAG) {
-			printf("rank %d recieved STOPTAG. \n", rank);
+			//printf("rank %d recieved STOPTAG. \n", rank);
 			return;
 		}
 
-		printf("rank %d recieved a shift job! \n", rank);		
-		for (int i = 0; i < num_eigs; ++i){
-			result[i] = 12;
-		}
+		printf("rank %d recieved a shift job! \n", rank);
 		
-
+		double temp_index_to_pos[max_index*3];
+		for (int i = 0; i < max_index; ++i) {
+		
+			if (index_to_grid[i*4 + 3] == 0){
+				temp_index_to_pos[i*3 + 0] = index_to_pos[i*3 + 0];
+				temp_index_to_pos[i*3 + 1] = index_to_pos[i*3 + 1];
+				temp_index_to_pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				}
+			if (index_to_grid[i*4 + 3] == 1){
+				temp_index_to_pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0];
+				temp_index_to_pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[1];
+				temp_index_to_pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				}
+		}
+			
+		
 		int inter_counter = 0;
 		int intra_counter = 0;
 	
@@ -476,22 +588,25 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		Vector eigs;
 		Matrix vecs;
 		Vector interval(2);
-		interval(1) = -1;  
-		interval(2) = 1;
+		interval(1) = interval_start;  
+		interval(2) = interval_end;
 
-		opts.neigWanted = 5;
+		opts.neigWanted = num_eigs;
+		/*
 		opts.numIterForEigenRange = 30;
 		opts.minIter = 10;
 		opts.maxIter = 500;
 		opts.extraIter = 100;
 		opts.stride = 5;
 		opts.tol = 0.0000000001;
+		*/
+
 		mkIndex baseDeg = 10; 
 		mkIndex polyDeg = 10;
-		opts.reorth = 0;
+		opts.reorth = 2;
 		opts.disp = 3;		
 
-
+		/*
 		opts.intervalOpts.intervalWeights(1) = 100;
 		opts.intervalOpts.intervalWeights(2) = 1;
 		opts.intervalOpts.intervalWeights(3) = 1;
@@ -506,14 +621,391 @@ void Locality::workerMatrixSolve(int* index_to_grid, double* index_to_pos, int* 
 		opts.intervalOpts.initialPlateau = 0.1;
 		opts.intervalOpts.yLimitTol = 0.0001;
 		opts.intervalOpts.maxInnerIter = 30;
+		*/
+		
 
 		printf("rank %d entering eigensolver... \n",rank);
 
 		info = FilteredLanczosEigenSolver(eigs, vecs, H, interval, polyDeg, baseDeg, opts);
 
+		int eigs_count = eigs.Length();
+		double result[eigs_count*2];
+		for (int i = 0; i < eigs_count; ++i) {
+			//printf("%lf \n", eigs(i+1));
+			result[i*2 + 0] = eigs(i+1);
+			result[i*2 + 1] = vecs(center_index+1,i+1);
+			
+		} 
+			
+		MPI::COMM_WORLD.Send(	
+					&eigs_count,
+					1,
+					MPI::INT,
+					root,
+					0);
+
 		MPI::COMM_WORLD.Send(	
 					result,
-					num_eigs,
+					eigs_count*2,
+					MPI::DOUBLE,
+					root,
+					0);
+					
+					
+		if (rank == print_rank)
+			printf("rank %d finished 1 job! \n", rank);
+					
+		}
+
+}
+
+void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
+
+	int maxJobs = nShifts*nShifts;
+	int currentJob = 0;
+	int num_samples;
+	double work[nShifts*nShifts][2];
+	std::vector<std::vector<double> > result_array;
+	
+	for (int i = 0; i < nShifts; ++i){
+		for (int j = 0; j < nShifts; ++j){
+			double x = (1.0/(double) maxJobs)*i;
+			double y = (1.0/(double) maxJobs)*j;
+			work[i*nShifts + j][0] = x;
+			work[i*nShifts + j][1] = y;
+
+		}
+	}
+	
+	MPI::Status status;
+	
+	// try to give each worker its first job
+	
+	for (int r = 1; r < size; ++r) {
+		if (currentJob < maxJobs) {
+		
+			MPI::COMM_WORLD.Send(	
+						work[currentJob], 	// input buffer
+						2,					// size of buffer [x,y]
+						MPI::DOUBLE,		// type of buffer
+						r,					// worker to recieve
+						WORKTAG);			// tag as work
+						
+			
+			++currentJob;					// one more job sent out!
+		}
+		
+	}
+	
+	
+	printf("rank %d has sent first batch of work... \n", rank);
+	
+	// Receive results and dispense new work
+	
+	while (currentJob < maxJobs) {
+	
+				
+		MPI::COMM_WORLD.Recv(				// get size of incoming work
+					&num_samples,
+					1,
+					MPI::INT,
+					MPI::ANY_SOURCE,
+					MPI::ANY_TAG,
+					status);				// keeps tag and source information
+		
+		double densities[num_samples];
+		
+		MPI::COMM_WORLD.Recv(	
+					densities,					// get result from worker
+					num_samples,
+					MPI::DOUBLE,
+					status.Get_source(),
+					MPI::ANY_TAG);	
+
+		std::vector<double> temp_result;
+		for (int i = 0; i < num_samples; ++i){
+			//printf("eigenvalue check: %lf \n", result[i]);
+			temp_result.push_back(densities[i]);
+			}
+			
+		result_array.push_back(temp_result);
+		
+		MPI::COMM_WORLD.Send(	
+					work[currentJob],
+					2,
+					MPI::DOUBLE,
+					status.Get_source(),		// send to worker that just completed
+					WORKTAG);
+		
+		++currentJob;						// one more job sent out!
+		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
+	}
+	
+	// Receive final work
+	
+	for (int r = 1; r < size; ++r){
+		
+		MPI::COMM_WORLD.Recv(				// get size of incoming work
+					&num_samples,
+					1,
+					MPI::INT,
+					MPI::ANY_SOURCE,
+					MPI::ANY_TAG,
+					status);				// keeps tag and source information
+		
+		double densities[num_samples];
+		
+		MPI::COMM_WORLD.Recv(	
+					densities,					// get result from worker
+					num_samples,
+					MPI::DOUBLE,
+					status.Get_source(),
+					MPI::ANY_TAG);
+		
+		std::vector<double> temp_result;
+		for (int i = 0; i < num_samples; ++i){
+			//printf("eigenvalue check: %lf \n", result[i]);
+			temp_result.push_back(densities[i]);
+			}
+			
+		result_array.push_back(temp_result);
+	
+		printf("rank %d has received final work from rank %d. \n", rank, r);
+	}
+	
+	// Tell workers to exit workerMatrixSolve()
+	
+	for (int r = 1; r < size; ++r){
+		printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
+		double temp[2];
+		temp[0] = 0.0;
+		temp[1] = 0.0;
+		MPI::COMM_WORLD.Send(	
+					temp,
+					2, 
+					MPI::DOUBLE, 
+					r, 
+					STOPTAG);
+		printf("rank %d sent STOPTAG succesfuly. \n", rank);
+	}
+	
+	for (int i = 0; i < nShifts*nShifts; ++i)
+		for (int j = 0; j < result_array[i].size(); ++j)
+			printf("%lf \n", result_array[i][j]);
+	
+
+}
+
+void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
+
+	double work[2];
+	MPI::Status status;
+	
+	// figure out the Chebyshev polynomial coefficients for each energy sample range
+	
+	double energy_rescale = 15.0;
+	double energy_shift = 0.0;
+	int poly_order = 3000;
+	
+	int p = poly_order;
+	double alpha_p = M_PI/(p+2);
+	
+	double cheb_coeff[num_samples][poly_order + 1];
+	double* damp_coeff = new double[poly_order + 1];
+	
+	double sample_width = (interval_end - interval_start)/(num_samples);
+	
+	double* sample_points = new double[num_samples + 1];
+	for (int i = 0; i < num_samples + 1; ++i){
+		sample_points[i] = ( (interval_start + sample_width*i) + energy_shift)/(energy_rescale);
+	}
+	
+	for (int i = 0; i < num_samples; ++i) {
+	
+		double a = sample_points[i];
+		double b = sample_points[i+1];
+		
+		cheb_coeff[i][0] = (1.0/M_PI)*(acos(a) - acos(b));
+		
+		for (int j = 1; j < poly_order + 1; ++j) {
+			double jd = (double) j;
+			cheb_coeff[i][j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
+		}
+	}
+	
+	damp_coeff[0] = 1.0;
+	for (int j = 0; j < poly_order + 1; ++j){
+		double jd = (double) j;
+		damp_coeff[j] = ((1-jd/(p+2))*sin(alpha_p)*cos(jd*alpha_p)+(1/(p+2))*cos(alpha_p)*sin(jd*alpha_p))/sin(alpha_p);
+	}
+	
+	// TESTING CODE BLOCK
+	/*
+	for (int i = 0; i < num_samples; ++i){
+		
+		double T;
+		double v_i = 1;
+		double H = sample_points[i] + sample_width*0.5/energy_rescale;
+		
+		double T_prev = 1;
+		
+		double T_j = H*T_prev;
+		double T_next;
+		
+		T = v_i*(T_prev*cheb_coeff[10][0]*damp_coeff[0] + T_j*cheb_coeff[10][1]*damp_coeff[1]);
+		
+		for (int j = 1; j < poly_order; ++j){
+			T_next = 2*H*T_j - T_prev;
+			T_prev = T_j;
+			T_j = T_next;
+			T = T + v_i*(T_next*cheb_coeff[10][j+1]*damp_coeff[j+1]);
+		}
+		
+		printf("%lf \n",T);
+	}
+	*/
+	// END TEST
+	
+
+	while (1) {
+
+		if (rank == print_rank)
+			printf("rank %d waiting for new job... \n",rank);
+		MPI::COMM_WORLD.Recv( 
+						work, 
+						2, 
+						MPI::DOUBLE, 
+						root, 
+						MPI::ANY_TAG, 
+						status);
+		
+		if (status.Get_tag() == STOPTAG) {
+			//printf("rank %d recieved STOPTAG. \n", rank);
+			return;
+		}
+
+		printf("rank %d recieved a shift job! \n", rank);
+		
+		double temp_index_to_pos[max_index*3];
+		for (int i = 0; i < max_index; ++i) {
+		
+			if (index_to_grid[i*4 + 3] == 0){
+				temp_index_to_pos[i*3 + 0] = index_to_pos[i*3 + 0];
+				temp_index_to_pos[i*3 + 1] = index_to_pos[i*3 + 1];
+				temp_index_to_pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				}
+			if (index_to_grid[i*4 + 3] == 1){
+				temp_index_to_pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0];
+				temp_index_to_pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[1];
+				temp_index_to_pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				}
+		}
+			
+		
+		int inter_counter = 0;
+		int intra_counter = 0;
+	
+		printf("rank %d trying to build Sparse MATKIT Matrix! \n",rank);
+		
+		mkIndex max_nnz = max_intra_pairs + max_inter_pairs;
+		mkIndex* row_index = new mkIndex[max_nnz];
+		Real* v = new Real[max_nnz];
+		mkIndex* col_pointer = new mkIndex[max_index+1];
+		int input_counter = 0;
+
+		for (int k = 0; k < max_index; ++k){
+			
+			col_pointer[k] = input_counter;
+			
+			bool same_index1 = true;
+			while(same_index1) {
+				if (intra_pairs[intra_counter*2 + 0] != k) {
+					same_index1 = false;
+				}
+				else {
+					row_index[input_counter] = intra_pairs[intra_counter*2 + 1];
+					
+					if (row_index[input_counter] == k)
+						v[input_counter] = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+					else
+						v[input_counter] = intra_pairs_t[intra_counter]/energy_rescale;
+					
+					//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
+					
+					++input_counter;
+					++intra_counter;
+				}
+				
+			}
+		
+			bool same_index2 = true;
+			while(same_index2) {
+				if (inter_pairs[inter_counter*2 + 0] != k) {
+					same_index2 = false;
+				}
+				
+				else {
+					int new_k = inter_pairs[inter_counter*2 + 1];	
+					row_index[input_counter] = new_k;
+					double x = index_to_pos[new_k*3 + 0] - index_to_pos[k*3 + 0];
+					double y = index_to_pos[new_k*3 + 1] - index_to_pos[k*3 + 1];
+					int orbit1 = index_to_grid[k*4 + 2];
+					int orbit2 = index_to_grid[new_k*4 + 2];
+					double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];					
+
+					v[input_counter] = inter_graphene(x, y, orbit1, orbit2, theta)/energy_rescale;
+					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+					++input_counter;
+					++inter_counter;
+				}
+				
+			}
+		}
+
+		col_pointer[max_index] = input_counter;
+			
+
+		SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
+		
+		Vector v_i(max_index);
+		v_i(center_index) = 1.0;
+		
+		if(rank == print_rank)
+			printf("rank %d starting Chebychev solver work... \n", rank);
+		
+		double* densities = new double[num_samples];
+		for (int i = 0; i < num_samples; ++i){
+			
+			double T;
+			
+			Vector T_prev(max_index);
+			T_prev(center_index) = 1.0;
+			
+			Vector T_j = H*T_prev;
+			Vector T_next;
+			
+			T = Vector::innerProduct(v_i,(T_prev*cheb_coeff[i][0]*damp_coeff[0] + T_j*cheb_coeff[i][1]*damp_coeff[1]));
+			
+			for (int j = 1; j < poly_order; ++j){
+				T_next = 2*H*T_j - T_prev;
+				T_prev = T_j;
+				T_j = T_next;
+				T = T + Vector::innerProduct(v_i,T_next*cheb_coeff[i][j+1]*damp_coeff[j+1]);
+			}
+			
+			densities[i] = T;
+		}
+			
+		MPI::COMM_WORLD.Send(	
+					&num_samples,
+					1,
+					MPI::INT,
+					root,
+					0);
+
+		MPI::COMM_WORLD.Send(	
+					densities,
+					num_samples,
 					MPI::DOUBLE,
 					root,
 					0);
@@ -545,4 +1037,3 @@ void Locality::finMPI(){
 	MPI_Finalize();
 
 }
-

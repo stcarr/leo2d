@@ -17,6 +17,10 @@ Sdata::Sdata(std::vector<std::vector<double> > _a, std::vector<int> _types, std:
            
 }
 
+Sdata::Sdata() {
+
+}
+
 Sdata::Sdata(const Sdata& orig) {
     a = orig.a;
     max_shape = orig.max_shape;

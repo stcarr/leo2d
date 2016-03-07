@@ -17,8 +17,8 @@ DEBUG = -g -O0
 CFLAGS = -c
 MPIFLAGS = -c
 #LFLAGS = -L/n/home12/stcarr/soft/FILTLAN/LIB -L/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/lib -L/n/regal/kaxiras_lab/locality_code/lib -lpetsc
-LFLAGS = -L/n/regal/kaxiras_lab/locality_code/soft/FILTLAN/LIB -ldfiltlan -ldmatkit -lm -lblas -llapack
-IFLAGS = -DUSE_NAMESPACE -I/n/regal/kaxiras_lab/locality_code/soft/FILTLAN/INCLUDE -I/n/regal/kaxiras_lab/locality_code/soft/FILTLAN/MATKIT/INCLUDE
+LFLAGS = -L/home/tfuser/software/FILTLAN/LIB -ldfiltlan -ldmatkit -lm -lblas -llapack
+IFLAGS = -DUSE_NAMESPACE -I/home/tfuser/software/FILTLAN/INCLUDE -I/home/tfuser/software/FILTLAN/MATKIT/INCLUDE
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
