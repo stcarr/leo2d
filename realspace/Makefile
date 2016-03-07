@@ -9,6 +9,9 @@ SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = main
 
+# ODYSSEY FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
+FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
+
 CC = gcc
 MPICC = mpicxx
 DEBUG = -g -O0
@@ -17,8 +20,8 @@ DEBUG = -g -O0
 CFLAGS = -c
 MPIFLAGS = -c
 #LFLAGS = -L/n/home12/stcarr/soft/FILTLAN/LIB -L/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/lib -L/n/regal/kaxiras_lab/locality_code/lib -lpetsc
-LFLAGS = -L/n/kaxiras_lab/stcarr/soft/FILTLAN/LIB -ldfiltlan -ldmatkit -lm -lblas -llapack
-IFLAGS = -DUSE_NAMESPACE -I/n/kaxiras_lab/stcarr/soft/FILTLAN/INCLUDE -I/n/kaxiras_lab/stcarr/soft/FILTLAN/MATKIT/INCLUDE
+LFLAGS = -L$(FILT_DIR)/LIB -ldfiltlan -ldmatkit -lm -lblas -llapack
+IFLAGS = -DUSE_NAMESPACE -I$(FILT_DIR)/INCLUDE -I$(FILT_DIR)/MATKIT/INCLUDE
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
