@@ -5,11 +5,11 @@
 #SBATCH -J hstruct_test
 #SBATCH -o hstruct_test_%j.out
 #SBATCH -e hstruct_test_%j.err
-#SBATCH -t 0-00:05 # Runtime limit
-#SBATCH -p kaxiras # Partition to submit to
+#SBATCH -t 0-00:30 # Runtime limit
+#SBATCH -p general # Partition to submit to (lab group = -p kaxiras)
 #SBATCH --mem-per-cpu=4000 # Memory per cpu in MB (see also --mem)
 
-module load intel/15.0.0-fasrc01 mvapich2/2.0-fasrc03 slepc/3.5.4-fasrc02
-module unload Anaconda/1.9.2-fasrc01
+module load gcc/4.8.2-fasrc01 acml/5.3.1-fasrc01
+module load mvapich2/2.0-fasrc03
  
-mpirun -n 4 ./main
+mpiexec -n 2 ./main
