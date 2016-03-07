@@ -994,6 +994,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 			
 			densities[i] = T;
+			if (rank == print_rank)
+				printf("rank %d done with Chebyshev sample %d out of %d \n",rank,i,num_samples);
 		}
 			
 		MPI::COMM_WORLD.Send(	
