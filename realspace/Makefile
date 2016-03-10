@@ -12,7 +12,7 @@ EXECUTABLE = main
 # ODYSSEY FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
 FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
 
-CC = gcc
+CC = g++
 MPICC = mpicxx
 DEBUG = -g -O0
 #DEBUG = 
@@ -20,13 +20,19 @@ DEBUG = -g -O0
 CFLAGS = -c
 MPIFLAGS = -c
 #LFLAGS = -L/n/home12/stcarr/soft/FILTLAN/LIB -L/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/lib -L/n/regal/kaxiras_lab/locality_code/lib -lpetsc
-LFLAGS = -L$(FILT_DIR)/LIB -ldfiltlan -ldmatkit -lm -lblas -llapack
+
+#MKLFLAGS = -lmkl_lapack95_ilp64 -lblas -lmkl_intel_ilp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl
+#MKLFLAGS = -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_intel_thread -liomp5
+MKLFLAGS = -lmkl_rt -lpthread -liomp5
+
+LFLAGS = -L$(FILT_DIR)/LIB -ldfiltlan -ldmatkit $(MKLFLAGS)
 IFLAGS = -DUSE_NAMESPACE -I$(FILT_DIR)/INCLUDE -I$(FILT_DIR)/MATKIT/INCLUDE
+#IFLAGS = -DUSE_NAMESPACE -I$(FILT_DIR)/INCLUDE -I$(FILT_DIR)/MATKIT/INCLUDE -I/n/sw/fasrcsw/apps/Comp/gcc/4.8.2-fasrc01/intel-mkl/11.0.0.079-fasrc01/include
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
 $(EXECUTABLE) : $(addprefix $(OUT_DIR)/,$(OBJS))
-	$(MPICC) $(DEBUG) $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ $(LFLAGS)
+	$(MPICC)  $(addprefix $(OUT_DIR)/,$(OBJS)) -o $@ $(LFLAGS)
 	
 $(addprefix $(OUT_DIR)/,$(CC_OBJ)): COMP = $(CC)
 $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)

@@ -822,8 +822,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	
 	for (int i = 0; i < num_samples; ++i) {
 	
-		double a = sample_points[i];
-		double b = sample_points[i+1];
+		double a = sample_points[i]- sample_width;
+		double b = sample_points[i+1] + sample_width;
 		
 		cheb_coeff[i][0] = (1.0/M_PI)*(acos(a) - acos(b));
 		
@@ -975,22 +975,27 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		double* densities = new double[num_samples];
 		for (int i = 0; i < num_samples; ++i){
-			
+		
+			printf("1 \n");	
 			double T;
 			
 			Vector T_prev(max_index);
 			T_prev(center_index) = 1.0;
 			
+			printf("2 \n");
 			Vector T_j = H*T_prev;
 			Vector T_next;
-			
+		
+			printf("attempting innerProduct \n");	
 			T = Vector::innerProduct(v_i,(T_prev*cheb_coeff[i][0]*damp_coeff[0] + T_j*cheb_coeff[i][1]*damp_coeff[1]));
-			
+			printf("inner product worked \n");			
+
 			for (int j = 1; j < poly_order; ++j){
 				T_next = 2*H*T_j - T_prev;
 				T_prev = T_j;
 				T_j = T_next;
 				T = T + Vector::innerProduct(v_i,T_next*cheb_coeff[i][j+1]*damp_coeff[j+1]);
+				printf("iteration %d/%d complete. \n", j, poly_order);
 			}
 			
 			densities[i] = T;

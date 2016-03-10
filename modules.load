@@ -1,2 +1,3 @@
-module load gcc/4.8.2-fasrc01 acml/5.3.1-fasrc01
+module load intel/15.0.0-fasrc01
+module load intel-mkl/11.0.0.079-fasrc02 
 module load mvapich2/2.0-fasrc03 
