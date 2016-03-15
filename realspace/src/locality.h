@@ -13,6 +13,7 @@
 
 class Locality {
     private:
+		std::string job_name;
 		int size;
 		int rank;
 		int print_rank;
@@ -29,6 +30,9 @@ class Locality {
 		int num_samples;
 		double interval_start;
 		double interval_end;
+		double energy_rescale;
+		double energy_shift;
+		int poly_order;
 		int solver_type;
 		void rootEigenSolve(int*,double*,int*,int*,double*);
 		void workerEigenSolve(int*,double*,int*,int*,double*);
@@ -41,7 +45,7 @@ class Locality {
         Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>);
         Locality(const Locality& orig);
         ~Locality();
-		void setup(int,int,int,double,double,int);
+		void setup(std::string,int,int,int,double,double,double,double,int,int);
 		void initMPI(int, char**);
 		void constructGeom();
 		void constructMatrix(int*,double*,int*,int*,double*);

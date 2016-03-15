@@ -38,6 +38,9 @@ int main(int argc, char** argv) {
 
 	
 	// Shape of the grid to sample for atom population
+	
+	std::string job_name = "HSTRUCT_JOB";
+	
 	int min_size = -300;
 	int max_size = 300;
 	std::vector<int> min;
@@ -67,6 +70,9 @@ int main(int argc, char** argv) {
 	int num_samples = 1;
 	double interval_start = -1;
 	double interval_end = 1;
+	double energy_rescale = 15;
+	double energy_shift = 0;
+	int poly_order = 3000;
 	int solver_type = 0;
 	
 	string line;
@@ -84,6 +90,13 @@ int main(int argc, char** argv) {
 			while ( getline(in_line, in_string, ' ') )	{
 			
 				//cout << in_string << "\n";
+				
+				if (in_string == "JOB_NAME"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					job_name = in_string;
+					}
+				
 				
 				if (in_string == "MAXSIZE"){
 					getline(in_line,in_string,' ');
@@ -226,6 +239,24 @@ int main(int argc, char** argv) {
 					interval_end = atof(in_string.c_str());
 				}
 				
+				if (in_string == "ENERGY_RESCALE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					energy_rescale = atof(in_string.c_str());
+				}
+				
+				if (in_string == "ENERGY_SHIFT"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					energy_shift = atof(in_string.c_str());
+				}
+				
+				if (in_string == "POLY_ORDER"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					poly_order = atoi(in_string.c_str());
+				}
+				
 				if (in_string == "SOLVER_TYPE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -314,7 +345,7 @@ int main(int argc, char** argv) {
 	Locality loc(s_data,heights,angles);
 	
 	// Simulation is controlled with following calls to Locality object
-	loc.setup(nShifts, num_eigs, num_samples, interval_start, interval_end, solver_type);
+	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, poly_order, solver_type);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);
