@@ -13,15 +13,9 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include <time.h>
 
 #include <matkit.h>
 #include <filtlan.h>
-//#include <spmatrix.h>
-
-//#include <petscksp.h>
-//#include <slepceps.h>
-//#include <petscmatlab.h>
 
 #ifdef USE_NAMESPACE
 using namespace MATKIT;
@@ -30,6 +24,8 @@ using namespace MATKIT;
 
 
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
+
+	// Set all of the run-specific options for matrix construction and paramters of the solver method used.
 
 	job_name = "HSTRUCT_TEST";
 
@@ -58,6 +54,9 @@ Locality::~Locality() {
 }
 
 void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, int p_order, int solver) {
+	
+	// Edit run-specific options for matrix constructions and paramters of the solver method (to edit settings from the constructor)
+
 	job_name = name;
 	nShifts = shifts;
 	num_eigs = eigs;
@@ -72,11 +71,8 @@ void Locality::setup(std::string name, int shifts, int eigs, int samples,double 
 
 void Locality::initMPI(int argc, char** argv){
 	
-//	char help[] = "what this program does in brief can go here.";
-
-//	PetscInitialize(&argc,&argv,(char*)0,help);
-//	SlepcInitialize(&argc,&argv,(char*)0,help);
- 	
+	// Start  MPI on each rank
+	  	
 	MPI_Init(&argc,&argv);
 
         root = 0;
@@ -87,6 +83,11 @@ void Locality::initMPI(int argc, char** argv){
 }
 
 void Locality::constructGeom(){
+
+	// The root node (rank == 0) uses the hstruct and sheet objects to figure out the geometery and tight-binding model sparse matrix structure
+	// This information is then pased to all worker nodes
+
+	time(&constructStart);
 	
 	if (rank == print_rank)
 		printf("rank %d entering constructGeom(). \n", rank);
@@ -245,10 +246,6 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_z, max_index, MPI_DOUBLE, root);
 
-	
-	// Some C code follows to allocate memory for our completed arrays
-	// Perhaps one can get MPI to take std::vector as a valid data type instead?
-	
 	if (rank == print_rank)
 		printf("rank %d attempting to allocate memory for its global variables. \n",rank);
 	
@@ -316,7 +313,10 @@ void Locality::constructGeom(){
 		printf("%d entries expected from intra. \n", max_intra_pairs);
 		printf("%d entries expected from inter. \n", max_inter_pairs);
 	}
+
+	time(&constructEnd);
 	
+	// Call the next method, which will send out jobs depending on the solver type to each worker and have them construct a matrix specific to that job.
 	constructMatrix(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
 	
 	delete index_to_grid;
@@ -328,8 +328,11 @@ void Locality::constructGeom(){
 }
 
 void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t){ 
+	time(&solveStart);
 	if (rank == print_rank)
 		printf("rank %d entering constructMatrix(). \n", rank);
+
+	// 0: FILTLAN local eigenvalue slover (DOS)
 	if(solver_type == 0){
 		if (rank == root) {
 			rootEigenSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
@@ -337,6 +340,8 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 			workerEigenSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
 		}
 	}
+
+	// 1: Chebyshev polynomial sampling of eigen spectrum (DOS)
 	if(solver_type == 1){
 		if (rank == root) {
 			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
@@ -344,7 +349,8 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 			workerChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
 		}	
 	}
-	
+
+	time(&solveEnd);
 }
 
 void Locality::rootEigenSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
@@ -432,7 +438,7 @@ void Locality::rootEigenSolve(int* index_to_grid, double* index_to_pos, int* int
 					WORKTAG);
 		
 		++currentJob;						// one more job sent out!
-		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
+		printf("rank %d has sent job to worker rank %d. (%d/%d) \n", rank, status.Get_source(),currentJob, maxJobs + 1);
 	}
 	
 	// Receive final work
@@ -477,7 +483,7 @@ void Locality::rootEigenSolve(int* index_to_grid, double* index_to_pos, int* int
 	// Tell workers to exit workerMatrixSolve()
 	
 	for (int r = 1; r < size; ++r){
-		printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
+		//printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
 		double temp[2];
 		temp[0] = 0.0;
 		temp[1] = 0.0;
@@ -487,7 +493,7 @@ void Locality::rootEigenSolve(int* index_to_grid, double* index_to_pos, int* int
 					MPI::DOUBLE, 
 					r, 
 					STOPTAG);
-		printf("rank %d sent STOPTAG succesfuly. \n", rank);
+		//printf("rank %d sent STOPTAG succesfuly. \n", rank);
 	}
 	
 	std::ofstream outFile1;
@@ -545,6 +551,10 @@ void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* i
 			//printf("rank %d recieved STOPTAG. \n", rank);
 			return;
 		}
+
+		time_t tempStart;
+		time(&tempStart);
+		solverTimes.push_back(tempStart);	
 
 		printf("rank %d recieved a shift job! \n", rank);
 		
@@ -644,7 +654,12 @@ void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* i
 		mkIndex baseDeg = 10; 
 		mkIndex polyDeg = 10;
 		opts.reorth = 2;
-		opts.disp = 3;		
+		
+		// no printout
+		opts.disp = 0;
+		
+		// verbose printouts
+		//opts.disp = 3;		
 
 		/*
 		opts.intervalOpts.intervalWeights(1) = 100;
@@ -676,7 +691,11 @@ void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* i
 			result[i*2 + 1] = vecs(center_index+1,i+1);
 			
 		} 
-			
+		
+		time_t tempEnd;
+		time(&tempEnd);
+		solverTimes.push_back(tempEnd);
+	
 		MPI::COMM_WORLD.Send(	
 					&eigs_count,
 					1,
@@ -1115,18 +1134,45 @@ void Locality::plot(){
 
 }
 
-void Locality::save(){ 
+void Locality::save(){
 
+	if (rank != root){
+		int jobCount = solverTimes.size() / 2;	
+		double avgTime = 0;
+		double maxTime = 0;
+		double minTime = difftime(solverTimes[1],solverTimes[0]);	
+	
+		for (int i = 0; i < jobCount; ++i){
+			double tempTime = difftime(solverTimes[2*i + 1],solverTimes[2*i]);
+			if (tempTime > maxTime)
+				maxTime = tempTime;
+			if (tempTime < minTime)
+				minTime = tempTime;
+			avgTime += tempTime/( (double) jobCount);
+		}
+
+		printf(	"=======- RANK %d TIMING -======= \n"
+			"Number of Jobs: %d \n"
+			"Avg Solve Time: %lf sec \n"
+			"Max Solve Time: %lf sec \n"
+			"Min Solve Time: %lf sec \n"
+			"================================ \n",
+			rank, jobCount, avgTime, maxTime, minTime);		
+	}
+
+	if (rank == print_rank){
+		printf(	"=======- TIMING RESULTS -======= \n"
+		        "Construct Geom: %lf sec \n"
+			"Solver        : %lf sec \n"
+			"================================ \n",
+			difftime(constructEnd, constructStart), 
+			difftime(solveEnd, solveStart));
+	}
 }
 
 void Locality::finMPI(){ 
-	printf("rank %d finalizing MPI. \n", rank);
-	if (rank == print_rank)
-		printf("rank %d finalizing MPI. \n", rank);
-
-	//PetscErrorCode ierr;
-	//ierr = PetscFinalize();CHKERRV(ierr);
-
+	//printf("rank %d finalizing MPI. \n", rank);
+		
 	MPI_Finalize();
 
 }

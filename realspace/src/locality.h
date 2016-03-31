@@ -10,13 +10,15 @@
 #define LOCALITY_H
 #include "hstruct.h"
 #include "interlayer_coupling.h"
-
+#include <time.h>
 class Locality {
     private:
 		std::string job_name;
+		
 		int size;
 		int rank;
 		int print_rank;
+		
 		std::vector<Sdata> sdata;
 		std::vector<double> heights;
 		std::vector<double> angles;
@@ -24,6 +26,13 @@ class Locality {
 		int center_index;
 		int max_inter_pairs;
 		int max_intra_pairs;
+		
+		time_t constructStart;
+		time_t constructEnd;
+		std::vector<time_t> solverTimes;
+		time_t solveStart;
+		time_t solveEnd;
+
 		int root;
 		int nShifts;
 		int num_eigs;
@@ -34,10 +43,12 @@ class Locality {
 		double energy_shift;
 		int poly_order;
 		int solver_type;
+		
 		void rootEigenSolve(int*,double*,int*,int*,double*);
 		void workerEigenSolve(int*,double*,int*,int*,double*);
 		void rootChebSolve(int*,double*,int*,int*,double*);
 		void workerChebSolve(int*,double*,int*,int*,double*);
+		
 		static const int WORKTAG = 0;
 		static const int STOPTAG = 1;
         
