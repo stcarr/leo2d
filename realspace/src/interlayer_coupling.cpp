@@ -33,7 +33,7 @@ double ac = acos(x/r);
 if ((x < 0 && y < 0) || (x > 0 && y < 0))
 	ac = 2*M_PI-ac;
 
-if (orbit1 == 2)
+if (orbit1 == 1)
 	theta21 = ac + pi6;
 else
 	theta21 = ac - pi6;
@@ -45,7 +45,7 @@ while (theta21 <= -pi2o3)
 
 ac = ac - theta;
 
-if (orbit2 == 2)
+if (orbit2 == 1)
 	theta12 = ac + pi6;
 else
 	theta12 = ac - pi6;
