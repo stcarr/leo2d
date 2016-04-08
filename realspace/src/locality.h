@@ -41,6 +41,7 @@ class Locality {
 		double interval_end;
 		double energy_rescale;
 		double energy_shift;
+		double cheb_width;
 		int poly_order;
 		int solver_type;
 		
@@ -56,7 +57,7 @@ class Locality {
         Locality(std::vector<Sdata>,std::vector<double>,std::vector<double>);
         Locality(const Locality& orig);
         ~Locality();
-		void setup(std::string,int,int,int,double,double,double,double,int,int);
+		void setup(std::string,int,int,int,double,double,double,double,double,int,int);
 		void initMPI(int, char**);
 		void constructGeom();
 		void constructMatrix(int*,double*,int*,int*,double*);

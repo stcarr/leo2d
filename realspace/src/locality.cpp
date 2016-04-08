@@ -40,9 +40,9 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 	
 	energy_rescale = 20.0;
 	energy_shift = 0.0;
+	cheb_width = 0.2;
 	poly_order = 3000;
-
-    
+	
 }
 
 Locality::Locality(const Locality& orig) {
@@ -53,7 +53,7 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, int p_order, int solver) {
+void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, double c_width, int p_order, int solver) {
 	
 	// Edit run-specific options for matrix constructions and paramters of the solver method (to edit settings from the constructor)
 
@@ -66,6 +66,7 @@ void Locality::setup(std::string name, int shifts, int eigs, int samples,double 
 	solver_type = solver;
     energy_rescale = e_rescale;
 	energy_shift = e_shift;
+	cheb_width = c_width;
 	poly_order = p_order;
 }
 
@@ -198,6 +199,15 @@ void Locality::constructGeom(){
 		h.getIndexToPos(index_to_pos_x,0);
 		h.getIndexToPos(index_to_pos_y,1);
 		h.getIndexToPos(index_to_pos_z,2);
+		
+		
+		// POSITION DEBUG PRINT
+		
+		for (int k = 0; k < max_index; ++k)
+			printf("%lf, %lf, %lf \n",index_to_pos_x[k],index_to_pos_y[k],index_to_pos_z[k]);
+		
+		//
+		
 		
 		
 	}
@@ -597,7 +607,7 @@ void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* i
 				else {
 					row_index[input_counter] = intra_pairs[intra_counter*2 + 1];
 					v[input_counter] = intra_pairs_t[intra_counter];
-					//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
+					//printf("[%d,%d] = %lf (intra) \n",intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
 					++input_counter;
 					++intra_counter;
 				}
@@ -613,14 +623,21 @@ void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* i
 				else {
 					int new_k = inter_pairs[inter_counter*2 + 1];	
 					row_index[input_counter] = new_k;
-					double x = i2pos[new_k*3 + 0] - i2pos[k*3 + 0];
-					double y = i2pos[new_k*3 + 1] - i2pos[k*3 + 1];
+					double x1 = i2pos[k*3 + 0];
+					double y1 = i2pos[k*3 + 1];
+					double x2 = i2pos[new_k*3 + 0];
+					double y2 = i2pos[new_k*3 + 1];
 					int orbit1 = index_to_grid[k*4 + 2];
 					int orbit2 = index_to_grid[new_k*4 + 2];
-					double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];					
-
-					v[input_counter] = inter_graphene(x, y, orbit1, orbit2, theta);
+					
+					//double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];
+					
+					double theta1 = angles[index_to_grid[k*4+3]];
+					double theta2 = angles[index_to_grid[new_k*4 + 3]];
+					
+					v[input_counter] = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2);
 					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+					//printf("[%d, %d] = %lf (inter) \n", k, new_k, v[input_counter]);
 					++input_counter;
 					++inter_counter;
 				}
@@ -656,10 +673,10 @@ void Locality::workerEigenSolve(int* index_to_grid, double* index_to_pos, int* i
 		opts.reorth = 2;
 		
 		// no printout
-		opts.disp = 0;
+		//opts.disp = 0;
 		
 		// verbose printouts
-		//opts.disp = 3;		
+		opts.disp = 3;		
 
 		/*
 		opts.intervalOpts.intervalWeights(1) = 100;
@@ -869,6 +886,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		sample_points[i] = interval_start + sample_width*i + sample_width*0.5;
 	}
 	
+	/*
 	for (int i = 0; i < maxJobs; ++i){
 		printf("printing results for shift %d \n", i+1);
 		printf("Energy || Density \n");
@@ -876,20 +894,21 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			printf("%lf || %lf \n", sample_points[j],result_array[i][j]);
 		}
 	}
+	*/
 	
 	std::ofstream outFile;
 	const char* extension = ".out";
 	outFile.open ((job_name + extension).c_str());
-	outFile << "Shift x, Shift y, ";
+	outFile << "Shift x, Shift y ";
 	
 	for(int j = 0; j < num_samples; ++j)
-		outFile << sample_points[j] << ", ";
+		outFile << ", " << sample_points[j];
 	outFile << "\n";
 	
 	for(int i = 0; i < maxJobs; ++i){
-		outFile << work[i][0] << ", " << work[i][1] << ", ";
+		outFile << work[i][0] << ", " << work[i][1];
 		for(int j = 0; j < num_samples; ++j)
-			outFile << result_array[i][j] << ", ";
+			outFile << ", " << result_array[i][j];
 		outFile << "\n";
 	}
 	
@@ -908,20 +927,23 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	int p = poly_order;
 	double alpha_p = M_PI/(p+2);
 	
-	double cheb_coeff[num_samples][poly_order + 1];
+	//double cheb_coeff[num_samples][poly_order + 1];
 	double* damp_coeff = new double[poly_order + 1];
 	
-	double sample_width = (interval_end - interval_start)/(num_samples);
+	/// need new variable: cheby_width
+	//double sample_width = (interval_end - interval_start)/(10*num_samples);
+	double sample_width = cheb_width/energy_rescale;
+	double sample_spacing = (interval_end - interval_start)/(num_samples);
 	
 	double* sample_points = new double[num_samples + 1];
 	for (int i = 0; i < num_samples + 1; ++i){
-		sample_points[i] = ( (interval_start + sample_width*i) + energy_shift)/(energy_rescale);
+		sample_points[i] = ( (interval_start + sample_spacing*i) + energy_shift)/(energy_rescale);
 	}
-	
+	/*
 	for (int i = 0; i < num_samples; ++i) {
 	
-		double a = sample_points[i]- sample_width;
-		double b = sample_points[i+1] + sample_width;
+		double a = sample_points[i] - sample_width/2;
+		double b = sample_points[i] + sample_width/2;
 		
 		cheb_coeff[i][0] = (1.0/M_PI)*(acos(a) - acos(b));
 		
@@ -930,6 +952,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			cheb_coeff[i][j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
 		}
 	}
+	*/
 	
 	damp_coeff[0] = 1.0;
 	for (int j = 0; j < poly_order + 1; ++j){
@@ -937,9 +960,24 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		damp_coeff[j] = ((1-jd/(p+2))*sin(alpha_p)*cos(jd*alpha_p)+(1/(p+2))*cos(alpha_p)*sin(jd*alpha_p))/sin(alpha_p);
 	}
 	
+	
 	// TESTING CODE BLOCK
+	// Plots a Chebyshev "step" function at the center of the interval
 	/*
+	int x = (int) num_samples/2;
 	for (int i = 0; i < num_samples; ++i){
+	
+		double cheb_coeff[poly_order];
+	
+		double a = sample_points[x] - sample_width/2;
+		double b = sample_points[x] + sample_width/2;
+		
+		cheb_coeff[0] = (1.0/M_PI)*(acos(a) - acos(b));
+		
+		for (int j = 1; j < poly_order + 1; ++j) {
+			double jd = (double) j;
+			cheb_coeff[j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
+		}
 		
 		double T;
 		double v_i = 1;
@@ -950,13 +988,13 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double T_j = H*T_prev;
 		double T_next;
 		
-		T = v_i*(T_prev*cheb_coeff[10][0]*damp_coeff[0] + T_j*cheb_coeff[10][1]*damp_coeff[1]);
+		T = v_i*(T_prev*cheb_coeff[0]*damp_coeff[0] + T_j*cheb_coeff[1]*damp_coeff[1]);
 		
 		for (int j = 1; j < poly_order; ++j){
 			T_next = 2*H*T_j - T_prev;
 			T_prev = T_j;
 			T_j = T_next;
-			T = T + v_i*(T_next*cheb_coeff[10][j+1]*damp_coeff[j+1]);
+			T = T + v_i*(T_next*cheb_coeff[j+1]*damp_coeff[j+1]);
 		}
 		
 		printf("%lf \n",T);
@@ -982,6 +1020,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			return;
 		}
 
+		time_t tempStart;
+		time(&tempStart);
+		solverTimes.push_back(tempStart);	
+		
 		printf("rank %d received a shift job! [%lf,%lf] \n", rank,work[0],work[1]);
 		
 		double i2pos[max_index*3];
@@ -1044,14 +1086,21 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				else {
 					int new_k = inter_pairs[inter_counter*2 + 1];	
 					row_index[input_counter] = new_k;
-					double x = i2pos[new_k*3 + 0] - i2pos[k*3 + 0];
-					double y = i2pos[new_k*3 + 1] - i2pos[k*3 + 1];
+					double x1 = i2pos[k*3 + 0];
+					double y1 = i2pos[k*3 + 1];
+					double x2 = i2pos[new_k*3 + 0];
+					double y2 = i2pos[new_k*3 + 1];
 					int orbit1 = index_to_grid[k*4 + 2];
 					int orbit2 = index_to_grid[new_k*4 + 2];
-					double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];					
+					
+					//double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];
+					
+					double theta1 = angles[index_to_grid[k*4 + 3]];
+					double theta2 = angles[index_to_grid[new_k*4 + 3]];
 
-					v[input_counter] = inter_graphene(x, y, orbit1, orbit2, theta)/energy_rescale;
-					//printf("rank %d added inter_pair for index %d: [%d, %d] \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1]);
+					v[input_counter] = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2)/energy_rescale;
+					
+					//printf("rank %d added inter_pair for index %d: [%d, %d] = %f \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1], v[input_counter]);
 					++input_counter;
 					++inter_counter;
 				}
@@ -1060,8 +1109,26 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		}
 
 		col_pointer[max_index] = input_counter;
-			
+		
 		SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
+		
+		// Print Matrix!
+		
+		std::ofstream outFile;
+		const char* extension = "_matrix.dat";
+		outFile.open ((job_name + extension).c_str());
+		
+		for(int i = 0; i < max_index; ++i){
+			int start_index = col_pointer[i];
+			int stop_index = col_pointer[i+1];
+				for(int j = start_index; j < stop_index; ++j){
+					outFile << row_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+				}
+		}
+		
+		outFile.close();
+		
+		// End Matrix Printing
 		
 		Vector v_i(max_index);
 		v_i(center_index) = 1.0;
@@ -1071,7 +1138,58 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		if(rank == print_rank)
 			printf("rank %d starting Chebychev solver work... \n", rank);
+			
+			
+		double T;
+		double* T_array = new double[poly_order];
+			
+		Vector T_prev(max_index);
+		T_prev(center_index) = 1.0;
 		
+		Vector T_j = H*T_prev;
+		Vector T_next;
+	
+		T_array[0] = 1;	
+		//T_array[1] = Vector::innerProduct(v_i,T_j);
+		T_array[1] = T_j(center_index);
+
+		for (int j = 2; j < poly_order; ++j){
+			T_next = 2*H*T_j - T_prev;
+			T_prev = T_j;
+			T_j = T_next;
+			//T_array[j] = Vector::innerProduct(v_i,T_j);
+			T_array[j] = T_j(center_index);
+			if (j%100 == 0)
+				printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order); 
+			//printf("iteration %d/%d complete. \n", j, poly_order);
+		}
+		
+		double* densities = new double[num_samples];
+		
+		for (int i =0; i < num_samples; ++i){
+			double cheb_coeff[num_samples];
+			double a = sample_points[i] - sample_width/2;
+			double b = sample_points[i] + sample_width/2;
+		
+			cheb_coeff[0] = (1.0/M_PI)*(acos(a) - acos(b));
+			
+			for (int j = 1; j < poly_order + 1; ++j) {
+				double jd = (double) j;
+				cheb_coeff[j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
+			}
+			
+			double T = 0;
+			for (int j = 0; j < poly_order; ++j){
+				T = T + T_array[j]*cheb_coeff[j]*damp_coeff[j];
+				}
+			
+			densities[i] = T;
+		}
+		
+		
+		
+		
+		/*
 		double* densities = new double[num_samples];
 		for (int i = 0; i < num_samples; ++i){
 		
@@ -1100,12 +1218,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			if (rank == print_rank)
 				printf("rank %d done with Chebyshev sample %d out of %d \n",rank,i+1,num_samples);
 		}
-		
-		double totalCpuTime = (double)(clock() - start_cpu)/(double)CLOCKS_PER_SEC;
-		time_t wallClockTime = time(NULL) - start_wall;
-		
-		std::cout << "CPU Time: " << totalCpuTime << " sec \n";
-		std::cout << "Wall Time: " << wallClockTime << " sec \n";
+		*/
 			
 		MPI::COMM_WORLD.Send(	
 					&num_samples,
@@ -1123,7 +1236,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					
 		if (rank == print_rank)
 			printf("rank %d finished 1 job! \n", rank);
-					
+			
+		time_t tempEnd;
+		time(&tempEnd);
+		solverTimes.push_back(tempEnd);	
+		
+		delete[] T_array;
 		delete[] densities;		
 			
 		}

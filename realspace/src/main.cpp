@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
 	double interval_end = 1;
 	double energy_rescale = 15;
 	double energy_shift = 0;
+	double cheb_width = 0.2;
 	int poly_order = 3000;
 	int solver_type = 0;
 	
@@ -193,7 +194,7 @@ int main(int argc, char** argv) {
 						pos[i].resize(3);
 						for (int j = 0; j < 3; ++j) {
 							getline(in_line,in_string,' ');
-							pos[i][j] = atof(in_string.c_str());
+							pos[i][j] = a*atof(in_string.c_str());
 						}
 					}
 				}
@@ -249,6 +250,12 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					energy_shift = atof(in_string.c_str());
+				}
+				
+				if (in_string == "CHEB_WIDTH"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					cheb_width = atof(in_string.c_str());
 				}
 				
 				if (in_string == "POLY_ORDER"){
@@ -345,7 +352,7 @@ int main(int argc, char** argv) {
 	Locality loc(s_data,heights,angles);
 	
 	// Simulation is controlled with following calls to Locality object
-	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, poly_order, solver_type);
+	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);

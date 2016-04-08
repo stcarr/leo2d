@@ -145,7 +145,7 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 
 void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array){
 
-	int searchsize = 4;
+	int searchsize = 10;
 		
 	for (int kh = 0; kh < max_index; ++kh){
 		
@@ -240,50 +240,62 @@ int Hstruct::gridToIndex(int (&grid_index)[4]) {
 }
 
 void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t) {
+
+	int searchsize = 10;
 	
-	for (int k = 0; k < max_index; ++k) {
-	
-		int grid_0[3];
+	for (int kh = 0; kh < max_index; ++kh){
 		
-		for (int x = 0; x < 3; ++x)
-			grid_0[x] = index_array[k][x];
+		// Manually add the diagonal elements, they are 0 in every model (energy offset is added in locality.cpp, not here)
+		array_i.push_back(kh);
+		array_j.push_back(kh);
+		array_t.push_back(0);
 		
-			
-		int mat = 0; // !!! Force to graphene, fix by adding material variable to Sheet.cpp !!!
+		int i0 = index_array[kh][0];
+		int j0 = index_array[kh][1];
+		int l0 = index_array[kh][2];
+		int s0 = index_array[kh][3];
 		
-		std::vector< std::vector<int> > temp_grid;
-		std::vector<double> temp_t; 
-		intralayer_terms(grid_0,mat,temp_grid,temp_t);
+		double pos_here[3];
+		pos_here[0] = posAtomIndex(kh,0);
+		pos_here[1] = posAtomIndex(kh,1);
+		pos_here[2] = posAtomIndex(kh,2);
 		
-		for (int y = 0; y < static_cast<int>(temp_grid.size()); ++y) {
-		
-			int new_grid[4];
-			new_grid[0] = temp_grid[y][0];
-			new_grid[1] = temp_grid[y][1];
-			new_grid[2] = temp_grid[y][2];
-			new_grid[3] = index_array[k][3];
-			
-			int new_k = gridToIndex(new_grid);
-			
-			if (new_k != -1) {
-				array_i.push_back(k);						// current index in loop
-				array_j.push_back(new_k);					// other index in interaction
-				array_t.push_back(temp_t[y]);				// hopping term t
+		for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
+			for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
+				for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
 				
+					int grid_2[4] = {i,j,l,s0};
+					int k2 = gridToIndex(grid_2);
+
+					if (k2 != -1){
+						double x2 = posAtomIndex(k2,0);
+						double y2 = posAtomIndex(k2,1);
+						double z2 = posAtomIndex(k2,2);
+						
+						// GENERALIZE THE MAT TERM (mat = 0 -> Graphene)
+						int mat = 0; 
+						
+						double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, mat);
+						
+						if (t != 0){
+							array_i.push_back(kh);
+							array_j.push_back(k2);
+							array_t.push_back(t);
+						}
+					}
+				}
 			}
-		
-		
 		}
-
 	}
-
 }
 
 
 void Hstruct::getIndexToPos(double* array_in,int dim){
 	
-	for (int k = 0; k < max_index; ++k)
+	for (int k = 0; k < max_index; ++k){
 		array_in[k] = posAtomIndex(k,dim);
+		//printf("index %d: dim %d = %lf \n", k, dim, array_in[k]);
+	}	
 
 }
 
