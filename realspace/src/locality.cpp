@@ -202,10 +202,11 @@ void Locality::constructGeom(){
 		
 		
 		// POSITION DEBUG PRINT
+		/*
 		
 		for (int k = 0; k < max_index; ++k)
 			printf("%lf, %lf, %lf \n",index_to_pos_x[k],index_to_pos_y[k],index_to_pos_z[k]);
-		
+		*/
 		//
 		
 		
@@ -342,7 +343,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	if (rank == print_rank)
 		printf("rank %d entering constructMatrix(). \n", rank);
 
-	// 0: FILTLAN local eigenvalue slover (DOS)
+	// 0: FILTLAN local eigenvalue solver (DOS)
 	if(solver_type == 0){
 		if (rank == root) {
 			rootEigenSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
@@ -351,7 +352,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 		}
 	}
 
-	// 1: Chebyshev polynomial sampling of eigen spectrum (DOS)
+	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
 	if(solver_type == 1){
 		if (rank == root) {
 			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
@@ -924,45 +925,38 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	
 	// figure out the Chebyshev polynomial coefficients for each energy sample range
 	
+	// p is the maximum order of the Chebyshev polynomial
 	int p = poly_order;
+	
+	// alpha_p is a constant used in the definition of the Chebyshev polynomial
 	double alpha_p = M_PI/(p+2);
 	
-	//double cheb_coeff[num_samples][poly_order + 1];
-	double* damp_coeff = new double[poly_order + 1];
-	
-	/// need new variable: cheby_width
-	//double sample_width = (interval_end - interval_start)/(10*num_samples);
+	// sample_width is the scaled width of the non-zero portion of the polynomial
 	double sample_width = cheb_width/energy_rescale;
+	
+	// sample_spacing is the scaled distance between the center of each sample
 	double sample_spacing = (interval_end - interval_start)/(num_samples);
 	
+	// Save the center-point of each sample
 	double* sample_points = new double[num_samples + 1];
 	for (int i = 0; i < num_samples + 1; ++i){
 		sample_points[i] = ( (interval_start + sample_spacing*i) + energy_shift)/(energy_rescale);
 	}
-	/*
-	for (int i = 0; i < num_samples; ++i) {
 	
-		double a = sample_points[i] - sample_width/2;
-		double b = sample_points[i] + sample_width/2;
-		
-		cheb_coeff[i][0] = (1.0/M_PI)*(acos(a) - acos(b));
-		
-		for (int j = 1; j < poly_order + 1; ++j) {
-			double jd = (double) j;
-			cheb_coeff[i][j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
-		}
-	}
-	*/
-	
+	// Determine "dampening coefficients" (independent of sample location)
+	double* damp_coeff = new double[poly_order + 1];
 	damp_coeff[0] = 1.0;
 	for (int j = 0; j < poly_order + 1; ++j){
 		double jd = (double) j;
 		damp_coeff[j] = ((1-jd/(p+2))*sin(alpha_p)*cos(jd*alpha_p)+(1/(p+2))*cos(alpha_p)*sin(jd*alpha_p))/sin(alpha_p);
 	}
 	
+	// ------------------------
+	// TESTING POLYNOMIAL BLOCK
+	// Evaluates a Chebyshev "step" function at the center of the interval
+	// If std::out is saved to a file, can plot this to see how well behaved your Chebyshev polynomial is
+	//
 	
-	// TESTING CODE BLOCK
-	// Plots a Chebyshev "step" function at the center of the interval
 	/*
 	int x = (int) num_samples/2;
 	for (int i = 0; i < num_samples; ++i){
@@ -1000,33 +994,51 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		printf("%lf \n",T);
 	}
 	*/
-	// END TEST
+	// END POLY TESTING BLOCK
+	// ----------------------
 	
-
+	
+	
+	// ---------------------
+	// Enter MPI worker loop
+	// ---------------------
+	
 	while (1) {
 
-		if (rank == print_rank)
-			printf("rank %d waiting for new job... \n",rank);
-		MPI::COMM_WORLD.Recv( 
-						work, 
-						2, 
-						MPI::DOUBLE, 
-						root, 
-						MPI::ANY_TAG, 
-						status);
+		//if (rank == print_rank)
+			//printf("rank %d waiting for new job... \n",rank);
+			
 		
+		// Recv to get a new job
+		
+		MPI::COMM_WORLD.Recv( 
+						work, 			// work determines b-shift
+						2, 				// length of work
+						MPI::DOUBLE, 	// data-type of work
+						root, 			// must come from root
+						MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
+						status);		// keep MPI status information
+		
+		// If worker gets STOPTAG it ends this method
 		if (status.Get_tag() == STOPTAG) {
 			//printf("rank %d received STOPTAG. \n", rank);
 			return;
 		}
 
+		// If not STOPTAG, start timing the solver
 		time_t tempStart;
 		time(&tempStart);
 		solverTimes.push_back(tempStart);	
 		
 		printf("rank %d received a shift job! [%lf,%lf] \n", rank,work[0],work[1]);
 		
+		// ------------------------------------------------------
+		// Determine the work-specific positions of every orbital
+		// ------------------------------------------------------
+		
+		// i2pos = "index to position"
 		double i2pos[max_index*3];
+		
 		for (int i = 0; i < max_index; ++i) {
 		
 			if (index_to_grid[i*4 + 3] == 0){
@@ -1041,31 +1053,56 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				}
 				
 		}
-			
 		
+		// -----------------------
+		// Build the Sparse matrix
+		// -----------------------
+
+		// Indexes how many inter terms we have entered so far
 		int inter_counter = 0;
+		
+		// Indexes how many intra terms we have intered so far
 		int intra_counter = 0;
 		
+		// Total number of expected non-zero matrix elements
 		mkIndex max_nnz = max_intra_pairs + max_inter_pairs;
+		
+		// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
+		
+		// row_index tells us the row of element i
+		// v tells us the value of element i
+		// col_pointer tells us the start of column j (at element i = col_pointer[j]) and the end of column j (at element i = col_pointer[j] - 1)
+		
 		mkIndex* row_index = new mkIndex[max_nnz];
 		Real* v = new Real[max_nnz];
 		mkIndex* col_pointer = new mkIndex[max_index+1];
+		
+		// Count the current element, i.e. "i = input_counter"
 		int input_counter = 0;
 
+		// Loop through every orbital
 		for (int k = 0; k < max_index; ++k){
 			
+			// Save starting point of column k
 			col_pointer[k] = input_counter;
 			
+			// While we are still at the correct index in our intra_pairs list:
 			bool same_index1 = true;
 			while(same_index1) {
+			
+				// if the first index of intra_pairs changes, we stop
 				if (intra_pairs[intra_counter*2 + 0] != k) {
 					same_index1 = false;
 				}
+				
+				// otherwise we save that pair into our sparse matrix format
 				else {
 					row_index[input_counter] = intra_pairs[intra_counter*2 + 1];
-					
+					 
+					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 					if (row_index[input_counter] == k)
 						v[input_counter] = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+					// Otherwise we just enter the value just with scaling
 					else
 						v[input_counter] = intra_pairs_t[intra_counter]/energy_rescale;
 					
@@ -1077,27 +1114,37 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 			}
 		
+			// While we are still at the correct index in our inter_pairs list:
 			bool same_index2 = true;
 			while(same_index2) {
+			
+				// if the first index of inter_pairs changes, we stop
 				if (inter_pairs[inter_counter*2 + 0] != k) {
 					same_index2 = false;
 				}
 				
+				// otherwise we save that pair into our sparse matrix format
 				else {
-					int new_k = inter_pairs[inter_counter*2 + 1];	
+					// get the index of the other orbital in this term
+					int new_k = inter_pairs[inter_counter*2 + 1];
 					row_index[input_counter] = new_k;
+					
+					// get the position of both orbitals
 					double x1 = i2pos[k*3 + 0];
 					double y1 = i2pos[k*3 + 1];
 					double x2 = i2pos[new_k*3 + 0];
 					double y2 = i2pos[new_k*3 + 1];
+					
+					// and the orbit tag in their respective unit-cell
 					int orbit1 = index_to_grid[k*4 + 2];
 					int orbit2 = index_to_grid[new_k*4 + 2];
 					
-					//double theta = angles[index_to_grid[new_k*4 + 3]] - angles[index_to_grid[k*4 + 3]];
-					
+					// and the angle of the sheet each orbital is on
 					double theta1 = angles[index_to_grid[k*4 + 3]];
 					double theta2 = angles[index_to_grid[new_k*4 + 3]];
 
+					// use all this information to determine coupling energy
+					// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
 					v[input_counter] = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2)/energy_rescale;
 					
 					//printf("rank %d added inter_pair for index %d: [%d, %d] = %f \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1], v[input_counter]);
@@ -1108,12 +1155,18 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 		}
 
+		// Save the end point + 1 of the last column
 		col_pointer[max_index] = input_counter;
 		
+		// Construct the Sparse Tight-binding Hamiltonian matrix
 		SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
 		
-		// Print Matrix!
+		// ------------------------------
+		// Follwoing saves Matrix to file
+		//
+		// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
 		
+		/*
 		std::ofstream outFile;
 		const char* extension = "_matrix.dat";
 		outFile.open ((job_name + extension).c_str());
@@ -1127,46 +1180,61 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		}
 		
 		outFile.close();
+		*/
 		
-		// End Matrix Printing
+		// End Matrix Save
+		// ---------------
 		
+		// Starting vector for Chebyshev method is a unit-vector at the center-orbital
 		Vector v_i(max_index);
 		v_i(center_index) = 1.0;
-		
-		clock_t start_wall = clock();
-		time_t start_cpu = time(NULL);
 		
 		if(rank == print_rank)
 			printf("rank %d starting Chebychev solver work... \n", rank);
 			
-			
+		// Chebyshev values
 		double T;
+		
+		// Saves T values
 		double* T_array = new double[poly_order];
 			
+		// Temporary vector for algorithm ("previous" vector T_j-1)
 		Vector T_prev(max_index);
 		T_prev(center_index) = 1.0;
 		
+		// Temporary vector for algorithm ("current" vector T_j)
 		Vector T_j = H*T_prev;
+		
+		// Temporary vector for algorithm ("next" vector T_j+1)
 		Vector T_next;
-	
+		
+		// first T value is always 1
 		T_array[0] = 1;	
-		//T_array[1] = Vector::innerProduct(v_i,T_j);
+		
+		// Next one is calculated simply
 		T_array[1] = T_j(center_index);
 
+		// Now loop algorithm up to poly_order to find all T values
 		for (int j = 2; j < poly_order; ++j){
+		
 			T_next = 2*H*T_j - T_prev;
 			T_prev = T_j;
 			T_j = T_next;
-			//T_array[j] = Vector::innerProduct(v_i,T_j);
 			T_array[j] = T_j(center_index);
-			if (j%100 == 0)
-				printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order); 
-			//printf("iteration %d/%d complete. \n", j, poly_order);
+			
+			// print every 100 steps on print rank
+			//if (rank == print_rank)
+				//if (j%100 == 0)
+					//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 		}
 		
+		// Find the density of eigenvalue spectrum
 		double* densities = new double[num_samples];
 		
+		// At each sample_point, we center a sample of sample_width
 		for (int i =0; i < num_samples; ++i){
+		
+			// Now we determine the Chebyshev coefficients for a specific sample range in this loop
 			double cheb_coeff[num_samples];
 			double a = sample_points[i] - sample_width/2;
 			double b = sample_points[i] + sample_width/2;
@@ -1178,6 +1246,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				cheb_coeff[j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
 			}
 			
+			// Finally we evaluate our polynomial using the T array
 			double T = 0;
 			for (int j = 0; j < poly_order; ++j){
 				T = T + T_array[j]*cheb_coeff[j]*damp_coeff[j];
@@ -1186,40 +1255,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			densities[i] = T;
 		}
 		
+		// Save time at which solver finished
+		time_t tempEnd;
+		time(&tempEnd);
+		solverTimes.push_back(tempEnd);	
 		
-		
-		
-		/*
-		double* densities = new double[num_samples];
-		for (int i = 0; i < num_samples; ++i){
-		
-			double T;
-			
-			Vector T_prev(max_index);
-			T_prev(center_index) = 1.0;
-			
-			Vector T_j = H*T_prev;
-			Vector T_next;
-		
-			//printf("attempting innerProduct \n");	
-			T = Vector::innerProduct(v_i,(T_prev*cheb_coeff[i][0]*damp_coeff[0] + T_j*cheb_coeff[i][1]*damp_coeff[1]));
-			//printf("inner product worked \n");			
-
-			for (int j = 1; j < poly_order; ++j){
-				T_next = 2*H*T_j - T_prev;
-				T_prev = T_j;
-				T_j = T_next;
-				T = T + Vector::innerProduct(v_i,T_next*cheb_coeff[i][j+1]*damp_coeff[j+1]);
-				//printf("iteration %d/%d complete. \n", j, poly_order);
-			}
-			
-			densities[i] = T;
-			
-			if (rank == print_rank)
-				printf("rank %d done with Chebyshev sample %d out of %d \n",rank,i+1,num_samples);
-		}
-		*/
-			
+		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
 					&num_samples,
 					1,
@@ -1227,6 +1268,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					root,
 					0);
 
+		// Send root the density information
 		MPI::COMM_WORLD.Send(	
 					densities,
 					num_samples,
@@ -1234,24 +1276,24 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					root,
 					0);
 					
-		if (rank == print_rank)
-			printf("rank %d finished 1 job! \n", rank);
-			
-		time_t tempEnd;
-		time(&tempEnd);
-		solverTimes.push_back(tempEnd);	
+		//if (rank == print_rank)
+			//printf("rank %d finished 1 job! \n", rank);
 		
+		// Cleanup C++ allocated memory
 		delete[] T_array;
 		delete[] densities;		
-			
+		
+		// End of while(1) means we wait for another instruction from root
 		}
 
 }
 
+// Not implemented (plotting is done via output files through i.e. MATLAB utility scripts)
 void Locality::plot(){ 
 
 }
 
+// Prints timing information
 void Locality::save(){
 
 	if (rank != root){
