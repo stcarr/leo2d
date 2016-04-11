@@ -8,137 +8,28 @@
  
 #include "intralayer_coupling.h"
 
-void intralayer_terms(int (&grid_index)[3],int mat,std::vector< std::vector<int> > &temp_grid, std::vector<double> &temp_t){
+double intralayer_term(double x1, double y1, double z1, double x2, double y2, double z2, int mat){
 	
 	if (mat == 0) // graphene
-		intralayer_graphene(grid_index, temp_grid, temp_t);
+		intralayer_graphene(x1, y1, z1, x2, y2, z2);
 		
 }
 
-void intralayer_graphene(int (&grid_index)[3],std::vector< std::vector<int> > &temp_grid, std::vector<double> &temp_t){
+double intralayer_graphene(double x1, double y1, double z1, double x2, double y2, double z2){
 
-	int i = grid_index[0];
-	int j = grid_index[1];
-	int s = grid_index[2];
-	double t0 = 0.000;
-	double t1 = -2.892;
-	double t2 =  0.243;
-	double t3 = -0.266;
-	double t4 =  0.024;
-	double t5 =  0.052;
-	double t6 = -0.021;
-	double t7 = -0.015;
-	double t8 = -0.021;
-	double t[9] = {t0,t1,t2,t3,t4,t5,t6,t7,t8};
-		       
-	if (s == 0) {
-                int temp_array[40][4] = 
-					{	{i  ,j  ,0,0},
-						{i  ,j  ,1,1},
-						{i-1,j  ,1,1},
-                				{i  ,j-1,1,1},
-                				{i  ,j+1,0,2},
-                				{i+1,j  ,0,2},
-                				{i+1,j-1,0,2},
-                				{i  ,j-1,0,2},
-                				{i-1,j  ,0,2},
-                				{i-1,j+1,0,2},
-						{i-1,j-1,1,3},
-                				{i+1,j-1,1,3},
-                				{i-1,j+1,1,3},
-                				{i  ,j+1,1,4},
-                				{i+1,j  ,1,4},
-                				{i+1,j-2,1,4},
-                				{i  ,j-2,1,4},
-                				{i-2,j  ,1,4},
-                				{i-2,j+1,1,4},
-                				{i-1,j+2,0,5},
-						{i+1,j+1,0,5},
-                				{i+2,j-1,0,5},
-                				{i+1,j-2,0,5},
-                				{i-1,j-1,0,5},
-                				{i-2,j+1,0,5},
-                				{i  ,j+2,0,6},
-                				{i+2,j  ,0,6},
-                				{i+2,j-2,0,6},
-                				{i  ,j-2,0,6},
-                				{i-2,j  ,0,6},
-                				{i-2,j+2,0,6},
-                				{i-2,j+2,1,7},
-                				{i-1,j+2,1,7},
-                				{i+2,j-1,1,7},
-                				{i+2,j-2,1,7},
-                				{i-2,j-1,1,7},
-                				{i-1,j-2,1,7},
-                				{i+1,j+1,1,8},
-                				{i+1,j-3,1,8},
-                				{i-3,j+1,1,8},
-							};
-							
-				for (int x = 0; x < 40; ++x) {
-					std::vector<int> grid_here;
-					
-					for (int y = 0; y < 3; ++y)
-						grid_here.push_back(temp_array[x][y]);
-						
-					temp_grid.push_back(grid_here);
-					temp_t.push_back(t[temp_array[x][3]]);
-				}
-	}
-                
-	if (s == 1) {
-				int temp_array[40][4] = 
-							{	{i  ,j  ,1,0},
-								{i  ,j  ,0,1},
-								{i+1,j  ,0,1},
-								{i  ,j+1,0,1},
-								{i  ,j+1,1,2},
-								{i+1,j  ,1,2},
-								{i+1,j-1,1,2},
-								{i  ,j-1,1,2},
-								{i-1,j  ,1,2},
-								{i-1,j+1,1,2},
-								{i+1,j+1,0,3},
-								{i+1,j-1,0,3},
-								{i-1,j+1,0,3},
-								{i  ,j+2,0,4},
-								{i-1,j+2,0,4},
-								{i+2,j  ,0,4},
-								{i+2,j-1,0,4},
-								{i  ,j-1,0,4},
-								{i-1,j  ,0,4},
-								{i-1,j+2,1,5},
-								{i+1,j+1,1,5},
-								{i+2,j-1,1,5},
-								{i+1,j-2,1,5},
-								{i-1,j-1,1,5},
-								{i-2,j+1,1,5},
-								{i  ,j+2,1,6},
-								{i+2,j  ,1,6},
-								{i+2,j-2,1,6},
-								{i  ,j-2,1,6},
-								{i-2,j  ,1,6},
-								{i-2,j+2,1,6},
-								{i+1,j+2,0,7},
-								{i+2,j+1,0,7},
-								{i+2,j-2,0,7},
-								{i+1,j-2,0,7},
-								{i-2,j+1,0,7},
-								{i-2,j+2,0,7},
-								{i-1,j+3,0,8},
-								{i+3,j-1,0,8},
-								{i-1,j-1,0,8},
-							};
-					
-		for (int x = 0; x < 40; ++x) {
-			std::vector<int> grid_here;
-			
-			for (int y = 0; y < 3; ++y)
-				grid_here.push_back(temp_array[x][y]);
-				
-			temp_grid.push_back(grid_here);
-			temp_t.push_back(t[temp_array[x][3]]);
-		}
-	}
-			
+double delta = .1;
+double t = 0;
+
+double r_sq = (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
+
+if ((r_sq > 2.0449 - delta) && (r_sq < 2.0449 + delta))
+	t = -2.892;
+else if ((r_sq > 6.1345 - delta) && (r_sq < 6.1345 + delta))
+    t =  0.243;
+else if ((r_sq > 14.3141 - delta) && (r_sq < 14.3141 + delta))
+    t = -0.266;
+else if ((r_sq > 18.4041 - delta) && (r_sq < 18.4041 + delta))
+    t =  0.024;
+
+return t;	
 }

@@ -12,10 +12,22 @@ const double r_cut2_graphene = 7;
 
 
 // assuming (x,y) aims from sheet 1 to sheet 2 site
-// theta rotates sheet2 counter-clockwise
+// theta rotates sheet counter-clockwise
 
-double inter_graphene(double x, double y, int orbit1, int orbit2, double theta)
+double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2)
 {
+
+/*
+double x1 = cos(-theta1)*x1_in - sin(-theta1)*y1_in;
+double y1 = sin(-theta1)*x1_in + cos(-theta1)*y1_in;
+
+double x2 = cos(-theta1)*x2_in - sin(-theta1)*y2_in;
+double y2 = sin(-theta1)*x2_in + cos(-theta1)*y2_in;
+*/
+
+double x = x2_in - x1_in;
+double y = y2_in - y1_in; 
+
 double theta12 = 0;
 double theta21 = 0;
 
@@ -26,42 +38,40 @@ double t = 0;
 if (x == 0.0 && y == 0.0)
 	return 0.3155;
 
-if (r < r_cut_graphene)
-{
-double ac = acos(x/r);
+if (r < r_cut_graphene){
 
-if ((x < 0 && y < 0) || (x > 0 && y < 0))
-	ac = 2*M_PI-ac;
+	double ac = acos(x/r);
 
-if (orbit1 == 1)
-	theta21 = ac + pi6;
-else
-	theta21 = ac - pi6;
+	if ( y < 0 )
+		ac = 2*M_PI - ac;
 
-while (theta21 >= pi2o3)
-	theta21 -= pi2o3;
-while (theta21 <= -pi2o3)
-	theta21 += pi2o3;
+	// theta21 (angle to bond on sheet 1)
 
-ac = ac - theta;
+	theta21 = ac - theta1;
+	if (orbit1 == 1){
+		theta21 = theta21 + pi6;
+	}
+	if (orbit1 == 0){
+		theta21 = theta21 - pi6;
+	}
 
-if (orbit2 == 1)
-	theta12 = ac + pi6;
-else
-	theta12 = ac - pi6;
+	// theta12 (angle to bond on sheet 2)
+	
+	theta12 = ac - theta2 + M_PI;
+	if (orbit2 == 1) {
+		theta12 = theta12 + pi6;
+	}
+	if (orbit2 == 0) {
+		theta12 = theta12 - pi6;
+	}
 
-while (theta12 >= pi2o3)
-	theta12 -= pi2o3;
-while (theta12 <= -pi2o3)
-	theta12 += pi2o3;
-
-
+	//printf("r = %lf, ac = %lf, orbit2 = %d, theta12 = %lf, orbit1 = %d, theta21 = %lf \n", r, ac, orbit2, theta12, orbit1, theta21);
 
 
 	double V0 = .3155*exp(-1.7543*(r/2.46)*(r/2.46))*cos(2.001*r/2.46);
 	double V3 = -.0688*(r/2.46)*(r/2.46)*exp(-3.4692*(r/2.46 - .5212)*(r/2.46-.5212));
 	double V6 = -.0083*exp(-2.8764*(r/2.46-1.5206)*(r/2.46-1.5206))*sin(1.5731*r/2.46);
-    
+	
 	t = V0+V3*(cos(3*theta12)+cos(3*theta21)) + V6*(cos(6*theta12)+cos(6*theta21));
 	if (r > r_cut2_graphene)
 	{
@@ -72,7 +82,7 @@ while (theta12 <= -pi2o3)
 
 }
 
-//printf("interlayer_coupling input = %f, %f, %d, %d, %f \n", x, y, orbit1, orbit2, theta);
+//printf("coupling = %f, from input = %f, %f, %d, %d, %f, %f \n", t, x, y, orbit1, orbit2, theta1, theta2);
 //printf("%f inter-term computed. \n",t);
 
 return t;

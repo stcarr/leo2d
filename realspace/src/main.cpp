@@ -7,7 +7,6 @@
 
 #include "locality.h"
 
-//#include <cstdlib>
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
@@ -15,10 +14,6 @@
 #include <stdlib.h>
 #include <string>
 #include <sstream>
-//#include <mpi.h>
-
-//#include <petscksp.h>
-//#include <slepceps.h>
 
 
 
@@ -26,54 +21,74 @@ using namespace std;
  
 int main(int argc, char** argv) {
 
-	// char help[] = "what this program does in brief can go here.";
-
-	// PetscInitialize(&argc,&argv,(char*)0,help);
-	//SlepcInitialize(&argc,&argv,(char*)0,help);
-
+	// ------------------------------
 	// Generate input for simulation.
-	//
-	// Eventually will want this read from an input file
-	// so that we don't need to recompile it each time
-
+	// ------------------------------
 	
-	// Shape of the grid to sample for atom population
+	// -----------------------------------------
+	// First set basic information about the job
+	// -----------------------------------------
 	
+	// Gets pre-pended to all output files
 	std::string job_name = "HSTRUCT_JOB";
 	
-	int min_size = -300;
-	int max_size = 300;
+	// Determines the grid size (from min_size to max_size) which the simulation attempts to populate using a geometric condition (currently checks r < max_size)
+	int min_size = -50;
+	int max_size = 50;
 	std::vector<int> min;
 	std::vector<int> max;
 	
-	
+	// Number of sheets in simulation, s_data,heights,angles determines their properties
 	int num_sheets = 0;
 	int current_sheet = -1;
 	vector<Sdata> s_data;
 	vector<double> heights, angles;
 
+	// ---------------------------------------------------------
+	// Next three Categories define a single sheet's information
+	// ---------------------------------------------------------
+	
+	// Unit cell information, gets put into an sdata object
 	double a = 0;
 	std::vector<std::vector<double> > unitCell;
 	unitCell.resize(3);
 	for (int i = 0; i < 3; ++i)
 		unitCell[i].resize(3);
 
+	// number of orbitals per unit cell
 	int num_orbitals = 0;
 	std::vector<int> types;
 	std::vector<std::vector<double> > pos;
 	
+	// Height (in angstroms) and twist angle (CCW, in radians)
 	double height = 0;
 	double angle = 0;
 	
+	// ----------------------------------
+	// Solver methods and b-shift options
+	// ----------------------------------
+	
+	// Number of b-shifts to perform in one direction (uniform grid sample over the first sheets unit cell is performed via MPI)
 	int nShifts = 1;
-	int num_eigs = 1;
-	int num_samples = 1;
+	
+	// Solver information (type = 0 is FILTLAN local eigensolve, = 2 is Chebyshev spectrum sample.
+	int solver_type = 0;
 	double interval_start = -1;
 	double interval_end = 1;
+	
+	// FILTLAN settings
+	int num_eigs = 1;
+	
+	// Chebyshev settings
+	int num_samples = 1;
 	double energy_rescale = 15;
 	double energy_shift = 0;
+	double cheb_width = 0.2;
 	int poly_order = 3000;
-	int solver_type = 0;
+	
+	// -----------------------------------------------------------
+	// Now we parse the command-line input file for these settings
+	// -----------------------------------------------------------
 	
 	string line;
 	ifstream in_file;
@@ -82,14 +97,11 @@ int main(int argc, char** argv) {
 	{
 		while ( getline(in_file,line) )
 		{
-			//cout << line << "\n";
 			
 			istringstream in_line(line);
 			string in_string;
 			
 			while ( getline(in_line, in_string, ' ') )	{
-			
-				//cout << in_string << "\n";
 				
 				if (in_string == "JOB_NAME"){
 					getline(in_line,in_string,' ');
@@ -151,7 +163,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < 3; ++i) {
 						getline(in_line,in_string,' ');
-						unitCell[0][i] = a*atof(in_string.c_str());
+						unitCell[i][0] = a*atof(in_string.c_str());
 					}
 				}
 				
@@ -159,7 +171,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < 3; ++i) {
 						getline(in_line,in_string,' ');
-						unitCell[1][i] = a*atof(in_string.c_str());
+						unitCell[i][1] = a*atof(in_string.c_str());
 					}
 				}
 				
@@ -167,7 +179,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < 3; ++i) {
 						getline(in_line,in_string,' ');
-						unitCell[2][i] = a*atof(in_string.c_str());
+						unitCell[i][2] = a*atof(in_string.c_str());
 					}
 				}
 				
@@ -193,7 +205,7 @@ int main(int argc, char** argv) {
 						pos[i].resize(3);
 						for (int j = 0; j < 3; ++j) {
 							getline(in_line,in_string,' ');
-							pos[i][j] = atof(in_string.c_str());
+							pos[i][j] = a*atof(in_string.c_str());
 						}
 					}
 				}
@@ -251,6 +263,12 @@ int main(int argc, char** argv) {
 					energy_shift = atof(in_string.c_str());
 				}
 				
+				if (in_string == "CHEB_WIDTH"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					cheb_width = atof(in_string.c_str());
+				}
+				
 				if (in_string == "POLY_ORDER"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -269,101 +287,26 @@ int main(int argc, char** argv) {
 		in_file.close();
 	}
 	
-	/*
-	// Unit Cell: is just test information, basic square lattice
-	std::vector<std::vector<double> > unitCell;
-	std::vector<double> a1,a2,a3;
-
-	double a = 2.46;
-	
-	double unitCell_in[3][3] = 
-	{
-		{a,0,0},
-		{a/2.0,a*sqrt(3)/2.0,0},
-		{0,0,1}
-	};
-	
-	for (int i = 0; i < 3; i++){
-		a1.push_back(unitCell_in[0][i]);
-		a2.push_back(unitCell_in[1][i]);
-		a3.push_back(unitCell_in[2][i]);
-	}
-	
-	unitCell.push_back(a1);
-	unitCell.push_back(a2);
-	vector<int> types;
-	unitCell.push_back(a3);
-	
-	// Number and atomic weight of atoms
-	int num_atoms = 2;
-	types.push_back(6); // 6 is carbon (atomic #)
-	types.push_back(6);
-	
-	// Position of atoms in the Unit Cell
-	vector<vector<double> > pos;
-	pos.resize(num_atoms);
-	for (int i = 0; i < num_atoms; ++i)
-		pos[i].resize(3);
-
-	pos[0][0] = 0.0;
-	pos[0][1] = 0.0;
-	pos[0][2] = 0.0;
-	
-	pos[1][0] = a/2.0;
-	pos[1][1] = a/(2.0*sqrt(3));
-	pos[1][2] = 0;
-	
-	std::vector<int> min;
-	min.push_back(min_size);
-	min.push_back(min_size);
-	min.push_back(min_size);
-	
-	std::vector<int> max;
-	max.push_back(max_size);
-	max.push_back(max_size);
-	max.push_back(max_size);
-	
-	// Save all this info into a wrapper data type
-	Sdata s_in(unitCell,types,pos,min,max);
-	
-	// Heterostructure input information
-	vector<double> heights, angles;
-	vector<Sdata> s_data;
-	
-	s_data.push_back(s_in);
-	s_data.push_back(s_in);
-	
-	heights.push_back(0);
-	heights.push_back(6);
-	
-	angles.push_back(0);
-	angles.push_back(0.1); // roughly 6 degree angle
-	*/
-	
-	
-	// Create the locality object with the input data
+	// Create the locality object with the sheet input data
 	Locality loc(s_data,heights,angles);
 	
-	// Simulation is controlled with following calls to Locality object
-	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, poly_order, solver_type);
+	// Simulation's solver is set with setup call to Locality object
+	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);
 	
-	// Builds q-points and lists the non-zero elements of the Hamiltonian
-	// on the root node and then sends them to workers via MPI
-	//
-	// !! Need to also make it send b-shift information to each worker !!
+	// Builds the geometery of the problem on the root node and then sends them to workers via MPI
 	loc.constructGeom();
 	
-	// Post processing operations
-	//
-	// !! NOT STARTED !!
+	// Oprn post processing operations. Plot does nothing currently, save prints timing information from each node. File saves happen on the MPI loop from the root node!
 	loc.plot();
 	loc.save();
 	
 	// End MPI processes and finish
 	loc.finMPI();
+	
+	// No errors hopefully!
 	return 0;
 
 }

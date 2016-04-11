@@ -23,6 +23,8 @@ class Sheet {
         std::vector<std::vector<int> > index_array;
 		bool ranSetup;
         void setIndex();
+		void setInverse();
+		double a_inverse[2][2];
         
     public:
         Sheet(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>);
@@ -39,6 +41,7 @@ class Sheet {
         double getUnit(int, int);
 		int getShape(int, int);
         int getNumAtoms();
+		double getInverse(int, int);
 
 };
 
