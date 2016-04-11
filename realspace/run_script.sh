@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH -n 5 # Number of MPI ranks
-#SBATCH -c 1 #CPU/Threads per rank
+#SBATCH -n 9 # Number of MPI ranks
+#SBATCH -c 4 #CPU/Threads per rank
 #SBATCH -J hstruct_test
 #SBATCH -o hstruct_test_%j.out
 #SBATCH -e hstruct_test_%j.err
@@ -22,8 +22,9 @@ export OMP_NUM_THREADS=$omp_threads
 
 module load intel/15.0.0-fasrc01
 module load intel-mkl/11.0.0.079-fasrc02
-module load mvapich2/2.0-fasrc03
+module load mvapich2/2.2b-fasrc02
 
 echo $OMP_NUM_THREADS
 
-mpiexec -n $SLURM_NTASKS ./main hstruct.in
+srun -n $SLURM_NTASKS --mpi=pmi2 ./main hstruct.in
+#mpirun -n $SLURM_NTASKS ./main hstruct.in
