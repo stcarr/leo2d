@@ -5,7 +5,7 @@
 #SBATCH -J hstruct_test
 #SBATCH -o hstruct_test_%j.out
 #SBATCH -e hstruct_test_%j.err
-#SBATCH -t 0-02:00 # Runtime limit
+#SBATCH -t 0-12:00 # Runtime limit
 #SBATCH -p kaxiras # Partition to submit to (lab group = -p kaxiras)
 #SBATCH --mem-per-cpu=4000 # Memory per cpu in MB (see also --mem)
 
