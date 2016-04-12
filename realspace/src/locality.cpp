@@ -740,9 +740,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	int maxJobs = nShifts*nShifts;
 	int currentJob = 0;
-	int num_samples;
+	int length;
 	double work[nShifts*nShifts][2];
 	std::vector<std::vector<double> > result_array;
+	result_array.resize(maxJobs);
 	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
@@ -777,7 +778,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 						2,					// size of buffer [x,y]
 						MPI::DOUBLE,		// type of buffer
 						r,					// worker to recieve
-						WORKTAG);			// tag as work
+						currentJob+1);		// work tag to label shift value
 						
 			
 			++currentJob;					// one more job sent out!
@@ -792,38 +793,39 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	while (currentJob < maxJobs) {
 	
-				
+		int jobTag;
 		MPI::COMM_WORLD.Recv(				// get size of incoming work
-					&num_samples,
+					&length,
 					1,
 					MPI::INT,
 					MPI::ANY_SOURCE,
 					MPI::ANY_TAG,
 					status);				// keeps tag and source information
 		
-		double densities[num_samples];
+		double results[length];
 		
 		MPI::COMM_WORLD.Recv(	
-					densities,					// get result from worker
-					num_samples,
+					results,					// get result from worker
+					length,
 					MPI::DOUBLE,
 					status.Get_source(),
-					MPI::ANY_TAG);	
+					MPI::ANY_TAG);
+
+		jobTag = status.Get_tag();
 
 		std::vector<double> temp_result;
-		for (int i = 0; i < num_samples; ++i){
-			//printf("eigenvalue check: %lf \n", result[i]);
-			temp_result.push_back(densities[i]);
+		for (int i = 0; i < length; ++i){
+			temp_result.push_back(results[i]);
 			}
 			
-		result_array.push_back(temp_result);
+		result_array[jobTag-1] = (temp_result);
 		
 		MPI::COMM_WORLD.Send(	
 					work[currentJob],
 					2,
 					MPI::DOUBLE,
 					status.Get_source(),		// send to worker that just completed
-					WORKTAG);
+					currentJob+1);
 		
 		++currentJob;						// one more job sent out!
 		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
@@ -832,35 +834,40 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	// Receive final work
 	
 	for (int r = 1; r < size; ++r){
+	
+		int length;
+		int jobTag;
 		
 		MPI::COMM_WORLD.Recv(				// get size of incoming work
-					&num_samples,
+					&length,
 					1,
 					MPI::INT,
 					MPI::ANY_SOURCE,
 					MPI::ANY_TAG,
 					status);				// keeps tag and source information
 		
-		double densities[num_samples];
+		double results[num_samples];
 		
 		MPI::COMM_WORLD.Recv(	
-					densities,					// get result from worker
-					num_samples,
+					results,					// get result from worker
+					length,
 					MPI::DOUBLE,
 					status.Get_source(),
 					MPI::ANY_TAG);
+					
+		jobTag = status.Get_tag();
 		
 		std::vector<double> temp_result;
 		for (int i = 0; i < num_samples; ++i){
 			//printf("eigenvalue check: %lf \n", result[i]);
-			temp_result.push_back(densities[i]);
+			temp_result.push_back(results[i]);
 			}
 			
-		result_array.push_back(temp_result);
+		result_array[jobTag-1] = (temp_result);
 	
 		printf("rank %d has received final work from rank %d. \n", rank, r);
-		if (result_array.size() == maxJobs)
-			break;
+		//if (result_array.size() == maxJobs)
+			//break;
 	}
 	
 	// Tell workers to exit workerMatrixSolve()
@@ -876,15 +883,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 					MPI::DOUBLE, 
 					r, 
 					STOPTAG);
-		printf("rank %d sent STOPTAG succesfuly. \n", rank);
+		printf("rank %d sent STOPTAG successfully. \n", rank);
 	}
 	
+	double* polys = new double[poly_order];
 	
-	double sample_width = (interval_end - interval_start)/(num_samples);
-	double* sample_points = new double[num_samples + 1];
-	
-	for (int i = 0; i < num_samples + 1; ++i){
-		sample_points[i] = interval_start + sample_width*i + sample_width*0.5;
+	for (int i = 0; i < poly_order; ++i){
+		polys[i] = i;
 	}
 	
 	/*
@@ -900,10 +905,12 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	std::ofstream outFile;
 	const char* extension = ".out";
 	outFile.open ((job_name + extension).c_str());
-	outFile << "Shift x, Shift y ";
+	outFile << job_name << " Chebyshev T value outputs \n";
+	outFile << "Shift x, Shift y, ... polynomial orders ... \n";
+	outFile << "-1, -1";
 	
-	for(int j = 0; j < num_samples; ++j)
-		outFile << ", " << sample_points[j];
+	for(int j = 0; j < poly_order; ++j)
+		outFile << ", " << polys[j];
 	outFile << "\n";
 	
 	for(int i = 0; i < maxJobs; ++i){
@@ -915,7 +922,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	outFile.close();
 	
-	delete[] sample_points;
+	delete[] polys;
 }
 
 void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
@@ -1004,6 +1011,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	// ---------------------
 	
 	while (1) {
+	
+		int jobTag;
 
 		//if (rank == print_rank)
 			//printf("rank %d waiting for new job... \n",rank);
@@ -1019,11 +1028,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 						MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
 						status);		// keep MPI status information
 		
+		
+		jobTag = status.Get_tag();
 		// If worker gets STOPTAG it ends this method
-		if (status.Get_tag() == STOPTAG) {
+		if (jobTag == STOPTAG) {
 			//printf("rank %d received STOPTAG. \n", rank);
 			return;
 		}
+		
 
 		// If not STOPTAG, start timing the solver
 		time_t tempStart;
@@ -1228,6 +1240,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 		}
 		
+		/* COMMENTED OUT (we save T values now, NOT densities)
 		// Find the density of eigenvalue spectrum
 		double* densities = new double[num_samples];
 		
@@ -1255,33 +1268,37 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			densities[i] = T;
 		}
 		
+		*/
+		
 		// Save time at which solver finished
 		time_t tempEnd;
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);	
 		
+		int length = poly_order;
+		
 		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
-					&num_samples,
+					&length,
 					1,
 					MPI::INT,
 					root,
-					0);
+					jobTag);
 
 		// Send root the density information
 		MPI::COMM_WORLD.Send(	
-					densities,
-					num_samples,
+					T_array,
+					length,
 					MPI::DOUBLE,
 					root,
-					0);
+					jobTag);
 					
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
 		
 		// Cleanup C++ allocated memory
 		delete[] T_array;
-		delete[] densities;		
+		//delete[] densities;
 		
 		// End of while(1) means we wait for another instruction from root
 		}

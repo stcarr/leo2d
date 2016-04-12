@@ -58,8 +58,8 @@ class Locality {
 		void workerChebSolve(int*,double*,int*,int*,double*);
 		
 		// MPI Communication flags
-		static const int WORKTAG = 0;
-		static const int STOPTAG = 1;
+		static const int WORKTAG = 1;
+		static const int STOPTAG = 0;
         
     public:
 		// Main constructor
