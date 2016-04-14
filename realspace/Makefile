@@ -7,7 +7,7 @@ CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp
 MPI_SRC = locality.cpp
 SRC_DIR = src
 OUT_DIR = obj
-EXECUTABLE = main
+EXECUTABLE = LEO2D
 
 # ODYSSEY FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
 FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN

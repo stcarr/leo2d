@@ -26,5 +26,5 @@ module load mvapich2/2.2b-fasrc02
 
 echo $OMP_NUM_THREADS
 
-srun -n $SLURM_NTASKS --mpi=pmi2 ./main hstruct.in
-#mpirun -n $SLURM_NTASKS ./main hstruct.in
+srun -n $SLURM_NTASKS --mpi=pmi2 ./LEO2D hstruct.in
+#mpirun -n $SLURM_NTASKS ./LEO2D hstruct.in

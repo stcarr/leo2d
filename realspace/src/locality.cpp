@@ -744,7 +744,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	double work[nShifts*nShifts][2];
 	std::vector<std::vector<double> > result_array;
 	result_array.resize(maxJobs);
-	
+
+	// Uniform sample over a grid	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
 			double x = (1.0/(double) nShifts)*i;
@@ -754,6 +755,15 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 		}
 	}
+	
+	// Cut through the unit cell
+	/*
+	for (int i = 0; i < maxJobs; ++i){
+		double x = (1.0/(double) maxJobs)*i;
+		work[i][0] = x;
+		work[i][1] = x;
+	}
+	*/
 	
 	// TESTING CODE
 	/*
