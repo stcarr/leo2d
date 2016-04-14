@@ -744,7 +744,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	double work[nShifts*nShifts][2];
 	std::vector<std::vector<double> > result_array;
 	result_array.resize(maxJobs);
-
+	
 	// Uniform sample over a grid	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
@@ -755,9 +755,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 		}
 	}
-	
-	// Cut through the unit cell
 	/*
+	// Cut through the unit cell
+	
 	for (int i = 0; i < maxJobs; ++i){
 		double x = (1.0/(double) maxJobs)*i;
 		work[i][0] = x;
@@ -1060,7 +1060,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		// i2pos = "index to position"
 		double i2pos[max_index*3];
-		
+
+		double s2_a[2][2];
+		for (int i = 0; i < 2; ++i){
+			for (int j = 0; j < 2; ++j){
+				s2_a[i][j] = sdata[1].a[i][j];
+			}
+		}		
+
 		for (int i = 0; i < max_index; ++i) {
 		
 			if (index_to_grid[i*4 + 3] == 0){
@@ -1069,8 +1076,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				}
 			if (index_to_grid[i*4 + 3] == 1){
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[1];
+				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0]*s2_a[0][0] + work[1]*s2_a[0][1];
+				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[0]*s2_a[1][0] + work[1]*s2_a[1][1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				}
 				
