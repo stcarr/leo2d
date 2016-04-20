@@ -194,10 +194,10 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array){
 
 	// We search over a searchsize x searchsize sized grid of unitcells
-	int searchsize = 10;
+	int searchsize = 6;
 	
 	// We do not save pairs that are farther apart than this (in Angstroms)
-	double inter_cutoff = 11.0;
+	double inter_cutoff = 12.5;
 	
 	// loop over all orbitals (kh = "k here")
 	for (int kh = 0; kh < max_index; ++kh){
