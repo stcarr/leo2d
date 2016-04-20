@@ -925,7 +925,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	for(int i = 0; i < maxJobs; ++i){
 		outFile << work[i][0] << ", " << work[i][1];
-		for(int j = 0; j < num_samples; ++j)
+		for(int j = 0; j < poly_order; ++j)
 			outFile << ", " << result_array[i][j];
 		outFile << "\n";
 	}
