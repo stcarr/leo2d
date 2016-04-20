@@ -126,10 +126,10 @@ void Locality::constructGeom(){
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();
 		
-		int stationary_sheet = 0;
-		int stationary_x_offset = ( sheets[stationary_sheet].getShape(1,0) - sheets[stationary_sheet].getShape(0,0) ) / 2;
-		int stationary_y_offset = ( sheets[stationary_sheet].getShape(1,1) - sheets[stationary_sheet].getShape(0,1) ) / 2;
-		int center_grid[4] = {stationary_x_offset,stationary_y_offset,0,stationary_sheet};
+		int target_sheet = 1;
+		int target_x_offset = ( sheets[target_sheet].getShape(1,0) - sheets[target_sheet].getShape(0,0) ) / 2;
+		int target_y_offset = ( sheets[target_sheet].getShape(1,1) - sheets[target_sheet].getShape(0,1) ) / 2;
+		int center_grid[4] = {target_x_offset,target_y_offset,0,target_sheet};
 		center_index = h.gridToIndex(center_grid);
 		
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
@@ -746,6 +746,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	result_array.resize(maxJobs);
 	
 	// Uniform sample over a grid	
+	/*
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
 			double x = (1.0/(double) nShifts)*i;
@@ -755,15 +756,16 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 		}
 	}
-	/*
+	*/
+	
 	// Cut through the unit cell
 	
 	for (int i = 0; i < maxJobs; ++i){
-		double x = (1.0/(double) maxJobs)*i;
+		double x = (1.0/(double) (maxJobs-1))*i;
 		work[i][0] = x;
 		work[i][1] = x;
 	}
-	*/
+	
 	
 	// TESTING CODE
 	/*
@@ -1061,10 +1063,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// i2pos = "index to position"
 		double i2pos[max_index*3];
 
-		double s2_a[2][2];
+		double s1_a[2][2];
 		for (int i = 0; i < 2; ++i){
 			for (int j = 0; j < 2; ++j){
-				s2_a[i][j] = sdata[1].a[i][j];
+				s1_a[i][j] = sdata[0].a[i][j];
 			}
 		}		
 
@@ -1076,8 +1078,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				}
 			if (index_to_grid[i*4 + 3] == 1){
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0]*s2_a[0][0] + work[1]*s2_a[0][1];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[0]*s2_a[1][0] + work[1]*s2_a[1][1];
+				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0]*s1_a[0][0] + work[1]*s1_a[0][1];
+				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[0]*s1_a[1][0] + work[1]*s1_a[1][1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				}
 				
@@ -1175,7 +1177,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					// use all this information to determine coupling energy
 					// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
 					v[input_counter] = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2)/energy_rescale;
-					
 					//printf("rank %d added inter_pair for index %d: [%d, %d] = %f \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1], v[input_counter]);
 					++input_counter;
 					++inter_counter;
@@ -1191,7 +1192,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
 		
 		// ------------------------------
-		// Follwoing saves Matrix to file
+		// Following saves Matrix to file
 		//
 		// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
 		
@@ -1213,6 +1214,39 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		// End Matrix Save
 		// ---------------
+		
+		if (work[0] == 0 && work[1] == 0) {
+			std::ofstream outFile;
+			const char* extension = "_start_matrix.dat";
+			outFile.open ((job_name + extension).c_str());
+			
+			for(int i = 0; i < max_index; ++i){
+				int start_index = col_pointer[i];
+				int stop_index = col_pointer[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						outFile << row_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+					}
+			}
+			
+			outFile.close();
+		}
+		
+		if (work[0] == 1 && work[1] == 1) {
+			std::ofstream outFile;
+			const char* extension = "_shift_matrix.dat";
+			outFile.open ((job_name + extension).c_str());
+			
+			for(int i = 0; i < max_index; ++i){
+				int start_index = col_pointer[i];
+				int stop_index = col_pointer[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						outFile << row_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+					}
+			}
+			
+			outFile.close();
+		}
+		
 		
 		// Starting vector for Chebyshev method is a unit-vector at the center-orbital
 		Vector v_i(max_index);
@@ -1257,7 +1291,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 		}
 		
-		/* COMMENTED OUT (we save T values now, NOT densities)
+		/* DEPRECIATED (we save T values now, NOT densities)
 		// Find the density of eigenvalue spectrum
 		double* densities = new double[num_samples];
 		
