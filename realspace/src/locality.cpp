@@ -746,29 +746,30 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	result_array.resize(maxJobs);
 	
 	// Uniform sample over a grid	
-	/*
+	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
-			double x = (1.0/(double) nShifts)*i;
-			double y = (1.0/(double) nShifts)*j;
+			double x = (1.0/(double) (nShifts-1))*i;
+			double y = (1.0/(double) (nShifts-1))*j;
 			work[i*nShifts + j][0] = x;
 			work[i*nShifts + j][1] = y;
 
 		}
 	}
-	*/
+	
 	
 	// Cut through the unit cell
-	
+	/*
 	for (int i = 0; i < maxJobs; ++i){
 		double x = (1.0/(double) (maxJobs-1))*i;
 		work[i][0] = x;
 		work[i][1] = x;
 	}
 	
-	
+	*/
+	/*		
 	// TESTING CODE
-	/*
+	
 	int maxJobs = 1;
 	int currentJob = 0;
 	int num_samples;
@@ -1215,39 +1216,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// End Matrix Save
 		// ---------------
 		
-		if (work[0] == 0 && work[1] == 0) {
-			std::ofstream outFile;
-			const char* extension = "_start_matrix.dat";
-			outFile.open ((job_name + extension).c_str());
-			
-			for(int i = 0; i < max_index; ++i){
-				int start_index = col_pointer[i];
-				int stop_index = col_pointer[i+1];
-					for(int j = start_index; j < stop_index; ++j){
-						outFile << row_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
-					}
-			}
-			
-			outFile.close();
-		}
-		
-		if (work[0] == 1 && work[1] == 1) {
-			std::ofstream outFile;
-			const char* extension = "_shift_matrix.dat";
-			outFile.open ((job_name + extension).c_str());
-			
-			for(int i = 0; i < max_index; ++i){
-				int start_index = col_pointer[i];
-				int stop_index = col_pointer[i+1];
-					for(int j = start_index; j < stop_index; ++j){
-						outFile << row_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
-					}
-			}
-			
-			outFile.close();
-		}
-		
-		
+				
 		// Starting vector for Chebyshev method is a unit-vector at the center-orbital
 		Vector v_i(max_index);
 		v_i(center_index) = 1.0;
