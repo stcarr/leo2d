@@ -1177,10 +1177,21 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 
 					// use all this information to determine coupling energy
 					// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
+					
+					/*
 					v[input_counter] = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2)/energy_rescale;
 					//printf("rank %d added inter_pair for index %d: [%d, %d] = %f \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2+1], v[input_counter]);
 					++input_counter;
 					++inter_counter;
+					*/
+					
+					double t = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2)/energy_rescale;
+					if (t != 0 ){
+						v[input_counter] = t;
+						++input_counter;
+					}
+					++inter_counter;
+					
 				}
 				
 			}
