@@ -52,8 +52,6 @@ class Locality {
 		int solver_type;
 		
 		// Private solver methods
-		void rootEigenSolve(int*,double*,int*,int*,double*);
-		void workerEigenSolve(int*,double*,int*,int*,double*);
 		void rootChebSolve(int*,double*,int*,int*,double*);
 		void workerChebSolve(int*,double*,int*,int*,double*);
 		
