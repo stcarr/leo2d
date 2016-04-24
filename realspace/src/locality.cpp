@@ -16,6 +16,7 @@
 
 #include <matkit.h>
 #include <filtlan.h>
+#include "mkl.h"
 
 #ifdef USE_NAMESPACE
 using namespace MATKIT;
@@ -749,8 +750,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
-			double x = (1.0/(double) (nShifts-1))*i;
-			double y = (1.0/(double) (nShifts-1))*j;
+			double x = (1.0/(double) (nShifts))*i;
+			double y = (1.0/(double) (nShifts))*j;
 			work[i*nShifts + j][0] = x;
 			work[i*nShifts + j][1] = y;
 
@@ -1105,10 +1106,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// v tells us the value of element i
 		// col_pointer tells us the start of column j (at element i = col_pointer[j]) and the end of column j (at element i = col_pointer[j] - 1)
 		
+		/*
 		mkIndex* row_index = new mkIndex[max_nnz];
 		Real* v = new Real[max_nnz];
 		mkIndex* col_pointer = new mkIndex[max_index+1];
+		*/
 		
+		int row_index[max_nnz];
+		double v[max_nnz];
+		int col_pointer[max_index+1];		
+
 		// Count the current element, i.e. "i = input_counter"
 		int input_counter = 0;
 
@@ -1197,11 +1204,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 		}
 
-		// Save the end point + 1 of the last column
+		// Sve the end point + 1 of the last column
 		col_pointer[max_index] = input_counter;
 		
 		// Construct the Sparse Tight-binding Hamiltonian matrix
-		SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
+		//!!	SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
 		
 		// ------------------------------
 		// Following saves Matrix to file
@@ -1227,14 +1234,57 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// End Matrix Save
 		// ---------------
 		
-				
+		
+		//MKL DIRECT CALL TEST
+		/*
+		double vecIn[max_index];
+		for (int i = 0; i < max_index; ++i){
+			vecIn[i] = 0;		
+			}
+		vecIn[center_index] = 1;
+		
+		double vecOut[max_index];
+
+		char mv_type = 'N';
+		char matdescra[6] = {'G',' ',' ','C',' ',' '};
+		double alpha = 1;
+		double beta = 0;		
+
+		// y = alpha*A*x + beta*y if mv_type = 'N'
+		mkl_dcscmv(
+			&mv_type,		// Specifies operator, transpose or not	
+			&max_index,		// Number of rows in matrix
+			&max_index,		// Number of cols in matrix
+			&alpha,			// scalar ALPHA
+			matdescra,		// Specifies type of matrix, *char
+			v,			// nonzero elements
+			row_index,		// row indicies
+			col_pointer,		// begin of col ptr
+			col_pointer + 1,	// end of col ptr
+			vecIn,			// input vector
+			&beta,			// scalar BETA
+			vecOut
+			);
+		printf("mkl_dcscmv success! \n");
+		for (int i = 0; i < max_index; ++i)
+			printf("%lf \n", vecOut[i]);
+		*/
+		//END TEST
+		
 		// Starting vector for Chebyshev method is a unit-vector at the center-orbital
-		Vector v_i(max_index);
-		v_i(center_index) = 1.0;
+		//Vector v_i(max_index);
+		//v_i(center_index) = 1.0;
 		
 		if(rank == print_rank)
 			printf("rank %d starting Chebychev solver work... \n", rank);
-			
+		
+		char mv_type = 'N';
+                char matdescra[6] = {'G',' ',' ','C',' ',' '};
+                double alpha = 1;
+                double beta = 0;
+
+
+	
 		// Chebyshev values
 		double T;
 		
@@ -1242,28 +1292,73 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double* T_array = new double[poly_order];
 			
 		// Temporary vector for algorithm ("previous" vector T_j-1)
-		Vector T_prev(max_index);
-		T_prev(center_index) = 1.0;
-		
+		//Vector T_prev(max_index);
+		//T_prev(center_index) = 1.0;
+		double T_prev[max_index];
+		for (int i = 0; i < max_index; ++i){
+			T_prev[i] = 0.0;
+		}
+		T_prev[center_index] = 1.0;
+	
 		// Temporary vector for algorithm ("current" vector T_j)
-		Vector T_j = H*T_prev;
-		
+		//Vector T_j = H*T_prev;
+		double T_j[max_index];		
+					
+		// y = alpha*A*x + beta*y if mv_type = 'N'
+		mkl_dcscmv(
+			&mv_type,		// Specifies operator, transpose or not	
+			&max_index,		// Number of rows in matrix
+			&max_index,		// Number of cols in matrix
+			&alpha,			// scalar ALPHA
+			matdescra,		// Specifies type of matrix, *char
+			v,			// nonzero elements
+			row_index,		// row indicies
+			col_pointer,		// begin of col ptr
+			col_pointer + 1,	// end of col ptr
+			T_prev,			// input vector
+			&beta,			// scalar BETA
+			T_j
+			);
+
 		// Temporary vector for algorithm ("next" vector T_j+1)
-		Vector T_next;
-		
+		//Vector T_next;
+		double T_next[max_index];		
 		// first T value is always 1
 		T_array[0] = 1;	
 		
 		// Next one is calculated simply
-		T_array[1] = T_j(center_index);
-
+		T_array[1] = T_j[center_index];
+		
 		// Now loop algorithm up to poly_order to find all T values
+		double alpha2 = 2;
 		for (int j = 2; j < poly_order; ++j){
 		
-			T_next = 2*H*T_j - T_prev;
-			T_prev = T_j;
-			T_j = T_next;
-			T_array[j] = T_j(center_index);
+			//T_next = 2*H*T_j - T_prev;
+
+			// y = alpha*A*x + beta*y if mv_type = 'N'
+			mkl_dcscmv(
+				&mv_type,		// Specifies operator, transpose or not	
+				&max_index,		// Number of rows in matrix
+				&max_index,		// Number of cols in matrix
+				&alpha2,		// scalar ALPHA
+				matdescra,		// Specifies type of matrix, *char
+				v,			// nonzero elements
+				row_index,		// row indicies
+				col_pointer,		// begin of col ptr
+				col_pointer + 1,	// end of col ptr
+				T_j,			// input vector
+				&beta,			// scalar BETA
+				T_next
+				);
+			for (int c = 0; c < max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+		
+			for (int c = 0; c < max_index; ++c){
+				T_prev[c] = T_j[c];	//T_prev = T_j;
+				T_j[c] = T_next[c];	//T_j = T_next;
+			}
+			T_array[j] = T_j[center_index];
 			
 			// print every 100 steps on print rank
 			//if (rank == print_rank)
