@@ -365,17 +365,17 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		}
 	}
 	
-	
+	/*	
 	// Cut through the unit cell
-	/*
+	
 	for (int i = 0; i < maxJobs; ++i){
-		double x = (1.0/(double) (maxJobs-1))*i;
+		double x = (1.0/((double) maxJobs))*i;
 		work[i][0] = x;
 		work[i][1] = x;
 	}
-	
 	*/
-	/*		
+	
+	/*	
 	// TESTING CODE
 	
 	int maxJobs = 1;
@@ -695,7 +695,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		int intra_counter = 0;
 		
 		// Total number of expected non-zero matrix elements
-		mkIndex max_nnz = max_intra_pairs + max_inter_pairs;
+		int max_nnz = max_intra_pairs + max_inter_pairs;
 		
 		// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
 		

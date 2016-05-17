@@ -10,7 +10,7 @@ OUT_DIR = obj
 EXECUTABLE = LEO2D
 
 # ODYSSEY FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
-FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
+# FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
 
 CC = g++
 MPICC = mpicxx
@@ -25,8 +25,9 @@ MPIFLAGS = -c
 #MKLFLAGS = -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_intel_thread -liomp5
 MKLFLAGS = -lmkl_rt -lpthread -liomp5
 
-LFLAGS = -L$(FILT_DIR)/LIB -ldfiltlan -ldmatkit $(MKLFLAGS)
-IFLAGS = -DUSE_NAMESPACE -I$(FILT_DIR)/INCLUDE -I$(FILT_DIR)/MATKIT/INCLUDE
+LFLAGS = $(MKLFLAGS)
+#LFLAGS = -L$(FILT_DIR)/LIB -ldfiltlan -ldmatkit $(MKLFLAGS)
+#IFLAGS = -DUSE_NAMESPACE -I$(FILT_DIR)/INCLUDE -I$(FILT_DIR)/MATKIT/INCLUDE
 #IFLAGS = -DUSE_NAMESPACE -I$(FILT_DIR)/INCLUDE -I$(FILT_DIR)/MATKIT/INCLUDE -I/n/sw/fasrcsw/apps/Comp/gcc/4.8.2-fasrc01/intel-mkl/11.0.0.079-fasrc01/include
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
