@@ -10,6 +10,7 @@
 #define LOCALITY_H
 #include "hstruct.h"
 #include "interlayer_coupling.h"
+#include "spmatrix.h"
 #include <time.h>
 class Locality {
     private:

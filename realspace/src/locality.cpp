@@ -13,9 +13,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-
-#include "mkl.h"
-
+	
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
 	// Set all of the run-specific options for matrix construction and paramters of the solver method used.
@@ -703,9 +701,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// v tells us the value of element i
 		// col_pointer tells us the start of column j (at element i = col_pointer[j]) and the end of column j (at element i = col_pointer[j] - 1)
 		
-		int row_index[max_nnz];
-		double v[max_nnz];
-		int col_pointer[max_index+1];		
+		int* row_index = new int[max_nnz];
+		double* v = new double[max_nnz];
+		int* col_pointer = new int[max_index+1];		
 
 		// Count the current element, i.e. "i = input_counter"
 		int input_counter = 0;
@@ -821,10 +819,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		if(rank == print_rank)
 			printf("rank %d starting Chebychev solver work... \n", rank);
 		
+		/*
 		char mv_type = 'N';
         char matdescra[6] = {'G',' ',' ','C',' ',' '};
         double alpha = 1;
         double beta = 0;
+		*/
+		
+		SpMatrix H = SpMatrix(max_index, max_index, v, row_index, col_pointer, max_nnz); 
 
 
 	
@@ -847,6 +849,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double T_j[max_index];		
 					
 		// y = alpha*A*x + beta*y if mv_type = 'N'
+		/*
 		mkl_dcscmv(
 			&mv_type,		// Specifies operator, transpose or not	
 			&max_index,		// Number of rows in matrix
@@ -861,6 +864,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			&beta,			// scalar BETA
 			T_j
 			);
+		*/
+		
+		H.vectorMultiply(T_prev, T_j, 1, 0);
 
 		// Temporary vector for algorithm ("next" vector T_j+1)
 		double T_next[max_index];		
@@ -871,11 +877,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		T_array[1] = T_j[center_index];
 		
 		// Now loop algorithm up to poly_order to find all T values
-		double alpha2 = 2;
+		// double alpha2 = 2;
 		for (int j = 2; j < poly_order; ++j){
 		
 			// want to do: T_next = 2*H*T_j - T_prev;
 
+			/*
 			// y = alpha*A*x + beta*y if mv_type = 'N'
 			mkl_dcscmv(
 				&mv_type,		// Specifies operator, transpose or not	
@@ -891,6 +898,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				&beta,			// scalar BETA
 				T_next
 				);
+			*/
+			
+			H.vectorMultiply(T_j, T_next, 2, 0);
 				
 			for (int c = 0; c < max_index; ++c){
 				T_next[c] = T_next[c] - T_prev[c];

@@ -1,16 +1,16 @@
-CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o
+CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o spmatrix.o
 MPI_OBJ = main.o locality.o
 
 OBJS = $(CC_OBJ) $(MPI_OBJ)
 
-CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp
+CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp
 MPI_SRC = locality.cpp
 SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = LEO2D
 
-# ODYSSEY FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
-# FILT_DIR = /n/kaxiras_lab/stcarr/soft/FILTLAN
+
+
 
 CC = g++
 MPICC = mpicxx
@@ -19,11 +19,13 @@ DEBUG = -g -O0
 
 CFLAGS = -c
 MPIFLAGS = -c
-#LFLAGS = -L/n/home12/stcarr/soft/FILTLAN/LIB -L/n/regal/kaxiras_lab/locality_code/soft/petsc/linux-c-debug/lib -L/n/regal/kaxiras_lab/locality_code/lib -lpetsc
+
 
 #MKLFLAGS = -lmkl_lapack95_ilp64 -lblas -lmkl_intel_ilp64 -lmkl_core -lmkl_sequential -lpthread -lm -ldl
 #MKLFLAGS = -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_intel_thread -liomp5
+
 MKLFLAGS = -lmkl_rt -lpthread -liomp5
+#MKLFLAGS = 
 
 LFLAGS = $(MKLFLAGS)
 #LFLAGS = -L$(FILT_DIR)/LIB -ldfiltlan -ldmatkit $(MKLFLAGS)
