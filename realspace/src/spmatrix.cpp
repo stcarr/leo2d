@@ -86,7 +86,7 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 	mkl_dcscmv(
 		&mv_type,		// Specifies operator, transpose or not	
 		&nrows,			// Number of rows in matrix
-		&mcols,			// Number of cols in matrix
+		&ncols,			// Number of cols in matrix
 		&alpha,			// scalar ALPHA
 		matdescra,		// Specifies type of matrix, *char
 		val,			// nonzero elements
