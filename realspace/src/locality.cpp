@@ -914,9 +914,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			T_array[j] = T_j[center_index];
 			
 			// print every 100 steps on print rank
-			//if (rank == print_rank)
-				//if (j%100 == 0)
-					//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			if (rank == print_rank)
+				if (j%100 == 0)
+					printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 		}
 		
 		// Save time at which solver finished
@@ -925,7 +925,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		solverTimes.push_back(tempEnd);	
 		
 		int length = poly_order;
-		
+
+		printf("sending length. \n");		
 		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
 					&length,
@@ -935,6 +936,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					jobTag);
 
 		// Send root the density information
+		printf("sending T_array. \n");
 		MPI::COMM_WORLD.Send(	
 					T_array,
 					length,
@@ -944,7 +946,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
-		
+		printf("cleaning up chebyshev memory \n");	
 		// Cleanup C++ allocated memory
 		delete[] T_array;
 		

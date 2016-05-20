@@ -23,13 +23,20 @@ double t = 0;
 double r_sq = (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
 
 if ((r_sq > 2.0449 - delta) && (r_sq < 2.0449 + delta))
-	t = -2.892;
+    t = -2.8922;
 else if ((r_sq > 6.1345 - delta) && (r_sq < 6.1345 + delta))
-    t =  0.243;
+    t =  0.2425;
 else if ((r_sq > 14.3141 - delta) && (r_sq < 14.3141 + delta))
-    t = -0.266;
+    t = -0.2656;
 else if ((r_sq > 18.4041 - delta) && (r_sq < 18.4041 + delta))
-    t =  0.024;
+    t =  0.0235;
+
+// t5 = 0.0524
+// t6 = -0.0209
+// t7 = -0.0148
+// t8 = -0.0211
+// onsite = 0.3504
+
 
 return t;	
 }
