@@ -9,21 +9,37 @@ SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = LEO2D
 
+DEBUG = -g -O0
 
+PLATFORM = ALCF
 
-
+# Block for Odyssey
+ifeq ($(PLATFORM),ODYSSEY)
 CC = g++
 MPICC = mpicxx
+DFLAGS = -DUSE_MKL
+LOCALFLAGS = -lmkl_rt -lpthread -liomp5
+endif
 
-DEBUG = -g -O0
-#DEBUG = 
+# Block for VESTA/MIRA
+ifeq ($(PLATFORM),ALCF)
+CC = mpixlc_r
+MPICC = mpixlcxx_r
+DFLAGS = 
+LOCALFLAGS =
+#LOCALFLAGS = -lmkl_rt -lpthread -liomp5 -L/soft/libraries/alcf/current/xl/LAPACK/lib -L/soft/libraries/alcf/current/xl/BLAS/lib -llapack -lblas
+endif
 
-IFLAGS = -DUSE_MKL
+# Generic Block
+ifeq ($(PLATFORM),DEFAULT)
+CC = g++
+MPICC = mpicxx
+DFLAGS = 
+LOCALFLAGS = 
+endif
 
-MKLFLAGS = -lmkl_rt -lpthread -liomp5
-#MKLFLAGS = 
 
-LFLAGS = $(MKLFLAGS)
+LFLAGS = $(LOCALFLAGS)
 
 all: $(addprefix $(OUT_DIR)/,$(OBJS)) $(EXECUTABLE)
 
@@ -35,7 +51,7 @@ $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)
 $(addprefix $(OUT_DIR)/,$(OBJS)): TARGET = $@
 
 $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
-	$(COMP) $(IFLAGS) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
+	$(COMP) $(DFLAGS) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
 
 .PHONY: clean
 
