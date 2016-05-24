@@ -352,7 +352,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	result_array.resize(maxJobs);
 	
 	// Uniform sample over a grid	
-	
+	#ifdef SQ_WORK	
 	for (int i = 0; i < nShifts; ++i){
 		for (int j = 0; j < nShifts; ++j){
 			double x = (1.0/(double) (nShifts))*i;
@@ -362,8 +362,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 		}
 	}
+	#endif
 	
-	/*	
+	#ifdef LINE_WORK	
 	// Cut through the unit cell
 	
 	for (int i = 0; i < maxJobs; ++i){
@@ -371,7 +372,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		work[i][0] = x;
 		work[i][1] = x;
 	}
-	*/
+	#endif
 	
 	/*	
 	// TESTING CODE
