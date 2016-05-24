@@ -513,7 +513,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	}
 	
 	std::ofstream outFile;
-	const char* extension = ".out";
+	const char* extension = ".cheb";
 	outFile.open ((job_name + extension).c_str());
 	outFile << job_name << " Chebyshev T value outputs \n";
 	outFile << "Shift x, Shift y, ... polynomial orders ... \n";
@@ -698,22 +698,22 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
 		
-		// row_index tells us the row of element i
+		// col_index tells us the col of element i
 		// v tells us the value of element i
-		// col_pointer tells us the start of column j (at element i = col_pointer[j]) and the end of column j (at element i = col_pointer[j] - 1)
+		// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
 		
-		int* row_index = new int[max_nnz];
+		int* col_index = new int[max_nnz];
 		double* v = new double[max_nnz];
-		int* col_pointer = new int[max_index+1];		
+		int* row_pointer = new int[max_index+1];		
 
 		// Count the current element, i.e. "i = input_counter"
 		int input_counter = 0;
 
-		// Loop through every orbital
+		// Loop through every orbital (i.e. rows of H)
 		for (int k = 0; k < max_index; ++k){
 			
-			// Save starting point of column k
-			col_pointer[k] = input_counter;
+			// Save starting point of row k
+			row_pointer[k] = input_counter;
 			
 			// While we are still at the correct index in our intra_pairs list:
 			bool same_index1 = true;
@@ -726,10 +726,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 				// otherwise we save that pair into our sparse matrix format
 				else {
-					row_index[input_counter] = intra_pairs[intra_counter*2 + 1];
+					col_index[input_counter] = intra_pairs[intra_counter*2 + 1];
 					 
 					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
-					if (row_index[input_counter] == k)
+					if (col_index[input_counter] == k)
 						v[input_counter] = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
 					// Otherwise we just enter the value just with scaling
 					else
@@ -756,7 +756,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				else {
 					// get the index of the other orbital in this term
 					int new_k = inter_pairs[inter_counter*2 + 1];
-					row_index[input_counter] = new_k;
+					col_index[input_counter] = new_k;
 					
 					// get the position of both orbitals
 					double x1 = i2pos[k*3 + 0];
@@ -768,6 +768,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					int orbit1 = index_to_grid[k*4 + 2];
 					int orbit2 = index_to_grid[new_k*4 + 2];
 					
+					int mat1 = sdata[index_to_grid[k*4 + 3]].mat;
+					int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+					
 					// and the angle of the sheet each orbital is on
 					double theta1 = angles[index_to_grid[k*4 + 3]];
 					double theta2 = angles[index_to_grid[new_k*4 + 3]];
@@ -775,7 +778,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					// use all this information to determine coupling energy
 					// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
 					
-					double t = inter_graphene(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2)/energy_rescale;
+					double t = interlayer_term(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 					if (t != 0 ){
 						v[input_counter] = t;
 						++input_counter;
@@ -787,8 +790,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 		}
 
-		// Save the end point + 1 of the last column
-		col_pointer[max_index] = input_counter;
+		// Save the end point + 1 of the last row
+		row_pointer[max_index] = input_counter;
 		
 		// Construct the Sparse Tight-binding Hamiltonian matrix
 		//!!	SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
@@ -804,10 +807,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		outFile.open ((job_name + extension).c_str());
 		
 		for(int i = 0; i < max_index; ++i){
-			int start_index = col_pointer[i];
-			int stop_index = col_pointer[i+1];
+			int start_index = row_pointer[i];
+			int stop_index = row_pointer[i+1];
 				for(int j = start_index; j < stop_index; ++j){
-					outFile << row_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
 				}
 		}
 		
@@ -827,9 +830,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
         double beta = 0;
 		*/
 		
-		SpMatrix H = SpMatrix(max_index, max_index, v, row_index, col_pointer, max_nnz); 
-
-
+		SpMatrix H = SpMatrix(max_index, max_index, v, col_index, row_pointer, max_nnz); 
 	
 		// Chebyshev values
 		double T;
@@ -844,10 +845,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		for (int i = 0; i < max_index; ++i){
 			T_prev[i] = 0.0;
 		}
+		
 		T_prev[center_index] = 1.0;
 	
 		// Temporary vector for algorithm ("current" vector T_j)
-		double T_j[max_index];		
+		double T_j[max_index];	
+		for (int i = 0; i < max_index; ++i){
+			T_j[i] = 0.0;
+		}		
 					
 		// y = alpha*A*x + beta*y if mv_type = 'N'
 		/*
@@ -870,7 +875,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		H.vectorMultiply(T_prev, T_j, 1, 0);
 
 		// Temporary vector for algorithm ("next" vector T_j+1)
-		double T_next[max_index];		
+		double T_next[max_index];
+		for (int i = 0; i < max_index; ++i){
+			T_next[i] = 0.0;
+		}
+		
 		// first T value is always 1
 		T_array[0] = 1;	
 		

@@ -44,6 +44,8 @@ Sheet::Sheet(Sdata input){
 	atom_types = input.atom_types;
 	atom_pos = input.atom_pos;
 	
+	mat = input.mat;
+	
 	// Set indexing
 	setIndex();
 	
@@ -251,6 +253,14 @@ int Sheet::getShape(int type, int dim){
 // ----------------------------------
 int Sheet::getNumAtoms(){
 	return atom_types.size();
+}
+
+
+// ----------------------
+// Returns material index
+// ----------------------
+int Sheet::getMat(){
+	return mat;
 }
 
 // ------------------------------------------------------------

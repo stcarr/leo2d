@@ -7,15 +7,22 @@
 
  
 #include "intralayer_coupling.h"
+#include <stdio.h>
+
 
 double intralayer_term(double x1, double y1, double z1, double x2, double y2, double z2, int mat){
 	
-	if (mat == 0) // graphene
-		intralayer_graphene(x1, y1, z1, x2, y2, z2);
+	// bilayer graphene
+	if (mat == 0){
+		return intralayer_blg(x1, y1, z1, x2, y2, z2);
+	}
+	
+	printf("failed to find intra-coupling term. \n");
+	return 0;
 		
 }
 
-double intralayer_graphene(double x1, double y1, double z1, double x2, double y2, double z2){
+double intralayer_blg(double x1, double y1, double z1, double x2, double y2, double z2){
 
 double delta = .1;
 double t = 0;

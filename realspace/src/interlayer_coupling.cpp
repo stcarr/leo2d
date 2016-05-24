@@ -14,7 +14,18 @@ const double r_cut2_graphene = 7;
 // assuming (x,y) aims from sheet 1 to sheet 2 site
 // theta rotates sheet counter-clockwise
 
-double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2)
+double interlayer_term(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2)
+{
+
+	if (mat1 == 0 && mat2 == 0) {
+		return inter_graphene(x1_in,y1_in,x2_in,y2_in,orbit1,orbit2,theta1,theta2,mat1,mat2);
+	}
+
+	return 0;
+
+}
+
+double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2) 
 {
 
 /*

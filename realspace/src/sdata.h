@@ -15,7 +15,7 @@
 class Sdata {
         
     public:
-        Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>);
+        Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int);
         Sdata(const Sdata& orig);
 		Sdata();
         ~Sdata();
@@ -23,7 +23,7 @@ class Sdata {
         std::vector<int> max_shape, min_shape;
         std::vector<int> atom_types;
 		std::vector<std::vector<double> > atom_pos;
-		
+		int mat;
 
 };
 

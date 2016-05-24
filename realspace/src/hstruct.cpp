@@ -356,6 +356,8 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 		int l0 = index_array[kh][2];
 		int s0 = index_array[kh][3];
 		
+		int mat = sheets[s0].getMat();
+		
 		double pos_here[3];
 		pos_here[0] = posAtomIndex(kh,0);
 		pos_here[1] = posAtomIndex(kh,1);
@@ -373,11 +375,9 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 						double y2 = posAtomIndex(k2,1);
 						double z2 = posAtomIndex(k2,2);
 						
-						// GENERALIZE THE MAT TERM (mat = 0 -> Graphene)
-						int mat = 0; 
+						int mat2 = sheets[index_array[k2][3]].getMat(); 
 						
 						double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, mat);
-						
 						if (t != 0){
 							array_i.push_back(kh);
 							array_j.push_back(k2);

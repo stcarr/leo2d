@@ -12,6 +12,6 @@
 #define INTRALAYER_COUPLING_H
 
 double intralayer_term(double, double, double, double, double, double, int);
-double intralayer_graphene(double, double, double, double, double, double);
+double intralayer_blg(double, double, double, double, double, double);
 
 #endif /* INTRALAYER_COUPLING_H */

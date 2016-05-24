@@ -17,6 +17,7 @@ class Sheet {
         std::vector<std::vector<double> > a;
         std::vector<int> max_shape, min_shape;
         int max_index;
+		int mat;
         std::vector<int> atom_types;
         std::vector<std::vector<double> > atom_pos;
         std::vector<std::vector<std::vector<int> > > grid_array;
@@ -41,6 +42,7 @@ class Sheet {
         double getUnit(int, int);
 		int getShape(int, int);
         int getNumAtoms();
+		int getMat();
 		double getInverse(int, int);
 
 };

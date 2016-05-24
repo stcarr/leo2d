@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
 	int current_sheet = -1;
 	vector<Sdata> s_data;
 	vector<double> heights, angles;
+	int mat = 0;
 
 	// ---------------------------------------------------------
 	// Next three Categories define a single sheet's information
@@ -147,10 +148,16 @@ int main(int argc, char** argv) {
 				if (in_string == "END_SHEET") {
 					getline(in_line,in_string,' ');
 					if (current_sheet == atoi(in_string.c_str()) - 1) {
-						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max);
+						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat);
 						heights[current_sheet] = height;
 						angles[current_sheet] = angle;
 					}
+				}
+				
+				if (in_string == "MATERIAL") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					mat = atoi(in_string.c_str());
 				}
 				
 				if (in_string == "ALPHA") {

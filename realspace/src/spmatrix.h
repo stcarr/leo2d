@@ -1,4 +1,3 @@
-
 /* 
  * File:   locality.h
  * Author: Stephen Carr
@@ -23,12 +22,12 @@ class SpMatrix {
 		//! A storage for storing values of nonzero elements of <em>*this</em>.
 		// a storage for storing values of nonzero elements of *this
 		double* val;
-		//! An array for row indices of <em>*this</em>.
-		// an array for row indices of *this
-		int *rowIndex;
-		//! An array for column pointers of <em>*this</em>.
-		// an array for column pointers of *this
-		int *colPointer;
+		//! An array for column indices of <em>*this</em>.
+		// an array for column indices of *this
+		int *colIndex;
+		//! An array for row pointers of <em>*this</em>.
+		// an array for row pointers of *this
+		int *rowPointer;
 		//! Maximum number of nonzero elements allowed in the allocated memory.
 		// maximum number of nonzero elements allowed in the allocated memory
 		int maxnnz;
