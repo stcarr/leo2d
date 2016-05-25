@@ -45,14 +45,15 @@ double theta21 = 0;
 double r = sqrt(x*x+y*y);
 double t = 0;
 
+//printf("input for inter term: x = %lf, y = %lf, r  = %lf, orbit1 = %d, orbit 2 = %d, theta1 = %lf, theta2 = %lf \n",x,y,r,orbit1,orbit2,theta1,theta2);
+
 // deal with r = 0 case first (causes problems with theta computation)
-if (x == 0.0 && y == 0.0)
+if (r == 0.0)
 	return 0.3155;
 
 if (r < r_cut_graphene){
 
 	double ac = acos(x/r);
-
 	if ( y < 0 )
 		ac = 2*M_PI - ac;
 

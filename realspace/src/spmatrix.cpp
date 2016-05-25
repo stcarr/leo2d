@@ -70,14 +70,25 @@ SpMatrix::~SpMatrix() {
 // Sparse Matrix - Vector Multiplication
 
 void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, double beta) {
-	/*
+	
     if (vec_out == NULL) {
         // allocate memory
         vec_out = new double[nrows];
 		for (int i = 0; i < nrows; ++i){
-			vec_out[i] = 0;
+			vec_out[i] = 0.0;
+		printf("and vec_out[%d] = %lf \n",i,vec_out[i]);;
 		}
     }
+	
+	/*
+	for (int i = 0; i < nrows; ++i){
+		printf("vec_in[%d] = %lf \n",i,vec_in[i]);
+		printf("and vec_out[%d] = %lf \n",i,vec_out[i]);
+		int end = rowPointer[nrows];
+		for (int j = 0; j < end; ++j){
+			printf("val[%d] = %lf \n",j,val[j]);
+		}	
+	}
 	*/
 
 #ifdef USE_MKL
@@ -99,7 +110,10 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 		&beta,			// scalar BETA
 		vec_out			// output vector
 		);
-		
+	/*
+	for (int i = 0; i < nrows; ++i)
+		printf("vec_out[%d] = %lf \n",i,vec_out[i]);		
+	*/
 #elif USE_ESSL
 
 		int nz = nrows;

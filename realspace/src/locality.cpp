@@ -392,12 +392,15 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	for (int r = 1; r < size; ++r) {
 		if (currentJob < maxJobs) {
-		
+
+			printf("work[0][0] = %lf \n",work[0][0]);
+			printf("work[0][1] = %lf \n",work[0][1]);
+
 			MPI::COMM_WORLD.Send(	
 						work[currentJob], 	// input buffer
-						2,					// size of buffer [x,y]
+						2,			// size of buffer [x,y]
 						MPI::DOUBLE,		// type of buffer
-						r,					// worker to recieve
+						r,			// worker to recieve
 						currentJob+1);		// work tag to label shift value
 						
 			
@@ -638,7 +641,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 						MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
 						status);		// keep MPI status information
 		
-		
+		printf("work = [%lf,%lf] \n",work[1],work[2]);
 		jobTag = status.Get_tag();
 		// If worker gets STOPTAG it ends this method
 		if (jobTag == STOPTAG) {
