@@ -144,7 +144,8 @@ void Locality::constructGeom(){
 		
 		
 		// Construct and prepare the pairs arrays for broadcasting
-		
+	
+		printf("Building inter and intra pairs. \n");	
 		std::vector<std::vector<int> > inter_pairs_vec;
 		h.getInterPairs(inter_pairs_vec);
 		
@@ -153,6 +154,7 @@ void Locality::constructGeom(){
 		std::vector<double> intra_pairs_vec_t;
 		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t);
 	
+		printf("Inter and intra pair construction complete. \n");
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 		
@@ -182,7 +184,7 @@ void Locality::constructGeom(){
 		}
 		
 		// Get and prepare the index_to_pos array for broadcasting
-		
+		printf("Getting indexToPos arrays. \n");
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
 		index_to_pos_z = new double[max_index];
@@ -190,7 +192,7 @@ void Locality::constructGeom(){
 		h.getIndexToPos(index_to_pos_x,0);
 		h.getIndexToPos(index_to_pos_y,1);
 		h.getIndexToPos(index_to_pos_z,2);
-		
+		printf("indexToPos complete. \n");	
 		
 		// POSITION DEBUG PRINT
 		/*
@@ -392,9 +394,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	for (int r = 1; r < size; ++r) {
 		if (currentJob < maxJobs) {
-
-			printf("work[0][0] = %lf \n",work[0][0]);
-			printf("work[0][1] = %lf \n",work[0][1]);
 
 			MPI::COMM_WORLD.Send(	
 						work[currentJob], 	// input buffer
@@ -641,7 +640,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 						MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
 						status);		// keep MPI status information
 		
-		printf("work = [%lf,%lf] \n",work[1],work[2]);
 		jobTag = status.Get_tag();
 		// If worker gets STOPTAG it ends this method
 		if (jobTag == STOPTAG) {
@@ -689,7 +687,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// -----------------------
 		// Build the Sparse matrix
 		// -----------------------
-
+		
+		printf("rank %d building Sparse Matrix H. \n",rank);
+		
 		// Indexes how many inter terms we have entered so far
 		int inter_counter = 0;
 		
@@ -714,7 +714,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 
 		// Loop through every orbital (i.e. rows of H)
 		for (int k = 0; k < max_index; ++k){
-			
+					
 			// Save starting point of row k
 			row_pointer[k] = input_counter;
 			
@@ -792,7 +792,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 			}
 		}
-
+		
 		// Save the end point + 1 of the last row
 		row_pointer[max_index] = input_counter;
 		
@@ -823,7 +823,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// End Matrix Save
 		// ---------------
 				
-		if(rank == print_rank)
+		//if(rank == print_rank)
 			printf("rank %d starting Chebychev solver work... \n", rank);
 		
 		/*
@@ -875,6 +875,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			);
 		*/
 		
+		printf("rank %d attempting matrix-vector product. \n",rank);
 		H.vectorMultiply(T_prev, T_j, 1, 0);
 
 		// Temporary vector for algorithm ("next" vector T_j+1)

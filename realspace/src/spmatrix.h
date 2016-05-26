@@ -31,7 +31,11 @@ class SpMatrix {
 		//! Maximum number of nonzero elements allowed in the allocated memory.
 		// maximum number of nonzero elements allowed in the allocated memory
 		int maxnnz;
-        
+		
+		double** ac;
+		int** ka;
+		int nz;
+    
     public:
 		// Empty Constructor
 		SpMatrix();

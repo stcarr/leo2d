@@ -46,26 +46,61 @@ SpMatrix::SpMatrix(int nr, int nc) {
 // if maxnnz0 is greater than the number of nonzero elements, then it is assumed that
 // memory of size maxnnz0 is allocated, with the address pointed to by val0 and so is it for rowIndex0
 SpMatrix::SpMatrix(int nr, int nc, double *val0, int *colIndex0, int *rowPointer0, int maxnnz0) {
-    // set dimensions
-    nrows = nr;
-    ncols = nc;
+    
 
-    val = val0;
-    colIndex = colIndex0;
-    rowPointer = rowPointer0;
 
-    maxnnz = rowPointer[nrows]-rowPointer[0];
-    if (maxnnz < maxnnz0)
-        maxnnz = maxnnz0;
-    // the default maxnnz0 is 0, in which case we have maxnnz = colPointer[ncols]-colPointer[0]
+	// set dimensions
+	nrows = nr;
+	ncols = nc;
+
+	val = val0;
+	colIndex = colIndex0;
+	rowPointer = rowPointer0;
+
+	maxnnz = rowPointer[nrows]-rowPointer[0];
+	if (maxnnz < maxnnz0)
+		maxnnz = maxnnz0;
+    	// the default maxnnz0 is 0, in which case we have maxnnz = colPointer[ncols]-colPointer[0]
+   
+#ifdef USE_ESSL
+	nz = nrows+3;
+
+	double ac[nrows][nrows];
+	int ka[nrows][nrows];
+	//ac = new double[nrows*nrows];
+	//ka = new int[nrows*nrows];
+	printf("calling essl_dsrsm. \n");
+	// converts csr format to compressed matrix storage format
+	printf("nz in = %d \n",nz);	
+	dsrsm(
+			0, 		// 0 = general sparse matrix, 1 = only upper triangle (symmetric)
+			val, 		// array of the values of the matrix
+			colIndex, 	// array of the column indices
+			rowPointer,	// row pointer array
+			nrows, 		// number of rows
+			nz,		// maximum number of nonzero elements in each row 
+			ac, 		// values of the converted sparse matrix
+			ka, 		// column indices of the converted sparse matrix
+			nrows		// size of leading dimension of the arrays
+			);
+	printf("nz out = %d \n",nz);
+	for(int i = 0; i < nrows; ++i){
+		for(int j = 0;j < nrows; ++j){
+			printf("ka[%d][%d] = %d: ac[%d][%d] = %lf ([%d][%d] = %lf) \n",j,i,ka[j][i],j,i,ac[j][i],i,j,val[i*nrows + j]);
+		}
+	}
+
+#endif
+
 }
 
 // a destructor
 SpMatrix::~SpMatrix() {
-    delete [] val;
-    delete [] colIndex;
-    delete [] rowPointer;
+	delete [] val;
+	delete [] colIndex;
+	delete [] rowPointer;
 }
+
 
 // Sparse Matrix - Vector Multiplication
 
@@ -76,8 +111,7 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
         vec_out = new double[nrows];
 		for (int i = 0; i < nrows; ++i){
 			vec_out[i] = 0.0;
-		printf("and vec_out[%d] = %lf \n",i,vec_out[i]);;
-		}
+			}
     }
 	
 	/*
@@ -115,29 +149,19 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 		printf("vec_out[%d] = %lf \n",i,vec_out[i]);		
 	*/
 #elif USE_ESSL
-
-		int nz = nrows;
-		double* ac;
-		int* ka;
-		
-		double* orig_vec[nrows];
+				
+		double orig_vec[nrows];
 		for (int i = 0; i < nrows; ++i){
 			orig_vec[i] = vec_out[i];
 		}
-
-		// converts csr format to compressed matrix storage format
-		dsrsm(
-			0, 			// 0 = general sparse matrix, 1 = only upper triangle (symmetric)
-			val, 		// array of the values of the matrix
-			colIndex, 	// array of the column indices
-			rowPointer,	// row pointer array
-			nrows, 		// number of rows
-			&nz,		// maximum number of nonzero elements in each row 
-			ac, 		// values of the converted sparse matrix
-			ka, 		// column indices of the converted sparse matrix
-			nrows		// size of leading dimension of the arrays
-			);
-			
+		printf("checking input for dsmmx: \n");
+		printf("nrows = %d \n", nrows);
+		printf("nz = %d \n", nz);
+		printf("ac[7][7] = %lf \n", ac[7][7]);
+		printf("ka[7][7] = %d \n", ka[7][7]);
+		printf("vec_in[7] = %lf \n", vec_in[7]);
+		printf("vec_out[7] = %lf \n", vec_out[7]);
+		printf("calling dsmmx. \n");	
 		dsmmx(
 			nrows, 		// number of rows in matrix
 			nz, 		// maximum number of nonzero elements in each row
@@ -147,7 +171,7 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 			vec_in, 
 			vec_out
 			);
-			
+		printf("giving matrix-vector product output. \n");		
 		for (int i = 0; i < nrows; ++i){
 			vec_out[i] = alpha*vec_out[i] + beta*orig_vec[i];
 		}
