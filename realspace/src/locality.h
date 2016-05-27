@@ -31,6 +31,8 @@ class Locality {
 		int center_index;
 		int max_inter_pairs;
 		int max_intra_pairs;
+		int intra_searchsize;
+		int inter_searchsize;
 		
 		// Timing information
 		time_t constructStart;
@@ -69,7 +71,7 @@ class Locality {
         ~Locality();
 		
 		// Set the solver information
-		void setup(std::string,int,int,int,double,double,double,double,double,int,int);
+		void setup(std::string,int,int,int,double,double,double,double,double,int,int,int,int);
 		
 		// Starts MPI
 		void initMPI(int, char**);

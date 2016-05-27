@@ -11,7 +11,8 @@
 #ifndef INTRALAYER_COUPLING_H
 #define INTRALAYER_COUPLING_H
 
-double intralayer_term(double, double, double, double, double, double, int);
-double intralayer_blg(double, double, double, double, double, double);
+double intralayer_term(double, double, double, double, double, double, int, int, int);
+double intralayer_graphene(double, double, double, double, double, double);
+double intralayer_tmdc(double, double, double, double, double, double, int, int, int);
 
 #endif /* INTRALAYER_COUPLING_H */

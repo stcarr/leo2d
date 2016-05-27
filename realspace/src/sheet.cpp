@@ -64,6 +64,7 @@ Sheet::Sheet(const Sheet& orig) {
     min_shape = orig.min_shape;
     atom_types = orig.atom_types;
     atom_pos = orig.atom_pos;
+	mat = orig.mat;
 
 	max_index = orig.max_index;
     grid_array = orig.grid_array;
@@ -262,6 +263,59 @@ int Sheet::getNumAtoms(){
 int Sheet::getMat(){
 	return mat;
 }
+
+void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, int start_index, int searchsize){
+
+	for (int kh = 0; kh < max_index; ++kh){
+			
+		// Manually add the diagonal elements
+		/*
+		array_i.push_back(kh + start_index);
+		array_j.push_back(kh + start_index);
+		array_t.push_back(0);
+		*/
+		
+		//int searchsize = 10;
+		
+
+		
+		int i0 = index_array[kh][0];
+		int j0 = index_array[kh][1];
+		int l0 = index_array[kh][2];
+		
+		double pos_here[3];
+		pos_here[0] = posAtomIndex(kh,0);
+		pos_here[1] = posAtomIndex(kh,1);
+		pos_here[2] = posAtomIndex(kh,2);
+		
+		//printf("index %d pos_here = [%lf,%lf,%lf] \n",kh,pos_here[0],pos_here[1],pos_here[2]);
+		
+		for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
+			for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
+				for (int l = 0; l < getNumAtoms(); ++l) {
+				
+					int grid_2[3] = {i,j,l};
+					int k2 = gridToIndex(grid_2);
+
+					if (k2 != -1){
+						double x2 = posAtomIndex(k2,0);
+						double y2 = posAtomIndex(k2,1);
+						double z2 = posAtomIndex(k2,2);
+						
+						double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+						if (t != 0){
+							array_i.push_back(kh + start_index);
+							array_j.push_back(k2 + start_index);
+							array_t.push_back(t);
+						}
+					}
+				}
+			}
+		}
+	}
+
+}
+
 
 // ------------------------------------------------------------
 // Creates the matrix which converts position -> unit cell grid

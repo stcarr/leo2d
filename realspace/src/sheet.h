@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include "sdata.h"
+#include "intralayer_coupling.h"
 
 
 class Sheet {
@@ -43,6 +44,7 @@ class Sheet {
 		int getShape(int, int);
         int getNumAtoms();
 		int getMat();
+		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, int, int);
 		double getInverse(int, int);
 
 };

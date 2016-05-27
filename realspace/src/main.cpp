@@ -39,6 +39,8 @@ int main(int argc, char** argv) {
 	std::vector<int> max;
 	
 	// Number of sheets in simulation, s_data,heights,angles determines their properties
+	int intra_searchsize = 5;
+	int inter_searchsize = 5;
 	int num_sheets = 0;
 	int current_sheet = -1;
 	vector<Sdata> s_data;
@@ -229,6 +231,21 @@ int main(int argc, char** argv) {
 					angle = atof(in_string.c_str());
 				}
 				
+				
+				
+				if (in_string == "INTRA_SEARCHSIZE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					intra_searchsize = atoi(in_string.c_str());
+				}
+				
+				if (in_string == "INTER_SEARCHSIZE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					inter_searchsize = atoi(in_string.c_str());
+				}
+				
+				
 				if (in_string == "NSHIFTS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -298,7 +315,7 @@ int main(int argc, char** argv) {
 	Locality loc(s_data,heights,angles);
 	
 	// Simulation's solver is set with setup call to Locality object
-	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type);
+	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type, intra_searchsize, inter_searchsize);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);

@@ -44,7 +44,7 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, double c_width, int p_order, int solver) {
+void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, double c_width, int p_order, int solver, int intra_search, int inter_search) {
 	
 	// Edit run-specific options for matrix constructions and paramters of the solver method (to edit settings from the constructor)
 
@@ -59,6 +59,8 @@ void Locality::setup(std::string name, int shifts, int eigs, int samples,double 
 	energy_shift = e_shift;
 	cheb_width = c_width;
 	poly_order = p_order;
+	intra_searchsize = intra_search;
+	inter_searchsize = inter_search;
 }
 
 void Locality::initMPI(int argc, char** argv){
@@ -147,12 +149,12 @@ void Locality::constructGeom(){
 	
 		printf("Building inter and intra pairs. \n");	
 		std::vector<std::vector<int> > inter_pairs_vec;
-		h.getInterPairs(inter_pairs_vec);
+		h.getInterPairs(inter_pairs_vec,inter_searchsize);
 		
 		std::vector<int> intra_pairs_vec_i;
 		std::vector<int> intra_pairs_vec_j;
 		std::vector<double> intra_pairs_vec_t;
-		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t);
+		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t, intra_searchsize);
 	
 		printf("Inter and intra pair construction complete. \n");
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
@@ -517,6 +519,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	std::ofstream outFile;
 	const char* extension = ".cheb";
 	outFile.open ((job_name + extension).c_str());
+	std::cout << "Saving " << job_name << " to file. \n";
 	outFile << job_name << " Chebyshev T value outputs \n";
 	outFile << "Shift x, Shift y, ... polynomial orders ... \n";
 	outFile << "-1, -1";
@@ -804,7 +807,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		//
 		// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
 		
-		/*
+		// /*
 		std::ofstream outFile;
 		const char* extension = "_matrix.dat";
 		outFile.open ((job_name + extension).c_str());
@@ -818,7 +821,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		}
 		
 		outFile.close();
-		*/
+		// */
 		
 		// End Matrix Save
 		// ---------------
@@ -875,7 +878,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			);
 		*/
 		
-		printf("rank %d attempting matrix-vector product. \n",rank);
 		H.vectorMultiply(T_prev, T_j, 1, 0);
 
 		// Temporary vector for algorithm ("next" vector T_j+1)
