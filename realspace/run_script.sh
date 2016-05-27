@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH -n 2 # Number of MPI ranks
+#SBATCH -n 16 # Number of MPI ranks
 #SBATCH -c 2 #CPU/Threads per rank
 #SBATCH -J hstruct_test
 #SBATCH -o hstruct_test_%j.out

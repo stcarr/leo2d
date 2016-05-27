@@ -810,7 +810,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		//
 		// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
 		
-		// /*
+		/*
 		std::ofstream outFile;
 		const char* extension = "_matrix.dat";
 		outFile.open ((job_name + extension).c_str());
@@ -824,7 +824,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		}
 		
 		outFile.close();
-		// */
+		*/
 		
 		// End Matrix Save
 		// ---------------
