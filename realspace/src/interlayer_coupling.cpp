@@ -14,18 +14,22 @@ const double r_cut2_graphene = 7;
 // assuming (x,y) aims from sheet 1 to sheet 2 site
 // theta rotates sheet counter-clockwise
 
-double interlayer_term(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2)
+double interlayer_term(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2)
 {
 
 	if (mat1 == 0 && mat2 == 0) {
-		return inter_graphene(x1_in,y1_in,x2_in,y2_in,orbit1,orbit2,theta1,theta2,mat1,mat2);
+		return inter_graphene(x1_in,y1_in,x2_in,y2_in,orbit1,orbit2,theta1,theta2);
+	}
+	
+	if (mat1 == 1 && mat2 == 1){
+		return inter_tmdc(x1_in,y1_in,z1_in,x2_in,y2_in,z2_in,orbit1,orbit2,mat1,mat2);
 	}
 
 	return 0;
 
 }
 
-double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2) 
+double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2) 
 {
 
 /*
@@ -98,4 +102,72 @@ if (r < r_cut_graphene){
 //printf("%f inter-term computed. \n",t);
 
 return t;
+}
+
+double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, int mat1, int mat2)
+{
+	double delta_z = z1_in - z2_in;
+	
+	double nu_sigma 	=  2.627;
+	double R_sigma 		=  3.128;
+	double eta_sigma 	=  3.859;
+	
+	double nu_pi 		= -0.708;
+	double R_pi 		=  2.923;
+	double eta_pi 		=  5.724;
+	
+	int p_i = 0;
+	int p_j = 0;
+	
+	double r_vec[3] = {x2_in - x1_in, y2_in - y1_in, z2_in - z1_in};
+	double r_sq = r_vec[0]*r_vec[0] + r_vec[1]*r_vec[1] + r_vec[2]*r_vec[2];
+	double r = sqrt(r_sq);
+	
+	if (r > 7){
+		return 0;
+	}
+	
+	double temp_t = 0;
+	
+	if (delta_z < 0) {
+		delta_z = -delta_z;
+	}
+	
+	double delta = 0.05;
+	if ((delta_z > 3.01588 - delta) && (delta_z < 3.01588 + delta)) {
+	
+		if (orbit1 == 5 || orbit1 == 8) {
+			p_i = 1;
+		}
+		if (orbit1 == 6 || orbit1 == 9) {
+			p_i = 2;
+		}
+		if (orbit1 == 7 || orbit1 == 10) {
+			p_i = 3;
+		}
+		
+		if (orbit2 == 5 || orbit2 == 8) {
+			p_j = 1;
+		}
+		if (orbit2 == 6 || orbit2 == 9) {
+			p_j = 2;
+		}
+		if (orbit2 == 7 || orbit2 == 10) {
+			p_j = 3;
+		}
+		
+		double V_sigma = nu_sigma*exp(-pow(r/R_sigma, eta_sigma));
+		double V_pi    =    nu_pi*exp(-pow(r/R_pi,    eta_pi   ));
+		
+		temp_t += (V_sigma - V_pi)*((r_vec[p_i]*r_vec[p_j])/r_sq);
+		if (p_i == p_j){
+			temp_t += V_pi;
+		}
+		
+		return temp_t;
+		
+	}
+
+	return 0;
+	
 }

@@ -767,8 +767,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					// get the position of both orbitals
 					double x1 = i2pos[k*3 + 0];
 					double y1 = i2pos[k*3 + 1];
+					double z1 = i2pos[k*3 + 2];
 					double x2 = i2pos[new_k*3 + 0];
 					double y2 = i2pos[new_k*3 + 1];
+					double z2 = i2pos[new_k*3 + 2];
 					
 					// and the orbit tag in their respective unit-cell
 					int orbit1 = index_to_grid[k*4 + 2];
@@ -784,9 +786,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					// use all this information to determine coupling energy
 					// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
 					
-					double t = interlayer_term(x1, y1, x2, y2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+					double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 					if (t != 0 ){
 						v[input_counter] = t;
+						//printf("inter [%d,%d] = %lf \n",k,new_k,t);
 						++input_counter;
 					}
 					++inter_counter;
