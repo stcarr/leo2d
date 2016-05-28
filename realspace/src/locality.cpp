@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 	
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
@@ -516,26 +517,39 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		polys[i] = i;
 	}
 	
-	std::ofstream outFile;
-	const char* extension = ".cheb";
-	outFile.open ((job_name + extension).c_str());
-	std::cout << "Saving " << job_name << " to file. \n";
-	outFile << job_name << " Chebyshev T value outputs \n";
-	outFile << "Shift x, Shift y, ... polynomial orders ... \n";
-	outFile << "-1, -1";
-	
-	for(int j = 0; j < poly_order; ++j)
-		outFile << ", " << polys[j];
-	outFile << "\n";
-	
-	for(int i = 0; i < maxJobs; ++i){
-		outFile << work[i][0] << ", " << work[i][1];
+	int num_orbitals = sdata[1].atom_types.size();
+
+	for (int orb = 0; orb < num_orbitals; ++orb) {
+
+	    std::ostringstream st;
+		st << orb+1;
+		std::string orbital_string = st.str();
+		if ( orb + 1 < 10){
+			orbital_string = "0" + orbital_string;
+		}
+		
+		std::ofstream outFile;
+		const char* extension =".cheb";
+		outFile.open ((job_name + "_orbital" + orbital_string + extension).c_str());
+		std::cout << "Saving " << job_name << "_orbital" << orbital_string << " to file. \n";
+		outFile << job_name << " Chebyshev T value outputs \n";
+		outFile << "Shift x, Shift y, ... polynomial orders ... \n";
+		outFile << "-1, -1";
+		
 		for(int j = 0; j < poly_order; ++j)
-			outFile << ", " << result_array[i][j];
+			outFile << ", " << polys[j];
 		outFile << "\n";
-	}
+		
+		for(int i = 0; i < maxJobs; ++i){
+			outFile << work[i][0] << ", " << work[i][1];
+			for(int j = 0; j < poly_order; ++j)
+				outFile << ", " << result_array[i][j + poly_order*orb];
+			outFile << "\n";
+		}
+		
+		outFile.close();
 	
-	outFile.close();
+	}
 	
 	delete[] polys;
 }
@@ -843,99 +857,103 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	
 		// Chebyshev values
 		double T;
+		int num_orbitals = sdata[1].atom_types.size();
 		
 		// Saves T values
-		double* T_array = new double[poly_order];
+		double* T_array = new double[poly_order*num_orbitals];
 			
 		// Temporary vector for algorithm ("previous" vector T_j-1)
 		// Starting vector for Chebyshev method is a unit-vector at the center-orbital
-
-		double T_prev[max_index];
-		for (int i = 0; i < max_index; ++i){
-			T_prev[i] = 0.0;
-		}
+		for (int orb = 0; orb < num_orbitals; ++orb) {
+			int target_index = center_index + orb;
+			double T_prev[max_index];
+			for (int i = 0; i < max_index; ++i){
+				T_prev[i] = 0.0;
+			}
+			
+			T_prev[target_index] = 1.0;
 		
-		T_prev[center_index] = 1.0;
-	
-		// Temporary vector for algorithm ("current" vector T_j)
-		double T_j[max_index];	
-		for (int i = 0; i < max_index; ++i){
-			T_j[i] = 0.0;
-		}		
-					
-		// y = alpha*A*x + beta*y if mv_type = 'N'
-		/*
-		mkl_dcscmv(
-			&mv_type,		// Specifies operator, transpose or not	
-			&max_index,		// Number of rows in matrix
-			&max_index,		// Number of cols in matrix
-			&alpha,			// scalar ALPHA
-			matdescra,		// Specifies type of matrix, *char
-			v,			// nonzero elements
-			row_index,		// row indicies
-			col_pointer,		// begin of col ptr
-			col_pointer + 1,	// end of col ptr
-			T_prev,			// input vector
-			&beta,			// scalar BETA
-			T_j
-			);
-		*/
-		
-		H.vectorMultiply(T_prev, T_j, 1, 0);
-
-		// Temporary vector for algorithm ("next" vector T_j+1)
-		double T_next[max_index];
-		for (int i = 0; i < max_index; ++i){
-			T_next[i] = 0.0;
-		}
-		
-		// first T value is always 1
-		T_array[0] = 1;	
-		
-		// Next one is calculated simply
-		T_array[1] = T_j[center_index];
-		
-		// Now loop algorithm up to poly_order to find all T values
-		// double alpha2 = 2;
-		for (int j = 2; j < poly_order; ++j){
-		
-			// want to do: T_next = 2*H*T_j - T_prev;
-
-			/*
+			// Temporary vector for algorithm ("current" vector T_j)
+			double T_j[max_index];	
+			for (int i = 0; i < max_index; ++i){
+				T_j[i] = 0.0;
+			}		
+						
 			// y = alpha*A*x + beta*y if mv_type = 'N'
+			/*
 			mkl_dcscmv(
 				&mv_type,		// Specifies operator, transpose or not	
 				&max_index,		// Number of rows in matrix
 				&max_index,		// Number of cols in matrix
-				&alpha2,		// scalar ALPHA
+				&alpha,			// scalar ALPHA
 				matdescra,		// Specifies type of matrix, *char
 				v,			// nonzero elements
 				row_index,		// row indicies
 				col_pointer,		// begin of col ptr
 				col_pointer + 1,	// end of col ptr
-				T_j,			// input vector
+				T_prev,			// input vector
 				&beta,			// scalar BETA
-				T_next
+				T_j
 				);
 			*/
 			
-			H.vectorMultiply(T_j, T_next, 2, 0);
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			double T_next[max_index];
+			for (int i = 0; i < max_index; ++i){
+				T_next[i] = 0.0;
+			}
+			
+			// first T value is always 1
+			T_array[0 + orb*poly_order] = 1;	
+			
+			// Next one is calculated simply
+			T_array[1 + orb*poly_order] = T_j[target_index];
+			
+			// Now loop algorithm up to poly_order to find all T values
+			// double alpha2 = 2;
+			for (int j = 2; j < poly_order; ++j){
+			
+				// want to do: T_next = 2*H*T_j - T_prev;
+
+				/*
+				// y = alpha*A*x + beta*y if mv_type = 'N'
+				mkl_dcscmv(
+					&mv_type,		// Specifies operator, transpose or not	
+					&max_index,		// Number of rows in matrix
+					&max_index,		// Number of cols in matrix
+					&alpha2,		// scalar ALPHA
+					matdescra,		// Specifies type of matrix, *char
+					v,			// nonzero elements
+					row_index,		// row indicies
+					col_pointer,		// begin of col ptr
+					col_pointer + 1,	// end of col ptr
+					T_j,			// input vector
+					&beta,			// scalar BETA
+					T_next
+					);
+				*/
 				
-			for (int c = 0; c < max_index; ++c){
-				T_next[c] = T_next[c] - T_prev[c];
-			}
-		
-			for (int c = 0; c < max_index; ++c){
-				T_prev[c] = T_j[c];	//T_prev = T_j;
-				T_j[c] = T_next[c];	//T_j = T_next;
+				H.vectorMultiply(T_j, T_next, 2, 0);
+					
+				for (int c = 0; c < max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+			
+				for (int c = 0; c < max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+				
+				T_array[j + orb*poly_order] = T_j[target_index];
+				
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 			}
 			
-			T_array[j] = T_j[center_index];
-			
-			// print every 100 steps on print rank
-			//if (rank == print_rank)
-				//if (j%100 == 0)
-					//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 		}
 		
 		// Save time at which solver finished
@@ -943,7 +961,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);	
 		
-		int length = poly_order;
+		int length = poly_order*num_orbitals;
 		
 		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
