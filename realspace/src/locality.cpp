@@ -195,8 +195,8 @@ void Locality::constructGeom(){
 		h.getIndexToPos(index_to_pos_x,0);
 		h.getIndexToPos(index_to_pos_y,1);
 		h.getIndexToPos(index_to_pos_z,2);
-		printf("indexToPos complete. \n");	
-		
+		printf("indexToPos complete. \n");
+
 		// POSITION DEBUG PRINT
 		/*
 		
@@ -856,7 +856,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		SpMatrix H = SpMatrix(max_index, max_index, v, col_index, row_pointer, max_nnz); 
 	
 		// Chebyshev values
-		double T;
 		int num_orbitals = sdata[1].atom_types.size();
 		
 		// Saves T values
@@ -906,7 +905,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 			
 			// first T value is always 1
-			T_array[0 + orb*poly_order] = 1;	
+			T_array[0 + orb*poly_order] = 1;
 			
 			// Next one is calculated simply
 			T_array[1 + orb*poly_order] = T_j[target_index];
