@@ -311,6 +311,11 @@ int main(int argc, char** argv) {
 		in_file.close();
 	}
 	
+	if (poly_order %4 != 0){
+		printf("Warning!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",poly_order);
+		return -1;
+	}
+	
 	// Create the locality object with the sheet input data
 	Locality loc(s_data,heights,angles);
 	

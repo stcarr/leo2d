@@ -265,8 +265,8 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 			int s0 = sh + 1;
 			
 			// prints how index 0 is paired to the grid above it (used as a troubleshooting print)
-			if (kh == 0)
-				printf("index 0: [%d,%d,%d] to [%d,%d,%d] \n",ih,jh,sh,i0,j0,s0);
+			//if (kh == 0)
+			//	printf("index %d: [%d,%d,%d] to [%d,%d,%d] \n",kh,ih,jh,sh,i0,j0,s0);
 		
 			// find the base_index we need to add to the local sheet index on sheet s0
 			int base_index = 0;

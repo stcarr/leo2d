@@ -70,7 +70,7 @@ void Locality::initMPI(int argc, char** argv){
 	  	
 	MPI_Init(&argc,&argv);
 
-        root = 0;
+    root = 0;
 	print_rank = 1;
 	
 	size = MPI::COMM_WORLD.Get_size();
@@ -912,7 +912,13 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 			// Now loop algorithm up to poly_order to find all T values
 			// double alpha2 = 2;
-			for (int j = 2; j < poly_order; ++j){
+			
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+			
+			for (int j = 2; j < poly_order/2; ++j){
 			
 				// want to do: T_next = 2*H*T_j - T_prev;
 
@@ -934,18 +940,37 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					);
 				*/
 				
-				H.vectorMultiply(T_j, T_next, 2, 0);
-					
-				for (int c = 0; c < max_index; ++c){
-					T_next[c] = T_next[c] - T_prev[c];
-				}
-			
+				// reassign values from previous iteration
 				for (int c = 0; c < max_index; ++c){
 					T_prev[c] = T_j[c];	//T_prev = T_j;
 					T_j[c] = T_next[c];	//T_j = T_next;
 				}
 				
+				// get the jth entry
 				T_array[j + orb*poly_order] = T_j[target_index];
+				
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+				
+				// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+				if (j >= poly_order/4){
+				
+					double an_an = 0;
+					double anp_an = 0;
+					for (int c = 0; c < max_index; ++c){
+						an_an += T_j[c]*T_j[c];
+						anp_an += T_next[c]*T_j[c];
+					}
+					
+					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
+					T_array[2*j + orb*poly_order] = 2*an_an - T_array[0 + orb*poly_order];
+					T_array[2*j + 1 + orb*poly_order] = 2*anp_an - T_array[1 + orb*poly_order];
+
+				}
 				
 				// print every 100 steps on print rank
 				//if (rank == print_rank)
