@@ -21,7 +21,7 @@ double interlayer_term(double x1_in, double y1_in, double z1_in, double x2_in, d
 		return inter_graphene(x1_in,y1_in,x2_in,y2_in,orbit1,orbit2,theta1,theta2);
 	}
 	
-	if (mat1 == 1 && mat2 == 1){
+	if (mat1 > 0 && mat1 < 5 && mat2 > 0 && mat2 < 5){
 		return inter_tmdc(x1_in,y1_in,z1_in,x2_in,y2_in,z2_in,orbit1,orbit2,mat1,mat2);
 	}
 
@@ -108,14 +108,47 @@ double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double
 {
 	double delta_z = z1_in - z2_in;
 	
-	double nu_sigma 	=  2.627;
-	double R_sigma 		=  3.128;
-	double eta_sigma 	=  3.859;
+	double nu_sigma;
+	double R_sigma;
+	double eta_sigma;
 	
-	double nu_pi 		= -0.708;
-	double R_pi 		=  2.923;
-	double eta_pi 		=  5.724;
+	double nu_pi;
+	double R_pi;
+	double eta_pi;
 	
+	double c;
+	double d_xx;
+	
+	// mat1/2 == 1: MoS_2 bilayer
+	// This is for S-S interaction
+	if (mat1 == 1 && mat2 == 1){
+		nu_sigma 	=  2.627;
+		R_sigma 	=  3.128;
+		eta_sigma 	=  3.859;
+		
+		nu_pi 		= -0.708;
+		R_pi 		=  2.923;
+		eta_pi 		=  5.724;
+		
+		c 			=  12.29;
+		d_xx		=  3.130;
+	}
+	// mat1/2 == 2: WSe_2 bilayer
+	// This is for Se-Se interaction
+	else if (mat1 == 2 && mat2 == 2){
+		nu_sigma 	=  2.559;
+		R_sigma 	=  3.337;
+		eta_sigma 	=  4.114;
+		
+		nu_pi 		= -1.006;
+		R_pi 		=  2.927;
+		eta_pi 		=  5.185;
+		
+		c 			=  12.96;
+		d_xx		=  3.350;
+	}
+
+	double XX_sep = (c/2.0) - d_xx;
 	int p_i = 0;
 	int p_j = 0;
 	
@@ -134,7 +167,7 @@ double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double
 	}
 	
 	double delta = 0.05;
-	if ((delta_z > 3.01588 - delta) && (delta_z < 3.01588 + delta)) {
+	if ((delta_z > XX_sep - delta) && (delta_z < XX_sep + delta)) {
 	
 		if (orbit1 == 5 || orbit1 == 8) {
 			p_i = 1;
