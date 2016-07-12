@@ -26,6 +26,7 @@ SpMatrix::SpMatrix() {
     colIndex = NULL;
     rowPointer = NULL;
     maxnnz = 0;
+	type = 0;
 }
 
 
@@ -39,6 +40,7 @@ SpMatrix::SpMatrix(int nr, int nc) {
     for (int j = 0; j <= nc; j++)
         rowPointer[j] = 0;
     maxnnz = 0;
+	type = 0;
 }
 
 // a constructor for an nr-by-nc (sparse) matrix stored in CSC format in store0[], rowIndex0[], colPointer0[]
@@ -47,6 +49,7 @@ SpMatrix::SpMatrix(int nr, int nc) {
 // memory of size maxnnz0 is allocated, with the address pointed to by val0 and so is it for rowIndex0
 SpMatrix::SpMatrix(int nr, int nc, double *val0, int *colIndex0, int *rowPointer0, int maxnnz0) {
     
+	type = 0;
 
 
 	// set dimensions
@@ -94,9 +97,38 @@ SpMatrix::SpMatrix(int nr, int nc, double *val0, int *colIndex0, int *rowPointer
 
 }
 
+// Complex constructor
+SpMatrix::SpMatrix(int nr, int nc, std::complex<double> *val_c0, int *colIndex0, int *rowPointer0, int maxnnz0) {
+    
+	type = 1;
+
+	// set dimensions
+	nrows = nr;
+	ncols = nc;
+
+	val_c = val_c0;
+	colIndex = colIndex0;
+	rowPointer = rowPointer0;
+
+	maxnnz = rowPointer[nrows]-rowPointer[0];
+	if (maxnnz < maxnnz0)
+		maxnnz = maxnnz0;
+    	// the default maxnnz0 is 0, in which case we have maxnnz = colPointer[ncols]-colPointer[0]
+		
+}
+
+
 // a destructor
 SpMatrix::~SpMatrix() {
-	delete [] val;
+
+	if (type == 0){
+		delete [] val;
+	}
+	
+	if (type == 1){
+		delete [] val_c;
+	}
+	
 	delete [] colIndex;
 	delete [] rowPointer;
 }
@@ -105,15 +137,15 @@ SpMatrix::~SpMatrix() {
 // Sparse Matrix - Vector Multiplication
 
 void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, double beta) {
-	
-    if (vec_out == NULL) {
-        // allocate memory
-        vec_out = new double[nrows];
+
+	if (vec_out == NULL) {
+		// allocate memory
+		vec_out = new double[nrows];
 		for (int i = 0; i < nrows; ++i){
 			vec_out[i] = 0.0;
 			}
-    }
-	
+	}
+		
 	/*
 	for (int i = 0; i < nrows; ++i){
 		printf("vec_in[%d] = %lf \n",i,vec_in[i]);
@@ -125,31 +157,31 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 	}
 	*/
 
-#ifdef USE_MKL
-	char mv_type = 'N';
-	char matdescra[6] = {'G',' ',' ','C',' ',' '};
+	#ifdef USE_MKL
+		char mv_type = 'N';
+		char matdescra[6] = {'G',' ',' ','C',' ',' '};
 
-	// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
-	mkl_dcsrmv(
-		&mv_type,		// Specifies operator, transpose or not	
-		&nrows,			// Number of rows in matrix
-		&ncols,			// Number of cols in matrix
-		&alpha,			// scalar ALPHA
-		matdescra,		// Specifies type of matrix, *char
-		val,			// nonzero elements
-		colIndex,		// row indicies
-		rowPointer,		// begin of col ptr
-		rowPointer + 1,	// end of col ptr
-		vec_in,			// input vector
-		&beta,			// scalar BETA
-		vec_out			// output vector
-		);
-	/*
-	for (int i = 0; i < nrows; ++i)
-		printf("vec_out[%d] = %lf \n",i,vec_out[i]);		
-	*/
-#elif USE_ESSL
-				
+		// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
+		mkl_dcsrmv(
+			&mv_type,		// Specifies operator, transpose or not	
+			&nrows,			// Number of rows in matrix
+			&ncols,			// Number of cols in matrix
+			&alpha,			// scalar ALPHA
+			matdescra,		// Specifies type of matrix, *char
+			val,			// nonzero elements
+			colIndex,		// row indicies
+			rowPointer,		// begin of col ptr
+			rowPointer + 1,	// end of col ptr
+			vec_in,			// input vector
+			&beta,			// scalar BETA
+			vec_out			// output vector
+			);
+		/*
+		for (int i = 0; i < nrows; ++i)
+			printf("vec_out[%d] = %lf \n",i,vec_out[i]);		
+		*/
+	#elif USE_ESSL
+					
 		double orig_vec[nrows];
 		for (int i = 0; i < nrows; ++i){
 			orig_vec[i] = vec_out[i];
@@ -177,19 +209,39 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 		}
 
 
-	
-#else
-	for (int r = 0; r < nrows; ++r){
 		
-		double temp_sum = 0;
-		int begin = rowPointer[r];
-		int end = rowPointer[r+1];
-		
-		for (int i = begin; i < end; ++i){
-			temp_sum += vec_in[colIndex[i]]*val[i];
+	#else
+		for (int r = 0; r < nrows; ++r){
+			
+			double temp_sum = 0;
+			int begin = rowPointer[r];
+			int end = rowPointer[r+1];
+			
+			for (int i = begin; i < end; ++i){
+				temp_sum += vec_in[colIndex[i]]*val[i];
+			}
+			
+			vec_out[r] = alpha*temp_sum + beta*vec_out[r];
 		}
-		
-		vec_out[r] = alpha*temp_sum + beta*vec_out[r];
-	}
-#endif
+	#endif
+
 }
+
+void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> *vec_out, std::complex<double> alpha, std::complex<double> beta) {
+
+	for (int r = 0; r < nrows; ++r){
+			
+				std::complex<double> temp_sum;
+				temp_sum = std::complex<double>(0,0);
+				int begin = rowPointer[r];
+				int end = rowPointer[r+1];
+				
+				for (int i = begin; i < end; ++i){
+					temp_sum += vec_in[colIndex[i]]*val_c[i];
+				}
+				
+				vec_out[r] = alpha*temp_sum + beta*vec_out[r];
+	}
+}
+
+
