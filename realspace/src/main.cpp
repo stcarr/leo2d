@@ -79,6 +79,9 @@ int main(int argc, char** argv) {
 	double interval_start = -1;
 	double interval_end = 1;
 	
+	int magOn = 0;
+	double B = 0;
+	
 	// FILTLAN settings
 	int num_eigs = 1;
 	
@@ -303,7 +306,19 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					solver_type = atoi(in_string.c_str());
-				}				
+				}
+
+				if (in_string == "USE_B_FIELD"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					magOn = atoi(in_string.c_str());
+				}	
+
+				if (in_string == "B_FIELD"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					B = atof(in_string.c_str());
+				}					
 				
 				
 			}
@@ -320,7 +335,7 @@ int main(int argc, char** argv) {
 	Locality loc(s_data,heights,angles);
 	
 	// Simulation's solver is set with setup call to Locality object
-	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type, intra_searchsize, inter_searchsize);
+	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type, intra_searchsize, inter_searchsize, magOn, B);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);

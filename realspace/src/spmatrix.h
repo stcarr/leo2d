@@ -51,10 +51,16 @@ class SpMatrix {
 		SpMatrix(int,int);
 		
 		// Normal real constructor
-		SpMatrix(int,int,double*,int*,int*,int);
+		SpMatrix(int,int,double*              ,int*,int*,int);
 		
 		// Normal complex constructor
 		SpMatrix(int,int,std::complex<double>*,int*,int*,int);
+		
+		// after construction setup
+		void setup(int,int,double*              ,int*,int*,int);
+		
+		// and for complex
+		void setup(int,int,std::complex<double>*,int*,int*,int);
 	
 		// Destructor
 		~SpMatrix();

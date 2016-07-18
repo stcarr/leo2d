@@ -133,9 +133,77 @@ SpMatrix::~SpMatrix() {
 	delete [] rowPointer;
 }
 
+// Real setup
+void SpMatrix::setup(int nr, int nc, double *val0, int *colIndex0, int *rowPointer0, int maxnnz0){   
+	
+	type = 0;
+
+
+	// set dimensions
+	nrows = nr;
+	ncols = nc;
+
+	val = val0;
+	colIndex = colIndex0;
+	rowPointer = rowPointer0;
+
+	maxnnz = rowPointer[nrows]-rowPointer[0];
+	if (maxnnz < maxnnz0)
+		maxnnz = maxnnz0;
+    	// the default maxnnz0 is 0, in which case we have maxnnz = colPointer[ncols]-colPointer[0]
+   
+	#ifdef USE_ESSL
+		nz = nrows+3;
+
+		double ac[nrows][nrows];
+		int ka[nrows][nrows];
+		//ac = new double[nrows*nrows];
+		//ka = new int[nrows*nrows];
+		printf("calling essl_dsrsm. \n");
+		// converts csr format to compressed matrix storage format
+		printf("nz in = %d \n",nz);	
+		dsrsm(
+				0, 		// 0 = general sparse matrix, 1 = only upper triangle (symmetric)
+				val, 		// array of the values of the matrix
+				colIndex, 	// array of the column indices
+				rowPointer,	// row pointer array
+				nrows, 		// number of rows
+				nz,		// maximum number of nonzero elements in each row 
+				ac, 		// values of the converted sparse matrix
+				ka, 		// column indices of the converted sparse matrix
+				nrows		// size of leading dimension of the arrays
+				);
+		printf("nz out = %d \n",nz);
+		for(int i = 0; i < nrows; ++i){
+			for(int j = 0;j < nrows; ++j){
+				printf("ka[%d][%d] = %d: ac[%d][%d] = %lf ([%d][%d] = %lf) \n",j,i,ka[j][i],j,i,ac[j][i],i,j,val[i*nrows + j]);
+			}
+		}
+	#endif
+}
+
+// Complex setup
+void SpMatrix::setup(int nr, int nc, std::complex<double> *val_c0, int *colIndex0, int *rowPointer0, int maxnnz0) {
+    
+	type = 1;
+
+	// set dimensions
+	nrows = nr;
+	ncols = nc;
+
+	val_c = val_c0;
+	colIndex = colIndex0;
+	rowPointer = rowPointer0;
+
+	maxnnz = rowPointer[nrows]-rowPointer[0];
+	if (maxnnz < maxnnz0)
+		maxnnz = maxnnz0;
+    	// the default maxnnz0 is 0, in which case we have maxnnz = colPointer[ncols]-colPointer[0]
+		
+}
+
 
 // Sparse Matrix - Vector Multiplication
-
 void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, double beta) {
 
 	if (vec_out == NULL) {

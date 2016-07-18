@@ -12,6 +12,7 @@
 #include "interlayer_coupling.h"
 #include "spmatrix.h"
 #include <time.h>
+#include <math.h>  
 class Locality {
     private:
 	
@@ -33,6 +34,8 @@ class Locality {
 		int max_intra_pairs;
 		int intra_searchsize;
 		int inter_searchsize;
+		int magOn;
+		double B;
 		
 		// Timing information
 		time_t constructStart;
@@ -71,7 +74,7 @@ class Locality {
         ~Locality();
 		
 		// Set the solver information
-		void setup(std::string,int,int,int,double,double,double,double,double,int,int,int,int);
+		void setup(std::string,int,int,int,double,double,double,double,double,int,int,int,int,int,double);
 		
 		// Starts MPI
 		void initMPI(int, char**);
@@ -81,6 +84,9 @@ class Locality {
 		
 		// Construct and solve the tight binding problem. Also saves output files
 		void constructMatrix(int*,double*,int*,int*,double*);
+		
+		// Calculates Peierls phase between two hopping sites;
+		double peierlsPhase(double, double, double, double, double);
 		
 		// Not implemented
 		void plot();

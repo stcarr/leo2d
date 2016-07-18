@@ -45,7 +45,7 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, double c_width, int p_order, int solver, int intra_search, int inter_search) {
+void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, double c_width, int p_order, int solver, int intra_search, int inter_search, int magOn_in, double B_in) {
 	
 	// Edit run-specific options for matrix constructions and paramters of the solver method (to edit settings from the constructor)
 
@@ -62,6 +62,8 @@ void Locality::setup(std::string name, int shifts, int eigs, int samples,double 
 	poly_order = p_order;
 	intra_searchsize = intra_search;
 	inter_searchsize = inter_search;
+	magOn = magOn_in;
+	B = B_in;
 }
 
 void Locality::initMPI(int argc, char** argv){
@@ -723,8 +725,18 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
 		
 		int* col_index = new int[max_nnz];
-		double* v = new double[max_nnz];
-		int* row_pointer = new int[max_index+1];		
+		
+		double* v;
+		std::complex<double>* v_c;
+		
+		if (magOn == 0){
+			v = new double[max_nnz];
+		}
+		else if (magOn == 1){
+			v_c = new std::complex<double>[max_nnz];
+		}
+		
+		int* row_pointer = new int[max_index+1];
 
 		// Count the current element, i.e. "i = input_counter"
 		int input_counter = 0;
@@ -747,15 +759,34 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				// otherwise we save that pair into our sparse matrix format
 				else {
 					col_index[input_counter] = intra_pairs[intra_counter*2 + 1];
-					 
+					
+					double t;
+					
 					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 					if (col_index[input_counter] == k)
-						v[input_counter] = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
 					// Otherwise we just enter the value just with scaling
 					else
-						v[input_counter] = intra_pairs_t[intra_counter]/energy_rescale;
+						t = intra_pairs_t[intra_counter]/energy_rescale;
 					
 					//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
+					
+					if (magOn == 0){
+						v[input_counter] = t;
+					}
+					else if (magOn == 1) {
+
+						int new_k = intra_pairs[intra_counter*2 + 1];
+						
+						double x1 = i2pos[k*3 + 0];
+						double y1 = i2pos[k*3 + 1];
+						double x2 = i2pos[new_k*3 + 0];
+						double y2 = i2pos[new_k*3 + 1];
+						
+						double pPhase = peierlsPhase(x1, x2, y1, y2, B);
+						v_c[input_counter] = std::polar(t, pPhase);
+					}
+					
 					
 					++input_counter;
 					++intra_counter;
@@ -802,7 +833,13 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					
 					double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 					if (t != 0 ){
-						v[input_counter] = t;
+						if (magOn == 0){
+							v[input_counter] = t;
+						}
+						else if (magOn == 1){
+							double pPhase = peierlsPhase(x1, x2, y1, y2, B);
+						    v_c[input_counter] = std::polar(t, pPhase);
+						}
 						//printf("inter [%d,%d] = %lf \n",k,new_k,t);
 						++input_counter;
 					}
@@ -845,7 +882,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 		//if(rank == print_rank)
 			printf("rank %d starting Chebychev solver work... \n", rank);
-		
 		/*
 		char mv_type = 'N';
         char matdescra[6] = {'G',' ',' ','C',' ',' '};
@@ -853,132 +889,196 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
         double beta = 0;
 		*/
 		
-		SpMatrix H = SpMatrix(max_index, max_index, v, col_index, row_pointer, max_nnz); 
-	
+		SpMatrix H = SpMatrix();
+		if (magOn == 0){
+			H.setup(max_index, max_index, v,   col_index, row_pointer, max_nnz); 
+		}
+		else if (magOn == 1){
+			H.setup(max_index, max_index, v_c, col_index, row_pointer, max_nnz);
+		}
+		
 		// Chebyshev values
 		int num_orbitals = sdata[1].atom_types.size();
 		
 		// Saves T values
 		double* T_array = new double[poly_order*num_orbitals];
-			
-		// Temporary vector for algorithm ("previous" vector T_j-1)
-		// Starting vector for Chebyshev method is a unit-vector at the center-orbital
-		for (int orb = 0; orb < num_orbitals; ++orb) {
-			int target_index = center_index + orb;
-			double T_prev[max_index];
-			for (int i = 0; i < max_index; ++i){
-				T_prev[i] = 0.0;
-			}
-			
-			T_prev[target_index] = 1.0;
 		
-			// Temporary vector for algorithm ("current" vector T_j)
-			double T_j[max_index];	
-			for (int i = 0; i < max_index; ++i){
-				T_j[i] = 0.0;
-			}		
-						
-			// y = alpha*A*x + beta*y if mv_type = 'N'
-			/*
-			mkl_dcscmv(
-				&mv_type,		// Specifies operator, transpose or not	
-				&max_index,		// Number of rows in matrix
-				&max_index,		// Number of cols in matrix
-				&alpha,			// scalar ALPHA
-				matdescra,		// Specifies type of matrix, *char
-				v,			// nonzero elements
-				row_index,		// row indicies
-				col_pointer,		// begin of col ptr
-				col_pointer + 1,	// end of col ptr
-				T_prev,			// input vector
-				&beta,			// scalar BETA
-				T_j
-				);
-			*/
-			
-			H.vectorMultiply(T_prev, T_j, 1, 0);
+		if (magOn == 0){
 
-			// Temporary vector for algorithm ("next" vector T_j+1)
-			double T_next[max_index];
-			for (int i = 0; i < max_index; ++i){
-				T_next[i] = 0.0;
-			}
-			
-			// first T value is always 1
-			T_array[0 + orb*poly_order] = 1;
-			
-			// Next one is calculated simply
-			T_array[1 + orb*poly_order] = T_j[target_index];
-			
-			// Now loop algorithm up to poly_order to find all T values
-			// double alpha2 = 2;
-			
-			H.vectorMultiply(T_j, T_next, 2, 0);
-			for (int c = 0; c < max_index; ++c){
-				T_next[c] = T_next[c] - T_prev[c];
-			}
-			
-			for (int j = 2; j < poly_order/2; ++j){
-			
-				// want to do: T_next = 2*H*T_j - T_prev;
-
-				/*
-				// y = alpha*A*x + beta*y if mv_type = 'N'
-				mkl_dcscmv(
-					&mv_type,		// Specifies operator, transpose or not	
-					&max_index,		// Number of rows in matrix
-					&max_index,		// Number of cols in matrix
-					&alpha2,		// scalar ALPHA
-					matdescra,		// Specifies type of matrix, *char
-					v,			// nonzero elements
-					row_index,		// row indicies
-					col_pointer,		// begin of col ptr
-					col_pointer + 1,	// end of col ptr
-					T_j,			// input vector
-					&beta,			// scalar BETA
-					T_next
-					);
-				*/
+			// Temporary vector for algorithm ("previous" vector T_j-1)
+			// Starting vector for Chebyshev method is a unit-vector at the center-orbital
+			for (int orb = 0; orb < num_orbitals; ++orb) {
+				int target_index = center_index + orb;
 				
-				// reassign values from previous iteration
-				for (int c = 0; c < max_index; ++c){
-					T_prev[c] = T_j[c];	//T_prev = T_j;
-					T_j[c] = T_next[c];	//T_j = T_next;
+				double T_prev[max_index];
+				
+				for (int i = 0; i < max_index; ++i){
+					T_prev[i] = 0.0;
 				}
 				
-				// get the jth entry
-				T_array[j + orb*poly_order] = T_j[target_index];
+				T_prev[target_index] = 1.0;
+			
+				// Temporary vector for algorithm ("current" vector T_j)
+				double T_j[max_index];	
+				for (int i = 0; i < max_index; ++i){
+					T_j[i] = 0.0;
+				}		
 				
-				// compute the next vector
+				H.vectorMultiply(T_prev, T_j, 1, 0);
+				
+				// Temporary vector for algorithm ("next" vector T_j+1)
+				double T_next[max_index];
+				for (int i = 0; i < max_index; ++i){
+					T_next[i] = 0.0;
+				}
+				
+				// first T value is always 1
+				T_array[0 + orb*poly_order] = 1;
+				
+				// Next one is calculated simply
+				T_array[1 + orb*poly_order] = T_j[target_index];
+				
+				// Now loop algorithm up to poly_order to find all T values
+				// double alpha2 = 2;
+				
+				// want to do: T_next = 2*H*T_j - T_prev;
 				H.vectorMultiply(T_j, T_next, 2, 0);
 				for (int c = 0; c < max_index; ++c){
 					T_next[c] = T_next[c] - T_prev[c];
 				}
 				
-				// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
-				if (j >= poly_order/4){
+				for (int j = 2; j < poly_order/2; ++j){
 				
-					double an_an = 0;
-					double anp_an = 0;
+					// reassign values from previous iteration
 					for (int c = 0; c < max_index; ++c){
-						an_an += T_j[c]*T_j[c];
-						anp_an += T_next[c]*T_j[c];
+						T_prev[c] = T_j[c];	//T_prev = T_j;
+						T_j[c] = T_next[c];	//T_j = T_next;
 					}
 					
-					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
-					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
-					T_array[2*j + orb*poly_order] = 2*an_an - T_array[0 + orb*poly_order];
-					T_array[2*j + 1 + orb*poly_order] = 2*anp_an - T_array[1 + orb*poly_order];
+					// get the jth entry
+					T_array[j + orb*poly_order] = T_j[target_index];
+					
+					// compute the next vector
+					H.vectorMultiply(T_j, T_next, 2, 0);
+					for (int c = 0; c < max_index; ++c){
+						T_next[c] = T_next[c] - T_prev[c];
+					}
+					
+					// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+					if (j >= poly_order/4){
+					
+						double an_an = 0;
+						double anp_an = 0;
+						for (int c = 0; c < max_index; ++c){
+							an_an += T_j[c]*T_j[c];
+							anp_an += T_next[c]*T_j[c];
+						}
+						
+						// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+						// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
+						T_array[2*j + orb*poly_order] = 2*an_an - T_array[0 + orb*poly_order];
+						T_array[2*j + 1 + orb*poly_order] = 2*anp_an - T_array[1 + orb*poly_order];
 
+					}
+
+					
+					// print every 100 steps on print rank
+					//if (rank == print_rank)
+						//if (j%100 == 0)
+							//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 				}
 				
-				// print every 100 steps on print rank
-				//if (rank == print_rank)
-					//if (j%100 == 0)
-						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 			}
 			
-		}
+		}	// end magOn == 0 block
+		else if (magOn == 1) {
+		
+			// Temporary vector for algorithm ("previous" vector T_j-1)
+			// Starting vector for Chebyshev method is a unit-vector at the center-orbital
+			for (int orb = 0; orb < num_orbitals; ++orb) {
+				int target_index = center_index + orb;
+				
+				std::complex<double> T_prev[max_index];
+				
+				for (int i = 0; i < max_index; ++i){
+					T_prev[i] = 0.0;
+				}
+				
+				T_prev[target_index] = 1.0;
+			
+				// Temporary vector for algorithm ("current" vector T_j)
+				std::complex<double> T_j[max_index];	
+				for (int i = 0; i < max_index; ++i){
+					T_j[i] = 0.0;
+				}		
+				
+				H.vectorMultiply(T_prev, T_j, 1, 0);
+
+				// Temporary vector for algorithm ("next" vector T_j+1)
+				std::complex<double> T_next[max_index];
+				for (int i = 0; i < max_index; ++i){
+					T_next[i] = 0.0;
+				}
+				
+				// first T value is always 1
+				T_array[0 + orb*poly_order] = 1;
+				
+				// Next one is calculated simply
+				T_array[1 + orb*poly_order] = T_j[target_index].real();
+				
+				// Now loop algorithm up to poly_order to find all T values
+				// double alpha2 = 2;
+				
+				// want to do: T_next = 2*H*T_j - T_prev;
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+				
+				for (int j = 2; j < poly_order/2; ++j){
+				
+					// reassign values from previous iteration
+					for (int c = 0; c < max_index; ++c){
+						T_prev[c] = T_j[c];	//T_prev = T_j;
+						T_j[c] = T_next[c];	//T_j = T_next;
+					}
+					
+					// get the jth entry
+					T_array[j + orb*poly_order] = T_j[target_index].real();
+					
+					// compute the next vector
+					H.vectorMultiply(T_j, T_next, 2, 0);
+					for (int c = 0; c < max_index; ++c){
+						T_next[c] = T_next[c] - T_prev[c];
+					}
+					
+					// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+					if (j >= poly_order/4){
+					
+						double an_an = 0;
+						double anp_an = 0;
+						for (int c = 0; c < max_index; ++c){
+							an_an += (std::conj(T_j[c])*T_j[c]).real();
+							anp_an += (std::conj(T_next[c])*T_j[c]).real();
+						}
+						
+						// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+						// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
+						T_array[2*j + orb*poly_order] = 2*an_an - T_array[0 + orb*poly_order];
+						T_array[2*j + 1 + orb*poly_order] = 2*anp_an - T_array[1 + orb*poly_order];
+
+					}
+					
+					// print every 100 steps on print rank
+					//if (rank == print_rank)
+						//if (j%100 == 0)
+							//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+				}
+				
+			}
+		
+		
+		} // end magOn == 1 block
 		
 		// Save time at which solver finished
 		time_t tempEnd;
@@ -1012,6 +1112,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// End of while(1) means we wait for another instruction from root
 		}
 
+}
+
+double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){
+	double preFactor = 3.14e-5; // This should be changed to be eqaul to (2 Pi)/(Flux Quanta), with Flux Quanta = h/e, in units of (T*Ang^2)^-1
+	double phase = preFactor*B_in*(x2 - x1)*(0.5)*(y1 + y2);
+	return phase;
 }
 
 // Not implemented (plotting is done via output files through i.e. MATLAB utility scripts)
