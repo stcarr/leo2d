@@ -12,9 +12,6 @@ EXECUTABLE = LEO2D
 DEBUG = -g -O0
 
 PLATFORM = DEFAULT
-WORKFLAGS = -DSQ_WORK
-#WORKFLAGS = -DLINE_WORK
-
 
 # Block for Odyssey
 ifeq ($(PLATFORM),ODYSSEY)
@@ -54,7 +51,7 @@ $(addprefix $(OUT_DIR)/,$(MPI_OBJ)): COMP = $(MPICC)
 $(addprefix $(OUT_DIR)/,$(OBJS)): TARGET = $@
 
 $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
-	$(COMP) $(MATFLAGS) $(WORKFLAGS) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
+	$(COMP) $(MATFLAGS) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
 
 .PHONY: clean
 
