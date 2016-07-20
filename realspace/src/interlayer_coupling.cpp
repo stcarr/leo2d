@@ -170,23 +170,23 @@ double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double
 	if ((delta_z > XX_sep - delta) && (delta_z < XX_sep + delta)) {
 	
 		if (orbit1 == 5 || orbit1 == 8) {
-			p_i = 1;
+			p_i = 0;
 		}
 		if (orbit1 == 6 || orbit1 == 9) {
-			p_i = 2;
+			p_i = 1;
 		}
 		if (orbit1 == 7 || orbit1 == 10) {
-			p_i = 3;
+			p_i = 2;
 		}
 		
 		if (orbit2 == 5 || orbit2 == 8) {
-			p_j = 1;
+			p_j = 0;
 		}
 		if (orbit2 == 6 || orbit2 == 9) {
-			p_j = 2;
+			p_j = 1;
 		}
 		if (orbit2 == 7 || orbit2 == 10) {
-			p_j = 3;
+			p_j = 2;
 		}
 		
 		double V_sigma = nu_sigma*exp(-pow(r/R_sigma, eta_sigma));

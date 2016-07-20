@@ -870,7 +870,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			int start_index = row_pointer[i];
 			int stop_index = row_pointer[i+1];
 				for(int j = start_index; j < stop_index; ++j){
-					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
 				}
 		}
 		
