@@ -338,7 +338,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 		printf("rank %d entering constructMatrix(). \n", rank);
 
 	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
-	if(solver_type == 1){
+	if(solver_type == 1 or solver_type == 2){
 		if (rank == root) {
 			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
 		} else {
@@ -359,27 +359,26 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	result_array.resize(maxJobs);
 	
 	// Uniform sample over a grid	
-	#ifdef SQ_WORK	
-	for (int i = 0; i < nShifts; ++i){
-		for (int j = 0; j < nShifts; ++j){
-			double x = (1.0/(double) (nShifts))*i;
-			double y = (1.0/(double) (nShifts))*j;
-			work[i*nShifts + j][0] = x;
-			work[i*nShifts + j][1] = y;
+	if (solver_type == 1){
+		for (int i = 0; i < nShifts; ++i){
+			for (int j = 0; j < nShifts; ++j){
+				double x = (1.0/(double) (nShifts))*i;
+				double y = (1.0/(double) (nShifts))*j;
+				work[i*nShifts + j][0] = x;
+				work[i*nShifts + j][1] = y;
 
+			}
 		}
 	}
-	#endif
 	
-	#ifdef LINE_WORK	
 	// Cut through the unit cell
-	
-	for (int i = 0; i < maxJobs; ++i){
-		double x = (1.0/((double) maxJobs))*i;
-		work[i][0] = x;
-		work[i][1] = x;
+	if (solver_type == 2){
+		for (int i = 0; i < maxJobs; ++i){
+			double x = (1.0/((double) maxJobs))*i;
+			work[i][0] = x;
+			work[i][1] = x;
+		}
 	}
-	#endif
 	
 	/*	
 	// TESTING CODE
