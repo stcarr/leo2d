@@ -297,6 +297,28 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 
 void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> *vec_out, std::complex<double> alpha, std::complex<double> beta) {
 
+	#ifdef USE_MKL
+	char mv_type = 'N';
+	char matdescra[6] = {'G',' ',' ','C',' ',' '};
+
+	// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
+	mkl_zcsrmv(
+		&mv_type,		// Specifies operator, transpose or not	
+		&nrows,			// Number of rows in matrix
+		&ncols,			// Number of cols in matrix
+		&alpha,			// scalar ALPHA
+		matdescra,		// Specifies type of matrix, *char
+		val,			// nonzero elements
+		colIndex,		// row indicies
+		rowPointer,		// begin of col ptr
+		rowPointer + 1,	// end of col ptr
+		vec_in,			// input vector
+		&beta,			// scalar BETA
+		vec_out			// output vector
+		);
+		
+	#else
+
 	for (int r = 0; r < nrows; ++r){
 			
 				std::complex<double> temp_sum;
@@ -310,6 +332,7 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 				
 				vec_out[r] = alpha*temp_sum + beta*vec_out[r];
 	}
+	#end
 }
 
 
