@@ -79,8 +79,16 @@ int main(int argc, char** argv) {
 	double interval_start = -1;
 	double interval_end = 1;
 	
+	// Magnetic field information (Peierl's substitution)
 	int magOn = 0;
 	double B = 0;
+	
+	// Probability (from 0 to 1) of turning a site into a vacancy defect
+	double vacancy_chance = 0;
+	
+	
+	int num_target_sheets = 1;
+	std::vector<int> target_sheets;
 	
 	// FILTLAN settings
 	int num_eigs = 1;
@@ -309,6 +317,8 @@ int main(int argc, char** argv) {
 						solver_type = 1;
 					} else if (in_string == "LC"){
 						solver_type = 2;
+					} else if (in_string == "VD"){
+						solver_type = 3;
 					}
 				}
 				
@@ -323,7 +333,30 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					B = atof(in_string.c_str());
-				}					
+				}
+				
+				if (in_string == "VACANCY_CHANCE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					vacancy_chance = atof(in_string.c_str());
+				}
+				
+				// !WARNING! Doing more than 1 target sheet is currently bugged (anp_an terms in the Cheby iteration having a memory allocation problem)
+				// However, can now do either the "top" or "bottom" sheet in a bilayer (sheet #2 ("top") is always shifted currently)
+				if (in_string == "NUM_TARGET_SHEETS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					num_target_sheets = atoi(in_string.c_str());
+					target_sheets.resize(num_target_sheets);
+				}
+				
+				if (in_string == "TARGET_SHEETS"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < num_target_sheets; ++i){
+						getline(in_line,in_string,' ');
+						target_sheets[i] = atoi(in_string.c_str()) - 1;
+					}
+				}
 				
 				
 			}
@@ -340,7 +373,7 @@ int main(int argc, char** argv) {
 	Locality loc(s_data,heights,angles);
 	
 	// Simulation's solver is set with setup call to Locality object
-	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type, intra_searchsize, inter_searchsize, magOn, B);
+	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type, intra_searchsize, inter_searchsize, magOn, B, vacancy_chance, num_target_sheets, target_sheets);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);

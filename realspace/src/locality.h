@@ -29,13 +29,16 @@ class Locality {
 		std::vector<double> heights;
 		std::vector<double> angles;
 		int max_index;
-		int center_index;
+		int* center_index;
 		int max_inter_pairs;
 		int max_intra_pairs;
 		int intra_searchsize;
 		int inter_searchsize;
 		int magOn;
 		double B;
+		int num_target_sheets;
+		std::vector<int> target_sheets;
+		double vacancy_chance;
 		
 		// Timing information
 		time_t constructStart;
@@ -74,7 +77,7 @@ class Locality {
         ~Locality();
 		
 		// Set the solver information
-		void setup(std::string,int,int,int,double,double,double,double,double,int,int,int,int,int,double);
+		void setup(std::string,int,int,int,double,double,double,double,double,int,int,int,int,int,double,double,int,std::vector<int>);
 		
 		// Starts MPI
 		void initMPI(int, char**);

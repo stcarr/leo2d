@@ -332,7 +332,7 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 				
 				vec_out[r] = alpha*temp_sum + beta*vec_out[r];
 	}
-	#end
+	#endif
 }
 
 
