@@ -6,6 +6,8 @@
  */
 #include <complex>
 
+#define MKL_Complex16 std::complex<double>
+
 #ifndef SPMATRIX_H
 #define SPMATRIX_H
 class SpMatrix {
