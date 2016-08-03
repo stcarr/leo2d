@@ -61,6 +61,9 @@ class Locality {
 		int solver_type;
 		
 		// Private solver methods
+		void sendRootWork(int, int, int,std::vector< std::vector<double> >, std::vector< std::vector<int> >);
+		std::vector<std::vector<int> > v_work;
+		
 		void rootChebSolve(int*,double*,int*,int*,double*);
 		void workerChebSolve(int*,double*,int*,int*,double*);
 		

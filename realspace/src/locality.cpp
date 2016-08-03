@@ -142,6 +142,11 @@ void Locality::constructGeom(){
 			center_index[target_sheet] = h.gridToIndex(center_grid);
 		}
 		
+		// Get Vacancies if solver_type == 3
+		if (solver_type == 3){
+			v_work = h.getVacancyList(center_index[0],nShifts*nShifts);
+		}
+		
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(center_index, sdata.size(), MPI_INT, root);
 		
@@ -365,12 +370,89 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	time(&solveEnd);
 }
 
+
+void Locality::sendRootWork(int type, int jobIndex, int target_r, std::vector< std::vector<double> > work, std::vector< std::vector<int> > v){
+
+	if (type == 1 or type == 2){
+		if(jobIndex == -1){
+		
+			double temp[2];
+			temp[0] = 0.0;
+			temp[1] = 0.0;
+			MPI::COMM_WORLD.Send(	
+					temp,
+					2, 
+					MPI::DOUBLE, 
+					target_r, 
+					STOPTAG);
+		
+		}
+		else{
+			double work_out[2];
+			work_out[0] = work[jobIndex][0];
+			work_out[1] = work[jobIndex][1];
+	
+			MPI::COMM_WORLD.Send(	
+						work_out, 	// input buffer
+						2,					// size of buffer [x,y]
+						MPI::DOUBLE,		// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label shift value
+		}		
+	} else if (type == 3){
+	
+		if(jobIndex == -1){
+			int temp_length = 2;
+			int temp[2];
+			temp[0] = 0;
+			temp[1] = 0;
+			MPI::COMM_WORLD.Send(	
+					&temp_length,
+					1, 
+					MPI::INT, 
+					target_r, 
+					STOPTAG);
+					
+			MPI::COMM_WORLD.Send(	
+					temp,
+					2, 
+					MPI::INT, 
+					target_r, 
+					STOPTAG);
+		
+		}
+		else{
+	
+			int vac_length = v[jobIndex].size();
+			int vac_list[vac_length];
+			for (int i = 0; i < vac_length; ++i){
+				vac_list[i] = v[jobIndex][i];
+			}
+			
+			MPI::COMM_WORLD.Send(	
+						&vac_length, 		// input buffer
+						1,					// size of buffer 
+						MPI::INT,			// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label work
+						
+			MPI::COMM_WORLD.Send(	
+						vac_list,		 	// input buffer
+						vac_length,			// size of buffer
+						MPI::INT,			// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label work
+		}
+	}
+
+}
+
 void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
 	
 	int maxJobs = nShifts*nShifts;
 	int currentJob = 0;
 	int length;
-	double work[nShifts*nShifts][2];
+	std::vector<std::vector<double> > work (maxJobs, std::vector<double> ( 2, 0 ) );
 	std::vector<std::vector<double> > result_array;
 	result_array.resize(maxJobs);
 	
@@ -420,17 +502,12 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	// try to give each worker its first job
 	
+	v_work.push_back(std::vector<int> (5,12));
+	
 	for (int r = 1; r < size; ++r) {
 		if (currentJob < maxJobs) {
 
-			MPI::COMM_WORLD.Send(	
-						work[currentJob], 	// input buffer
-						2,			// size of buffer [x,y]
-						MPI::DOUBLE,		// type of buffer
-						r,			// worker to recieve
-						currentJob+1);		// work tag to label shift value
-						
-			
+			sendRootWork(solver_type, currentJob, r, work, v_work);
 			++currentJob;					// one more job sent out!
 		}
 		
@@ -470,13 +547,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 		result_array[jobTag-1] = (temp_result);
 		
-		MPI::COMM_WORLD.Send(	
-					work[currentJob],
-					2,
-					MPI::DOUBLE,
-					status.Get_source(),		// send to worker that just completed
-					currentJob+1);
-		
+		sendRootWork(solver_type, currentJob, status.Get_source(), work, v_work);
+
 		++currentJob;						// one more job sent out!
 		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
 	}
@@ -524,15 +596,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	for (int r = 1; r < size; ++r){
 		printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
-		double temp[2];
-		temp[0] = 0.0;
-		temp[1] = 0.0;
-		MPI::COMM_WORLD.Send(	
-					temp,
-					2, 
-					MPI::DOUBLE, 
-					r, 
-					STOPTAG);
+		
+		sendRootWork(solver_type, -1, r, work, v_work);
+		
 		printf("rank %d sent STOPTAG successfully. \n", rank);
 	}
 	
@@ -695,6 +761,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	while (1) {
 	
 		int jobTag;
+		int vac_length;
+		int* vac_list;
 
 		//if (rank == print_rank)
 			//printf("rank %d waiting for new job... \n",rank);
@@ -702,13 +770,36 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		// Recv to get a new job
 		
-		MPI::COMM_WORLD.Recv( 
-						work, 			// work determines b-shift
-						2, 				// length of work
-						MPI::DOUBLE, 	// data-type of work
-						root, 			// must come from root
-						MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
-						status);		// keep MPI status information
+		if (solver_type == 1 || solver_type == 2){
+		
+			MPI::COMM_WORLD.Recv( 
+							work, 			// work determines b-shift
+							2, 				// length of work
+							MPI::DOUBLE, 	// data-type of work
+							root, 			// must come from root
+							MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
+							status);		// keep MPI status information
+							
+		} else if (solver_type == 3){
+		
+			MPI::COMM_WORLD.Recv(	
+						&vac_length, 		// input buffer
+						1,					// size of buffer 
+						MPI::INT,			// type of buffer
+						root,				// must come from root
+						MPI::ANY_TAG,		// either WORKTAG or STOPTAG
+						status);			// keep MPI status information
+			
+			vac_list = new int[vac_length];
+			
+			MPI::COMM_WORLD.Recv(	
+						vac_list,		 	// input buffer
+						vac_length,			// size of buffer
+						MPI::INT,			// type of buffer
+						root,				// must come from root
+						status.Get_tag(),	// make sure to get the right WORKTAG
+						status);			// work tag to label work
+		}
 		
 		jobTag = status.Get_tag();
 		// If worker gets STOPTAG it ends this method
@@ -796,6 +887,41 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		int num_vacancies = 0;										// total number of vacancies
 		
 		// Vacancy creation loop
+		if (solver_type == 3){
+			for (int i = 0; i < max_index; ++i){
+			
+				current_index_reduction[i] = num_vacancies;
+
+				for (int j = 0; j < vac_length; ++j){
+					if(i == vac_list[j]){
+					
+						vacancies.push_back(i);
+						num_vacancies++;
+						break;
+						
+					}
+				}
+		
+			}
+			
+			current_index_reduction[max_index] = num_vacancies;
+			local_max_index = max_index - num_vacancies;
+			
+			printf("Number of vacancies = %d \n",num_vacancies);
+			printf("First few vacancies = [");
+			for (int j = 0; j < 6; ++j){
+				if (vac_length > j){
+					printf("%d, ",vac_list[j]);
+				}
+			}
+			if (vac_length > 5){
+				printf("...] \n");
+			} else{
+				printf("] \n");
+			}
+		}
+		/*
+		
 		
 		if (solver_type == 3){
 		
@@ -837,7 +963,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			printf("Number of vacancies = %d \n",num_vacancies);
 		
 		} // End of vacancy creation loop (i.e. solver_type == 3)
-		
+		*/
 		
 		int* row_pointer = new int[local_max_index+1];
 

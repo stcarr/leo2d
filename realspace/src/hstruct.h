@@ -19,7 +19,7 @@ class Hstruct {
         std::vector<double> angles;
         std::vector<double> heights;
         std::vector<std::vector<double> > shifts;
-	std::vector<std::vector<int> > index_array;
+		std::vector<std::vector<int> > index_array;
         void setIndex();
         
     public:
@@ -40,6 +40,7 @@ class Hstruct {
 		std::vector<std::vector<int> > getIndexArray();
 		int gridToIndex(int (&grid_index)[4]);
 		void getIndexToPos(double*,int);
+		std::vector<std::vector<int> > getVacancyList(int,int);
 
 };
 

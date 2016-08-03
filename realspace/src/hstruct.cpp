@@ -410,6 +410,32 @@ void Hstruct::getIndexToPos(double* array_in,int dim){
 
 }
 
+std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int num_samples){
+
+	std::vector<std::vector<int> > temp_v_list;
+	int center_grid[4];
+	for (int i = 0; i < 4; ++i){
+		center_grid[i] = index_array[center_index][i];
+	}
+	
+	for (int j = 0; j < num_samples; ++j){
+		std::vector<int> temp_v;
+		for (int k = 5; k < 8; ++k){
+			int temp_grid[4];
+			temp_grid[0] = center_grid[0];
+			temp_grid[1] = center_grid[1] + 1 + j;
+			temp_grid[2] = k;
+			temp_grid[3] = center_grid[3];
+			temp_v.push_back(gridToIndex(temp_grid));
+		}
+		temp_v_list.push_back(temp_v);
+	}
+	
+	return temp_v_list;
+	
+	
+}
+
 
 
 
