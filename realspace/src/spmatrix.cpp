@@ -308,7 +308,7 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 		&ncols,			// Number of cols in matrix
 		&alpha,			// scalar ALPHA
 		matdescra,		// Specifies type of matrix, *char
-		val,			// nonzero elements
+		val_c,			// nonzero elements
 		colIndex,		// row indicies
 		rowPointer,		// begin of col ptr
 		rowPointer + 1,	// end of col ptr
