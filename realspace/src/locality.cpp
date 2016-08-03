@@ -144,7 +144,7 @@ void Locality::constructGeom(){
 		
 		// Get Vacancies if solver_type == 3
 		if (solver_type == 3){
-			v_work = h.getVacancyList(center_index[0],nShifts*nShifts);
+			v_work = h.getVacancyList(center_index[0],nShifts);
 		}
 		
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
@@ -370,7 +370,6 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	time(&solveEnd);
 }
 
-
 void Locality::sendRootWork(int type, int jobIndex, int target_r, std::vector< std::vector<double> > work, std::vector< std::vector<int> > v){
 
 	if (type == 1 or type == 2){
@@ -478,11 +477,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		}
 	}
 	
-	// No Shifts, used for vacancy in monolayer
+	// No Shifts, used instead to label poisition of vacancy in monolayer
 	if (solver_type == 3){
-		for (int i = 0; i < maxJobs; ++i){
-			work[i][0] = 0;
-			work[i][1] = 0;
+		int k = (nShifts - 1)/2;
+		for (int i = 0; i < nShifts; ++i){
+			for (int j = 0; j < nShifts; ++j){
+			work[i*nShifts + j][0] = i - k;
+			work[i*nShifts + j][1] = j - k;
+			}
 		}
 	}
 	
@@ -501,8 +503,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	MPI::Status status;
 	
 	// try to give each worker its first job
-	
-	v_work.push_back(std::vector<int> (5,12));
 	
 	for (int r = 1; r < size; ++r) {
 		if (currentJob < maxJobs) {
@@ -1396,12 +1396,6 @@ double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double
 	return phase;
 }
 
-// Not implemented (plotting is done via output files through i.e. MATLAB utility scripts)
-void Locality::plot(){ 
-
-}
-
-// Prints timing information
 void Locality::save(){
 
 	if (rank != root){

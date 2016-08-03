@@ -94,9 +94,6 @@ class Locality {
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
 		
-		// Not implemented
-		void plot();
-		
 		// Prints out timing information
 		void save();
 		

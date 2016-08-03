@@ -369,6 +369,11 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 	
+	if (solver_type == 3 && nShifts%2 == 0){
+		nShifts = nShifts + 1;
+		printf("Warning!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",nShifts);
+	}
+	
 	// Create the locality object with the sheet input data
 	Locality loc(s_data,heights,angles);
 	
@@ -381,8 +386,7 @@ int main(int argc, char** argv) {
 	// Builds the geometery of the problem on the root node and then sends them to workers via MPI
 	loc.constructGeom();
 	
-	// Oprn post processing operations. Plot does nothing currently, save prints timing information from each node. File saves happen on the MPI loop from the root node!
-	loc.plot();
+	// Post processing operations. Save prints timing information from each node. File saves happen on the MPI loop from the root node!
 	loc.save();
 	
 	// End MPI processes and finish
