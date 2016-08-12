@@ -430,7 +430,7 @@ std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int nSh
 			int j_shift = j - shift_avg;
 			
 			if (i_shift != 0 || j_shift != 0){
-				for (int k = 5; k < 8; ++k){
+				for (int k = 5; k < 11; ++k){
 					int temp_grid[4];
 					temp_grid[0] = center_grid[0] + i_shift;
 					temp_grid[1] = center_grid[1] + j_shift;
