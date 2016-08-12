@@ -217,7 +217,7 @@ void Locality::constructGeom(){
 		h.getIndexToPos(index_to_pos_y,1);
 		h.getIndexToPos(index_to_pos_z,2);
 		printf("indexToPos complete. \n");
-
+		
 		// POSITION DEBUG PRINT
 		/*
 		
@@ -355,8 +355,9 @@ void Locality::constructGeom(){
 
 void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t){ 
 	time(&solveStart);
-	if (rank == print_rank)
-		printf("rank %d entering constructMatrix(). \n", rank);
+	
+	//if (rank == print_rank)
+		//printf("rank %d entering constructMatrix(). \n", rank);
 
 	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
 	if(solver_type == 1 or solver_type == 2 or solver_type == 3){
@@ -371,7 +372,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 }
 
 void Locality::sendRootWork(int type, int jobIndex, int target_r, std::vector< std::vector<double> > work, std::vector< std::vector<int> > v){
-
+	
 	if (type == 1 or type == 2){
 		if(jobIndex == -1){
 		
@@ -447,7 +448,7 @@ void Locality::sendRootWork(int type, int jobIndex, int target_r, std::vector< s
 }
 
 void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
-	
+		
 	int maxJobs = nShifts*nShifts;
 	int currentJob = 0;
 	int length;
@@ -667,6 +668,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
 
 	double work[2];
+	work[0] = 0;
+	work[1] = 0;
 	MPI::Status status;
 	
 	// figure out the Chebyshev polynomial coefficients for each energy sample range
@@ -837,11 +840,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				i2pos[i*3 + 1] = index_to_pos[i*3 + 1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				}
-			if (index_to_grid[i*4 + 3] == 1){
+			else if (index_to_grid[i*4 + 3] == 1){
 				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0]*s1_a[0][0] + work[1]*s1_a[0][1];
 				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[0]*s1_a[1][0] + work[1]*s1_a[1][1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				}
+			else{
+				i2pos[i*3 + 0] = index_to_pos[i*3 + 0];
+				i2pos[i*3 + 1] = index_to_pos[i*3 + 1];
+				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+			}
 				
 		}
 		
