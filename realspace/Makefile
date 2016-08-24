@@ -1,9 +1,9 @@
-CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o spmatrix.o
+CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o spmatrix.o loc_params.o
 MPI_OBJ = main.o locality.o
 
 OBJS = $(CC_OBJ) $(MPI_OBJ)
 
-CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp
+CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp loc_params.cpp
 MPI_SRC = locality.cpp
 SRC_DIR = src
 OUT_DIR = obj

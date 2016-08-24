@@ -26,13 +26,9 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 	angles = angles_in;
 	
 	nShifts = 2;
-	num_eigs = 5;
-	interval_start = -1;
-	interval_end = 1;
 	
 	energy_rescale = 20.0;
 	energy_shift = 0.0;
-	cheb_width = 0.2;
 	poly_order = 3000;
 	
 }
@@ -45,37 +41,30 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup(std::string name, int shifts, int eigs, int samples,double start, double end,double e_rescale, double e_shift, double c_width, int p_order, int solver, int intra_search, int inter_search, int magOn_in, double B_in, double vc_in, int nts_in, std::vector<int> ts_in) {
-	// Edits run-specific options for matrix constructions and parameters of the solver method (to edit settings from the constructor)
+void Locality::setup(Loc_params opts){
+// Edits run-specific options for matrix constructions and parameters of the solver method (to edit settings from the constructor)
 
-	job_name = name;
-	nShifts = shifts;
-	
-	// Following are no longer used for calculation, done in post-processing
-	num_eigs = eigs;
-	num_samples = samples;
-	interval_start = start;
-	interval_end = end;
+	job_name = opts.getString("job_name");
+	nShifts = opts.getInt("nShifts");
 
 	// H construction and Chebyshev options
-	solver_type = solver;
-    energy_rescale = e_rescale;
-	energy_shift = e_shift;
-	cheb_width = c_width;
-	poly_order = p_order;
-	intra_searchsize = intra_search;
-	inter_searchsize = inter_search;
+	solver_type = opts.getInt("solver_type");
+    energy_rescale = opts.getDouble("energy_rescale");
+	energy_shift = opts.getDouble("energy_shift");
+	poly_order = opts.getInt("poly_order");
+	intra_searchsize = opts.getInt("intra_searchsize");
+	inter_searchsize = opts.getInt("inter_searchsize");
 	
 	// Magnetic field options
-	magOn = magOn_in;
-	B = B_in;
+	magOn = opts.getDouble("magOn");
+	B = opts.getDouble("B");
 	
 	// Vacancy options
-	vacancy_chance = vc_in;
+	vacancy_chance = opts.getDouble("vacancy_chance");
 	
 	// Local DOS targets
-	num_target_sheets = nts_in;
-	target_sheets = ts_in;
+	num_target_sheets = opts.getInt("num_target_sheets");
+	target_sheets = opts.getVecInt("target_sheets");
 }
 
 void Locality::initMPI(int argc, char** argv){
@@ -478,7 +467,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		}
 	}
 	
-	// No Shifts, used instead to label poisition of vacancy in monolayer
+	// No Shifts, used instead to label position of vacancy in monolayer
 	if (solver_type == 3){
 		int k = (nShifts - 1)/2;
 		for (int i = 0; i < nShifts; ++i){
@@ -488,18 +477,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			}
 		}
 	}
-	
-	/*	
-	// TESTING CODE
-	
-	int maxJobs = 1;
-	int currentJob = 0;
-	int num_samples;
-	double work[1][2];
-	work[0][0] = 0.0;
-	work[0][1] = 0.5;
-	std::vector<std::vector<double> > result_array;
-	*/
 	
 	MPI::Status status;
 	
@@ -677,29 +654,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	// p is the maximum order of the Chebyshev polynomial
 	int p = poly_order;
 	
-	// alpha_p is a constant used in the definition of the Chebyshev polynomial
-	double alpha_p = M_PI/(p+2);
-	
-	// sample_width is the scaled width of the non-zero portion of the polynomial
-	double sample_width = cheb_width/energy_rescale;
-	
-	// sample_spacing is the scaled distance between the center of each sample
-	double sample_spacing = (interval_end - interval_start)/(num_samples);
-	
-	// Save the center-point of each sample
-	double* sample_points = new double[num_samples + 1];
-	for (int i = 0; i < num_samples + 1; ++i){
-		sample_points[i] = ( (interval_start + sample_spacing*i) + energy_shift)/(energy_rescale);
-	}
-	
-	// Determine "dampening coefficients" (independent of sample location)
-	double* damp_coeff = new double[poly_order + 1];
-	damp_coeff[0] = 1.0;
-	for (int j = 0; j < poly_order + 1; ++j){
-		double jd = (double) j;
-		damp_coeff[j] = ((1-jd/(p+2))*sin(alpha_p)*cos(jd*alpha_p)+(1/(p+2))*cos(alpha_p)*sin(jd*alpha_p))/sin(alpha_p);
-	}
-	
 	// Sheet solving information
 	int num_orbitals[num_target_sheets];
 	int total_orbs = 0;
@@ -707,55 +661,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	for (int i = 0; i < num_target_sheets; i++){
 		num_orbitals[i] = sdata[target_sheets[i]].atom_types.size();
 		total_orbs = total_orbs + num_orbitals[i];
-	}
-	
-	// ------------------------
-	// TESTING POLYNOMIAL BLOCK
-	// Evaluates a Chebyshev "step" function at the center of the interval
-	// If std::out is saved to a file, can plot this to see how well behaved your Chebyshev polynomial is
-	//
-	
-	/*
-	int x = (int) num_samples/2;
-	for (int i = 0; i < num_samples; ++i){
-	
-		double cheb_coeff[poly_order];
-	
-		double a = sample_points[x] - sample_width/2;
-		double b = sample_points[x] + sample_width/2;
-		
-		cheb_coeff[0] = (1.0/M_PI)*(acos(a) - acos(b));
-		
-		for (int j = 1; j < poly_order + 1; ++j) {
-			double jd = (double) j;
-			cheb_coeff[j] = (2/M_PI)*(sin(jd*acos(a))-sin(jd*acos(b)))/jd;
-		}
-		
-		double T;
-		double v_i = 1;
-		double H = sample_points[i] + sample_width*0.5/energy_rescale;
-		
-		double T_prev = 1;
-		
-		double T_j = H*T_prev;
-		double T_next;
-		
-		T = v_i*(T_prev*cheb_coeff[0]*damp_coeff[0] + T_j*cheb_coeff[1]*damp_coeff[1]);
-		
-		for (int j = 1; j < poly_order; ++j){
-			T_next = 2*H*T_j - T_prev;
-			T_prev = T_j;
-			T_j = T_next;
-			T = T + v_i*(T_next*cheb_coeff[j+1]*damp_coeff[j+1]);
-		}
-		
-		printf("%lf \n",T);
-	}
-	*/
-	// END POLY TESTING BLOCK
-	// ----------------------
-	
-	
+	}	
 	
 	// ---------------------
 	// Enter MPI worker loop

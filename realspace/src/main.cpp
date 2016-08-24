@@ -29,9 +29,6 @@ int main(int argc, char** argv) {
 	// First set basic information about the job
 	// -----------------------------------------
 	
-	// Gets pre-pended to all output files
-	std::string job_name = "HSTRUCT_JOB";
-	
 	// Determines the grid size (from min_size to max_size) which the simulation attempts to populate using a geometric condition (currently checks r < max_size)
 	int min_size = -50;
 	int max_size = 50;
@@ -39,8 +36,6 @@ int main(int argc, char** argv) {
 	std::vector<int> max;
 	
 	// Number of sheets in simulation, s_data,heights,angles determines their properties
-	int intra_searchsize = 5;
-	int inter_searchsize = 5;
 	int num_sheets = 0;
 	int current_sheet = -1;
 	vector<Sdata> s_data;
@@ -67,38 +62,11 @@ int main(int argc, char** argv) {
 	double height = 0;
 	double angle = 0;
 	
-	// ----------------------------------
-	// Solver methods and b-shift options
-	// ----------------------------------
+	// ------------------------------------------------------
+	// Solver methods and b-shift options in Loc_params class
+	// ------------------------------------------------------
 	
-	// Number of b-shifts to perform in one direction (uniform grid sample over the first sheets unit cell is performed via MPI)
-	int nShifts = 1;
-	
-	// Solver information (type = 0 is FILTLAN local eigensolve, = 2 is Chebyshev spectrum sample.
-	int solver_type = 0;
-	double interval_start = -1;
-	double interval_end = 1;
-	
-	// Magnetic field information (Peierl's substitution)
-	int magOn = 0;
-	double B = 0;
-	
-	// Probability (from 0 to 1) of turning a site into a vacancy defect
-	double vacancy_chance = 0;
-	
-	
-	int num_target_sheets = 1;
-	std::vector<int> target_sheets;
-	
-	// FILTLAN settings
-	int num_eigs = 1;
-	
-	// Chebyshev settings
-	int num_samples = 1;
-	double energy_rescale = 15;
-	double energy_shift = 0;
-	double cheb_width = 0.2;
-	int poly_order = 3000;
+	Loc_params opts;
 	
 	// -----------------------------------------------------------
 	// Now we parse the command-line input file for these settings
@@ -120,7 +88,7 @@ int main(int argc, char** argv) {
 				if (in_string == "JOB_NAME"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					job_name = in_string;
+					opts.setParam("job_name", in_string);
 					}
 				
 				
@@ -247,78 +215,49 @@ int main(int argc, char** argv) {
 				if (in_string == "INTRA_SEARCHSIZE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					intra_searchsize = atoi(in_string.c_str());
+					opts.setParam("intra_searchsize",atoi(in_string.c_str()));
 				}
 				
 				if (in_string == "INTER_SEARCHSIZE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					inter_searchsize = atoi(in_string.c_str());
+					opts.setParam("inter_searchsize",atoi(in_string.c_str()));
 				}
 				
 				
 				if (in_string == "NSHIFTS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					nShifts = atoi(in_string.c_str());
-				}
-				
-				if (in_string == "NUM_EIGS"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					num_eigs = atoi(in_string.c_str());
-				}
-				if (in_string == "NUM_SAMPLES"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					num_samples = atoi(in_string.c_str());
-				}
-
-				if (in_string == "INTERVAL_START"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					interval_start = atof(in_string.c_str());
-				}
-
-				if (in_string == "INTERVAL_END"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					interval_end = atof(in_string.c_str());
+					opts.setParam("nShifts",atoi(in_string.c_str()));
 				}
 				
 				if (in_string == "ENERGY_RESCALE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					energy_rescale = atof(in_string.c_str());
+					opts.setParam("energy_rescale",atof(in_string.c_str()));
 				}
 				
 				if (in_string == "ENERGY_SHIFT"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					energy_shift = atof(in_string.c_str());
-				}
-				
-				if (in_string == "CHEB_WIDTH"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					cheb_width = atof(in_string.c_str());
+					opts.setParam("energy_shift",atof(in_string.c_str()));
 				}
 				
 				if (in_string == "POLY_ORDER"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					poly_order = atoi(in_string.c_str());
+					opts.setParam("poly_order",atoi(in_string.c_str()));
 				}
 				
 				if (in_string == "SOLVER_TYPE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					if (in_string == "SQ"){
-						solver_type = 1;
+						opts.setParam("solver_type",1);
 					} else if (in_string == "LC"){
-						solver_type = 2;
+						opts.setParam("solver_type",2);
 					} else if (in_string == "VD"){
-						solver_type = 3;
+						opts.setParam("solver_type",3);
 					}
 				}
 				
@@ -326,19 +265,19 @@ int main(int argc, char** argv) {
 				if (in_string == "USE_B_FIELD"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					magOn = atoi(in_string.c_str());
+					opts.setParam("magOn",atoi(in_string.c_str()));
 				}	
 
 				if (in_string == "B_FIELD"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					B = atof(in_string.c_str());
+					opts.setParam("B",atof(in_string.c_str()));
 				}
 				
 				if (in_string == "VACANCY_CHANCE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					vacancy_chance = atof(in_string.c_str());
+					opts.setParam("vacancy_chance",atof(in_string.c_str()));
 				}
 				
 				// !WARNING! Doing more than 1 target sheet is currently bugged (anp_an terms in the Cheby iteration having a memory allocation problem)
@@ -346,15 +285,16 @@ int main(int argc, char** argv) {
 				if (in_string == "NUM_TARGET_SHEETS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					num_target_sheets = atoi(in_string.c_str());
-					target_sheets.resize(num_target_sheets);
+					opts.setParam("num_target_sheets",atoi(in_string.c_str()));
 				}
 				
 				if (in_string == "TARGET_SHEETS"){
 					getline(in_line,in_string,' ');
-					for (int i = 0; i < num_target_sheets; ++i){
+					for (int i = 0; i < opts.getInt("num_target_sheets"); ++i){
 						getline(in_line,in_string,' ');
-						target_sheets[i] = atoi(in_string.c_str()) - 1;
+						std::vector<int> temp_sheets = opts.getVecInt("target_sheets");
+						temp_sheets.push_back(atoi(in_string.c_str()) - 1);
+						opts.setParam("target_sheets",temp_sheets);
 					}
 				}
 				
@@ -364,21 +304,21 @@ int main(int argc, char** argv) {
 		in_file.close();
 	}
 	
-	if (poly_order %4 != 0){
-		printf("Warning!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",poly_order);
+	if (opts.getInt("poly_order")%4 != 0){
+		printf("Warning!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",opts.getInt("poly_order"));
 		return -1;
 	}
 	
-	if (solver_type == 3 && nShifts%2 == 0){
-		nShifts = nShifts + 1;
-		printf("Warning!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",nShifts);
+	if (opts.getInt("solver_type") == 3 && opts.getInt("nShifts")%2 == 0){
+		opts.setParam("nShifts",opts.getInt("nShifts") + 1);
+		printf("Warning!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",opts.getInt("nShifts"));
 	}
 	
 	// Create the locality object with the sheet input data
 	Locality loc(s_data,heights,angles);
 	
 	// Simulation's solver is set with setup call to Locality object
-	loc.setup(job_name,nShifts, num_eigs, num_samples, interval_start, interval_end, energy_rescale, energy_shift, cheb_width, poly_order, solver_type, intra_searchsize, inter_searchsize, magOn, B, vacancy_chance, num_target_sheets, target_sheets);
+	loc.setup(opts);
 	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);

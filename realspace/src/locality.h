@@ -8,9 +8,12 @@
 
 #ifndef LOCALITY_H
 #define LOCALITY_H
+
 #include "hstruct.h"
 #include "interlayer_coupling.h"
 #include "spmatrix.h"
+#include "loc_params.h"
+
 #include <time.h>
 #include <math.h>  
 class Locality {
@@ -24,7 +27,7 @@ class Locality {
 		int rank;
 		int print_rank;
 		
-		// Geometery information
+		// Geometry information
 		std::vector<Sdata> sdata;
 		std::vector<double> heights;
 		std::vector<double> angles;
@@ -50,13 +53,8 @@ class Locality {
 		// Solver settings
 		int root;
 		int nShifts;
-		int num_eigs;
-		int num_samples;
-		double interval_start;
-		double interval_end;
 		double energy_rescale;
 		double energy_shift;
-		double cheb_width;
 		int poly_order;
 		int solver_type;
 		
@@ -80,7 +78,7 @@ class Locality {
         ~Locality();
 		
 		// Set the solver information
-		void setup(std::string,int,int,int,double,double,double,double,double,int,int,int,int,int,double,double,int,std::vector<int>);
+		void setup(Loc_params);
 		
 		// Starts MPI
 		void initMPI(int, char**);
