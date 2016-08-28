@@ -274,6 +274,18 @@ int main(int argc, char** argv) {
 					opts.setParam("B",atof(in_string.c_str()));
 				}
 				
+				if (in_string == "USE_E_FIELD"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("elecOn",atoi(in_string.c_str()));
+				}	
+
+				if (in_string == "E_FIELD"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("E",atof(in_string.c_str()));
+				}
+				
 				if (in_string == "VACANCY_CHANCE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -289,13 +301,15 @@ int main(int argc, char** argv) {
 				}
 				
 				if (in_string == "TARGET_SHEETS"){
+					std::vector<int> temp_sheets;
+					temp_sheets.resize(opts.getInt("num_target_sheets"));
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < opts.getInt("num_target_sheets"); ++i){
 						getline(in_line,in_string,' ');
-						std::vector<int> temp_sheets = opts.getVecInt("target_sheets");
-						temp_sheets.push_back(atoi(in_string.c_str()) - 1);
-						opts.setParam("target_sheets",temp_sheets);
+						int temp_target_sheet = atoi(in_string.c_str()) - 1;
+						temp_sheets[i] = temp_target_sheet;
 					}
+					opts.setParam("target_sheets",temp_sheets);
 				}
 				
 				
@@ -317,11 +331,11 @@ int main(int argc, char** argv) {
 	// Create the locality object with the sheet input data
 	Locality loc(s_data,heights,angles);
 	
-	// Simulation's solver is set with setup call to Locality object
-	loc.setup(opts);
-	
 	// Start MPI within Locality object on each processor
 	loc.initMPI(argc, argv);
+	
+	// Simulation's solver is set with setup call to Locality object
+	loc.setup(opts);
 	
 	// Builds the geometery of the problem on the root node and then sends them to workers via MPI
 	loc.constructGeom();

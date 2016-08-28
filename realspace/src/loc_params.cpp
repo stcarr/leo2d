@@ -6,6 +6,9 @@
  */
 
 #include "loc_params.h"
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 
 // --------------------------------------
 // Old constructor, no use of class Sdata
@@ -156,5 +159,33 @@ std::vector<int> Loc_params::getVecInt(std::string tag) const{
 	if (tag == "target_sheets")
 		return target_sheets;
 
+}
+
+void Loc_params::printParams(){
+
+		printf(" T Input parameters for Locality object: \n");
+		printf(" | nShifts = %d \n", nShifts);
+		printf(" | solver_type = %d \n", solver_type);
+		printf(" | intra_searchsize = %d \n", intra_searchsize);
+		printf(" | inter_searchsize = %d \n", inter_searchsize);
+		printf(" | num_target_sheets = %d \n", num_target_sheets);
+		printf(" | poly_order = %d \n", poly_order);
+		printf(" | magOn = %d \n", magOn);
+		printf(" | elecOn = %d \n", elecOn);
+		
+		printf(" | energy_rescale = %lf \n", energy_rescale);
+		printf(" | energy_shift = %lf \n", energy_shift);
+		printf(" | B = %lf \n", B);
+		printf(" | E = %lf \n", E);
+		printf(" | vacancy_chance = %lf \n",vacancy_chance);
+		
+		std::cout << " | job_name = " << job_name << "\n";
+		
+		std::cout << " L target_sheets = [";
+		std::cout << target_sheets[0];
+		for (int s = 1; s < num_target_sheets; ++s){
+			std::cout << ", " << target_sheets[s];
+		}
+		std::cout << "] \n";
 }
 

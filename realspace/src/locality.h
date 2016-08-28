@@ -37,8 +37,12 @@ class Locality {
 		int max_intra_pairs;
 		int intra_searchsize;
 		int inter_searchsize;
+		
 		int magOn;
 		double B;
+		int elecOn;
+		double E;
+		
 		int num_target_sheets;
 		std::vector<int> target_sheets;
 		double vacancy_chance;
@@ -91,6 +95,9 @@ class Locality {
 		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
+		
+		// Calculates the on-site energy in the presence of a gated electric field
+		double onSiteE(double, double, double);
 		
 		// Prints out timing information
 		void save();

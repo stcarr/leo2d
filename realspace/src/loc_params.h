@@ -47,6 +47,7 @@ class Loc_params {
 		double getDouble(std::string) const;
 		std::string getString(std::string) const;
 		std::vector<int> getVecInt(std::string) const;
+		void printParams();
 };
 
 #endif /* LOC_PARAMS_H */

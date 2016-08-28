@@ -44,6 +44,10 @@ Locality::~Locality() {
 void Locality::setup(Loc_params opts){
 // Edits run-specific options for matrix constructions and parameters of the solver method (to edit settings from the constructor)
 
+	if (rank == root){
+		opts.printParams();
+	}
+	
 	job_name = opts.getString("job_name");
 	nShifts = opts.getInt("nShifts");
 
@@ -58,6 +62,10 @@ void Locality::setup(Loc_params opts){
 	// Magnetic field options
 	magOn = opts.getDouble("magOn");
 	B = opts.getDouble("B");
+	
+	// Electric field options
+	elecOn = opts.getInt("elecOn");
+	E = opts.getDouble("E");
 	
 	// Vacancy options
 	vacancy_chance = opts.getDouble("vacancy_chance");
@@ -929,9 +937,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					double t;
 					
 					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
-					if (new_k == k_i)
-						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
-					// Otherwise we just enter the value just with scaling
+					// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+					if (new_k == k_i){
+						if (elecOn == 1)
+							t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(i2pos[k_i*3 + 0],i2pos[k_i*3 + 1],i2pos[k_i*3 + 2]))/energy_rescale;
+						else if (elecOn == 0)
+							t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+					// Otherwise we enter the value just with rescaling
+					}
 					else
 						t = intra_pairs_t[intra_counter]/energy_rescale;
 					
@@ -1156,7 +1169,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 							// u_{2n} 	= 2*<a_n|a_n>		- u_0;
 							// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
 							T_array[2*j + orb*poly_order + sIndex] = 2*an_an - T_array[0 + orb*poly_order + sIndex];
-							T_array[2*j + 1 + orb*poly_order + sIndex] = 2*anp_an - T_array[1 + orb*poly_order] + sIndex;
+							T_array[2*j + 1 + orb*poly_order + sIndex] = 2*anp_an - T_array[1 + orb*poly_order + sIndex];
 
 						}
 
@@ -1305,9 +1318,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 }
 
 double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){
-	double preFactor = 3.14e-5; // This should be changed to be eqaul to (2 Pi)/(Flux Quanta), with Flux Quanta = h/e, in units of (T*Ang^2)^-1
+	double preFactor = 3.14e-5; // This should be changed to be equal to (2 Pi)/(Flux Quanta), with Flux Quanta = h/e, in units of (T*Ang^2)^-1
 	double phase = preFactor*B_in*(x2 - x1)*(0.5)*(y1 + y2);
 	return phase;
+}
+
+double Locality::onSiteE(double x, double y, double z){
+	// E a constant in the Z direction, return z*E (physical prefactors missing!!!)
+	return z*E;
 }
 
 void Locality::save(){
