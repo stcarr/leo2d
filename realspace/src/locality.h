@@ -93,6 +93,9 @@ class Locality {
 		// Construct and solve the tight binding problem. Also saves output files
 		void constructMatrix(int*,double*,int*,int*,double*);
 		
+		// Creates and returns a SpMatrix object representing H for a specific job
+		void generateH(SpMatrix&, int*, double*, int*, int*, double*, std::vector<int>, int);
+		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
 		

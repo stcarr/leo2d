@@ -60,7 +60,7 @@ void Locality::setup(Loc_params opts){
 	inter_searchsize = opts.getInt("inter_searchsize");
 	
 	// Magnetic field options
-	magOn = opts.getDouble("magOn");
+	magOn = opts.getInt("magOn");
 	B = opts.getDouble("B");
 	
 	// Electric field options
@@ -95,9 +95,6 @@ void Locality::constructGeom(){
 
 	time(&constructStart);
 	
-	if (rank == print_rank)
-		printf("rank %d entering constructGeom(). \n", rank);
-
 	int max_pairs;
 	
 	int* inter_pairs_i;
@@ -178,6 +175,10 @@ void Locality::constructGeom(){
 		printf("Inter and intra pair construction complete. \n");
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
+
+		printf("Heterostructure has %d atoms. \n", max_index);
+		printf("%d entries expected from intra. \n", max_intra_pairs);
+		printf("%d entries expected from inter. \n", max_inter_pairs);
 		
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
@@ -205,7 +206,7 @@ void Locality::constructGeom(){
 		}
 		
 		// Get and prepare the index_to_pos array for broadcasting
-		printf("Getting indexToPos arrays. \n");
+		printf("Building indexToPos arrays. \n");
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
 		index_to_pos_z = new double[max_index];
@@ -228,9 +229,7 @@ void Locality::constructGeom(){
 	}
 	
 	if (rank != root){
-		
-		printf("rank %d allocating memory in constructGeom(). \n", rank);
-		
+	
 		center_index = new int[sdata.size()];
 	
 		// Allocate memory to receive pair and "index to grid" information
@@ -272,14 +271,8 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_z, max_index, MPI_DOUBLE, root);
-
-	if (rank == print_rank)
-		printf("rank %d attempting to allocate memory for its global variables. \n",rank);
-	
 	int* index_to_grid = new int[max_index*4];
 	
-	printf("rank %d has max_index = %d \n", rank, max_index);
-
 	for (int k = 0; k < max_index; ++k){
 		index_to_grid[k*4 + 0] = index_to_grid_i[k];
 		index_to_grid[k*4 + 1] = index_to_grid_j[k];
@@ -292,9 +285,6 @@ void Locality::constructGeom(){
 	delete index_to_grid_l;
 	delete index_to_grid_s;
 	
-	
-	printf("rank %d finished index_to_grid creation \n", rank);
-	
 	int* inter_pairs = new int[2*max_inter_pairs];
 	
 	for (int x = 0; x < max_inter_pairs; ++x){
@@ -306,21 +296,12 @@ void Locality::constructGeom(){
 	delete inter_pairs_i;
 	delete inter_pairs_j;
 	
-	printf("inter_pairs size = %d \n", max_inter_pairs);
-	printf("rank %d finished inter_pairs creation \n", rank);
-
-	printf("allocating memory for intra pairs on rank %d \n", rank);
-	printf("intra_pairs size = %d \n", max_intra_pairs);
 	int* intra_pairs = new int[2*max_intra_pairs];
-	printf("allocated memory for intra pairs on rank %d \n", rank);
-
-
+	
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
 		intra_pairs[x*2 + 1] = intra_pairs_j[x];
 	}
-	
-	printf("rank %d finished intra_pairs creation \n", rank);
 	
 	double* index_to_pos = new double[3*max_index];
 	
@@ -329,12 +310,6 @@ void Locality::constructGeom(){
 		index_to_pos[k*3 + 1] = index_to_pos_y[k];
 		index_to_pos[k*3 + 2] = index_to_pos_z[k];
 
-	}
-			
-	if (rank == print_rank){	
-		printf("Heterostructure has %d atoms. \n", max_index);
-		printf("%d entries expected from intra. \n", max_intra_pairs);
-		printf("%d entries expected from inter. \n", max_inter_pairs);
 	}
 
 	time(&constructEnd);
@@ -767,326 +742,62 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 		}
 		
+	// Keep track of variables for vacancy simulation
+	
+	int local_max_index = max_index;
+	
+	std::vector<int> vacancies;									// indices of the orbitals to remove from the tight-binding model
+	std::vector<int> current_index_reduction(max_index+1,0);	// tells us how to relabel our indices in the reduced size matrix
+	int num_vacancies = 0;										// total number of vacancies
+	
+	// Vacancy creation loop
+	if (solver_type == 3){
+		for (int i = 0; i < max_index; ++i){
+		
+			current_index_reduction[i] = num_vacancies;
+
+			for (int j = 0; j < vac_length; ++j){
+				if(i == vac_list[j]){
+				
+					vacancies.push_back(i);
+					num_vacancies++;
+					break;
+					
+				}
+			}
+	
+		}
+		
+		current_index_reduction[max_index] = num_vacancies;
+		local_max_index = max_index - num_vacancies;
+		
+		printf("Number of vacancies = %d \n",num_vacancies);
+		printf("First few vacancies = [");
+		for (int j = 0; j < 6; ++j){
+			if (vac_length > j){
+				printf("%d, ",vac_list[j]);
+			}
+		}
+		if (vac_length > 5){
+			printf("...] \n");
+		} else{
+			printf("] \n");
+		}
+	}
+	
+		
 		// -----------------------
 		// Build the Sparse matrix
 		// -----------------------
 		
-		printf("rank %d building Sparse Matrix H. \n",rank);
+		SpMatrix H;
+		generateH(H, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		
-		// Indexes how many inter terms we have entered so far
-		int inter_counter = 0;
-		
-		// Indexes how many intra terms we have intered so far
-		int intra_counter = 0;
-		
-		// Total number of expected non-zero matrix elements
-		int max_nnz = max_intra_pairs + max_inter_pairs;
-		
-		// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
-		
-		// col_index tells us the col of element i
-		// v tells us the value of element i
-		// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
-		
-		int* col_index = new int[max_nnz];
-		
-		double* v;
-		std::complex<double>* v_c;
-		
-		if (magOn == 0){
-			v = new double[max_nnz];
-		}
-		else if (magOn == 1){
-			v_c = new std::complex<double>[max_nnz];
-		}
-		
-		// Keep track of variables for vacancy simulation
-		
-		int local_max_index = max_index;
-		
-		std::vector<int> vacancies;									// indices of the orbitals to remove from the tight-binding model
-		std::vector<int> current_index_reduction(max_index+1,0);	// tells us how to relabel our indices in the reduced size matrix
-		int num_vacancies = 0;										// total number of vacancies
-		
-		// Vacancy creation loop
-		if (solver_type == 3){
-			for (int i = 0; i < max_index; ++i){
-			
-				current_index_reduction[i] = num_vacancies;
-
-				for (int j = 0; j < vac_length; ++j){
-					if(i == vac_list[j]){
-					
-						vacancies.push_back(i);
-						num_vacancies++;
-						break;
-						
-					}
-				}
-		
-			}
-			
-			current_index_reduction[max_index] = num_vacancies;
-			local_max_index = max_index - num_vacancies;
-			
-			printf("Number of vacancies = %d \n",num_vacancies);
-			printf("First few vacancies = [");
-			for (int j = 0; j < 6; ++j){
-				if (vac_length > j){
-					printf("%d, ",vac_list[j]);
-				}
-			}
-			if (vac_length > 5){
-				printf("...] \n");
-			} else{
-				printf("] \n");
-			}
-		}
-		/*
-		
-		
-		if (solver_type == 3){
-		
-			srand((unsigned)time(NULL));
-			
-			for (int i = 0; i < max_index; ++i){
-			
-				current_index_reduction[i] = num_vacancies;
-				int protected_orbital = 0;
-				
-				for (int s = 0; s < num_target_sheets; ++s){
-				
-					int sheet = target_sheets[s];
-					
-					for (int o = 0; o < num_orbitals[s]; ++o){
-					
-						if (i == center_index[sheet] + o){
-							protected_orbital = 1;
-						}
-						
-						
-					}
-					
-				}
-				
-				if (protected_orbital == 1){
-					continue;
-				}
-					
-				if (((double)rand()/(double)RAND_MAX) < vacancy_chance){
-					vacancies.push_back(i);
-					num_vacancies++;
-				}
-			}
-			
-			current_index_reduction[max_index] = num_vacancies;
-			local_max_index = max_index - num_vacancies;
-			
-			printf("Number of vacancies = %d \n",num_vacancies);
-		
-		} // End of vacancy creation loop (i.e. solver_type == 3)
-		*/
-		
-		int* row_pointer = new int[local_max_index+1];
-
-		// Count the current element, i.e. "i = input_counter"
-		int input_counter = 0;
-	
-		// Loop through every orbital (i.e. rows of H)
-		for (int k_i = 0; k_i < max_index; ++k_i){
-			
-			int skip_here1 = 0;
-			
-			if (solver_type == 3){
-				if (current_index_reduction[k_i] + 1 == current_index_reduction[k_i + 1]){
-					skip_here1 = 1;
-				}
-			}
-			
-			int k = k_i - current_index_reduction[k_i];
-					
-			// Save starting point of row k
-			row_pointer[k] = input_counter;
-			
-			// While we are still at the correct index in our intra_pairs list:
-			bool same_index1 = true;
-			while(same_index1) {
-			
-				int skip_here2 = 0;
-			
-				// if the first index of intra_pairs changes, we stop
-				if (intra_pairs[intra_counter*2 + 0] != k_i) {
-					same_index1 = false;
-					continue; // go to "while(same_index1)" which will end this loop
-				}
-				
-				int new_k = intra_pairs[intra_counter*2 + 1];
-
-				
-				// if we are accounting for defects, we check if the other half of the pair has been removed
-				if (solver_type == 3){
-					if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
-						skip_here2 = 1;
-					}
-				}
-				
-				// we save this pair into our sparse matrix format
-				if (skip_here1 == 0 && skip_here2 == 0){
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					
-					double t;
-					
-					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
-					// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
-					if (new_k == k_i){
-						if (elecOn == 1)
-							t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(i2pos[k_i*3 + 0],i2pos[k_i*3 + 1],i2pos[k_i*3 + 2]))/energy_rescale;
-						else if (elecOn == 0)
-							t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
-					// Otherwise we enter the value just with rescaling
-					}
-					else
-						t = intra_pairs_t[intra_counter]/energy_rescale;
-					
-					//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
-					
-					if (magOn == 0){
-						v[input_counter] = t;
-					}
-					else if (magOn == 1) {
-						
-						double x1 = i2pos[k*3 + 0];
-						double y1 = i2pos[k*3 + 1];
-						double x2 = i2pos[new_k*3 + 0];
-						double y2 = i2pos[new_k*3 + 1];
-						
-						double pPhase = peierlsPhase(x1, x2, y1, y2, B);
-						v_c[input_counter] = std::polar(t, pPhase);
-					}
-					++input_counter;
-				}
-				++intra_counter;
-				
-			}
-		
-			// While we are still at the correct index in our inter_pairs list:
-			bool same_index2 = true;
-			while(same_index2) {
-			
-				int skip_here2 = 0;
-			
-				// if the first index of intra_pairs changes, we stop
-				if (inter_pairs[inter_counter*2 + 0] != k_i) {
-					same_index2 = false;
-					continue; // go to "while(same_index2)" which will end this loop
-				}
-				
-				int new_k = inter_pairs[inter_counter*2 + 1];
-				
-				// if we are accounting for defects, we check if the other half of the pair has been removed
-				if (solver_type == 3){
-					if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
-						skip_here2 = 1;
-					}
-				}
-				
-				// we save this pair into our sparse matrix format
-				if (skip_here1 == 0 && skip_here2 == 0){
-					// get the index of the other orbital in this term
-					
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					
-					// get the position of both orbitals
-					double x1 = i2pos[k_i*3 + 0];
-					double y1 = i2pos[k_i*3 + 1];
-					double z1 = i2pos[k_i*3 + 2];
-					double x2 = i2pos[new_k*3 + 0];
-					double y2 = i2pos[new_k*3 + 1];
-					double z2 = i2pos[new_k*3 + 2];
-					
-					// and the orbit tag in their respective unit-cell
-					int orbit1 = index_to_grid[k_i*4 + 2];
-					int orbit2 = index_to_grid[new_k*4 + 2];
-					
-					int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
-					int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
-					
-					// and the angle of the sheet each orbital is on
-					double theta1 = angles[index_to_grid[k_i*4 + 3]];
-					double theta2 = angles[index_to_grid[new_k*4 + 3]];
-
-					// use all this information to determine coupling energy
-					// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
-					
-					double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
-					if (t != 0 ){
-						if (magOn == 0){
-							v[input_counter] = t;
-						}
-						else if (magOn == 1){
-							double pPhase = peierlsPhase(x1, x2, y1, y2, B);
-						    v_c[input_counter] = std::polar(t, pPhase);
-						}
-						//printf("inter [%d,%d] = %lf \n",k,new_k,t);
-						++input_counter;
-					}
-				}
-				++inter_counter;
-
-			}
-		}
-		
-		// Save the end point + 1 of the last row
-		row_pointer[local_max_index] = input_counter;
-		
-		// Construct the Sparse Tight-binding Hamiltonian matrix
-		//!!	SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
-		
-		// ------------------------------
-		// Following saves Matrix to file
-		//
-		// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
-		
-		/*
-		std::ofstream outFile;
-		const char* extension = "_matrix.dat";
-		outFile.open ((job_name + extension).c_str());
-		
-		for(int i = 0; i < max_index; ++i){
-			int start_index = row_pointer[i];
-			int stop_index = row_pointer[i+1];
-				for(int j = start_index; j < stop_index; ++j){
-					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-				}
-		}
-		
-		outFile.close();
-		*/
-		
-		// End Matrix Save
-		// ---------------
-				
-		//if(rank == print_rank)
-			printf("rank %d starting Chebychev solver work... \n", rank);
-		/*
-		char mv_type = 'N';
-        char matdescra[6] = {'G',' ',' ','C',' ',' '};
-        double alpha = 1;
-        double beta = 0;
-		*/
-		
-		SpMatrix H = SpMatrix();
-		if (magOn == 0){
-			H.setup(local_max_index, local_max_index, v,   col_index, row_pointer, max_nnz); 
-		}
-		else if (magOn == 1){
-			H.setup(local_max_index, local_max_index, v_c, col_index, row_pointer, max_nnz);
-		}
-		
-		// Chebyshev values
+		// ---------------------
+		// Chebyshev Computation
+		// ---------------------
 		
 		// Saves T values
-		
 		double* T_array = new double[poly_order*total_orbs];
 		
 		if (magOn == 0){
@@ -1315,6 +1026,225 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// End of while(1) means we wait for another instruction from root
 		}
 
+}
+
+void Locality::generateH(SpMatrix &H, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+
+	// Indexes how many inter terms we have entered so far
+	int inter_counter = 0;
+	
+	// Indexes how many intra terms we have entered so far
+	int intra_counter = 0;
+	
+	// Total number of expected non-zero matrix elements
+	int max_nnz = max_intra_pairs + max_inter_pairs;
+	
+	// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
+	
+	// col_index tells us the col of element i
+	// v tells us the value of element i
+	// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
+	
+	H.setup(max_nnz, local_max_index, local_max_index);
+	
+	int* col_index = H.allocColIndx();
+	int* row_pointer = H.allocRowPtr();
+	
+	double* v;
+	std::complex<double>* v_c;
+	
+	if (magOn == 0){
+		v = H.allocRealVal();
+	}
+	else if (magOn == 1){
+		v_c = H.allocCpxVal();
+	}
+
+	// Count the current element, i.e. "i = input_counter"
+	int input_counter = 0;
+
+	// Loop through every orbital (i.e. rows of H)
+	for (int k_i = 0; k_i < max_index; ++k_i){
+	
+		int skip_here1 = 0;
+		
+		if (solver_type == 3){
+			if (current_index_reduction[k_i] + 1 == current_index_reduction[k_i + 1]){
+				skip_here1 = 1;
+			}
+		}
+		
+		int k = k_i - current_index_reduction[k_i];
+		
+		// Save starting point of row k
+		row_pointer[k] = input_counter;
+		
+		// While we are still at the correct index in our intra_pairs list:
+		bool same_index1 = true;
+		while(same_index1) {
+		
+			int skip_here2 = 0;
+		
+			// if the first index of intra_pairs changes, we stop
+			if (intra_pairs[intra_counter*2 + 0] != k_i) {
+				same_index1 = false;
+				continue; // go to "while(same_index1)" which will end this loop
+			}
+			
+			int new_k = intra_pairs[intra_counter*2 + 1];
+			
+			// if we are accounting for defects, we check if the other half of the pair has been removed
+			if (solver_type == 3){
+				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
+					skip_here2 = 1;
+				}
+			}
+			
+			// we save this pair into our sparse matrix format
+			if (skip_here1 == 0 && skip_here2 == 0){
+				col_index[input_counter] = new_k - current_index_reduction[new_k];
+				
+				double t;
+				
+				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
+				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+				if (new_k == k_i){
+					if (elecOn == 1){
+						t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(i2pos[k_i*3 + 0],i2pos[k_i*3 + 1],i2pos[k_i*3 + 2]))/energy_rescale;
+					} else if (elecOn == 0)
+						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+				// Otherwise we enter the value just with rescaling
+				}
+				else
+					t = intra_pairs_t[intra_counter]/energy_rescale;
+				
+				//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
+				
+				if (magOn == 0){
+					v[input_counter] = t;
+				}
+				else if (magOn == 1) {
+					
+					double x1 = i2pos[k*3 + 0];
+					double y1 = i2pos[k*3 + 1];
+					double x2 = i2pos[new_k*3 + 0];
+					double y2 = i2pos[new_k*3 + 1];
+					
+					double pPhase = peierlsPhase(x1, x2, y1, y2, B);
+					v_c[input_counter] = std::polar(t, pPhase);
+				}
+				++input_counter;
+			}
+			++intra_counter;
+			
+		}
+			
+		// While we are still at the correct index in our inter_pairs list:
+		bool same_index2 = true;
+		while(same_index2) {
+		
+			int skip_here2 = 0;
+		
+			// if the first index of intra_pairs changes, we stop
+			if (inter_pairs[inter_counter*2 + 0] != k_i) {
+				same_index2 = false;
+				continue; // go to "while(same_index2)" which will end this loop
+			}
+			
+			int new_k = inter_pairs[inter_counter*2 + 1];
+			
+			// if we are accounting for defects, we check if the other half of the pair has been removed
+			if (solver_type == 3){
+				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
+					skip_here2 = 1;
+				}
+			}
+			
+			// we save this pair into our sparse matrix format
+			if (skip_here1 == 0 && skip_here2 == 0){
+				// get the index of the other orbital in this term
+				
+				col_index[input_counter] = new_k - current_index_reduction[new_k];
+				
+				// get the position of both orbitals
+				double x1 = i2pos[k_i*3 + 0];
+				double y1 = i2pos[k_i*3 + 1];
+				double z1 = i2pos[k_i*3 + 2];
+				double x2 = i2pos[new_k*3 + 0];
+				double y2 = i2pos[new_k*3 + 1];
+				double z2 = i2pos[new_k*3 + 2];
+				
+				// and the orbit tag in their respective unit-cell
+				int orbit1 = index_to_grid[k_i*4 + 2];
+				int orbit2 = index_to_grid[new_k*4 + 2];
+				
+				int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
+				int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+				
+				// and the angle of the sheet each orbital is on
+				double theta1 = angles[index_to_grid[k_i*4 + 3]];
+				double theta2 = angles[index_to_grid[new_k*4 + 3]];
+
+				// use all this information to determine coupling energy
+				// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
+				
+				double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+				if (t != 0 ){
+					if (magOn == 0){
+						v[input_counter] = t;
+					}
+					else if (magOn == 1){
+						double pPhase = peierlsPhase(x1, x2, y1, y2, B);
+						v_c[input_counter] = std::polar(t, pPhase);
+					}
+					//printf("inter [%d,%d] = %lf \n",k,new_k,t);
+					++input_counter;
+				}
+			}
+			++inter_counter;
+
+		}
+	}
+	
+	// Save the end point + 1 of the last row
+	row_pointer[local_max_index] = input_counter;
+	
+	// Construct the Sparse Tight-binding Hamiltonian matrix
+	//!!	SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
+	
+	// ------------------------------
+	// Following saves Matrix to file
+	//
+	// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+	
+	/*
+	std::ofstream outFile;
+	const char* extension = "_matrix.dat";
+	outFile.open ((job_name + extension).c_str());
+	
+	for(int i = 0; i < max_index; ++i){
+		int start_index = row_pointer[i];
+		int stop_index = row_pointer[i+1];
+			for(int j = start_index; j < stop_index; ++j){
+				outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+			}
+	}
+	
+	outFile.close();
+	*/
+	
+	// End Matrix Save
+	// ---------------
+	
+	/*
+	if (magOn == 0){
+		H.setup(local_max_index, local_max_index, v,   col_index, row_pointer, max_nnz); 
+	}
+	else if (magOn == 1){
+		H.setup(local_max_index, local_max_index, v_c, col_index, row_pointer, max_nnz);
+	}
+	*/
+	
 }
 
 double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){

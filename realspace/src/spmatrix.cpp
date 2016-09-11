@@ -120,7 +120,7 @@ SpMatrix::SpMatrix(int nr, int nc, std::complex<double> *val_c0, int *colIndex0,
 
 // a destructor
 SpMatrix::~SpMatrix() {
-
+	
 	if (type == 0){
 		delete [] val;
 	}
@@ -131,6 +131,17 @@ SpMatrix::~SpMatrix() {
 	
 	delete [] colIndex;
 	delete [] rowPointer;
+
+}
+
+
+
+void SpMatrix::setup(int maxnnz0, int nr, int nc){
+	
+	nrows = nr;
+	ncols = nc;
+	maxnnz = maxnnz0;
+	
 }
 
 // Real setup
@@ -180,6 +191,28 @@ void SpMatrix::setup(int nr, int nc, double *val0, int *colIndex0, int *rowPoint
 			}
 		}
 	#endif
+}
+
+int* SpMatrix::allocColIndx(){
+	colIndex = new int[maxnnz];
+	return colIndex;
+}
+
+int* SpMatrix::allocRowPtr(){
+	rowPointer = new int[nrows+1];
+	return rowPointer;
+}
+
+double* SpMatrix::allocRealVal(){
+	val = new double[maxnnz];
+	type = 0;
+	return val;
+}
+
+std::complex<double>* SpMatrix::allocCpxVal(){
+	val_c = new std::complex<double>[maxnnz];
+	type = 1;
+	return val_c;
 }
 
 // Complex setup
@@ -309,7 +342,7 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 		&alpha,			// scalar ALPHA
 		matdescra,		// Specifies type of matrix, *char
 		val_c,			// nonzero elements
-		colIndex,		// row indicies
+		colIndex,		// row indices
 		rowPointer,		// begin of col ptr
 		rowPointer + 1,	// end of col ptr
 		vec_in,			// input vector
@@ -335,4 +368,17 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 	#endif
 }
 
+int SpMatrix::getNumRows(){
+	return nrows;
+}
 
+int SpMatrix::getNumCols(){
+	return ncols;
+}
+
+double SpMatrix::getFirstVal(){
+	if (type == 0)
+		return val[0];
+	else
+		return -999;
+}

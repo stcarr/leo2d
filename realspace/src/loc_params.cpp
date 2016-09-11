@@ -182,7 +182,7 @@ void Loc_params::printParams(){
 		std::cout << " | job_name = " << job_name << "\n";
 		
 		std::cout << " L target_sheets = [";
-		std::cout << target_sheets[0];
+		std::cout << target_sheets[0] + 1;
 		for (int s = 1; s < num_target_sheets; ++s){
 			std::cout << ", " << target_sheets[s];
 		}

@@ -17,10 +17,12 @@ class SpMatrix {
 		// 0: real
 		// 1: complex
 		int type;
+		
 		// number of rows and number of columns of *this
 		//! Number of rows of <em>*this</em>.
 		// number of rows of *this
 		int nrows;
+		
 		//! Number of columns of <em>*this</em>.
 		// number of columns of *this
 		int ncols;
@@ -30,13 +32,15 @@ class SpMatrix {
 		// a storage for storing values of nonzero elements of *this
 		double* val;
 		std::complex<double> *val_c;
+		
 		//! An array for column indices of <em>*this</em>.
 		// an array for column indices of *this
-		
 		int *colIndex;
+		
 		//! An array for row pointers of <em>*this</em>.
 		// an array for row pointers of *this
 		int *rowPointer;
+		
 		//! Maximum number of nonzero elements allowed in the allocated memory.
 		// maximum number of nonzero elements allowed in the allocated memory
 		int maxnnz;
@@ -58,6 +62,18 @@ class SpMatrix {
 		// Normal complex constructor
 		SpMatrix(int,int,std::complex<double>*,int*,int*,int);
 		
+		int* allocColIndx();
+
+		int* allocRowPtr();
+
+		double* allocRealVal();
+
+		std::complex<double>* allocCpxVal();
+		
+		// before construction setup
+		
+		void setup(int,int,int);
+		
 		// after construction setup
 		void setup(int,int,double*              ,int*,int*,int);
 		
@@ -70,6 +86,11 @@ class SpMatrix {
 		// Matrix-vector Multiplication
 		void vectorMultiply(double*, double*, double, double);
 		void vectorMultiply(std::complex<double>*, std::complex<double>*, std::complex<double>, std::complex<double>);
+		
+		// Diagnostic functions
+		int getNumRows();
+		int getNumCols();
+		double getFirstVal();
 
 };
 
