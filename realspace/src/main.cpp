@@ -332,7 +332,13 @@ int main(int argc, char** argv) {
 	Locality loc(s_data,heights,angles);
 	
 	// Start MPI within Locality object on each processor
-	loc.initMPI(argc, argv);
+	int multi_rank_job = loc.initMPI(argc, argv);
+	if (multi_rank_job == -1){
+		printf("Error: Only 1 MPI rank detected (need to run with n > 1).\n");
+		loc.finMPI();
+		return -1;
+	}
+	
 	
 	// Simulation's solver is set with setup call to Locality object
 	loc.setup(opts);

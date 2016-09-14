@@ -85,7 +85,7 @@ class Locality {
 		void setup(Loc_params);
 		
 		// Starts MPI
-		void initMPI(int, char**);
+		int initMPI(int, char**);
 		
 		// Root determines matrix structure and broadcasts
 		void constructGeom();

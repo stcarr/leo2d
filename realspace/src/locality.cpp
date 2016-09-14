@@ -75,7 +75,7 @@ void Locality::setup(Loc_params opts){
 	target_sheets = opts.getVecInt("target_sheets");
 }
 
-void Locality::initMPI(int argc, char** argv){
+int Locality::initMPI(int argc, char** argv){
 	
 	// Start  MPI on each rank
 	  	
@@ -86,6 +86,11 @@ void Locality::initMPI(int argc, char** argv){
 	
 	size = MPI::COMM_WORLD.Get_size();
 	rank = MPI::COMM_WORLD.Get_rank();
+	
+	if (size == 1)
+		return -1;
+	else
+		return 0;
 }
 
 void Locality::constructGeom(){
