@@ -1,6 +1,4 @@
 Home directory for this project.
 
-/realspace holds old (unfinished) c++ code for a real-space simulation strategy
+/realspace holds c++ code for a real-space simulation strategy
 /scatter holds in-progress c++ code for the scatter formulation
-
-
