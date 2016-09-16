@@ -4,8 +4,8 @@ JOB_NAME = graphene001
 
 ===STRUCTURE INFORMATION===
 
-MAXSIZE = 10
-MINSIZE = -10
+MAXSIZE = 6		// 12x12 system size, (MAX-MIN)^2
+MINSIZE = -6
 BOUNDARY_CONDITION = 1  // 0: Finite size of radius MAXSIZE (A), 1: Periodic with 2*MAXSIZE unit-cells sides
 
 NUM_SHEETS = 1
@@ -36,8 +36,8 @@ END_SHEET 1
 // VD_FILE == Vacancies from vacancies.dat
 
 SOLVER_TYPE = VD_FILE
-USE_B_FIELD = 1
-B_FIELD = 1
+USE_B_FIELD = 0
+B_FIELD = 0
 USE_E_FIELD = 0
 E_FIELD = 0
 VACANCY_CHANCE = 0.001
