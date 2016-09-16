@@ -405,8 +405,6 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 
 void Locality::sendRootWork(Mpi_job_params jobIn, int target_r){
 	
-	printf("entering sendRootWork. \n");
-	
 	jobIn.sendParams(target_r,1);
 	
 	/*
@@ -915,7 +913,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		double* shifts = jobIn.getDoubleMat("shifts");
 		
-		printf("rank %d received a shift job (%d/%d) \n", rank, jobID,max_jobs);
+		printf("rank %d received a job (%d/%d) \n", rank, jobID,max_jobs);
 		
 		// ------------------------------------------------------
 		// Determine the work-specific positions of every orbital
@@ -971,7 +969,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 			current_index_reduction[max_index] = vacancy_counter;
 			local_max_index = max_index - vacancy_counter;
-			printf("Number of vacancies = %d \n",vacancy_counter);
 			/*
 			printf("First few vacancies = [");
 			for (int j = 0; j < 6; ++j){
