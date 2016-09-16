@@ -286,12 +286,6 @@ void Mpi_job_params::printParams(){
 		printf("B = %lf \n", B);
 		printf("E = %lf \n", E);
 		printf("vacancy_chance = %lf \n",vacancy_chance);
-		std::cout << "target_sheets = [";
-		std::cout << target_sheets[0] + 1;
-		for (int s = 1; s < num_target_sheets; ++s){
-			std::cout << ", " << target_sheets[s];
-		}
-		std::cout << "] \n";
 }
 
 void Mpi_job_params::printCheb(std::ofstream& outFile){
