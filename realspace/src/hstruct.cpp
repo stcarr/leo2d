@@ -413,7 +413,7 @@ void Hstruct::getIndexToPos(double* array_in,int dim){
 
 std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int nShifts){
 
-	std::vector<std::vector<int> > temp_v_list;
+	std::vector<std::vector<int> > v_list;
 	int center_grid[4];
 	for (int i = 0; i < 4; ++i){
 		center_grid[i] = index_array[center_index][i];
@@ -439,7 +439,7 @@ std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int nSh
 					temp_v.push_back(gridToIndex(temp_grid));
 				}
 			}				
-			temp_v_list.push_back(temp_v);
+			v_list.push_back(temp_v);
 		}
 	}
 	
@@ -459,9 +459,46 @@ std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int nSh
 	}
 	*/
 	
-	return temp_v_list;
+	return v_list;
 	
 	
+}
+
+std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
+
+	std::vector<std::vector<int> > t_list;
+	
+	int solver_type = opts.getInt("solver_type");
+	
+	if (solver_type == 1 || solver_type == 2) {
+	
+		std::vector<int> temp_list;
+	
+		int num_target_sheets = opts.getInt("num_target_sheets");
+		std::vector<int> target_sheets = opts.getVecInt("target_sheets");
+		
+		for (int s_index = 0; s_index < num_target_sheets; ++s_index){
+			
+			int target_sheet = target_sheets[s_index];
+			
+			int target_x_offset = ( sheets[target_sheet].getShape(1,0) - sheets[target_sheet].getShape(0,0) ) / 2;
+			int target_y_offset = ( sheets[target_sheet].getShape(1,1) - sheets[target_sheet].getShape(0,1) ) / 2;
+			int center_grid[4] = {target_x_offset,target_y_offset,0,target_sheet};
+			int center_index = gridToIndex(center_grid);
+			
+			int num_orbs = sheets[target_sheet].getNumAtoms();
+			
+			for (int orb = 0; orb < num_orbs; ++orb){
+					temp_list.push_back(center_index + orb);
+			}
+		}
+		
+		t_list.push_back(temp_list);
+		
+	}
+	
+	return t_list;
+
 }
 
 

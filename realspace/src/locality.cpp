@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 	
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
@@ -25,12 +26,6 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 	heights = heights_in;
 	angles = angles_in;
 	
-	nShifts = 2;
-	
-	energy_rescale = 20.0;
-	energy_shift = 0.0;
-	poly_order = 3000;
-	
 }
 
 Locality::Locality(const Locality& orig) {
@@ -41,14 +36,18 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup(Loc_params opts){
+void Locality::setup(Loc_params opts_in){
 // Edits run-specific options for matrix constructions and parameters of the solver method (to edit settings from the constructor)
-
+	
+	opts = opts_in;
+	
 	if (rank == root){
 		opts.printParams();
 	}
 	
 	job_name = opts.getString("job_name");
+	
+	/*
 	nShifts = opts.getInt("nShifts");
 
 	// H construction and Chebyshev options
@@ -56,8 +55,6 @@ void Locality::setup(Loc_params opts){
     energy_rescale = opts.getDouble("energy_rescale");
 	energy_shift = opts.getDouble("energy_shift");
 	poly_order = opts.getInt("poly_order");
-	intra_searchsize = opts.getInt("intra_searchsize");
-	inter_searchsize = opts.getInt("inter_searchsize");
 	
 	// Magnetic field options
 	magOn = opts.getInt("magOn");
@@ -73,6 +70,53 @@ void Locality::setup(Loc_params opts){
 	// Local DOS targets
 	num_target_sheets = opts.getInt("num_target_sheets");
 	target_sheets = opts.getVecInt("target_sheets");
+	*/
+}
+
+void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t){
+	
+	std::string line;
+	std::ifstream in_file;
+	in_file.open("vacancies.dat");
+	if (in_file.is_open())
+	{
+		while ( getline(in_file,line) ) {
+			
+			std::vector<int> temp_v;
+			std::vector<int> temp_t;
+			
+			std::istringstream in_line(line);
+		
+			std::string in_string;
+			
+			while ( getline(in_line, in_string, ' ') )	{
+				
+				if (in_string == "JOB:"){
+				
+					std::string v_line;
+					std::string t_line;
+					
+					getline(in_file,v_line);
+					getline(in_file,t_line);
+					
+					std::istringstream in_v_line(v_line);
+					std::istringstream in_t_line(t_line);
+					
+					while ( getline(in_v_line, in_string, ',') )	{
+						temp_v.push_back(atoi(in_string.c_str()));
+					}
+					while ( getline(in_t_line, in_string, ',') )	{
+						temp_t.push_back(atoi(in_string.c_str()));
+					}
+					
+					v.push_back(temp_v);
+					t.push_back(temp_t);
+					
+				}
+				
+			}
+		}
+	}
 }
 
 int Locality::initMPI(int argc, char** argv){
@@ -100,6 +144,11 @@ void Locality::constructGeom(){
 
 	time(&constructStart);
 	
+	int solver_type = opts.getInt("solver_type");
+	int intra_searchsize = opts.getInt("intra_searchsize");
+	int inter_searchsize = opts.getInt("inter_searchsize");
+	int nShifts = opts.getInt("nShifts");
+	
 	int max_pairs;
 	
 	int* inter_pairs_i;
@@ -118,6 +167,12 @@ void Locality::constructGeom(){
 	double* index_to_pos_y;
 	double* index_to_pos_z;
 	
+	// vacancy and target indices
+	
+	std::vector<std::vector<int> > v_work;
+	std::vector<std::vector<int> > target_indices;
+		
+	
 	if (rank == root){
 	
 		// Build Hstruct object
@@ -133,21 +188,22 @@ void Locality::constructGeom(){
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();
 		
-		center_index = new int[sdata.size()];
-		for (int target_sheet = 0; target_sheet < sdata.size(); target_sheet++){
-			int target_x_offset = ( sheets[target_sheet].getShape(1,0) - sheets[target_sheet].getShape(0,0) ) / 2;
-			int target_y_offset = ( sheets[target_sheet].getShape(1,1) - sheets[target_sheet].getShape(0,1) ) / 2;
-			int center_grid[4] = {target_x_offset,target_y_offset,0,target_sheet};
-			center_index[target_sheet] = h.gridToIndex(center_grid);
+		// Get Vacancies if solver_type == 3 or 4
+		
+		if (solver_type == 1 || solver_type == 2){
+			target_indices = h.getTargetList(opts);
 		}
 		
-		// Get Vacancies if solver_type == 3
 		if (solver_type == 3){
-			v_work = h.getVacancyList(center_index[0],nShifts);
+			//v_work = h.getVacancyList(center_index[0],nShifts);
 		}
+		
+		if (solver_type == 4){
+			getVacanciesFromFile(v_work, target_indices);
+		}
+		
 		
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(center_index, sdata.size(), MPI_INT, root);
 		
 		std::vector<std::vector<int> > index_vec = h.getIndexArray();
 		
@@ -235,11 +291,8 @@ void Locality::constructGeom(){
 	
 	if (rank != root){
 	
-		center_index = new int[sdata.size()];
-	
 		// Allocate memory to receive pair and "index to grid" information
 		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(center_index, sdata.size(), MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 		
@@ -320,7 +373,7 @@ void Locality::constructGeom(){
 	time(&constructEnd);
 	
 	// Call the next method, which will send out jobs depending on the solver type to each worker and have them construct a matrix specific to that job.
-	constructMatrix(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+	constructMatrix(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,v_work,target_indices);
 	
 	delete index_to_grid;
 	delete index_to_pos;
@@ -330,16 +383,18 @@ void Locality::constructGeom(){
 
 }
 
-void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t){ 
+void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices){ 
 	time(&solveStart);
+	
+	int solver_type = opts.getInt("solver_type");
 	
 	//if (rank == print_rank)
 		//printf("rank %d entering constructMatrix(). \n", rank);
 
 	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
-	if(solver_type == 1 or solver_type == 2 or solver_type == 3){
+	if(solver_type < 5){
 		if (rank == root) {
-			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
+			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,v_work,target_indices);
 		} else {
 			workerChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t);
 		}	
@@ -348,7 +403,13 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	time(&solveEnd);
 }
 
-void Locality::sendRootWork(int type, int jobIndex, int target_r, std::vector< std::vector<double> > work, std::vector< std::vector<int> > v){
+void Locality::sendRootWork(Mpi_job_params jobIn, int target_r){
+	
+	printf("entering sendRootWork. \n");
+	
+	jobIn.sendParams(target_r,1);
+	
+	/*
 	
 	if (type == 1 or type == 2){
 		if(jobIndex == -1){
@@ -420,27 +481,141 @@ void Locality::sendRootWork(int type, int jobIndex, int target_r, std::vector< s
 						target_r,			// worker to receive
 						jobIndex+1);		// work tag to label work
 		}
+	} else if (type == 4){
+	
+		if(jobIndex == -1){
+			int temp_length = 2;
+			int temp[2];
+			temp[0] = 0;
+			temp[1] = 0;
+			MPI::COMM_WORLD.Send(	
+					&temp_length,
+					1, 
+					MPI::INT, 
+					target_r, 
+					STOPTAG);
+					
+			MPI::COMM_WORLD.Send(	
+					temp,
+					2, 
+					MPI::INT, 
+					target_r, 
+					STOPTAG);
+					
+			MPI::COMM_WORLD.Send(	
+					&temp_length,
+					1, 
+					MPI::INT, 
+					target_r, 
+					STOPTAG);
+					
+			MPI::COMM_WORLD.Send(	
+					temp,
+					2, 
+					MPI::INT, 
+					target_r, 
+					STOPTAG);
+		
+		} else {
+	
+			int vac_length = v[jobIndex].size();
+			int vac_list[vac_length];
+			for (int i = 0; i < vac_length; ++i){
+				vac_list[i] = v[jobIndex][i];
+			}
+			
+			MPI::COMM_WORLD.Send(	
+						&vac_length, 		// input buffer
+						1,					// size of buffer 
+						MPI::INT,			// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label work
+						
+			MPI::COMM_WORLD.Send(	
+						vac_list,		 	// input buffer
+						vac_length,			// size of buffer
+						MPI::INT,			// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label work
+						
+			int tar_length = t[jobIndex].size();
+			int tar_list[tar_length];
+			for (int i = 0; i < tar_length; ++i){
+				tar_list[i] = t[jobIndex][i];
+			}
+			
+			MPI::COMM_WORLD.Send(	
+						&tar_length, 		// input buffer
+						1,					// size of buffer 
+						MPI::INT,			// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label work
+						
+			MPI::COMM_WORLD.Send(	
+						tar_list,		 	// input buffer
+						tar_length,			// size of buffer
+						MPI::INT,			// type of buffer
+						target_r,			// worker to receive
+						jobIndex+1);		// work tag to label work
+			
+		}
 	}
+	*/
 
 }
 
-void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
+void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices) {
 		
-	int maxJobs = nShifts*nShifts;
+	int solver_type = opts.getInt("solver_type");
+	
+	int maxJobs;
+	int nShifts;
+	
 	int currentJob = 0;
 	int length;
-	std::vector<std::vector<double> > work (maxJobs, std::vector<double> ( 2, 0 ) );
-	std::vector<std::vector<double> > result_array;
-	result_array.resize(maxJobs);
+	
+	std::vector<Mpi_job_params> jobArray;
+	
+	int num_sheets = (int)sdata.size();
 	
 	// Uniform sample over a grid	
 	if (solver_type == 1){
+		nShifts = opts.getInt("nShifts");
+		maxJobs = nShifts*nShifts;
+		
 		for (int i = 0; i < nShifts; ++i){
 			for (int j = 0; j < nShifts; ++j){
+			
+				double shifts[num_sheets*3];
+				Mpi_job_params tempJob;
+			
 				double x = (1.0/(double) (nShifts))*i;
 				double y = (1.0/(double) (nShifts))*j;
-				work[i*nShifts + j][0] = x;
-				work[i*nShifts + j][1] = y;
+				
+				for(int s = 0; s < num_sheets - 1; ++s){
+					shifts[s*3 + 0] = 0;
+					shifts[s*3 + 1] = 0;
+					shifts[s*3 + 2] = 0;
+				}
+				
+				shifts[(num_sheets-1)*3 + 0] = x;
+				shifts[(num_sheets-1)*3 + 1] = y;
+				shifts[(num_sheets-1)*3 + 2] = 0;
+				
+				int n_targets = (int)target_indices[0].size();
+				int targets[n_targets];
+				
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = target_indices[0][t];
+				}
+			
+				
+				tempJob.loadLocParams(opts);
+				tempJob.setParam("shifts",shifts,num_sheets,3);
+				tempJob.setParam("jobID",i*nShifts + j +1);
+				tempJob.setParam("max_jobs",maxJobs);
+				tempJob.setParam("target_list",targets,n_targets);
+				jobArray.push_back(tempJob);
 
 			}
 		}
@@ -448,32 +623,102 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	// Cut through the unit cell
 	if (solver_type == 2){
+	
+		nShifts = opts.getInt("nShifts");
+		maxJobs = nShifts*nShifts;
+		
 		for (int i = 0; i < maxJobs; ++i){
+		
 			double x = (1.0/((double) maxJobs))*i;
-			work[i][0] = x;
-			work[i][1] = x;
+			
+			double shifts[num_sheets*3];
+			Mpi_job_params tempJob;
+			tempJob = Mpi_job_params();
+			
+			for(int s = 0; s < num_sheets - 1; ++s){
+				shifts[s*3 + 0] = 0;
+				shifts[s*3 + 1] = 0;
+				shifts[s*3 + 2] = 0;
+			}
+			
+			shifts[(num_sheets-1)*3 + 0] = x;
+			shifts[(num_sheets-1)*3 + 1] = x;
+			shifts[(num_sheets-1)*3 + 2] = 0;
+						
+			int n_targets = (int)target_indices[0].size();
+			int targets[n_targets];
+			
+			for (int t = 0; t < n_targets; ++t){
+				targets[t] = target_indices[0][t];
+			}
+		
+							
+			
+			tempJob.loadLocParams(opts);
+			tempJob.setParam("shifts",shifts,num_sheets,3);
+			tempJob.setParam("jobID",i+1);
+			tempJob.setParam("max_jobs",maxJobs);
+			tempJob.setParam("target_list",targets,n_targets);
+			jobArray.push_back(tempJob);
+
 		}
 	}
 	
-	// No Shifts, used instead to label position of vacancy in monolayer
-	if (solver_type == 3){
-		int k = (nShifts - 1)/2;
-		for (int i = 0; i < nShifts; ++i){
-			for (int j = 0; j < nShifts; ++j){
-			work[i*nShifts + j][0] = i - k;
-			work[i*nShifts + j][1] = j - k;
+	// Vacancy solvers
+	
+	if (solver_type == 3 || solver_type == 4){
+	
+		maxJobs = (int)v_work.size();
+		
+		for (int i = 0; i < maxJobs; ++i){
+			
+			Mpi_job_params tempJob;
+			
+			double shifts[num_sheets*3];
+
+			for(int s = 0; s < num_sheets ; ++s){
+				shifts[s*3 + 0] = 0;
+				shifts[s*3 + 1] = 0;
+				shifts[s*3 + 2] = 0;
 			}
+				
+			int n_vac = (int)v_work[i].size();
+			int vacancies[n_vac];
+			
+			for (int v = 0; v < n_vac; ++v){
+				vacancies[v] = v_work[i][v];
+			}
+			
+			int n_targets = (int)target_indices[i].size();
+			int targets[n_targets];
+			
+			for (int t = 0; t < n_targets; ++t){
+				targets[t] = target_indices[i][t];
+			}
+			
+						
+			tempJob.loadLocParams(opts);
+			tempJob.setParam("shifts",shifts,num_sheets,3);
+			tempJob.setParam("target_list",targets,n_targets);
+			tempJob.setParam("vacancy_list",vacancies,n_vac);
+			tempJob.setParam("jobID",i+1);
+			tempJob.setParam("max_jobs",maxJobs);
+			jobArray.push_back(tempJob);
 		}
 	}
+	
 	
 	MPI::Status status;
+	
+	std::vector<std::vector<double> > result_array;
+	result_array.resize(maxJobs);
 	
 	// try to give each worker its first job
 	
 	for (int r = 1; r < size; ++r) {
 		if (currentJob < maxJobs) {
-
-			sendRootWork(solver_type, currentJob, r, work, v_work);
+		
+			sendRootWork(jobArray[currentJob], r);
 			++currentJob;					// one more job sent out!
 		}
 		
@@ -513,8 +758,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 		result_array[jobTag-1] = (temp_result);
 		
-		sendRootWork(solver_type, currentJob, status.Get_source(), work, v_work);
-
+		sendRootWork(jobArray[currentJob], status.Get_source());
 		++currentJob;						// one more job sent out!
 		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
 	}
@@ -551,7 +795,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			temp_result.push_back(results[i]);
 			}
 			
-		result_array[jobTag-1] = (temp_result);
+		result_array[jobTag-1] = temp_result;
 	
 		printf("rank %d has received final work from rank %d. \n", rank, r);
 		//if (result_array.size() == maxJobs)
@@ -563,93 +807,80 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	for (int r = 1; r < size; ++r){
 		printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
 		
-		sendRootWork(solver_type, -1, r, work, v_work);
+		Mpi_job_params tempJob;
+		
+		// solver_type == -1 is the STOPTAG for workers
+		tempJob.setParam("solver_type", -1);
+		
+		sendRootWork(tempJob, r);
 		
 		printf("rank %d sent STOPTAG successfully. \n", rank);
 	}
 	
+	int poly_order = opts.getInt("poly_order");
 	double* polys = new double[poly_order];
-	
 	for (int i = 0; i < poly_order; ++i){
 		polys[i] = i;
 	}
 	
+	int num_target_sheets = opts.getInt("num_target_sheets");
+	std::vector<int> target_sheets = opts.getVecInt("target_sheets");
 	
-	int num_orbitals[num_target_sheets];
-	int total_orbs = 0;
-	
-	for (int i = 0; i < num_target_sheets; i++){
-		num_orbitals[i] = sdata[target_sheets[i]].atom_types.size();
-		total_orbs = total_orbs + num_orbitals[i];
-	}
-	
-	int sIndex = 0;
-	for (int s_i = 0; s_i < num_target_sheets; s_i++){
-		int sheet = target_sheets[s_i];
-		for (int orb = 0; orb < num_orbitals[s_i]; ++orb) {
+	std::cout << "Saving " << job_name << ".cheb to disk. \n";
 
-			std::ostringstream sheet_st;
-			sheet_st << sheet+1;
-			std::string sheet_string = sheet_st.str();
-			if ( sheet + 1 < 10){
-				sheet_string = "0" + sheet_string;
-			}
+	
+	std::ofstream outFile;
+	const char* extension =".cheb";
+	outFile.open ((job_name + extension).c_str());
+	
+	for (int job = 0; job < maxJobs; ++job){
+	
+		int num_targets = jobArray[job].getInt("num_targets");
+		int* target_list = jobArray[job].getIntVec("target_list");
+
+		jobArray[job].printCheb(outFile);
 		
-			std::ostringstream orb_st;
-			orb_st << orb+1;
-			std::string orbital_string = orb_st.str();
-			if ( orb + 1 < 10){
-				orbital_string = "0" + orbital_string;
-			}
-			
-			std::ofstream outFile;
-			const char* extension =".cheb";
-			outFile.open ((job_name + "_sheet" + sheet_string + "_orbital" + orbital_string + extension).c_str());
-			std::cout << "Saving " << job_name << "_sheet" << sheet_string << "_orbital" << orbital_string << " to file. \n";
-			outFile << job_name << " Chebyshev T value outputs \n";
-			outFile << "Shift x, Shift y, ... polynomial orders ... \n";
-			outFile << "-1, -1";
-			
-			for(int j = 0; j < poly_order; ++j)
-				outFile << ", " << polys[j];
-			outFile << "\n";
-			
-			for(int i = 0; i < maxJobs; ++i){
-				outFile << work[i][0] << ", " << work[i][1];
-				for(int j = 0; j < poly_order; ++j)
-					outFile << ", " << result_array[i][j + poly_order*orb + sIndex];
-				outFile << "\n";
-			}
-			
-			outFile.close();
+		//outFile << job_name << " Chebyshev T value outputs for job " << job+1 << ":\n";
 		
+		outFile << "T:   ";
+		
+		for(int j = 0; j < poly_order-1; ++j){
+			outFile << polys[j] << ", ";
 		}
-		sIndex = sIndex + poly_order*num_orbitals[s_i];
+		outFile << polys[poly_order-1] << "\n";
+		
+		for(int t = 0; t < num_targets; ++t){
+			outFile << target_list[t] << ": ";
+			for(int j = 0; j < poly_order-1; ++j){
+				outFile << result_array[job][j + t*poly_order] << ", ";
+			}
+			outFile << result_array[job][poly_order-1 + t*poly_order] << "\n";
+		}
+		
+		outFile << "\n";
 	}
 	
-	delete[] polys;
+	outFile.close();
+	
+	delete polys;
 }
 
 void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
-
+	
+	MPI::Status status;
+	/*
 	double work[2];
 	work[0] = 0;
 	work[1] = 0;
-	MPI::Status status;
 	
 	// figure out the Chebyshev polynomial coefficients for each energy sample range
 	
 	// p is the maximum order of the Chebyshev polynomial
+	
 	int p = poly_order;
 	
 	// Sheet solving information
-	int num_orbitals[num_target_sheets];
-	int total_orbs = 0;
-	
-	for (int i = 0; i < num_target_sheets; i++){
-		num_orbitals[i] = sdata[target_sheets[i]].atom_types.size();
-		total_orbs = total_orbs + num_orbitals[i];
-	}	
+	*/
 	
 	// ---------------------
 	// Enter MPI worker loop
@@ -657,50 +888,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 	
 	while (1) {
 	
-		int jobTag;
-		int vac_length;
-		int* vac_list;
-
-		//if (rank == print_rank)
-			//printf("rank %d waiting for new job... \n",rank);
-			
+		Mpi_job_params jobIn;
 		
-		// Recv to get a new job
+		jobIn.recvParams(root);
 		
-		if (solver_type == 1 || solver_type == 2){
+		int jobID = jobIn.getInt("jobID");
+		int max_jobs = jobIn.getInt("max_jobs");
+		int solver_type = jobIn.getInt("solver_type");
 		
-			MPI::COMM_WORLD.Recv( 
-							work, 			// work determines b-shift
-							2, 				// length of work
-							MPI::DOUBLE, 	// data-type of work
-							root, 			// must come from root
-							MPI::ANY_TAG,  	// either WORKTAG or STOPTAG
-							status);		// keep MPI status information
-							
-		} else if (solver_type == 3){
-		
-			MPI::COMM_WORLD.Recv(	
-						&vac_length, 		// input buffer
-						1,					// size of buffer 
-						MPI::INT,			// type of buffer
-						root,				// must come from root
-						MPI::ANY_TAG,		// either WORKTAG or STOPTAG
-						status);			// keep MPI status information
-			
-			vac_list = new int[vac_length];
-			
-			MPI::COMM_WORLD.Recv(	
-						vac_list,		 	// input buffer
-						vac_length,			// size of buffer
-						MPI::INT,			// type of buffer
-						root,				// must come from root
-						status.Get_tag(),	// make sure to get the right WORKTAG
-						status);			// work tag to label work
-		}
-		
-		jobTag = status.Get_tag();
 		// If worker gets STOPTAG it ends this method
-		if (jobTag == STOPTAG) {
+		if (solver_type == -1) {
 			//printf("rank %d received STOPTAG. \n", rank);
 			return;
 		}
@@ -709,9 +906,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// If not STOPTAG, start timing the solver
 		time_t tempStart;
 		time(&tempStart);
-		solverTimes.push_back(tempStart);	
+		solverTimes.push_back(tempStart);
+
+		double vacancy_chance = jobIn.getDouble("vacancy_chance");
 		
-		printf("rank %d received a shift job! [%lf,%lf] \n", rank,work[0],work[1]);
+		int num_targets = jobIn.getInt("num_targets");
+		int poly_order = jobIn.getInt("poly_order");
+		
+		double* shifts = jobIn.getDoubleMat("shifts");
+		
+		printf("rank %d received a shift job (%d/%d) \n", rank, jobID,max_jobs);
 		
 		// ------------------------------------------------------
 		// Determine the work-specific positions of every orbital
@@ -725,286 +929,88 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			for (int j = 0; j < 2; ++j){
 				s1_a[i][j] = sdata[0].a[i][j];
 			}
-		}		
-
+		}
+		
 		for (int i = 0; i < max_index; ++i) {
 		
-			if (index_to_grid[i*4 + 3] == 0){
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1];
-				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
-				}
-			else if (index_to_grid[i*4 + 3] == 1){
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + work[0]*s1_a[0][0] + work[1]*s1_a[0][1];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + work[0]*s1_a[1][0] + work[1]*s1_a[1][1];
-				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
-				}
-			else{
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1];
-				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
-			}
-				
+			int s = index_to_grid[i*4 + 3];
+			
+			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*s1_a[0][0] + shifts[s*3 + 1]*s1_a[0][1];
+			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*s1_a[1][0] + shifts[s*3 + 1]*s1_a[1][1];
+			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+		
 		}
 		
-	// Keep track of variables for vacancy simulation
-	
-	int local_max_index = max_index;
-	
-	std::vector<int> vacancies;									// indices of the orbitals to remove from the tight-binding model
-	std::vector<int> current_index_reduction(max_index+1,0);	// tells us how to relabel our indices in the reduced size matrix
-	int num_vacancies = 0;										// total number of vacancies
-	
-	// Vacancy creation loop
-	if (solver_type == 3){
-		for (int i = 0; i < max_index; ++i){
+		// Keep track of variables for vacancy simulation
 		
-			current_index_reduction[i] = num_vacancies;
+		int local_max_index = max_index;
+		
+		std::vector<int> current_index_reduction(max_index+1,0);	// tells us how to relabel our indices in the reduced size matrix
+		int vacancy_counter = 0;									// total number of vacancies
+		
+		// Vacancy creation loop
+		
+		int num_vacancies = jobIn.getInt("num_vacancies");
+		int* vac_list = jobIn.getIntVec("vacancy_list");
+		
+		
+		if (solver_type == 3 || solver_type == 4){
+			for (int i = 0; i < max_index; ++i){
+			
+				current_index_reduction[i] = vacancy_counter;
 
-			for (int j = 0; j < vac_length; ++j){
-				if(i == vac_list[j]){
-				
-					vacancies.push_back(i);
-					num_vacancies++;
-					break;
-					
+				for (int j = 0; j < num_vacancies; ++j){
+					if(i == vac_list[j]){
+						vacancy_counter++;
+						break;
+						
+					}
+				}
+		
+			}
+			
+			current_index_reduction[max_index] = vacancy_counter;
+			local_max_index = max_index - vacancy_counter;
+			printf("Number of vacancies = %d \n",vacancy_counter);
+			/*
+			printf("First few vacancies = [");
+			for (int j = 0; j < 6; ++j){
+				if (num_vacancies > j){
+					printf("%d, ",vac_list[j]);
 				}
 			}
-	
-		}
-		
-		current_index_reduction[max_index] = num_vacancies;
-		local_max_index = max_index - num_vacancies;
-		
-		printf("Number of vacancies = %d \n",num_vacancies);
-		printf("First few vacancies = [");
-		for (int j = 0; j < 6; ++j){
-			if (vac_length > j){
-				printf("%d, ",vac_list[j]);
+			if (num_vacancies > 5){
+				printf("...] \n");
+			} else{
+				printf("] \n");
 			}
+			*/
 		}
-		if (vac_length > 5){
-			printf("...] \n");
-		} else{
-			printf("] \n");
-		}
-	}
-	
+		
+		
 		
 		// -----------------------
 		// Build the Sparse matrix
 		// -----------------------
 		
 		SpMatrix H;
-		generateH(H, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+		generateH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
 		
 		// Saves T values
-		double* T_array = new double[poly_order*total_orbs];
+		double* T_array = new double[poly_order*num_targets];
 		
-		if (magOn == 0){
-
-			// Temporary vector for algorithm ("previous" vector T_j-1)
-			// Starting vector for Chebyshev method is a unit-vector at the center-orbital
-			int sIndex = 0;
-			for (int t_s = 0; t_s < num_target_sheets; t_s++) {
-			
-				int sheet = target_sheets[t_s];
-			
-				for (int orb = 0; orb < num_orbitals[t_s]; ++orb) {
-				
-					int target_index = center_index[sheet] + orb - current_index_reduction[center_index[sheet] + orb];
-					
-					double T_prev[local_max_index];
-					
-					for (int i = 0; i < local_max_index; ++i){
-						T_prev[i] = 0.0;
-					}
-					
-					T_prev[target_index] = 1.0;
-				
-					// Temporary vector for algorithm ("current" vector T_j)
-					double T_j[local_max_index];	
-					for (int i = 0; i < local_max_index; ++i){
-						T_j[i] = 0.0;
-					}		
-					
-					H.vectorMultiply(T_prev, T_j, 1, 0);
-					
-					// Temporary vector for algorithm ("next" vector T_j+1)
-					double T_next[local_max_index];
-					for (int i = 0; i < local_max_index; ++i){
-						T_next[i] = 0.0;
-					}
-					
-					// first T value is always 1
-					T_array[0 + orb*poly_order + sIndex] = 1;
-					
-					// Next one is calculated simply
-					T_array[1 + orb*poly_order + sIndex] = T_j[target_index];
-					
-					// Now loop algorithm up to poly_order to find all T values
-					// double alpha2 = 2;
-					
-					// want to do: T_next = 2*H*T_j - T_prev;
-					H.vectorMultiply(T_j, T_next, 2, 0);
-					for (int c = 0; c < local_max_index; ++c){
-						T_next[c] = T_next[c] - T_prev[c];
-					}
-					
-					for (int j = 2; j < poly_order/2; ++j){
-					
-						// reassign values from previous iteration
-						for (int c = 0; c < local_max_index; ++c){
-							T_prev[c] = T_j[c];	//T_prev = T_j;
-							T_j[c] = T_next[c];	//T_j = T_next;
-						}
-						
-						// get the jth entry
-						T_array[j + orb*poly_order + sIndex] = T_j[target_index];
-						
-						// compute the next vector
-						H.vectorMultiply(T_j, T_next, 2, 0);
-						for (int c = 0; c < local_max_index; ++c){
-							T_next[c] = T_next[c] - T_prev[c];
-						}
-						
-						// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
-						if (j >= poly_order/4){
-						
-							double an_an = 0;
-							double anp_an = 0;
-							for (int c = 0; c < local_max_index; ++c){
-								an_an += T_j[c]*T_j[c];
-								anp_an += T_next[c]*T_j[c];
-							}
-							
-							// u_{2n} 	= 2*<a_n|a_n>		- u_0;
-							// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
-							T_array[2*j + orb*poly_order + sIndex] = 2*an_an - T_array[0 + orb*poly_order + sIndex];
-							T_array[2*j + 1 + orb*poly_order + sIndex] = 2*anp_an - T_array[1 + orb*poly_order + sIndex];
-
-						}
-
-						
-						// print every 100 steps on print rank
-						//if (rank == print_rank)
-							//if (j%100 == 0)
-								//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
-					}
-					
-				}
-				
-				sIndex = sIndex + num_orbitals[sheet]*poly_order;
-			}
-			
-		}	// end magOn == 0 block
-		else if (magOn == 1) {
-		
-			// Temporary vector for algorithm ("previous" vector T_j-1)
-			// Starting vector for Chebyshev method is a unit-vector at the center-orbital
-			int sIndex = 0;
-			for (int t_s = 0; t_s < num_target_sheets; t_s++) {
-			
-				int sheet = target_sheets[t_s];
-			
-				for (int orb = 0; orb < num_orbitals[t_s]; ++orb) {
-				
-					int target_index = center_index[sheet] + orb - current_index_reduction[center_index[sheet] + orb];
-				
-					std::complex<double> T_prev[local_max_index];
-					
-					for (int i = 0; i < local_max_index; ++i){
-						T_prev[i] = 0.0;
-					}
-					
-					T_prev[target_index] = 1.0;
-				
-					// Temporary vector for algorithm ("current" vector T_j)
-					std::complex<double> T_j[local_max_index];	
-					for (int i = 0; i < local_max_index; ++i){
-						T_j[i] = 0.0;
-					}		
-					
-					H.vectorMultiply(T_prev, T_j, 1, 0);
-
-					// Temporary vector for algorithm ("next" vector T_j+1)
-					std::complex<double> T_next[local_max_index];
-					for (int i = 0; i < local_max_index; ++i){
-						T_next[i] = 0.0;
-					}
-					
-					// first T value is always 1
-					T_array[0 + orb*poly_order + sIndex] = 1;
-					
-					// Next one is calculated simply
-					T_array[1 + orb*poly_order + sIndex] = T_j[target_index].real();
-					
-					// Now loop algorithm up to poly_order to find all T values
-					// double alpha2 = 2;
-					
-					// want to do: T_next = 2*H*T_j - T_prev;
-					H.vectorMultiply(T_j, T_next, 2, 0);
-					for (int c = 0; c < local_max_index; ++c){
-						T_next[c] = T_next[c] - T_prev[c];
-					}
-					
-					for (int j = 2; j < poly_order/2; ++j){
-					
-						// reassign values from previous iteration
-						for (int c = 0; c < local_max_index; ++c){
-							T_prev[c] = T_j[c];	//T_prev = T_j;
-							T_j[c] = T_next[c];	//T_j = T_next;
-						}
-						
-						// get the jth entry
-						T_array[j + orb*poly_order + sIndex] = T_j[target_index].real();
-						
-						// compute the next vector
-						H.vectorMultiply(T_j, T_next, 2, 0);
-						for (int c = 0; c < local_max_index; ++c){
-							T_next[c] = T_next[c] - T_prev[c];
-						}
-						
-						// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
-						if (j >= poly_order/4){
-						
-							double an_an = 0;
-							double anp_an = 0;
-							for (int c = 0; c < local_max_index; ++c){
-								an_an += (std::conj(T_j[c])*T_j[c]).real();
-								anp_an += (std::conj(T_next[c])*T_j[c]).real();
-							}
-							
-							// u_{2n} 	= 2*<a_n|a_n>		- u_0;
-							// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
-							T_array[2*j + orb*poly_order + sIndex] = 2*an_an - T_array[0 + orb*poly_order + sIndex];
-							T_array[2*j + 1 + orb*poly_order + sIndex] = 2*anp_an - T_array[1 + orb*poly_order + sIndex];
-
-						}
-						
-						// print every 100 steps on print rank
-						//if (rank == print_rank)
-							//if (j%100 == 0)
-								//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
-					}
-					
-				}
-				
-				sIndex = sIndex + num_orbitals[sheet]*poly_order;
-			}
-			
-		} // end magOn == 1 block
+		computeDosKPM(T_array,H,jobIn,current_index_reduction,local_max_index,-1);
 		
 		// Save time at which solver finished
 		time_t tempEnd;
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);	
 		
-		int length = poly_order*total_orbs;
+		int length = poly_order*num_targets;
 		
 		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
@@ -1012,7 +1018,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					1,
 					MPI::INT,
 					root,
-					jobTag);
+					jobID);
 
 		// Send root the density information
 		MPI::COMM_WORLD.Send(	
@@ -1020,21 +1026,32 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					length,
 					MPI::DOUBLE,
 					root,
-					jobTag);
+					jobID);
 					
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
 			
 		// Cleanup C++ allocated memory
-		delete[] T_array;
+		delete T_array;
 		
 		// End of while(1) means we wait for another instruction from root
 		}
 
 }
 
-void Locality::generateH(SpMatrix &H, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 
+	int solver_type = jobIn.getInt("solver_type");
+	int magOn = jobIn.getInt("magOn");
+	int elecOn = jobIn.getInt("elecOn");
+	double B = jobIn.getDouble("B");
+	double E = jobIn.getDouble("E");
+	double energy_rescale = jobIn.getDouble("energy_rescale");
+	double energy_shift = jobIn.getDouble("energy_shift");
+	
+	//jobIn.printParams();
+	
+	
 	// Indexes how many inter terms we have entered so far
 	int inter_counter = 0;
 	
@@ -1073,7 +1090,7 @@ void Locality::generateH(SpMatrix &H, int* index_to_grid, double* i2pos, int* in
 	
 		int skip_here1 = 0;
 		
-		if (solver_type == 3){
+		if (solver_type == 3 || solver_type == 4){
 			if (current_index_reduction[k_i] + 1 == current_index_reduction[k_i + 1]){
 				skip_here1 = 1;
 			}
@@ -1115,7 +1132,7 @@ void Locality::generateH(SpMatrix &H, int* index_to_grid, double* i2pos, int* in
 				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
 				if (new_k == k_i){
 					if (elecOn == 1){
-						t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(i2pos[k_i*3 + 0],i2pos[k_i*3 + 1],i2pos[k_i*3 + 2]))/energy_rescale;
+						t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(i2pos[k_i*3 + 0],i2pos[k_i*3 + 1],i2pos[k_i*3 + 2],E))/energy_rescale;
 					} else if (elecOn == 0)
 						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
 				// Otherwise we enter the value just with rescaling
@@ -1252,15 +1269,202 @@ void Locality::generateH(SpMatrix &H, int* index_to_grid, double* i2pos, int* in
 	
 }
 
+void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, int target_in){
+
+	int magOn = jobIn.getInt("magOn");
+	int poly_order = jobIn.getInt("poly_order");
+	
+	int num_targets = jobIn.getInt("num_targets");
+	int* target_list = jobIn.getIntVec("target_list");
+
+	
+	if (magOn == 0){
+
+		// Starting vector for Chebyshev method is a unit-vector at the target orbital
+		
+		for (int t_count = 0; t_count < num_targets; ++t_count){
+	
+			int target_index = target_list[t_count] - current_index_reduction[target_list[t_count]];
+			
+			double T_prev[local_max_index];
+			
+			for (int i = 0; i < local_max_index; ++i){
+				T_prev[i] = 0.0;
+			}
+			
+			T_prev[target_index] = 1.0;
+		
+			// Temporary vector for algorithm ("current" vector T_j)
+			double T_j[local_max_index];	
+			for (int i = 0; i < local_max_index; ++i){
+				T_j[i] = 0.0;
+			}		
+			
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+			
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			double T_next[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_next[i] = 0.0;
+			}
+			
+			// first T value is always 1
+			T_array[0 + t_count*poly_order] = 1;
+			
+			// Next one is calculated simply
+			T_array[1 + t_count*poly_order] = T_j[target_index];
+			
+			// Now loop algorithm up to poly_order to find all T values
+			// double alpha2 = 2;
+			
+			// want to do: T_next = 2*H*T_j - T_prev;
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < local_max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+			
+			for (int j = 2; j < poly_order/2; ++j){
+			
+				// reassign values from previous iteration
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+				
+				// get the jth entry
+				T_array[j + t_count*poly_order] = T_j[target_index];
+				
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+				
+				// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+				if (j >= poly_order/4){
+				
+					double an_an = 0;
+					double anp_an = 0;
+					for (int c = 0; c < local_max_index; ++c){
+						an_an += T_j[c]*T_j[c];
+						anp_an += T_next[c]*T_j[c];
+					}
+					
+					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
+					T_array[2*j + t_count*poly_order ] = 2*an_an - T_array[0 + t_count*poly_order];
+					T_array[2*j + 1 + t_count*poly_order] = 2*anp_an - T_array[1 + t_count*poly_order ];
+
+				}
+
+				
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			}
+		
+		}
+
+	}	// end magOn == 0 block
+	else if (magOn == 1) {
+	
+		// Starting vector for Chebyshev method is a unit-vector at the target rbital
+		for (int t_count = 0; t_count < num_targets; ++t_count){
+	
+			int target_index = target_list[t_count] - current_index_reduction[target_list[t_count]];			
+			
+			std::complex<double> T_prev[local_max_index];
+			
+			for (int i = 0; i < local_max_index; ++i){
+				T_prev[i] = 0.0;
+			}
+			
+			T_prev[target_index] = 1.0;
+		
+			// Temporary vector for algorithm ("current" vector T_j)
+			std::complex<double> T_j[local_max_index];	
+			for (int i = 0; i < local_max_index; ++i){
+				T_j[i] = 0.0;
+			}		
+			
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			std::complex<double> T_next[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_next[i] = 0.0;
+			}
+			
+			// first T value is always 1
+			T_array[0 + t_count*poly_order] = 1;
+			
+			// Next one is calculated simply
+			T_array[1 + t_count*poly_order] = T_j[target_index].real();
+			
+			// Now loop algorithm up to poly_order to find all T values
+			// double alpha2 = 2;
+			
+			// want to do: T_next = 2*H*T_j - T_prev;
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < local_max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+			
+			for (int j = 2; j < poly_order/2; ++j){
+			
+				// reassign values from previous iteration
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+				
+				// get the jth entry
+				T_array[j + t_count*poly_order] = T_j[target_index].real();
+				
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+				
+				// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+				if (j >= poly_order/4){
+				
+					double an_an = 0;
+					double anp_an = 0;
+					for (int c = 0; c < local_max_index; ++c){
+						an_an += (std::conj(T_j[c])*T_j[c]).real();
+						anp_an += (std::conj(T_next[c])*T_j[c]).real();
+					}
+					
+					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
+					T_array[2*j + t_count*poly_order] = 2*an_an - T_array[0 + t_count*poly_order];
+					T_array[2*j + 1 + t_count*poly_order] = 2*anp_an - T_array[1 + t_count*poly_order];
+
+				}
+				
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			}
+			
+		}
+		
+	} // end magOn == 1 block
+}
+
 double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){
 	double preFactor = 3.14e-5; // This should be changed to be equal to (2 Pi)/(Flux Quanta), with Flux Quanta = h/e, in units of (T*Ang^2)^-1
 	double phase = preFactor*B_in*(x2 - x1)*(0.5)*(y1 + y2);
 	return phase;
 }
 
-double Locality::onSiteE(double x, double y, double z){
+double Locality::onSiteE(double x, double y, double z, double E_in){
 	// E a constant in the Z direction, return z*E (physical prefactors missing!!!)
-	return z*E;
+	return z*E_in;
 }
 
 void Locality::save(){

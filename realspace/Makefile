@@ -1,10 +1,10 @@
 CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o spmatrix.o loc_params.o
-MPI_OBJ = main.o locality.o
+MPI_OBJ = main.o locality.o mpi_job_params.o
 
 OBJS = $(CC_OBJ) $(MPI_OBJ)
 
-CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp loc_params.cpp
-MPI_SRC = locality.cpp
+CC_SRC = main.cpp sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp loc_params.cpp 
+MPI_SRC = locality.cpp mpi_job_params.cpp
 SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = LEO2D

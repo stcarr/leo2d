@@ -27,9 +27,11 @@ class Sheet {
         void setIndex();
 		void setInverse();
 		double a_inverse[2][2];
+		int boundary_condition;
+		
         
     public:
-        Sheet(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>);
+        Sheet(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int);
 		Sheet(Sdata);
         Sheet(const Sheet& orig);
         ~Sheet();

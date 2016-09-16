@@ -13,6 +13,7 @@
 #include "interlayer_coupling.h"
 #include "spmatrix.h"
 #include "loc_params.h"
+#include "mpi_job_params.h"
 
 #include <time.h>
 #include <math.h>  
@@ -35,9 +36,15 @@ class Locality {
 		int* center_index;
 		int max_inter_pairs;
 		int max_intra_pairs;
+		
+		/*
 		int intra_searchsize;
 		int inter_searchsize;
+		*/
 		
+		Loc_params opts;
+		
+		/*
 		int magOn;
 		double B;
 		int elecOn;
@@ -46,6 +53,7 @@ class Locality {
 		int num_target_sheets;
 		std::vector<int> target_sheets;
 		double vacancy_chance;
+		*/
 		
 		// Timing information
 		time_t constructStart;
@@ -56,18 +64,22 @@ class Locality {
 
 		// Solver settings
 		int root;
+		/*
 		int nShifts;
 		double energy_rescale;
 		double energy_shift;
 		int poly_order;
 		int solver_type;
+		*/
 		
 		// Private solver methods
-		void sendRootWork(int, int, int,std::vector< std::vector<double> >, std::vector< std::vector<int> >);
+		void sendRootWork(Mpi_job_params, int);
 		std::vector<std::vector<int> > v_work;
+		std::vector<std::vector<int> > target_indices;
 		
-		void rootChebSolve(int*,double*,int*,int*,double*);
+		void rootChebSolve(int*,double*,int*,int*,double*,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 		void workerChebSolve(int*,double*,int*,int*,double*);
+		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&);
 		
 		// MPI Communication flags
 		static const int WORKTAG = 1;
@@ -91,16 +103,19 @@ class Locality {
 		void constructGeom();
 		
 		// Construct and solve the tight binding problem. Also saves output files
-		void constructMatrix(int*,double*,int*,int*,double*);
+		void constructMatrix(int*,double*,int*,int*,double*,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 		
 		// Creates and returns a SpMatrix object representing H for a specific job
-		void generateH(SpMatrix&, int*, double*, int*, int*, double*, std::vector<int>, int);
+		void generateH(SpMatrix&, Mpi_job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
+		
+		// Computes Local DOS using Chebyshev KPM methods
+		void computeDosKPM(double*,SpMatrix&, Mpi_job_params,std::vector<int>,int,int);
 		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
 		
 		// Calculates the on-site energy in the presence of a gated electric field
-		double onSiteE(double, double, double);
+		double onSiteE(double, double, double, double);
 		
 		// Prints out timing information
 		void save();

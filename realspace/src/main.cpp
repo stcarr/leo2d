@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
 	// Determines the grid size (from min_size to max_size) which the simulation attempts to populate using a geometric condition (currently checks r < max_size)
 	int min_size = -50;
 	int max_size = 50;
+	int boundary_condition = 0;
 	std::vector<int> min;
 	std::vector<int> max;
 	
@@ -112,6 +113,13 @@ int main(int argc, char** argv) {
 					min.push_back(min_size);
 					}
 					
+				if (in_string == "BOUNDARY_CONDITION"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					boundary_condition = atoi(in_string.c_str());
+				
+				}
+					
 				if (in_string == "NUM_SHEETS") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -129,7 +137,7 @@ int main(int argc, char** argv) {
 				if (in_string == "END_SHEET") {
 					getline(in_line,in_string,' ');
 					if (current_sheet == atoi(in_string.c_str()) - 1) {
-						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat);
+						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat,boundary_condition);
 						heights[current_sheet] = height;
 						angles[current_sheet] = angle;
 					}
@@ -256,8 +264,10 @@ int main(int argc, char** argv) {
 						opts.setParam("solver_type",1);
 					} else if (in_string == "LC"){
 						opts.setParam("solver_type",2);
-					} else if (in_string == "VD"){
+					} else if (in_string == "VD_CENTER"){
 						opts.setParam("solver_type",3);
+					} else if (in_string == "VD_FILE"){
+						opts.setParam("solver_type",4);
 					}
 				}
 				
@@ -319,13 +329,18 @@ int main(int argc, char** argv) {
 	}
 	
 	if (opts.getInt("poly_order")%4 != 0){
-		printf("Warning!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",opts.getInt("poly_order"));
+		printf("!!WARNING!!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",opts.getInt("poly_order"));
 		return -1;
 	}
 	
 	if (opts.getInt("solver_type") == 3 && opts.getInt("nShifts")%2 == 0){
 		opts.setParam("nShifts",opts.getInt("nShifts") + 1);
-		printf("Warning!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",opts.getInt("nShifts"));
+		printf("!!WARNING!!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",opts.getInt("nShifts"));
+	}
+	
+	if (num_sheets > 1 && boundary_condition == 1){
+		printf("!!WARNING: multiple sheet periodic run detected! Periodic boundary conditions not yet implemented for interlayer coupling! \n");
+		return -1;
 	}
 	
 	// Create the locality object with the sheet input data
