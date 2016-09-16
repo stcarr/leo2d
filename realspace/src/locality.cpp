@@ -89,9 +89,9 @@ void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vect
 		
 			std::string in_string;
 			
-			while ( getline(in_line, in_string, ' ') )	{
+			while ( getline(in_line, in_string, '=') )	{
 				
-				if (in_string == "JOB:"){
+				if (in_string == "JOB"){
 				
 					std::string v_line;
 					std::string t_line;
@@ -237,7 +237,7 @@ void Locality::constructGeom(){
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 
-		printf("Heterostructure has %d atoms. \n", max_index);
+		printf("Heterostructure has %d orbitals. \n", max_index);
 		printf("%d entries expected from intra. \n", max_intra_pairs);
 		printf("%d entries expected from inter. \n", max_inter_pairs);
 		
