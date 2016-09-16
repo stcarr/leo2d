@@ -4,6 +4,7 @@ JOB_NAME = tblg_bulk001
 
 MAXSIZE = 25
 MINSIZE = -25
+BOUNDARY_CONDITIONS = 0 // 0 == Finite Flake, 1 == Periodic BCs
 
 NUM_SHEETS = 4
 

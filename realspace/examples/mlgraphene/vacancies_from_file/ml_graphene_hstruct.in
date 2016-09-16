@@ -35,10 +35,10 @@ END_SHEET 1
 // VD_CENTER == Vacancy sampling (no shift)
 // VD_FILE == Vacancies from vacancies.dat
 
-SOLVER_TYPE = SQ
+SOLVER_TYPE = VD_FILE
 USE_B_FIELD = 1
 B_FIELD = 1
-USE_E_FIELD =01
+USE_E_FIELD = 0
 E_FIELD = 0
 VACANCY_CHANCE = 0.001
 NUM_TARGET_SHEETS = 1

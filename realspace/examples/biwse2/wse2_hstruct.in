@@ -6,6 +6,7 @@ JOB_NAME = bi_WSe2
 
 MAXSIZE = 50
 MINSIZE = -50
+BOUNDARY_CONDITION = 0 // 0 == Finite Flake, 1 == Periodic BC
 
 NUM_SHEETS = 2
 
