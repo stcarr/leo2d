@@ -484,6 +484,12 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		
 		double shifts[num_sheets*3];
 		
+		for (int s = 0; s < num_sheets; ++s){\
+			shifts[s*3 + 0] = 0;
+			shifts[s*3 + 1] = 0;
+			shifts[s*3 + 2] = 0;
+		}
+		
 		recursiveShiftCalc(jobArray,shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets, shift_sheets, target_indices);
 		
 	}
