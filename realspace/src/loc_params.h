@@ -15,6 +15,7 @@ class Loc_params {
     private:
 		
 		int nShifts;
+		int num_shift_sheets;
 		int solver_type;
 		int intra_searchsize;
 		int inter_searchsize;
@@ -29,6 +30,8 @@ class Loc_params {
 		double E;
 		double vacancy_chance;
 		
+		int* shift_sheets;
+		
 		std::string job_name;
 		
 		std::vector<int> target_sheets;
@@ -40,11 +43,14 @@ class Loc_params {
 		
         void setParam(std::string, int);
 		void setParam(std::string, double);
+		void setParam(std::string, int*);
+
 		void setParam(std::string, std::string);
 		void setParam(std::string, std::vector<int>);
 		
 		int getInt(std::string) const;
 		double getDouble(std::string) const;
+		int* getIntVec(std::string) const;
 		std::string getString(std::string) const;
 		std::vector<int> getVecInt(std::string) const;
 		void printParams();

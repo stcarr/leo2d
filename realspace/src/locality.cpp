@@ -15,6 +15,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string>
+#include <math.h>
 	
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
@@ -407,158 +409,54 @@ void Locality::sendRootWork(Mpi_job_params jobIn, int target_r){
 	
 	jobIn.sendParams(target_r,1);
 	
-	/*
+}
+
+void Locality::recursiveShiftCalc(std::vector<Mpi_job_params>& jobArray, double* shifts, int solver_type, int nShifts, int maxJobs, int num_sheets, int num_shift_sheets, int* shift_sheets, std::vector< std::vector<int> > target_indices) {
+
+	// Uniform sample over a grid	
+	if (solver_type == 1){
 	
-	if (type == 1 or type == 2){
-		if(jobIndex == -1){
-		
-			double temp[2];
-			temp[0] = 0.0;
-			temp[1] = 0.0;
-			MPI::COMM_WORLD.Send(	
-					temp,
-					2, 
-					MPI::DOUBLE, 
-					target_r, 
-					STOPTAG);
-		
-		}
-		else{
-			double work_out[2];
-			work_out[0] = work[jobIndex][0];
-			work_out[1] = work[jobIndex][1];
-	
-			MPI::COMM_WORLD.Send(	
-						work_out, 	// input buffer
-						2,					// size of buffer [x,y]
-						MPI::DOUBLE,		// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label shift value
-		}		
-	} else if (type == 3){
-	
-		if(jobIndex == -1){
-			int temp_length = 2;
-			int temp[2];
-			temp[0] = 0;
-			temp[1] = 0;
-			MPI::COMM_WORLD.Send(	
-					&temp_length,
-					1, 
-					MPI::INT, 
-					target_r, 
-					STOPTAG);
-					
-			MPI::COMM_WORLD.Send(	
-					temp,
-					2, 
-					MPI::INT, 
-					target_r, 
-					STOPTAG);
-		
-		}
-		else{
-	
-			int vac_length = v[jobIndex].size();
-			int vac_list[vac_length];
-			for (int i = 0; i < vac_length; ++i){
-				vac_list[i] = v[jobIndex][i];
-			}
+		if (num_shift_sheets == 0){
 			
-			MPI::COMM_WORLD.Send(	
-						&vac_length, 		// input buffer
-						1,					// size of buffer 
-						MPI::INT,			// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label work
-						
-			MPI::COMM_WORLD.Send(	
-						vac_list,		 	// input buffer
-						vac_length,			// size of buffer
-						MPI::INT,			// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label work
-		}
-	} else if (type == 4){
-	
-		if(jobIndex == -1){
-			int temp_length = 2;
-			int temp[2];
-			temp[0] = 0;
-			temp[1] = 0;
-			MPI::COMM_WORLD.Send(	
-					&temp_length,
-					1, 
-					MPI::INT, 
-					target_r, 
-					STOPTAG);
-					
-			MPI::COMM_WORLD.Send(	
-					temp,
-					2, 
-					MPI::INT, 
-					target_r, 
-					STOPTAG);
-					
-			MPI::COMM_WORLD.Send(	
-					&temp_length,
-					1, 
-					MPI::INT, 
-					target_r, 
-					STOPTAG);
-					
-			MPI::COMM_WORLD.Send(	
-					temp,
-					2, 
-					MPI::INT, 
-					target_r, 
-					STOPTAG);
+			int jobID = (int)jobArray.size() + 1;
+			
+			int n_targets = (int)target_indices[0].size();
+			int targets[n_targets];
+			
+			for (int t = 0; t < n_targets; ++t){
+				targets[t] = target_indices[0][t];
+			}
+
+			Mpi_job_params tempJob;
+			tempJob.loadLocParams(opts);
+			tempJob.setParam("shifts",shifts,num_sheets,3);
+			tempJob.setParam("jobID",jobID);
+			tempJob.setParam("max_jobs",maxJobs);
+			tempJob.setParam("target_list",targets,n_targets);
+			jobArray.push_back(tempJob);
 		
 		} else {
-	
-			int vac_length = v[jobIndex].size();
-			int vac_list[vac_length];
-			for (int i = 0; i < vac_length; ++i){
-				vac_list[i] = v[jobIndex][i];
+		
+			int tar_sheet = shift_sheets[num_shift_sheets-1];
+		
+			for (int i = 0; i < nShifts; ++i){
+				for (int j = 0; j < nShifts; ++j){
+					
+					double x = (1.0/(double) (nShifts))*i;
+					double y = (1.0/(double) (nShifts))*j;
+					
+					shifts[tar_sheet*3 + 0] = x;
+					shifts[tar_sheet*3 + 1] = y;
+					shifts[tar_sheet*3 + 2] = 0;
+					
+					recursiveShiftCalc(jobArray, shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets-1, shift_sheets, target_indices);
+
+
+				}
 			}
-			
-			MPI::COMM_WORLD.Send(	
-						&vac_length, 		// input buffer
-						1,					// size of buffer 
-						MPI::INT,			// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label work
-						
-			MPI::COMM_WORLD.Send(	
-						vac_list,		 	// input buffer
-						vac_length,			// size of buffer
-						MPI::INT,			// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label work
-						
-			int tar_length = t[jobIndex].size();
-			int tar_list[tar_length];
-			for (int i = 0; i < tar_length; ++i){
-				tar_list[i] = t[jobIndex][i];
-			}
-			
-			MPI::COMM_WORLD.Send(	
-						&tar_length, 		// input buffer
-						1,					// size of buffer 
-						MPI::INT,			// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label work
-						
-			MPI::COMM_WORLD.Send(	
-						tar_list,		 	// input buffer
-						tar_length,			// size of buffer
-						MPI::INT,			// type of buffer
-						target_r,			// worker to receive
-						jobIndex+1);		// work tag to label work
-			
 		}
+		
 	}
-	*/
 
 }
 
@@ -579,44 +477,15 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	// Uniform sample over a grid	
 	if (solver_type == 1){
 		nShifts = opts.getInt("nShifts");
-		maxJobs = nShifts*nShifts;
+		int num_shift_sheets = opts.getInt("num_shift_sheets");
+		int* shift_sheets = opts.getIntVec("shift_sheets");
 		
-		for (int i = 0; i < nShifts; ++i){
-			for (int j = 0; j < nShifts; ++j){
-			
-				double shifts[num_sheets*3];
-				Mpi_job_params tempJob;
-			
-				double x = (1.0/(double) (nShifts))*i;
-				double y = (1.0/(double) (nShifts))*j;
-				
-				for(int s = 0; s < num_sheets - 1; ++s){
-					shifts[s*3 + 0] = 0;
-					shifts[s*3 + 1] = 0;
-					shifts[s*3 + 2] = 0;
-				}
-				
-				shifts[(num_sheets-1)*3 + 0] = x;
-				shifts[(num_sheets-1)*3 + 1] = y;
-				shifts[(num_sheets-1)*3 + 2] = 0;
-				
-				int n_targets = (int)target_indices[0].size();
-				int targets[n_targets];
-				
-				for (int t = 0; t < n_targets; ++t){
-					targets[t] = target_indices[0][t];
-				}
-			
-				
-				tempJob.loadLocParams(opts);
-				tempJob.setParam("shifts",shifts,num_sheets,3);
-				tempJob.setParam("jobID",i*nShifts + j +1);
-				tempJob.setParam("max_jobs",maxJobs);
-				tempJob.setParam("target_list",targets,n_targets);
-				jobArray.push_back(tempJob);
-
-			}
-		}
+		maxJobs = pow(nShifts*nShifts,num_shift_sheets);
+		
+		double shifts[num_sheets*3];
+		
+		recursiveShiftCalc(jobArray,shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets, shift_sheets, target_indices);
+		
 	}
 	
 	// Cut through the unit cell

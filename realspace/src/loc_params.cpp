@@ -16,6 +16,7 @@
 Loc_params::Loc_params() {
 	
 		nShifts = 1;
+		num_shift_sheets = 1;
 		solver_type = 0;
 		intra_searchsize = 5;
 		inter_searchsize = 5;
@@ -30,6 +31,8 @@ Loc_params::Loc_params() {
 		E = 0;
 		vacancy_chance = 0;
 		
+		int* shift_sheets;
+		
 		job_name = "UNKNOWN_JOB";
 		
 		target_sheets.push_back(0);
@@ -38,6 +41,7 @@ Loc_params::Loc_params() {
 Loc_params::Loc_params(const Loc_params& orig){
 
 		nShifts = orig.getInt("nShifts");
+		num_shift_sheets = orig.getInt("num_shift_sheets");
 		solver_type = orig.getInt("solver_type");
 		intra_searchsize = orig.getInt("intra_searchsize");
 		inter_searchsize = orig.getInt("inter_searchsize");
@@ -52,6 +56,12 @@ Loc_params::Loc_params(const Loc_params& orig){
 		E = orig.getDouble("E");
 		vacancy_chance = orig.getDouble("vacancy_chance");
 		
+		int* temp_shift_sheets = orig.getIntVec("shift_sheets");
+		shift_sheets = new int[num_shift_sheets];
+		for (int s = 0; s < num_shift_sheets; ++s){
+			shift_sheets[s] = temp_shift_sheets[s];
+		}
+		
 		job_name = orig.getString("job_name");
 		
 		target_sheets = orig.getVecInt("target_sheets");
@@ -65,6 +75,8 @@ void Loc_params::setParam(std::string tag, int val){
 
 	if (tag == "nShifts")
 		nShifts = val;
+	if (tag == "num_shift_sheets")
+		num_shift_sheets = val;
 	if (tag == "solver_type")
 		solver_type = val;
 	if (tag == "intra_searchsize")
@@ -97,6 +109,17 @@ void Loc_params::setParam(std::string tag, double val){
 
 }
 
+void Loc_params::setParam(std::string tag, int* val){
+
+	if (tag == "shift_sheets"){
+		shift_sheets = new int[num_shift_sheets];
+		for (int s = 0; s < num_shift_sheets; ++s){
+			shift_sheets[s] = val[s];
+		}
+	}
+
+}
+
 void Loc_params::setParam(std::string tag, std::string val){
 	
 	if (tag == "job_name")
@@ -115,6 +138,8 @@ int Loc_params::getInt(std::string tag) const{
 
 	if (tag == "nShifts")
 		return nShifts;
+	if (tag == "num_shift_sheets")
+		return num_shift_sheets;
 	if (tag == "solver_type")
 		return solver_type;
 	if (tag == "intra_searchsize")
@@ -144,6 +169,13 @@ double Loc_params::getDouble(std::string tag) const{
 		return E;
 	if (tag == "vacancy_chance")
 		return vacancy_chance;
+
+}
+
+int* Loc_params::getIntVec(std::string tag) const{
+
+	if (tag == "shift_sheets")
+		return shift_sheets;
 
 }
 

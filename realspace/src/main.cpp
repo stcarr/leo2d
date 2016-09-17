@@ -302,8 +302,6 @@ int main(int argc, char** argv) {
 					opts.setParam("vacancy_chance",atof(in_string.c_str()));
 				}
 				
-				// !WARNING! Doing more than 1 target sheet is currently bugged (anp_an terms in the Cheby iteration having a memory allocation problem)
-				// However, can now do either the "top" or "bottom" sheet in a bilayer (sheet #2 ("top") is always shifted currently)
 				if (in_string == "NUM_TARGET_SHEETS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -321,6 +319,23 @@ int main(int argc, char** argv) {
 					}
 					opts.setParam("target_sheets",temp_sheets);
 				}
+				
+				if (in_string == "NUM_SHIFT_SHEETS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("num_shift_sheets",atoi(in_string.c_str()));
+				}
+				
+				if (in_string == "SHIFT_SHEETS"){
+					int* temp_sheets = new int[opts.getInt("num_shift_sheets")];
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < opts.getInt("num_shift_sheets"); ++i){
+						getline(in_line,in_string,' ');
+						int temp_target_sheet = atoi(in_string.c_str()) - 1;
+						temp_sheets[i] = temp_target_sheet;
+					}
+					opts.setParam("shift_sheets",temp_sheets);
+				}				
 				
 				
 			}

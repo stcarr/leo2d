@@ -77,6 +77,8 @@ class Locality {
 		std::vector<std::vector<int> > v_work;
 		std::vector<std::vector<int> > target_indices;
 		
+		void recursiveShiftCalc(std::vector<Mpi_job_params>&, double*, int, int, int, int, int, int*, std::vector< std::vector<int> >);
+		
 		void rootChebSolve(int*,double*,int*,int*,double*,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 		void workerChebSolve(int*,double*,int*,int*,double*);
 		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&);
