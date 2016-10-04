@@ -105,10 +105,10 @@ void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vect
 					std::istringstream in_t_line(t_line);
 					
 					while ( getline(in_v_line, in_string, ',') )	{
-						temp_v.push_back(atoi(in_string.c_str()));
+						temp_v.push_back(atoi(in_string.c_str()) - 1);
 					}
 					while ( getline(in_t_line, in_string, ',') )	{
-						temp_t.push_back(atoi(in_string.c_str()));
+						temp_t.push_back(atoi(in_string.c_str()) - 1);
 					}
 					
 					v.push_back(temp_v);
@@ -989,7 +989,7 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 			int new_k = intra_pairs[intra_counter*2 + 1];
 			
 			// if we are accounting for defects, we check if the other half of the pair has been removed
-			if (solver_type == 3){
+			if (solver_type == 3 || solver_type == 4){
 				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
 					skip_here2 = 1;
 				}
@@ -1020,8 +1020,8 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 				}
 				else if (magOn == 1) {
 					
-					double x1 = i2pos[k*3 + 0];
-					double y1 = i2pos[k*3 + 1];
+					double x1 = i2pos[k_i*3 + 0];
+					double y1 = i2pos[k_i*3 + 1];
 					double x2 = i2pos[new_k*3 + 0];
 					double y2 = i2pos[new_k*3 + 1];
 					
@@ -1049,7 +1049,7 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 			int new_k = inter_pairs[inter_counter*2 + 1];
 			
 			// if we are accounting for defects, we check if the other half of the pair has been removed
-			if (solver_type == 3){
+			if (solver_type == 3 || solver_type == 4){
 				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
 					skip_here2 = 1;
 				}
@@ -1117,7 +1117,7 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 	const char* extension = "_matrix.dat";
 	outFile.open ((job_name + extension).c_str());
 	
-	for(int i = 0; i < max_index; ++i){
+	for(int i = 0; i < local_max_index; ++i){
 		int start_index = row_pointer[i];
 		int stop_index = row_pointer[i+1];
 			for(int j = start_index; j < stop_index; ++j){
