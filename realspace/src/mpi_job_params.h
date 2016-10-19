@@ -25,6 +25,7 @@ class Mpi_job_params {
 		double vacancy_chance;
 	
 		int solver_type;
+		int observable_type;
 		
 		int num_target_sheets;
 		int* target_sheets;

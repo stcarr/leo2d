@@ -271,6 +271,15 @@ int main(int argc, char** argv) {
 					}
 				}
 				
+				if (in_string == "OBSERVABLE_TYPE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					if (in_string == "DOS"){
+						opts.setParam("observable_type",0);
+					} else if (in_string == "COND"){
+						opts.setParam("observable_type",1);
+					}
+				}
 
 				if (in_string == "USE_B_FIELD"){
 					getline(in_line,in_string,' ');

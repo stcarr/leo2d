@@ -463,6 +463,7 @@ void Locality::recursiveShiftCalc(std::vector<Mpi_job_params>& jobArray, double*
 void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices) {
 		
 	int solver_type = opts.getInt("solver_type");
+	int observable_type = opts.getInt("observable_type");
 	
 	int maxJobs;
 	int nShifts;
@@ -716,22 +717,41 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		
 		//outFile << job_name << " Chebyshev T value outputs for job " << job+1 << ":\n";
 		
-		outFile << "T:   ";
-		
-		for(int j = 0; j < poly_order-1; ++j){
-			outFile << polys[j] << ", ";
-		}
-		outFile << polys[poly_order-1] << "\n";
-		
-		for(int t = 0; t < num_targets; ++t){
-			outFile << target_list[t] << ": ";
+		if (observable_type == 0){
+			outFile << "T:   ";
+			
 			for(int j = 0; j < poly_order-1; ++j){
-				outFile << result_array[job][j + t*poly_order] << ", ";
+				outFile << polys[j] << ", ";
 			}
-			outFile << result_array[job][poly_order-1 + t*poly_order] << "\n";
-		}
+			outFile << polys[poly_order-1] << "\n";
+			
+			for(int t = 0; t < num_targets; ++t){
+				outFile << target_list[t] << ": ";
+				for(int j = 0; j < poly_order-1; ++j){
+					outFile << result_array[job][j + t*poly_order] << ", ";
+				}
+				outFile << result_array[job][poly_order-1 + t*poly_order] << "\n";
+			}
+			
+			outFile << "\n";
+			
+		} else if (observable_type == 1){
+			
+			outFile << "T: \n";
+			
+			for(int t = 0; t < num_targets; ++t){
+				outFile << target_list[t] << ": \n";
+				for (int r = 0; r < poly_order; ++r){
+					for(int j = 0; j < poly_order-1; ++j){
+						outFile << result_array[job][j + r*poly_order + t*poly_order*poly_order] << ", ";
+					}
+					outFile << result_array[job][poly_order-1 + r*poly_order + t*poly_order*poly_order] << "\n";
+				}
+			}	
+			
+			outFile << "\n";
 		
-		outFile << "\n";
+		}
 	}
 	
 	outFile.close();
@@ -769,6 +789,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		int jobID = jobIn.getInt("jobID");
 		int max_jobs = jobIn.getInt("max_jobs");
 		int solver_type = jobIn.getInt("solver_type");
+		int observable_type = jobIn.getInt("observable_type");
 		
 		// If worker gets STOPTAG it ends this method
 		if (solver_type == -1) {
@@ -867,23 +888,40 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// -----------------------
 		
 		SpMatrix H;
-		generateH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+		SpMatrix dxH;
+		double* alpha_0_arr = new double[num_targets*local_max_index];
+		
+		if (observable_type == 0){ // DOS
+			generateH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+		} else if (observable_type == 1) { // Conductivity
+			generateCondH(H, dxH, alpha_0_arr, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+		}
+		
 		
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
 		
 		// Saves T values
-		double* T_array = new double[poly_order*num_targets];
-		
-		computeDosKPM(T_array,H,jobIn,current_index_reduction,local_max_index,-1);
+		double* T_array;
+		if (observable_type == 0){
+			T_array = new double[poly_order*num_targets];
+			computeDosKPM(T_array,H,jobIn,current_index_reduction,local_max_index);
+		} else if (observable_type == 1){
+			T_array = new double[poly_order*poly_order*num_targets];
+			computeCondKPM(T_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_arr);
+		}
 		
 		// Save time at which solver finished
 		time_t tempEnd;
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);	
-		
-		int length = poly_order*num_targets;
+		int length;
+		if (observable_type == 0){
+			length = poly_order*num_targets;
+		} else if (observable_type == 1){
+			length = poly_order*poly_order*num_targets;
+		}
 		
 		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
@@ -906,6 +944,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 		// Cleanup C++ allocated memory
 		delete T_array;
+
 		
 		// End of while(1) means we wait for another instruction from root
 		}
@@ -1142,7 +1181,299 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 	
 }
 
-void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, int target_in){
+void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+	
+	int solver_type = jobIn.getInt("solver_type");
+	int magOn = jobIn.getInt("magOn");
+	int elecOn = jobIn.getInt("elecOn");
+	double B = jobIn.getDouble("B");
+	double E = jobIn.getDouble("E");
+	double energy_rescale = jobIn.getDouble("energy_rescale");
+	double energy_shift = jobIn.getDouble("energy_shift");
+	
+	//jobIn.printParams();
+	
+	
+	// Indexes how many inter terms we have entered so far
+	int inter_counter = 0;
+	
+	// Indexes how many intra terms we have entered so far
+	int intra_counter = 0;
+	
+	// Total number of expected non-zero matrix elements
+	int max_nnz = max_intra_pairs + max_inter_pairs;
+	
+	// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
+	
+	// col_index tells us the col of element i
+	// v tells us the value of element i
+	// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
+	
+	H.setup(max_nnz, local_max_index, local_max_index);
+	dxH.setup(max_nnz, local_max_index, local_max_index);
+
+	
+	int* col_index = H.allocColIndx();
+	int* row_pointer = H.allocRowPtr();
+	
+	int* col_index_dx = dxH.allocColIndx();
+	int* row_pointer_dx = dxH.allocRowPtr();
+
+	
+	double* v;
+	double* v_dx;
+	std::complex<double>* v_c;
+	std::complex<double>* v_c_dx;
+
+	
+	if (magOn == 0){
+		v = H.allocRealVal();
+		v_dx = dxH.allocRealVal();
+	}
+	else if (magOn == 1){
+		v_c = H.allocCpxVal();
+		v_c_dx = dxH.allocCpxVal();
+	}
+
+	// Count the current element, i.e. "i = input_counter"
+	int input_counter = 0;
+
+	// Loop through every orbital (i.e. rows of H)
+	for (int k_i = 0; k_i < max_index; ++k_i){
+	
+		int skip_here1 = 0;
+		
+		if (solver_type == 3 || solver_type == 4){
+			if (current_index_reduction[k_i] + 1 == current_index_reduction[k_i + 1]){
+				skip_here1 = 1;
+			}
+		}
+		
+		int k = k_i - current_index_reduction[k_i];
+		
+		// Save starting point of row k
+		row_pointer[k] = input_counter;
+		row_pointer_dx[k] = input_counter;
+		
+		// While we are still at the correct index in our intra_pairs list:
+		bool same_index1 = true;
+		while(same_index1) {
+		
+			int skip_here2 = 0;
+		
+			// if the first index of intra_pairs changes, we stop
+			if (intra_pairs[intra_counter*2 + 0] != k_i) {
+				same_index1 = false;
+				continue; // go to "while(same_index1)" which will end this loop
+			}
+			
+			int new_k = intra_pairs[intra_counter*2 + 1];
+			
+			// if we are accounting for defects, we check if the other half of the pair has been removed
+			if (solver_type == 3 || solver_type == 4){
+				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
+					skip_here2 = 1;
+				}
+			}
+			
+			// we save this pair into our sparse matrix format	
+			if (skip_here1 == 0 && skip_here2 == 0){
+			
+				col_index[input_counter] = new_k - current_index_reduction[new_k];
+				col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+				
+				double t;
+				
+				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
+				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+				if (new_k == k_i){
+					if (elecOn == 1){
+						t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(i2pos[k_i*3 + 0],i2pos[k_i*3 + 1],i2pos[k_i*3 + 2],E))/energy_rescale;
+					} else if (elecOn == 0)
+						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+				// Otherwise we enter the value just with rescaling
+				}
+				else
+					t = intra_pairs_t[intra_counter]/energy_rescale;
+				
+				//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
+				
+				if (magOn == 0){
+					v[input_counter] = t;
+					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t;
+				}
+				else if (magOn == 1) {
+					
+					double x1 = i2pos[k_i*3 + 0];
+					double y1 = i2pos[k_i*3 + 1];
+					double x2 = i2pos[new_k*3 + 0];
+					double y2 = i2pos[new_k*3 + 1];
+					
+					double pPhase = peierlsPhase(x1, x2, y1, y2, B);
+					v_c[input_counter] = std::polar(t, pPhase);
+					v_c_dx[input_counter] = std::polar((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t,pPhase);
+				}
+				++input_counter;
+			}
+			++intra_counter;
+			
+		}
+		
+		// While we are still at the correct index in our inter_pairs list:
+		bool same_index2 = true;
+		while(same_index2) {
+		
+			int skip_here2 = 0;
+		
+			// if the first index of intra_pairs changes, we stop
+			if (inter_pairs[inter_counter*2 + 0] != k_i) {
+				same_index2 = false;
+				continue; // go to "while(same_index2)" which will end this loop
+			}
+			
+			int new_k = inter_pairs[inter_counter*2 + 1];
+			
+			// if we are accounting for defects, we check if the other half of the pair has been removed
+			if (solver_type == 3 || solver_type == 4){
+				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
+					skip_here2 = 1;
+				}
+			}
+			
+			// we save this pair into our sparse matrix format
+			if (skip_here1 == 0 && skip_here2 == 0){
+				// get the index of the other orbital in this term
+				
+				col_index[input_counter] = new_k - current_index_reduction[new_k];
+				col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
+				
+				// get the position of both orbitals
+				double x1 = i2pos[k_i*3 + 0];
+				double y1 = i2pos[k_i*3 + 1];
+				double z1 = i2pos[k_i*3 + 2];
+				double x2 = i2pos[new_k*3 + 0];
+				double y2 = i2pos[new_k*3 + 1];
+				double z2 = i2pos[new_k*3 + 2];
+				
+				// and the orbit tag in their respective unit-cell
+				int orbit1 = index_to_grid[k_i*4 + 2];
+				int orbit2 = index_to_grid[new_k*4 + 2];
+				
+				int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
+				int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+				
+				// and the angle of the sheet each orbital is on
+				double theta1 = angles[index_to_grid[k_i*4 + 3]];
+				double theta2 = angles[index_to_grid[new_k*4 + 3]];
+
+				// use all this information to determine coupling energy
+				// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
+				
+				double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+				if (t != 0 ){
+					if (magOn == 0){
+						v[input_counter] = t;
+						v_dx[input_counter] = (x1 - x2)*t;
+					}
+					else if (magOn == 1){
+						double pPhase = peierlsPhase(x1, x2, y1, y2, B);
+						v_c[input_counter] = std::polar(t, pPhase);
+						v_c_dx[input_counter] = std::polar((x1 - x2)*t, pPhase);
+					}
+					//printf("inter [%d,%d] = %lf \n",k,new_k,t);
+					++input_counter;
+				}
+			}
+			++inter_counter;
+
+		}
+		
+	}
+	
+	// Save the end point + 1 of the last row
+	row_pointer[local_max_index] = input_counter;
+	row_pointer_dx[local_max_index] = input_counter;
+	
+	int num_targets = jobIn.getInt("num_targets");
+	int* target_list = jobIn.getIntVec("target_list");
+	
+	for (int t = 0; t < num_targets; ++t){
+		
+		int target_here = target_list[t];
+		double target_vec[local_max_index];
+		for (int i = 0; i < local_max_index; ++i){
+			target_vec[i] = 0;
+		}
+		target_vec[target_here] = 1;
+		
+		double temp_vec[local_max_index];
+		for (int i = 0; i < local_max_index; ++i){
+			temp_vec[i] = 0;
+		}
+		
+		dxH.vectorMultiply(target_vec,temp_vec,1,0);
+		
+		// want < 0 | dxH, not dxH | 0 >, so need to use: Transpose( < 0 | dxH ) = - dxH | 0 >
+		for (int i = 0; i < local_max_index; ++ i){
+			alpha_0_arr[t*local_max_index + i] = -temp_vec[i];
+		}
+	}
+	
+	/*
+			// ------------------------------
+			// Following saves Matrix to file
+			//
+			// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+			
+			//*
+			std::ofstream outFile;
+			const char* extension = "_matrix.dat";
+			outFile.open ((job_name + extension).c_str());
+			
+			for(int i = 0; i < local_max_index; ++i){
+				int start_index = row_pointer[i];
+				int stop_index = row_pointer[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+					}
+			}
+			
+			outFile.close();
+			//
+			
+			// End Matrix Save
+			// ---------------
+			
+			
+			// ------------------------------
+			// Following saves Matrix to file
+			//
+			// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+			
+			///*
+			std::ofstream outFile2;
+			const char* extension2 = "_dxH_matrix.dat";
+			outFile2.open ((job_name + extension2).c_str());
+			
+			for(int i = 0; i < local_max_index; ++i){
+				int start_index = row_pointer_dx[i];
+				int stop_index = row_pointer_dx[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+					}
+			}
+			
+			outFile2.close();
+			//
+			
+			// End Matrix Save
+			// ---------------
+			
+	*/
+	
+}
+
+void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
@@ -1327,6 +1658,193 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 		}
 		
 	} // end magOn == 1 block
+}
+
+void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
+
+	
+	int magOn = jobIn.getInt("magOn");
+	int poly_order = jobIn.getInt("poly_order");
+	
+	int num_targets = jobIn.getInt("num_targets");
+	int* target_list = jobIn.getIntVec("target_list");
+
+	if (magOn == 0){
+
+		// Starting vector for Chebyshev method is a unit-vector at the target orbital
+		for (int t_count = 0; t_count < num_targets; ++t_count){
+			
+			double* beta_array;
+			beta_array = new double[local_max_index*poly_order];
+			
+			int target_index = target_list[t_count] - current_index_reduction[target_list[t_count]];
+			
+			double T_prev[local_max_index];
+			
+			for (int i = 0; i < local_max_index; ++i){
+				T_prev[i] = 0.0;
+			}
+			
+			T_prev[target_index] = 1.0;
+			
+			for (int i = 0; i < local_max_index; ++i){
+				beta_array[i] = T_prev[i];
+			}
+			
+			// Temporary vector for algorithm ("current" vector T_j)
+			double T_j[local_max_index];	
+			for (int i = 0; i < local_max_index; ++i){
+				T_j[i] = 0.0;
+			}		
+			
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+			
+			for (int i = 0; i < local_max_index; ++i){
+				beta_array[local_max_index + i] = T_j[i];
+			}
+			
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			double T_next[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_next[i] = 0.0;
+			}
+			
+			// Now loop algorithm along T_m*|beta>, up to poly_order
+			// double alpha2 = 2;
+			
+			// want to do: T_next = 2*H*T_j - T_prev;
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < local_max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+			
+			for (int j = 2; j < poly_order; ++j){
+			
+				// reassign values from previous iteration
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+				
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[j*local_max_index + i] = T_j[i];
+				}
+				
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+				
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			}	// end beta_array construction
+			
+			// start loop over <alpha|*T_n for C_nm construction
+			
+			for (int i = 0; i < local_max_index; ++i){
+				T_prev[i] = alpha_0[t_count*local_max_index + i];
+			}
+			
+			for (int p = 0; p < poly_order; ++p){
+			
+				// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
+				double temp_vec[local_max_index];
+				dxH.vectorMultiply(T_prev, temp_vec,1,0);
+
+				double temp_sum = 0;
+				for (int i = 0; i < local_max_index; ++i){
+					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+				}
+
+				T_array[p + 0*poly_order + t_count*poly_order*poly_order] = temp_sum;
+				
+			}
+			
+			// Temporary vector for algorithm ("current" vector T_j)
+			for (int i = 0; i < local_max_index; ++i){
+				T_j[i] = 0.0;
+			}	
+
+			// This is OK because H is Hermitian, Transpose(H) = H, so <alpha|H can be computed with H|alpha>
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+			for (int p = 0; p < poly_order; ++p){
+			
+				// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
+				double temp_vec[local_max_index];
+				dxH.vectorMultiply(T_j, temp_vec,1,0);
+
+				double temp_sum = 0;
+				for (int i = 0; i < local_max_index; ++i){
+					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+				}
+
+				T_array[p + 1*poly_order + t_count*poly_order*poly_order] = temp_sum;
+				
+			}
+			
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			for (int i = 0; i < local_max_index; ++i){
+				T_next[i] = 0.0;
+			}
+		
+			// Now loop algorithm up to poly_order to find all T values
+			// double alpha2 = 2;
+			
+			// want to do: T_next = 2*H*T_j - T_prev;
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < local_max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+			
+			for (int j = 2; j < poly_order; ++j){
+			
+				// reassign values from previous iteration
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+				
+				
+				for (int p = 0; p < poly_order; ++p){
+				
+					// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
+					double temp_vec[local_max_index];
+					dxH.vectorMultiply(T_j, temp_vec,1,0);
+					
+					double temp_sum = 0;
+					for (int i = 0; i < local_max_index; ++i){
+						temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+					}
+					T_array[p + j*poly_order + t_count*poly_order*poly_order] = temp_sum;
+					
+				}
+				
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+
+				
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			}
+			
+			delete[] beta_array;
+			
+		}
+		
+		
+
+	}	// end magOn == 0 block
+	
+
+
 }
 
 double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){

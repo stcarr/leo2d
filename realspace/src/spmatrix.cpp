@@ -313,8 +313,9 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 		
 	#else
 		for (int r = 0; r < nrows; ++r){
-			
+		
 			double temp_sum = 0;
+			
 			int begin = rowPointer[r];
 			int end = rowPointer[r+1];
 			

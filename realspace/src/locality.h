@@ -108,10 +108,16 @@ class Locality {
 		void constructMatrix(int*,double*,int*,int*,double*,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 		
 		// Creates and returns a SpMatrix object representing H for a specific job
-		void generateH(SpMatrix&, Mpi_job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
+		void generateH(SpMatrix&,Mpi_job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
 		
+		// Creates and returns SpMatrix objects and an array of target vectors for Electron-Electron Correlation KPM
+		void generateCondH(SpMatrix&,SpMatrix&,double*,Mpi_job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
+	
 		// Computes Local DOS using Chebyshev KPM methods
-		void computeDosKPM(double*,SpMatrix&, Mpi_job_params,std::vector<int>,int,int);
+		void computeDosKPM(double*,SpMatrix&, Mpi_job_params,std::vector<int>,int);
+		
+		// Computes Local Electron-Electron Correlation using 2D Chebyshev KPM methods
+		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
 		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);

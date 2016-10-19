@@ -17,6 +17,7 @@ class Loc_params {
 		int nShifts;
 		int num_shift_sheets;
 		int solver_type;
+		int observable_type;
 		int intra_searchsize;
 		int inter_searchsize;
 		int num_target_sheets;

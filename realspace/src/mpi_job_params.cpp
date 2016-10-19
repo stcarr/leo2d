@@ -38,6 +38,7 @@ Mpi_job_params::Mpi_job_params() {
 	vacancy_chance = 0;
 
 	solver_type = 0;
+	observable_type = 0;
 	
 	poly_order = 20;
 	
@@ -58,6 +59,7 @@ Mpi_job_params::Mpi_job_params(const Mpi_job_params& orig){
 		vacancy_chance = orig.getDouble("vacancy_chance");
 		
 		solver_type = orig.getInt("solver_type");
+		observable_type = orig.getInt("observable_type");
 		
 		num_target_sheets = orig.getInt("num_target_sheets");
 		poly_order = orig.getInt("poly_order");
@@ -91,6 +93,7 @@ void Mpi_job_params::loadLocParams(Loc_params opts){
 	vacancy_chance = opts.getDouble("vacancy_chance");
 
 	solver_type = opts.getInt("solver_type");
+	observable_type = opts.getInt("observable_type");
 	
 	num_target_sheets = opts.getInt("num_target_sheets");
 	target_sheets = new int[num_target_sheets];
@@ -117,6 +120,8 @@ void Mpi_job_params::setParam(std::string tag, int val){
 		max_jobs = val;
 	if (tag == "solver_type")
 		solver_type = val;
+	if (tag == "observable_type")
+		observable_type = val;
 	if (tag == "poly_order")
 		poly_order = val;
 	if (tag == "magOn")
@@ -205,6 +210,8 @@ int Mpi_job_params::getInt(std::string tag) const{
 		return max_jobs;
 	if (tag == "solver_type")
 		return solver_type;
+	if (tag == "observable_type")
+		return observable_type;
 	if (tag == "num_target_sheets")
 		return num_target_sheets;
 	if (tag == "poly_order")
@@ -277,6 +284,7 @@ void Mpi_job_params::printParams(){
 
 		printf("JOBID = %d settings: \n", jobID);
 		printf("solver_type = %d \n", solver_type);
+		printf("observable_type = %d \n", observable_type);
 		printf("num_target_sheets = %d \n", num_target_sheets);
 		printf("poly_order = %d \n", poly_order);
 		printf("magOn = %d \n", magOn);
@@ -334,6 +342,8 @@ void Mpi_job_params::sendParams(int target, int tag){
 		sendInt(solver_type,target,tag);
 		
 		if (solver_type != -1) {
+		
+			sendInt(observable_type,target,tag);
 
 			sendInt(jobID,target,tag);
 			sendInt(max_jobs,target,tag);
@@ -367,6 +377,8 @@ void Mpi_job_params::recvParams(int from){
 		recvInt(from,"solver_type");
 		
 		if (solver_type != -1) {
+		
+			recvInt(from,"observable_type");
 		
 			recvInt(from,"jobID");
 			recvInt(from,"max_jobs");

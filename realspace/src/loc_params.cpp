@@ -18,6 +18,7 @@ Loc_params::Loc_params() {
 		nShifts = 1;
 		num_shift_sheets = 1;
 		solver_type = 0;
+		observable_type = 0;
 		intra_searchsize = 5;
 		inter_searchsize = 5;
 		num_target_sheets = 1;
@@ -43,6 +44,7 @@ Loc_params::Loc_params(const Loc_params& orig){
 		nShifts = orig.getInt("nShifts");
 		num_shift_sheets = orig.getInt("num_shift_sheets");
 		solver_type = orig.getInt("solver_type");
+		observable_type = orig.getInt("observable_type");
 		intra_searchsize = orig.getInt("intra_searchsize");
 		inter_searchsize = orig.getInt("inter_searchsize");
 		num_target_sheets = orig.getInt("num_target_sheets");
@@ -79,6 +81,8 @@ void Loc_params::setParam(std::string tag, int val){
 		num_shift_sheets = val;
 	if (tag == "solver_type")
 		solver_type = val;
+	if (tag == "observable_type")
+		observable_type = val;
 	if (tag == "intra_searchsize")
 		intra_searchsize = val;
 	if (tag == "inter_searchsize")
@@ -142,6 +146,8 @@ int Loc_params::getInt(std::string tag) const{
 		return num_shift_sheets;
 	if (tag == "solver_type")
 		return solver_type;
+	if (tag == "observable_type")
+		return observable_type;
 	if (tag == "intra_searchsize")
 		return intra_searchsize;
 	if (tag == "inter_searchsize")
@@ -198,6 +204,7 @@ void Loc_params::printParams(){
 		printf(" T Input parameters for Locality object: \n");
 		printf(" | nShifts = %d \n", nShifts);
 		printf(" | solver_type = %d \n", solver_type);
+		printf(" | observable_type = %d \n", observable_type);
 		printf(" | intra_searchsize = %d \n", intra_searchsize);
 		printf(" | inter_searchsize = %d \n", inter_searchsize);
 		printf(" | num_target_sheets = %d \n", num_target_sheets);
