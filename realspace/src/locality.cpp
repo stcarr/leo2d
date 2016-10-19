@@ -1578,7 +1578,7 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 	
 			int target_index = target_list[t_count] - current_index_reduction[target_list[t_count]];			
 			
-			std::complex<double> T_prev[local_max_index];
+			std::complex<double>* T_prev = new std::complex<double>[local_max_index];
 			
 			for (int i = 0; i < local_max_index; ++i){
 				T_prev[i] = 0.0;
@@ -1587,7 +1587,7 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 			T_prev[target_index] = 1.0;
 		
 			// Temporary vector for algorithm ("current" vector T_j)
-			std::complex<double> T_j[local_max_index];	
+			std::complex<double>* T_j = new std::complex<double>[local_max_index];	
 			for (int i = 0; i < local_max_index; ++i){
 				T_j[i] = 0.0;
 			}		
@@ -1595,7 +1595,7 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 			H.vectorMultiply(T_prev, T_j, 1, 0);
 
 			// Temporary vector for algorithm ("next" vector T_j+1)
-			std::complex<double> T_next[local_max_index];
+			std::complex<double>* T_next = new std::complex<double>[local_max_index];
 			for (int i = 0; i < local_max_index; ++i){
 				T_next[i] = 0.0;
 			}
@@ -1654,6 +1654,10 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 					//if (j%100 == 0)
 						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 			}
+			
+			delete T_prev;
+			delete T_j;
+			delete T_next;
 			
 		}
 		
@@ -1835,7 +1839,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
 			}
 			
-			delete[] beta_array;
+			delete beta_array;
 			
 		}
 		
