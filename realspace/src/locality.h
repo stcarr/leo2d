@@ -15,6 +15,8 @@
 #include "loc_params.h"
 #include "mpi_job_params.h"
 
+#include "fftw3.h"
+
 #include <time.h>
 #include <math.h>  
 class Locality {
@@ -83,6 +85,10 @@ class Locality {
 		void workerChebSolve(int*,double*,int*,int*,double*);
 		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&);
 		
+		std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
+		double crossProd(std::vector<double> x, std::vector<double> y, int dim);
+
+		
 		// MPI Communication flags
 		static const int WORKTAG = 1;
 		static const int STOPTAG = 0;
@@ -112,6 +118,9 @@ class Locality {
 		
 		// Creates and returns SpMatrix objects and an array of target vectors for Electron-Electron Correlation KPM
 		void generateCondH(SpMatrix&,SpMatrix&,double*,Mpi_job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
+	
+		// Creates and returns SpMatrix object representing H for a specific Momentum-space job
+		void generateMomH(SpMatrix&, Mpi_job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
 	
 		// Computes Local DOS using Chebyshev KPM methods
 		void computeDosKPM(double*,SpMatrix&, Mpi_job_params,std::vector<int>,int);

@@ -10,12 +10,14 @@
 #define HSTRUCT_H
 
 #include "sheet.h"
+#include "interlayer_coupling.h"
 #include "mpi_job_params.h"
 
 class Hstruct {
     private:
         int max_index;
         int max_sheets;
+		int solver_space;
 		
         std::vector<Sheet> sheets;
         std::vector<double> angles;
@@ -26,7 +28,7 @@ class Hstruct {
         void setIndex();
         
     public:
-        Hstruct(std::vector<Sheet>,std::vector<double>,std::vector<double>);
+        Hstruct(std::vector<Sheet>,std::vector<double>,std::vector<double>,int);
         Hstruct(const Hstruct& orig);
         ~Hstruct();
 
@@ -53,6 +55,9 @@ class Hstruct {
 		
 		std::vector<std::vector<int> > getVacancyList(int,int);
 		std::vector<std::vector<int> > getTargetList(Loc_params);
+		
+		void makeInterFFTFile(int, int, int, int, int, int, std::string);
+
 
 };
 

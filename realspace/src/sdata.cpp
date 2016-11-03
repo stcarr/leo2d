@@ -8,7 +8,7 @@
  #include "sdata.h"
  #include <vector>
 
-Sdata::Sdata(std::vector<std::vector<double> > _a, std::vector<int> _types, std::vector<std::vector<double> > _pos, std::vector<int> _min, std::vector<int> _max, int _mat, int _boundary_condition) {
+Sdata::Sdata(std::vector<std::vector<double> > _a, std::vector<int> _types, std::vector<std::vector<double> > _pos, std::vector<int> _min, std::vector<int> _max, int _mat, int _boundary_condition, int _solver_space) {
     a = _a;
     min_shape = _min;
     max_shape = _max;
@@ -16,6 +16,7 @@ Sdata::Sdata(std::vector<std::vector<double> > _a, std::vector<int> _types, std:
     atom_pos = _pos;
 	mat = _mat;
 	boundary_condition = _boundary_condition;
+	solver_space = _solver_space;
            
 }
 
@@ -31,6 +32,8 @@ Sdata::Sdata(const Sdata& orig) {
     atom_types = orig.atom_types;
     atom_pos = orig.atom_pos;
 	mat = orig.mat;
+	boundary_condition = orig.boundary_condition;
+	solver_space = orig.solver_space;
 }
 
 Sdata::~Sdata() {

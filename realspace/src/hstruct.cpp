@@ -6,18 +6,25 @@
  */
 
 #include "hstruct.h"
+
+#include <fftw3.h>
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cmath>
 #include <stdio.h>
 #include <math.h>
 
 // ---------------------
 // Use this constructor!
 // ---------------------
-Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std::vector<double> heights_in) {
+Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std::vector<double> heights_in, int solver_space_in) {
     std::vector<double> blank_shift;
 	// Create a shift corresponding to 0 so we can initialize
     for(int j = 0; j < 3; ++j)
         blank_shift.push_back(0);
-		
+	
 	// Save each sheet's information
     for(int i = 0; i < sheets_in.size(); ++i){
         sheets.push_back(sheets_in[i]);
@@ -26,6 +33,15 @@ Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std:
         shifts.push_back(blank_shift);
     }
     max_sheets = sheets.size();
+	solver_space = solver_space_in;
+	
+	// For Momentum space:
+	// Need to have sheet 0 get sheet 1's reciprocal lattice before sheet 0 constructs its geometry (and vice-versa) 
+	// Currently we assume that sheet 0 and sheet 1 are identical (up to a twist), so we do not "swap" their reciprocal lattices.
+	
+	if (solver_space == 1) {
+		printf("!!NOTE!!: Momentum-space only implemented for bilayers (check constructor in hstruct.cpp for more info) \n");
+	}
     
 	// Call to generate index information
 	setIndex();
@@ -124,7 +140,19 @@ double Hstruct::posAtomIndex(int k, int dim){
     double local_y = sheets[s].posAtomIndex(k - current_index,1);
     double local_z = sheets[s].posAtomIndex(k - current_index,2);
 	
-    double theta = angles[s];
+    double theta;
+	
+	// If we are in Momentum-space, we need to have sheet 0 have the geometry of sheet 1, so we swap the angles
+	
+	if (solver_space == 0) {
+		theta = angles[s];
+	} else if (solver_space == 1) {
+		if (s == 0) {
+			theta = angles[1];
+		} else if (s == 1) {
+			theta = angles[0];
+		}
+	}
 
 	// NEED TO FIX SHIFTS !! (but they are not used in current implementation)
 	// should rotate AFTER shifts, not before
@@ -499,6 +527,142 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 	
 	return t_list;
 
+}
+
+void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,int length_y, std::string fft_file){
+
+	// !!!!!!!! WARNING !!!!!!!!! 
+	//This is hard-coded for a "perfect" (no E,B,vacancies, or strain) twisted bilayer, momentum-space is not expected to work well for more general systems, use real-space instead!
+	//
+	
+	// n_i is the real-space discretization in that direction in the first 1x1 grid
+	// L_i is the number of 1x1 grids to append to the input before FFT in each direction. i.e. in R: <--- L_x -- | Origin 1x1 grid | -- L_x ---> 
+	// length_i is the total length in the i direction in momentum-space to save, i.e. in K: <----- L_i ------>
+	// o_1,o_2 are the orbitals of interest for this FFT
+	// theta is the relative angle between 1 and 2*L_x
+	// fft_file is the desired file name for the output
+	
+	int num_orb_1 = sheets[0].getNumAtoms();
+	int num_orb_2 = sheets[1].getNumAtoms();
+	
+	double theta = angles[1] - angles[0];
+	
+	
+	std::ofstream fout(fft_file.c_str());
+	
+	fout << num_orb_1 << " " << num_orb_2 << std::endl;
+	fout << "\n";
+
+	for (int o1 = 0; o1 < num_orb_1; ++o1){
+		for (int o2 = 0; o2 < num_orb_2; ++o2){
+			
+			int mat1 = sheets[0].getMat();
+			int mat2 = sheets[1].getMat();
+			int z1 = heights[0];
+			int z2 = heights[1];
+			
+			double o1_shift_x = sheets[0].getOrbPos(o1,0);
+			double o1_shift_y = sheets[0].getOrbPos(o1,1);
+			double o2_shift_x = sheets[1].getOrbPos(o2,0);
+			double o2_shift_y = sheets[1].getOrbPos(o2,1); 
+			
+			double x_pos,y_pos;
+			int x_size = n_x*(2*L_x)+2;
+			int y_size = n_y*(2*L_y)+2;
+			int y_size2 = y_size/2+1; // r2c y-direction size
+			double* in = new double[x_size*y_size];
+
+			double dx = 1.0/n_x;
+			double dy = 1.0/n_y;
+			fftw_complex *out;
+			out = (fftw_complex*) fftw_malloc(x_size*y_size2*sizeof(fftw_complex));
+
+			fftw_plan p;
+			p = fftw_plan_dft_r2c_2d(x_size,y_size,in,out,FFTW_MEASURE);
+
+			for (int i = 0; i < x_size; i++){
+				for (int j = 0; j < y_size; j++){
+				
+					if (i < x_size/2)
+						x_pos = -dx*i;
+					else
+						x_pos = -dx*i + dx*(x_size-1);
+						
+					if (j < y_size/2)
+						y_pos = -dy*j;
+					else
+						y_pos = -dy*j + dy*(y_size-1);
+						
+					in[j + i*y_size] = interlayer_term(0 + o1_shift_x, 0 + o1_shift_y, z1, x_pos + o2_shift_x, y_pos + o2_shift_y, z2, o1, o2, 0, theta, mat1, mat2);
+					
+				}
+			}
+			
+			fftw_execute(p);
+
+			double rescale = 4*M_PI*M_PI*n_x*n_y;
+			
+			for (int i = 0; i < x_size*y_size2; i++){
+				out[i][0] = out[i][0]/rescale;
+				out[i][1] = out[i][1]/rescale;
+			}
+
+		   //save_fftw_complex(out,x_size,y_size2,L_x*length_x,L_y*length_y,fft_file);
+
+			// Now we save the FFT to file
+			// Need defined:
+
+			//		fftw_complex* out 	: output from fftw3 = out
+			//		int x_size, y_size 	: 					= x_size, y_size2
+			// 		int x_L, y_L		: 					= L_x*length_x, L_y*length_y
+			//		string file			: filename of output= fft_file
+			
+			int x_L = L_x*length_x;
+			int y_L = L_y*length_y;
+			y_size = y_size2;
+			
+			// So redefine: y_size = y_size2, file = fft_file
+			// and define: x_L = L_x*length, y_L = L_y*length
+			
+			fout << o1 << " " << o2 << " " << x_L << " " << y_L << " 0" << std::endl;
+			
+			// save real data to file in plain-text matrix format
+			for (int i = 0; i < 2*x_L; i++) {
+				for (int j = 0; j < y_L; j++) {
+					if (i < x_L)
+						fout << out[j+(x_size - x_L+i)*y_size][0] << " ";
+					else
+						fout << out[j+(i-x_L)*y_size][0] << " ";
+					}
+					
+				fout << std::endl;
+			}
+			
+			fout << "\n";
+			
+			fout << o1 << " " << o2 << " " << x_L << " " << y_L << " 1" << std::endl;
+
+			// save complex data to file in plain-text matrix format
+			for (int i = 0; i < 2*x_L; i++) {
+				for (int j = 0; j < y_L; j++) {
+					if (i < x_L)
+						fout << out[j+(x_size-x_L+i)*y_size][1] << " ";
+					else
+						fout << out[j+(i-x_L)*y_size][1] << " ";
+					}
+					
+				fout << std::endl;
+			}
+			
+			fout << "\n";
+
+			fftw_destroy_plan(p);
+			fftw_free(out);
+			
+		}
+	}
+
+	fout.close();
 }
 
 

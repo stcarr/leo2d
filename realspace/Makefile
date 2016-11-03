@@ -18,7 +18,7 @@ ifeq ($(PLATFORM),ODYSSEY)
 CC = g++
 MPICC = mpicxx
 MATFLAGS = -DUSE_MKL
-LOCALFLAGS = -lmkl_rt -lpthread -liomp5
+LOCALFLAGS = -lmkl_rt -lpthread -liomp5 -lfftw3
 endif
 
 # Block for VESTA/MIRA
@@ -35,7 +35,7 @@ ifeq ($(PLATFORM),DEFAULT)
 CC = g++
 MPICC = mpicxx
 MATFLAGS = 
-LOCALFLAGS = 
+LOCALFLAGS = -lfftw3 
 endif
 
 

@@ -16,6 +16,7 @@
 class Sheet {
     private:
         std::vector<std::vector<double> > a;
+		std::vector<std::vector<double> > b;
         std::vector<int> max_shape, min_shape;
         int max_index;
 		int mat;
@@ -28,6 +29,7 @@ class Sheet {
 		void setInverse();
 		double a_inverse[2][2];
 		int boundary_condition;
+		int solver_space;
 		
         
     public:
@@ -44,9 +46,13 @@ class Sheet {
         int getMaxIndex();
         double getUnit(int, int);
 		int getShape(int, int);
+		double getOrbPos(int, int);
         int getNumAtoms();
 		int getMat();
 		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, int, int);
+		void setReciprocal();
+		double crossProd(std::vector<double>, std::vector<double>, int);
+		double getReciprocal(int, int);
 		double getInverse(int, int);
 
 };

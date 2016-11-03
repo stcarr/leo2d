@@ -10,12 +10,16 @@ const double pi6 	= M_PI/6;
 const double r_cut_graphene = 8;
 const double r_cut2_graphene = 7;
 
-
 // assuming (x,y) aims from sheet 1 to sheet 2 site
 // theta rotates sheet counter-clockwise
 
-double interlayer_term(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2)
-{
+Interlayer_coupling::Interlayer_coupling() {
+}
+
+Interlayer_coupling::~Interlayer_coupling() {
+}
+
+double interlayer_term(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2) {
 
 	if (mat1 == 0 && mat2 == 0) {
 		return inter_graphene(x1_in,y1_in,x2_in,y2_in,orbit1,orbit2,theta1,theta2);
@@ -29,8 +33,136 @@ double interlayer_term(double x1_in, double y1_in, double z1_in, double x2_in, d
 
 }
 
-double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2) 
-{
+void load_fftw_complex(std::vector< std::vector<fftw_complex*> > &out, std::string file) {
+
+	std::ifstream fin(file.c_str());
+	int num_orb_1;
+	int num_orb_2;
+	
+	fin >> num_orb_1;
+	fin >> num_orb_2;
+	
+	for (int o1 = 0; o1 < num_orb_1; ++o1){
+		
+		std::vector<fftw_complex*> temp_vec;
+		
+		for (int o2 = 0; o2 < num_orb_2; ++o2){
+		
+			int x_size;
+			int y_size;
+			
+			int file_o1;
+			int file_o2;
+			
+			int file_type;
+			
+			fin >> file_o1;
+			fin >> file_o2;
+			fin >> x_size;
+			fin >> y_size;
+			fin >> file_type;
+			
+			if (file_o1 != o1){
+				printf("Warning! orbit mismatch in *fft.dat file \n");
+				break;
+			}
+			if (file_o2 != o2){
+				printf("Warning! orbit mismatch in *fft.dat file \n");
+				break;
+			}
+			if (file_type != 0){
+				printf("Warning! orbit mismatch in *fft.dat file \n");
+				break;
+			}
+			
+			
+			fftw_complex* temp_out;
+			temp_out = (fftw_complex*) fftw_malloc(x_size*y_size*2*sizeof(fftw_complex));
+	
+			for (int i = 0; i < 2*x_size; i++)
+				for (int j = 0; j < y_size; j++)
+					fin >> temp_out[j + i*y_size][0];
+			
+			// Now get complex data for this orbit pairing
+			
+			fin >> file_o1;
+			fin >> file_o2;
+			fin >> x_size;
+			fin >> y_size;
+			fin >> file_type;
+			
+			if (file_o1 != o1){
+				printf("Warning! orbit mismatch in *fft.dat file \n");
+				break;
+			}
+			if (file_o2 != o2){
+				printf("Warning! orbit mismatch in *fft.dat file \n");
+				break;
+			}
+			if (file_type != 1){
+				printf("Warning! orbit mismatch in *fft.dat file \n");
+				break;
+			}
+
+			for (int i = 0; i < 2*x_size; i++)
+				for (int j = 0; j < y_size; j++)
+					fin >> temp_out[j + i*y_size][1];
+			
+			temp_vec.push_back(temp_out);
+					
+			
+		}
+		
+		out.push_back(temp_vec);
+		
+	}
+
+	fin.close();
+}
+
+double interp_4point(double x, double y, double v1, double v2, double v3, double v4) {
+   double value = v1*(1-x)*(1-y) + v2*x*(1-y)+ v3*(1-x)*y + v4*x*y;
+   return value;
+}
+
+double Interlayer_coupling::interp_fft(double x_input, double y_input, int o1, int o2, int entry) {
+
+	// (x_input, y_input) is location at which you want to know the (interpolated) value of the fftw_complex data
+	// o1, o2 are two two orbitals whose interlayer coupling you are computing
+	// entry is 0 for real and 1 for imaginary part
+	
+	fftw_complex* data;
+	data = fftw_data[o1][o2];
+	
+	int x_s = length_x*L_x;
+	int y_s = length_y*L_y;
+	double x = x_input*L_x/M_PI+x_s;
+	double y = y_input*L_y/M_PI;
+	
+	if (y < 0)
+		y = -y; // we use the y-symmetry in a FFT of purely real input data
+	if (x < 0 || x > 2*x_s || y > y_s)
+		return 0;
+		
+	int x_int = int(x);
+	int y_int = int(y);
+
+	double value = interp_4point(x-x_int,y-y_int, data[y_int + x_int*y_s][entry], data[y_int + (x_int+1)*y_s][entry], data[y_int+1 + x_int*y_s][entry],data[y_int+1+(x_int+1)*y_s][entry]);
+	return value;
+
+}
+
+void Interlayer_coupling::fft_setup(int L_x_in, int L_y_in, int length_x_in, int length_y_in, std::string fftw_file_in){
+
+	L_x = L_x_in;
+	L_y = L_y_in;
+	length_x = length_x_in;
+	length_y = length_y_in;
+	
+	load_fftw_complex(fftw_data, fftw_file_in);
+}
+
+double inter_graphene(double x1_in, double y1_in, double x2_in, double y2_in, int orbit1, int orbit2, double theta1, double theta2)  {
 
 /*
 double x1 = cos(-theta1)*x1_in - sin(-theta1)*y1_in;
@@ -104,8 +236,7 @@ if (r < r_cut_graphene){
 return t;
 }
 
-double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, int mat1, int mat2)
-{
+double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, int mat1, int mat2) {
 	double delta_z = z1_in - z2_in;
 	
 	double nu_sigma;

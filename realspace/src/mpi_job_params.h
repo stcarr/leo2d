@@ -26,6 +26,7 @@ class Mpi_job_params {
 	
 		int solver_type;
 		int observable_type;
+		int solver_space;
 		
 		int num_target_sheets;
 		int* target_sheets;

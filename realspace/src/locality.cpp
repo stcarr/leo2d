@@ -18,6 +18,7 @@
 #include <string>
 #include <math.h>
 	
+	
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
 	// Set all of the run-specific options for matrix construction and paramters of the solver method used.
@@ -42,12 +43,11 @@ void Locality::setup(Loc_params opts_in){
 // Edits run-specific options for matrix constructions and parameters of the solver method (to edit settings from the constructor)
 	
 	opts = opts_in;
+	job_name = opts.getString("job_name");
 	
 	if (rank == root){
 		opts.printParams();
 	}
-	
-	job_name = opts.getString("job_name");
 	
 	/*
 	nShifts = opts.getInt("nShifts");
@@ -147,6 +147,8 @@ void Locality::constructGeom(){
 	time(&constructStart);
 	
 	int solver_type = opts.getInt("solver_type");
+	int solver_space = opts.getInt("solver_space");
+	int fft_from_file = opts.getInt("fft_from_file");
 	int intra_searchsize = opts.getInt("intra_searchsize");
 	int inter_searchsize = opts.getInt("inter_searchsize");
 	int nShifts = opts.getInt("nShifts");
@@ -185,7 +187,7 @@ void Locality::constructGeom(){
 		}
 		
 		printf("rank %d building Hstruct. \n", rank);	
-		Hstruct h(sheets,angles,heights);
+		Hstruct h(sheets,angles,heights,solver_space);
 		
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();
@@ -228,11 +230,15 @@ void Locality::constructGeom(){
 	
 		printf("Building inter and intra pairs. \n");	
 		std::vector<std::vector<int> > inter_pairs_vec;
+		
+		// !! MOMENTUM SPACE TO DO !!
+		// Probably don't need to change this, just double check!
 		h.getInterPairs(inter_pairs_vec,inter_searchsize);
 		
 		std::vector<int> intra_pairs_vec_i;
 		std::vector<int> intra_pairs_vec_j;
 		std::vector<double> intra_pairs_vec_t;
+		
 		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t, intra_searchsize);
 	
 		printf("Inter and intra pair construction complete. \n");
@@ -242,6 +248,34 @@ void Locality::constructGeom(){
 		printf("Heterostructure has %d orbitals. \n", max_index);
 		printf("%d entries expected from intra. \n", max_intra_pairs);
 		printf("%d entries expected from inter. \n", max_inter_pairs);
+		
+		if (solver_space == 1){
+			if (fft_from_file == 0){
+			
+				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
+					int n_x = 20;
+					int n_y = 20;
+					int L_x = 20;
+					int L_y = 20;
+					int length_x = 2;
+					int length_y = 2;
+					std::string fft_file = "interlayer_fft.dat";
+				//
+				
+				printf("Making *fft.dat file. \n");
+				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, fft_file);
+				
+				// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
+				
+				// !! also when putting data[o1][o2] into H, will need to multiply every interlayer term by sqrt(Area(RL_1)*Area(RL_2))
+				// !! Using real-space area: This term is ~ 4*pi^2/sqrt(Area1*Area2) ~ 7.4308 for tBLG
+		
+
+
+			} else {
+				printf("Warning: Not creating FFT file, assuming a *fft.dat file exists in current directory. \n");
+			}
+		}
 		
 		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
@@ -464,6 +498,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		
 	int solver_type = opts.getInt("solver_type");
 	int observable_type = opts.getInt("observable_type");
+	int solver_space = opts.getInt("solver_space");
 	
 	int maxJobs;
 	int nShifts;
@@ -474,112 +509,203 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	std::vector<Mpi_job_params> jobArray;
 	
 	int num_sheets = (int)sdata.size();
+
+	if (solver_space == 0) {
 	
-	// Uniform sample over a grid	
-	if (solver_type == 1){
-		nShifts = opts.getInt("nShifts");
-		int num_shift_sheets = opts.getInt("num_shift_sheets");
-		int* shift_sheets = opts.getIntVec("shift_sheets");
-		
-		maxJobs = pow(nShifts*nShifts,num_shift_sheets);
-		
-		double shifts[num_sheets*3];
-		
-		for (int s = 0; s < num_sheets; ++s){
-			shifts[s*3 + 0] = 0;
-			shifts[s*3 + 1] = 0;
-			shifts[s*3 + 2] = 0;
+		// Uniform sample over a grid
+		if (solver_type == 1) {
+			nShifts = opts.getInt("nShifts");
+			int num_shift_sheets = opts.getInt("num_shift_sheets");
+			int* shift_sheets = opts.getIntVec("shift_sheets");
 			
-		}
-		
-		recursiveShiftCalc(jobArray,shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets, shift_sheets, target_indices);
-		
-	}
-	
-	// Cut through the unit cell
-	if (solver_type == 2){
-	
-		nShifts = opts.getInt("nShifts");
-		maxJobs = nShifts*nShifts;
-		
-		for (int i = 0; i < maxJobs; ++i){
-		
-			double x = (1.0/((double) maxJobs))*i;
+			maxJobs = pow(nShifts*nShifts,num_shift_sheets);
 			
 			double shifts[num_sheets*3];
-			Mpi_job_params tempJob;
-			tempJob = Mpi_job_params();
 			
-			for(int s = 0; s < num_sheets - 1; ++s){
+			for (int s = 0; s < num_sheets; ++s){
 				shifts[s*3 + 0] = 0;
 				shifts[s*3 + 1] = 0;
 				shifts[s*3 + 2] = 0;
-			}
-			
-			shifts[(num_sheets-1)*3 + 0] = x;
-			shifts[(num_sheets-1)*3 + 1] = x;
-			shifts[(num_sheets-1)*3 + 2] = 0;
-						
-			int n_targets = (int)target_indices[0].size();
-			int targets[n_targets];
-			
-			for (int t = 0; t < n_targets; ++t){
-				targets[t] = target_indices[0][t];
-			}
-		
-							
-			
-			tempJob.loadLocParams(opts);
-			tempJob.setParam("shifts",shifts,num_sheets,3);
-			tempJob.setParam("jobID",i+1);
-			tempJob.setParam("max_jobs",maxJobs);
-			tempJob.setParam("target_list",targets,n_targets);
-			jobArray.push_back(tempJob);
-
-		}
-	}
-	
-	// Vacancy solvers
-	
-	if (solver_type == 3 || solver_type == 4){
-	
-		maxJobs = (int)v_work.size();
-		
-		for (int i = 0; i < maxJobs; ++i){
-			
-			Mpi_job_params tempJob;
-			
-			double shifts[num_sheets*3];
-
-			for(int s = 0; s < num_sheets ; ++s){
-				shifts[s*3 + 0] = 0;
-				shifts[s*3 + 1] = 0;
-				shifts[s*3 + 2] = 0;
-			}
 				
-			int n_vac = (int)v_work[i].size();
-			int vacancies[n_vac];
-			
-			for (int v = 0; v < n_vac; ++v){
-				vacancies[v] = v_work[i][v];
 			}
 			
-			int n_targets = (int)target_indices[i].size();
-			int targets[n_targets];
+			recursiveShiftCalc(jobArray,shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets, shift_sheets, target_indices);
 			
-			for (int t = 0; t < n_targets; ++t){
-				targets[t] = target_indices[i][t];
-			}
-			
-						
-			tempJob.loadLocParams(opts);
-			tempJob.setParam("shifts",shifts,num_sheets,3);
-			tempJob.setParam("target_list",targets,n_targets);
-			tempJob.setParam("vacancy_list",vacancies,n_vac);
-			tempJob.setParam("jobID",i+1);
-			tempJob.setParam("max_jobs",maxJobs);
-			jobArray.push_back(tempJob);
 		}
+		
+		// Cut through the unit cell
+		if (solver_type == 2){
+		
+			nShifts = opts.getInt("nShifts");
+			maxJobs = nShifts*nShifts;
+			
+			for (int i = 0; i < maxJobs; ++i){
+			
+				double x = (1.0/((double) maxJobs))*i;
+				
+				double shifts[num_sheets*3];
+				Mpi_job_params tempJob;
+				tempJob = Mpi_job_params();
+				
+				for(int s = 0; s < num_sheets - 1; ++s){
+					shifts[s*3 + 0] = 0;
+					shifts[s*3 + 1] = 0;
+					shifts[s*3 + 2] = 0;
+				}
+				
+				shifts[(num_sheets-1)*3 + 0] = x;
+				shifts[(num_sheets-1)*3 + 1] = x;
+				shifts[(num_sheets-1)*3 + 2] = 0;
+							
+				int n_targets = (int)target_indices[0].size();
+				int targets[n_targets];
+				
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = target_indices[0][t];
+				}
+			
+								
+				
+				tempJob.loadLocParams(opts);
+				tempJob.setParam("shifts",shifts,num_sheets,3);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				tempJob.setParam("target_list",targets,n_targets);
+				jobArray.push_back(tempJob);
+
+			}
+		}
+		
+		// Vacancy solvers
+		
+		if (solver_type == 3 || solver_type == 4){
+		
+			maxJobs = (int)v_work.size();
+			
+			for (int i = 0; i < maxJobs; ++i){
+				
+				Mpi_job_params tempJob;
+				
+				double shifts[num_sheets*3];
+
+				for(int s = 0; s < num_sheets ; ++s){
+					shifts[s*3 + 0] = 0;
+					shifts[s*3 + 1] = 0;
+					shifts[s*3 + 2] = 0;
+				}
+					
+				int n_vac = (int)v_work[i].size();
+				int vacancies[n_vac];
+				
+				for (int v = 0; v < n_vac; ++v){
+					vacancies[v] = v_work[i][v];
+				}
+				
+				int n_targets = (int)target_indices[i].size();
+				int targets[n_targets];
+				
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = target_indices[i][t];
+				}
+				
+							
+				tempJob.loadLocParams(opts);
+				tempJob.setParam("shifts",shifts,num_sheets,3);
+				tempJob.setParam("target_list",targets,n_targets);
+				tempJob.setParam("vacancy_list",vacancies,n_vac);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				jobArray.push_back(tempJob);
+			}
+		}
+	} else if (solver_space == 1) {
+	// !! MOMENTUM SPACE TO DO !!
+	// if Momentum-space, want all sheets to always have the same "shift" (q value)
+	// Can still have a LC and grid sampling, and maybe even a "high-symm LC" which does Gamma->M->K->Gamma
+		
+		// Square sampling
+		if (solver_type == 1){
+			nShifts = opts.getInt("nShifts");
+			maxJobs = nShifts*nShifts;
+			
+			for (int i = 0; i < nShifts; ++i){
+				double x = (1.0/((double) nShifts))*i;
+				for (int j = 0; j < nShifts; ++j){
+					double y = (1.0/((double) nShifts))*j;
+					
+					double shifts[num_sheets*3];
+					Mpi_job_params tempJob;
+					tempJob = Mpi_job_params();
+					
+					for(int s = 0; s < num_sheets; ++s){
+						shifts[s*3 + 0] = x;
+						shifts[s*3 + 1] = y;
+						shifts[s*3 + 2] = 0;
+					}
+								
+					int n_targets = (int)target_indices[0].size();
+					int targets[n_targets];
+					
+					for (int t = 0; t < n_targets; ++t){
+						targets[t] = target_indices[0][t];
+					}
+				
+									
+					
+					tempJob.loadLocParams(opts);
+					tempJob.setParam("shifts",shifts,num_sheets,3);
+					tempJob.setParam("jobID",i*nShifts + j + 1);
+					tempJob.setParam("max_jobs",maxJobs);
+					tempJob.setParam("target_list",targets,n_targets);
+					jobArray.push_back(tempJob);
+				}
+
+			}
+			
+		}
+		
+		// Linecut sampling
+		if (solver_type == 2){
+			nShifts = opts.getInt("nShifts");
+			maxJobs = nShifts*nShifts;
+			
+			for (int i = 0; i < maxJobs; ++i){
+			
+				double x = (1.0/((double) maxJobs))*i;
+				
+				double shifts[num_sheets*3];
+				Mpi_job_params tempJob;
+				tempJob = Mpi_job_params();
+				
+				for(int s = 0; s < num_sheets; ++s){
+					shifts[s*3 + 0] = x;
+					shifts[s*3 + 1] = x;
+					shifts[s*3 + 2] = 0;
+				}
+							
+				int n_targets = (int)target_indices[0].size();
+				int targets[n_targets];
+				
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = target_indices[0][t];
+				}
+			
+								
+				
+				tempJob.loadLocParams(opts);
+				tempJob.setParam("shifts",shifts,num_sheets,3);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				tempJob.setParam("target_list",targets,n_targets);
+				jobArray.push_back(tempJob);
+
+			}
+		}
+		
+		if (solver_type == 3 || solver_type == 4){
+			printf("!!WARNING!!: Momentum-space (solver_space = M) is NOT compatible with vacancy solvers. \n");
+		}
+	
 	}
 	
 	
@@ -790,6 +916,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		int max_jobs = jobIn.getInt("max_jobs");
 		int solver_type = jobIn.getInt("solver_type");
 		int observable_type = jobIn.getInt("observable_type");
+		int solver_space = jobIn.getInt("solver_space");
 		
 		// If worker gets STOPTAG it ends this method
 		if (solver_type == -1) {
@@ -826,13 +953,41 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 		}
 		
-		for (int i = 0; i < max_index; ++i) {
-		
-			int s = index_to_grid[i*4 + 3];
+		if (solver_space == 0){
+			for (int i = 0; i < max_index; ++i) {
 			
-			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*s1_a[0][0] + shifts[s*3 + 1]*s1_a[0][1];
-			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*s1_a[1][0] + shifts[s*3 + 1]*s1_a[1][1];
-			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				int s = index_to_grid[i*4 + 3];
+				
+				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*s1_a[0][0] + shifts[s*3 + 1]*s1_a[0][1];
+				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*s1_a[1][0] + shifts[s*3 + 1]*s1_a[1][1];
+				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+			
+			}
+		} else if (solver_space == 1){
+		
+			// Here we define Lattice 1 as " A = q + K "
+			// and we define Lattice 2 as " B = q - K' "
+			// This is done to take care of the the fact that the code looks for K - K' close to zero for inter-pairs (inherited from real space)
+			// but in Momentum space the pairs that are "close" should K + K' close to zero!
+			// However the monolayer bloch states depend on the sign of K, so we need to make this substitution so the monolayer terms are correct
+			
+			std::vector< std::vector<double> > b1 = getReciprocal(sdata[0].a);
+			
+			for (int i = 0; i < max_index; ++i) {
+			
+				int s = index_to_grid[i*4 + 3];
+				if (s == 0){
+					i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
+					i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[1][0] + shifts[s*3 + 1]*b1[1][1];
+					i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				} if (s == 1){
+					i2pos[i*3 + 0] = -index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
+					i2pos[i*3 + 1] = -index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[1][0] + shifts[s*3 + 1]*b1[1][1];
+					i2pos[i*3 + 2] = -index_to_pos[i*3 + 2];
+				}
+			
+			}
+		
 		
 		}
 		
@@ -891,12 +1046,26 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		SpMatrix dxH;
 		double* alpha_0_arr = new double[num_targets*local_max_index];
 		
-		if (observable_type == 0){ // DOS
-			generateH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
-		} else if (observable_type == 1) { // Conductivity
-			generateCondH(H, dxH, alpha_0_arr, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+		if (solver_space == 0){
+			if (observable_type == 0){ // DOS
+				generateH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+			} else if (observable_type == 1) { // Conductivity
+				generateCondH(H, dxH, alpha_0_arr, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+			}
+		} else if (solver_space == 1){
+			generateMomH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		}
 		
+		// !! MOMENTUM SPACE TO DO !!
+		// if solver_space == 1: Instead call generateMomH
+		// generateMomH: 
+		// 			needs to always be complex
+		//			cannot deal with E or B fields yet
+		//			should check that there are no vacancies
+		//			needs to do bloch-theory on the intralayer blocks
+		//			needs to call the interpolate FFT file for interlayer and sample at r2 - r1 + q (i.e. the "shift")
+		//
+		// Has same input format as generateH(...), because shift is stored in jobIn!
 		
 		// ---------------------
 		// Chebyshev Computation
@@ -1169,15 +1338,6 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 	
 	// End Matrix Save
 	// ---------------
-	
-	/*
-	if (magOn == 0){
-		H.setup(local_max_index, local_max_index, v,   col_index, row_pointer, max_nnz); 
-	}
-	else if (magOn == 1){
-		H.setup(local_max_index, local_max_index, v_c, col_index, row_pointer, max_nnz);
-	}
-	*/
 	
 }
 
@@ -1473,16 +1633,381 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 	
 }
 
+void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+
+	int solver_type = jobIn.getInt("solver_type");
+	int magOn = jobIn.getInt("magOn");
+	int elecOn = jobIn.getInt("elecOn");
+	double B = jobIn.getDouble("B");
+	double E = jobIn.getDouble("E");
+	double energy_rescale = jobIn.getDouble("energy_rescale");
+	double energy_shift = jobIn.getDouble("energy_shift");
+	
+	double* shifts = jobIn.getDoubleMat("shifts");
+	
+	double shift_x = shifts[0];
+	double shift_y = shifts[1];
+	
+	// Indexes how many inter terms we have entered so far
+	int inter_counter = 0;
+	
+	// Indexes how many intra terms we have entered so far
+	int intra_counter = 0;
+	
+	// Total number of expected non-zero matrix elements
+	int max_nnz = max_intra_pairs + max_inter_pairs;
+	
+	// Do monolayer bloch theory for each sheet:
+	
+	int num_sheets = jobIn.getInt("num_sheets");
+	
+	int L = 5; // L is the half-side length of a 2L+1 x 2L+1 search grid for the monolayer bloch terms
+	
+	std::vector<int> N_R_array; // num_sheets vector of the number of real-space positions in each sheet
+	std::vector< std::vector< std::vector<double> > > R_array; // (num_sheets) x (N_R) x (3) array of real-space positions
+	std::vector< std::vector< std::vector< std::vector<double> > > > bloch_t_array; // (num_sheets) x (N_R) x (num_orbitals) x (num_orbitals) of real-space t_ij coupling values
+	
+	for (int s = 0; s < num_sheets; ++s){
+	
+		int N_R = 0;
+		
+		std::vector< std::vector<double> > temp_R_array;
+		std::vector< std::vector< std::vector<double> > > temp_bloch_t_array;
+		
+		std::vector<std::vector<double> > a = sdata[s].a;
+		double theta = angles[s];
+		int num_orbs = (int) sdata[s].atom_types.size();
+		int mat = sdata[s].mat;
+		
+		std::vector<std::vector<double> > orb_pos = sdata[s].atom_pos;
+		
+		for (int i = -L; i < L+1; ++i){
+			for (int j = -L; j < L+1; ++j){
+			
+			
+				// unrotated variables
+				
+				double temp_x = i*a[0][0] + j*a[0][1];
+				double temp_y = i*a[1][0] + j*a[1][1];
+				double temp_z = 0;
+				
+				// rotated variables	
+				double x = temp_x*cos(theta) - temp_y*sin(theta);
+				double y = temp_y*cos(theta) + temp_x*sin(theta);
+				double z = temp_z;
+				
+				
+				std::vector< std::vector<double> > temp_o1_bloch_t_array;
+				for (int o1 = 0; o1 < num_orbs; ++o1){
+					std::vector<double> temp_o2_bloch_t_array;
+					for (int o2 = 0; o2 < num_orbs; ++o2){
+					
+						// compute R(i,j) based on <a> and <theta>
+						// find monolayer t_ij(R(i,j),o1,o2)
+						// if t_ij != 0, add R and t_ij to respective vectors, and ++N_R;
+						
+						// !! Include orbital displacement in x,y,z*E
+						
+						double o1_x = orb_pos[o1][0];
+						double o1_y = orb_pos[o1][1];
+						double o1_z = orb_pos[o1][2];
+						
+						double o2_x = temp_x + orb_pos[o2][0];
+						double o2_y = temp_y + orb_pos[o2][1];
+						double o2_z = temp_z + orb_pos[o2][2];
+						
+						double t = intralayer_term(o1_x, o1_y, o1_z, o2_x, o2_y, o2_z, o1, o2, mat);
+						temp_o2_bloch_t_array.push_back(t);
+					}
+					temp_o1_bloch_t_array.push_back(temp_o2_bloch_t_array);
+				}
+				
+				std::vector<double> temp_r_vec;
+				temp_r_vec.push_back(x);
+				temp_r_vec.push_back(y);
+				temp_r_vec.push_back(z);
+				
+				temp_R_array.push_back(temp_r_vec);
+				temp_bloch_t_array.push_back(temp_o1_bloch_t_array);
+			}
+		}
+		
+		R_array.push_back(temp_R_array);
+		bloch_t_array.push_back(temp_bloch_t_array);
+		N_R_array.push_back( (int) temp_R_array.size());
+	}
+	
+	
+	
+	// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
+	
+	// col_index tells us the col of element i
+	// v tells us the value of element i
+	// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
+	
+	H.setup(max_nnz, local_max_index, local_max_index);
+	
+	int* col_index = H.allocColIndx();
+	int* row_pointer = H.allocRowPtr();
+	
+	std::complex<double>* v_c;
+	
+	v_c = H.allocCpxVal();
+
+	// Count the current element, i.e. "i = input_counter"
+	int input_counter = 0;
+
+	// Load FFTW data into Interlayer_coupling object
+	
+	// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
+		int n_x = 20;
+		int n_y = 20;
+		int L_x = 20;
+		int L_y = 20;
+		int length_x = 2;
+		int length_y = 2;
+		std::string fft_file = "interlayer_fft.dat";
+	//
+	
+	Interlayer_coupling fftw_inter;
+	fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
+	
+	//printf("Momentum Space coupling term [0][0] at k = (0,0) = %lf + i*%lf \n",7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,0),7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,1));
+	
+	
+	// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
+	
+	// !! also when putting data[o1][o2] into H, will need to multiply every interlayer term by sqrt(Area(RL_1)*Area(RL_2))
+	// !! Using real-space area: This term is ~ 4*pi^2/sqrt(Area1*Area2) ~ 7.4308 for tBLG
+		
+	
+	// We keep the vacancy methods here, although momentum space in general has no vacancies...
+	
+	// Loop through every orbital (i.e. rows of H)
+	for (int k_i = 0; k_i < max_index; ++k_i){
+	
+		int skip_here1 = 0;
+		
+		if (solver_type == 3 || solver_type == 4){
+			if (current_index_reduction[k_i] + 1 == current_index_reduction[k_i + 1]){
+				skip_here1 = 1;
+			}
+		}
+		
+		int k = k_i - current_index_reduction[k_i];
+		
+		// Save starting point of row k
+		row_pointer[k] = input_counter;
+		
+		// While we are still at the correct index in our intra_pairs list:
+		bool same_index1 = true;
+		while(same_index1) {
+		
+			int skip_here2 = 0;
+		
+			// if the first index of intra_pairs changes, we stop
+			if (intra_pairs[intra_counter*2 + 0] != k_i) {
+				same_index1 = false;
+				continue; // go to "while(same_index1)" which will end this loop
+			}
+			
+			int new_k = intra_pairs[intra_counter*2 + 1];
+			
+			
+			
+			// if we are accounting for defects, we check if the other half of the pair has been removed
+			if (solver_type == 3 || solver_type == 4){
+				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
+					skip_here2 = 1;
+				}
+			}
+			
+			// we save this pair into our sparse matrix format
+			if (skip_here1 == 0 && skip_here2 == 0){
+				col_index[input_counter] = new_k - current_index_reduction[new_k];
+				
+				std::complex<double> t(0.0,0.0);
+				
+				// Need to do monolayer bloch theory here!
+				
+				// finding pairing between k_i and new_k
+				
+
+				// and the orbit tag in their respective unit-cell
+				int orbit1 = index_to_grid[k_i*4 + 2];
+				int orbit2 = index_to_grid[new_k*4 + 2];
+				int s = index_to_grid[k_i*4 + 3];
+				
+				int N_R = N_R_array[s];
+				
+				for (int n = 0; n < N_R; ++n){
+					
+					double q1 = i2pos[k_i*3 + 0];
+					double q2 = i2pos[k_i*3 + 1];
+					double q3 = i2pos[k_i*3 + 2];
+					
+					double r1 = R_array[s][n][0];
+					double r2 = R_array[s][n][1];
+					double r3 = R_array[s][n][2];
+					
+					double phase = q1*r1 + q2*r2 + q3*r3;
+					
+					double t_here = bloch_t_array[s][n][orbit1][orbit2];
+					
+					
+					t = t + std::polar(t_here,phase);
+				}
+				
+				
+				v_c[input_counter] = t/energy_rescale;
+				++input_counter;
+			}
+			++intra_counter;
+			
+		}
+			
+		// While we are still at the correct index in our inter_pairs list:
+		bool same_index2 = true;
+		while(same_index2) {
+		
+			int skip_here2 = 0;
+		
+			// if the first index of intra_pairs changes, we stop
+			if (inter_pairs[inter_counter*2 + 0] != k_i) {
+				same_index2 = false;
+				continue; // go to "while(same_index2)" which will end this loop
+			}
+			
+			int new_k = inter_pairs[inter_counter*2 + 1];
+			
+			// if we are accounting for defects, we check if the other half of the pair has been removed
+			if (solver_type == 3 || solver_type == 4){
+				if(current_index_reduction[new_k] + 1 == current_index_reduction[new_k + 1]){
+					skip_here2 = 1;
+				}
+			}
+			
+			// we save this pair into our sparse matrix format
+			if (skip_here1 == 0 && skip_here2 == 0){
+				// get the index of the other orbital in this term
+				
+				col_index[input_counter] = new_k - current_index_reduction[new_k];
+				
+				// get the position of both orbitals
+				double x1 = i2pos[k_i*3 + 0];
+				double y1 = i2pos[k_i*3 + 1];
+				double z1 = i2pos[k_i*3 + 2];
+				double x2 = i2pos[new_k*3 + 0];
+				double y2 = i2pos[new_k*3 + 1];
+				double z2 = i2pos[new_k*3 + 2];
+				
+				// and the orbit tag in their respective unit-cell
+				int orbit1 = index_to_grid[k_i*4 + 2];
+				int orbit2 = index_to_grid[new_k*4 + 2];
+				
+				int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
+				int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+				
+				// and the angle of the sheet each orbital is on
+				double theta1 = angles[index_to_grid[k_i*4 + 3]];
+				double theta2 = angles[index_to_grid[new_k*4 + 3]];
+
+				// use all this information to determine coupling energy
+				// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
+				
+				
+				// Momentum-space Interlayer coupling is evaluated at k = k2 + k1 - q
+				// This is because we defined k1 = q + K orig, and k2 = q - K' original, and THAT was done because we did not want to change the code for inter-pairs in hstruct
+				
+				double dx = x2 + x1 - shift_x;
+				double dy = y2 + y1 - shift_y;
+				
+				std::complex<double> t;
+				
+				// FFT file is based on sheet1 -> sheet2, so we need to keep track of which sheet k_i and new_k are on (i.e. k_i < new_k -> k_i on 1st sheet, k_i > new_k -> k_i on 2nd sheet)
+				// Not checking for this is the equivalent of twisting the layer "theta" for 1->2 coupling and "-theta" for 2->1 coupling, which makes H non-Hermitian.
+				
+				
+				if (k_i <= new_k){
+					t = std::complex<double>(7.4308*fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),7.4308*fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
+				} else if (k_i > new_k) {
+					t = std::complex<double>(7.4308*fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),7.4308*fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
+				}
+				
+				// double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+				if (std::abs(t) != 0){
+					
+					if (k_i <= new_k){
+						v_c[input_counter] = t/energy_rescale;
+					} else if (k_i > new_k) {
+						v_c[input_counter] = std::conj(t)/energy_rescale;
+					}
+					++input_counter;
+				}
+			}
+			++inter_counter;
+
+		}
+	}
+	
+	// Save the end point + 1 of the last row
+	row_pointer[local_max_index] = input_counter;
+	
+	// Construct the Sparse Tight-binding Hamiltonian matrix
+	//!!	SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
+	
+	// ------------------------------
+	// Following saves Matrix to file
+	//
+	// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+	
+	/*
+	std::ofstream outFile;
+	const char* extension = "_matrix_real.dat";
+	outFile.open ((job_name + extension).c_str());
+	
+	for(int i = 0; i < local_max_index; ++i){
+		int start_index = row_pointer[i];
+		int stop_index = row_pointer[i+1];
+			for(int j = start_index; j < stop_index; ++j){
+				outFile << col_index[j] + 1 << ", " << i + 1 << ", " << std::real(v_c[j]) << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+			}
+	}
+	
+	outFile.close();
+	
+	std::ofstream outFile2;
+	const char* extension2 = "_matrix_cpx.dat";
+	outFile2.open ((job_name + extension2).c_str());
+	
+	for(int i = 0; i < local_max_index; ++i){
+		int start_index = row_pointer[i];
+		int stop_index = row_pointer[i+1];
+			for(int j = start_index; j < stop_index; ++j){
+				outFile2 << col_index[j] + 1 << ", " << i + 1 << ", " << std::imag(v_c[j]) << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+			}
+	}
+	
+	outFile.close();
+	*/
+	
+	// End Matrix Save
+	// ---------------
+
+	
+}
+
 void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
+	int solver_space = jobIn.getInt("solver_space");
 	
 	int num_targets = jobIn.getInt("num_targets");
 	int* target_list = jobIn.getIntVec("target_list");
 
 	
-	if (magOn == 0){
+	if (magOn == 0 && solver_space == 0){
 
 		// Starting vector for Chebyshev method is a unit-vector at the target orbital
 		
@@ -1571,7 +2096,7 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 		}
 
 	}	// end magOn == 0 block
-	else if (magOn == 1) {
+	else if (magOn == 1 || solver_space == 1) {
 	
 		// Starting vector for Chebyshev method is a unit-vector at the target rbital
 		for (int t_count = 0; t_count < num_targets; ++t_count){
@@ -1860,6 +2385,52 @@ double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double
 double Locality::onSiteE(double x, double y, double z, double E_in){
 	// E a constant in the Z direction, return z*E (physical prefactors missing!!!)
 	return z*E_in;
+}
+
+std::vector< std::vector<double> > Locality::getReciprocal(std::vector< std::vector<double> > a){
+
+	std::vector< std::vector<double> > b;
+	b.resize(3);
+	for (int i = 0; i < 3; ++i)
+		b[i].resize(3);
+	
+	double denom1 = 0.0;
+	double denom2 = 0.0;
+	double denom3 = 0.0;
+	
+	for (int j = 0; j < 3; ++j) {
+		denom1 += a[0][j]*crossProd(a[1],a[2],j);
+		denom2 += a[1][j]*crossProd(a[2],a[0],j);
+		denom3 += a[2][j]*crossProd(a[0],a[1],j);
+	}
+	
+	for (int k = 0; k < 3; ++k){
+		b[0][k] = 2*M_PI*crossProd(a[1],a[2],k)/denom1;
+		b[1][k] = 2*M_PI*crossProd(a[2],a[0],k)/denom2;
+		b[2][k] = 2*M_PI*crossProd(a[0],a[1],k)/denom3;
+	}
+	
+	/*
+	for (int l = 0; l < 3; ++l){
+		printf("b[%d] = [%lf, %lf, %lf] \n", l, b[l][0], b[l][1], b[l][2]);
+	}
+	*/
+
+	return b;
+}
+
+double Locality::crossProd(std::vector<double> x, std::vector<double> y, int dim){
+
+	if (dim == 0){
+		return ( x[1]*y[2] - x[2]*y[1] );
+	} else if (dim == 1) {
+		return ( x[2]*y[0] - x[0]*y[2] );
+	} else if (dim == 2) {
+		return ( x[0]*y[1] - x[1]*y[0] );
+	} else {
+		return 0;
+	}
+
 }
 
 void Locality::save(){

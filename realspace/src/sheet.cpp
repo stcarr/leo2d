@@ -24,6 +24,9 @@ Sheet::Sheet(std::vector<std::vector<double> > _a, std::vector<int> _types, std:
     atom_types = _types;
     atom_pos = _pos;
 	
+	// default to real-space, not momentum
+	solver_space = 0;
+	
 	// Set indexing
     setIndex();
 	
@@ -49,6 +52,13 @@ Sheet::Sheet(Sdata input){
 	
 	mat = input.mat;
 	
+	solver_space = input.solver_space;
+	
+	// If momentum space, compute reciprocal lattice
+	if (solver_space == 1){
+		setReciprocal();
+	}
+	
 	// Set indexing
 	setIndex();
 	
@@ -69,6 +79,7 @@ Sheet::Sheet(const Sheet& orig) {
     atom_types = orig.atom_types;
     atom_pos = orig.atom_pos;
 	mat = orig.mat;
+	solver_space = orig.solver_space;
 
 	max_index = orig.max_index;
     grid_array = orig.grid_array;
@@ -77,6 +88,10 @@ Sheet::Sheet(const Sheet& orig) {
 	for (int i = 0; i < 2; ++i)
 		for (int j = 0; j < 2; ++j)
 			a_inverse[i][j] = orig.a_inverse[i][j];
+			
+	if (solver_space == 1){
+		b = orig.b;
+	}
 }
 
 Sheet::~Sheet() {
@@ -182,14 +197,25 @@ double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
         int j = grid_index[1] + min_shape[1];
         int l = grid_index[2];
         
+		double x;
+		double y;
+		double z;
+		
 		// Simply multiply the grid by the unit cell vectors 
 		// and add the orbital's position in the unit cell
-        double x = i*a[0][0] + j*a[0][1] + atom_pos[l][0];
-        double y = i*a[1][0] + j*a[1][1] + atom_pos[l][1];
-		
-		// We assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
-        double z = atom_pos[l][2];
+		if (solver_space == 0){
+			x = i*a[0][0] + j*a[0][1] + atom_pos[l][0];
+			y = i*a[1][0] + j*a[1][1] + atom_pos[l][1];
+			z = atom_pos[l][2]; // We here assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
+
+		} else if (solver_space == 1){
+			x = i*b[0][0] + j*b[0][1];
+			y = i*b[1][0] + j*b[1][1];		
+			z = 0;
+		}
         
+		//printf("x,y,z = [%lf, %lf, %lf] \n",x,y,z);
+		
         if (dim == 0)
             return x;
         if (dim == 1)
@@ -209,9 +235,10 @@ bool Sheet::checkShape(double (&pos)[3]){
 	}
 	
     if (pow(pos[0],2) + pow(pos[1],2) < pow(max_shape[0],2)){
-        return true;}
-    else{
-        return false;}
+        return true;
+	} else {
+        return false;
+	}
 }
 
 // ------------------------------------------
@@ -258,6 +285,11 @@ int Sheet::getShape(int type, int dim){
 	return 0;
 }
 
+double Sheet::getOrbPos(int orb, int dim){
+	return atom_pos[orb][dim];
+}
+
+
 // ----------------------------------
 // Atoms actually refers to "orbitals"
 // ----------------------------------
@@ -275,273 +307,307 @@ int Sheet::getMat(){
 
 void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, int start_index, int searchsize){
 
-	for (int kh = 0; kh < max_index; ++kh){
+	if (solver_space == 0) { 
+		for (int kh = 0; kh < max_index; ++kh){
+				
+			// Manually add the diagonal elements
+			/*
+			array_i.push_back(kh + start_index);
+			array_j.push_back(kh + start_index);
+			array_t.push_back(0);
+			*/
 			
-		// Manually add the diagonal elements
-		/*
-		array_i.push_back(kh + start_index);
-		array_j.push_back(kh + start_index);
-		array_t.push_back(0);
-		*/
-		
-		//int searchsize = 10;
-		
+			//int searchsize = 10;
+			
 
-		
-		int i0 = index_array[kh][0];
-		int j0 = index_array[kh][1];
-		int l0 = index_array[kh][2];
-		
-		double pos_here[3];
-		pos_here[0] = posAtomIndex(kh,0);
-		pos_here[1] = posAtomIndex(kh,1);
-		pos_here[2] = posAtomIndex(kh,2);
-		
-		//printf("index %d pos_here = [%lf,%lf,%lf] \n",kh,pos_here[0],pos_here[1],pos_here[2]);
-		
-		for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
-			for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
+			
+			int i0 = index_array[kh][0];
+			int j0 = index_array[kh][1];
+			int l0 = index_array[kh][2];
+			
+			double pos_here[3];
+			pos_here[0] = posAtomIndex(kh,0);
+			pos_here[1] = posAtomIndex(kh,1);
+			pos_here[2] = posAtomIndex(kh,2);
+			
+			//printf("index %d pos_here = [%lf,%lf,%lf] \n",kh,pos_here[0],pos_here[1],pos_here[2]);
+			
+			for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
+				for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
+					for (int l = 0; l < getNumAtoms(); ++l) {
+					
+						int grid_2[3] = {i,j,l};
+						int k2 = gridToIndex(grid_2);
+
+						if (k2 != -1){
+							double x2 = posAtomIndex(k2,0);
+							double y2 = posAtomIndex(k2,1);
+							double z2 = posAtomIndex(k2,2);
+							
+							double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+							if (t != 0 || kh == k2){
+								array_i.push_back(kh + start_index);
+								array_j.push_back(k2 + start_index);
+								array_t.push_back(t);
+							}
+						}
+					}
+				}
+			}
+			
+			// periodic wrapping:
+			// solves for the 8 unique cases of (i,j) being "outside" the direct grid of the simulation
+			if (boundary_condition == 1){
+			
+				if (i0 - searchsize < 0){
+				
+					for(int i = i0 - searchsize + (getShape(1,0)  - getShape(0,0)); i < getShape(1,0)  - getShape(0,0); ++i){
+					
+						for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
+							for (int l = 0; l < getNumAtoms(); ++l) {
+							
+								int grid_2_for_index[3] = {i,j,l};
+								int grid_2_for_pos[3]   = {i - (getShape(1,0) - getShape(0,0)), j, l};
+								int k2 = gridToIndex(grid_2_for_index);
+
+								if (k2 != -1){
+									double x2 = posAtomGrid(grid_2_for_pos,0);
+									double y2 = posAtomGrid(grid_2_for_pos,1);
+									double z2 = posAtomGrid(grid_2_for_pos,2);
+									
+									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+									if (t != 0 || kh == k2){
+										array_i.push_back(kh + start_index);
+										array_j.push_back(k2 + start_index);
+										array_t.push_back(t);
+									}
+								}
+							}
+						}
+						
+						if (j0 - searchsize < 0){
+						
+							for (int j = j0 - searchsize + (getShape(1,1) - getShape(0,1)); j < getShape(1,1) - getShape(0,1); ++j) {
+								for (int l = 0; l < getNumAtoms(); ++l) {
+								
+									int grid_2_for_index[3] = {i,j,l};
+									int grid_2_for_pos[3]   = {i - (getShape(1,0) - getShape(0,0)), j - (getShape(1,1) - getShape(0,1)), l};
+									int k2 = gridToIndex(grid_2_for_index);
+
+									if (k2 != -1){
+										double x2 = posAtomGrid(grid_2_for_pos,0);
+										double y2 = posAtomGrid(grid_2_for_pos,1);
+										double z2 = posAtomGrid(grid_2_for_pos,2);
+										
+										double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+										if (t != 0 || kh == k2){
+											array_i.push_back(kh + start_index);
+											array_j.push_back(k2 + start_index);
+											array_t.push_back(t);
+										}
+									}
+								}
+							}
+						}
+						
+						if (j0 + searchsize > getShape(1,1) - getShape(0,1)){
+						
+							for (int j = 0; j < j0 + searchsize - (getShape(1,1) - getShape(0,1)); ++j) {
+								for (int l = 0; l < getNumAtoms(); ++l) {
+								
+									int grid_2_for_index[3] = {i,j,l};
+									int grid_2_for_pos[3]   = {i - (getShape(1,0) - getShape(0,0)), j + (getShape(1,1) - getShape(0,1)), l};
+									int k2 = gridToIndex(grid_2_for_index);
+
+									if (k2 != -1){
+										double x2 = posAtomGrid(grid_2_for_pos,0);
+										double y2 = posAtomGrid(grid_2_for_pos,1);
+										double z2 = posAtomGrid(grid_2_for_pos,2);
+										
+										double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+										if (t != 0 || kh == k2){
+											array_i.push_back(kh + start_index);
+											array_j.push_back(k2 + start_index);
+											array_t.push_back(t);
+										}
+									}
+								}
+							}
+						}
+						
+						
+					}
+				}
+					
+				
+				if (i0 + searchsize > getShape(1,0)  - getShape(0,0)){
+				
+					for (int i = 0; i < i0 + searchsize - (getShape(1,0)  - getShape(0,0)); ++i){
+					
+									
+						for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
+							for (int l = 0; l < getNumAtoms(); ++l) {
+							
+								int grid_2_for_index[3] = {i,j,l};
+								int grid_2_for_pos[3]   = {i + (getShape(1,0) - getShape(0,0)), j, l};
+								int k2 = gridToIndex(grid_2_for_index);
+
+								if (k2 != -1){
+									double x2 = posAtomGrid(grid_2_for_pos,0);
+									double y2 = posAtomGrid(grid_2_for_pos,1);
+									double z2 = posAtomGrid(grid_2_for_pos,2);
+									
+									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+									if (t != 0 || kh == k2){
+										array_i.push_back(kh + start_index);
+										array_j.push_back(k2 + start_index);
+										array_t.push_back(t);
+									}
+								}
+							}
+						}
+						
+						if (j0 - searchsize < 0){
+						
+							for (int j = j0 - searchsize + (getShape(1,1) - getShape(0,1)); j < getShape(1,1) - getShape(0,1); ++j) {
+								for (int l = 0; l < getNumAtoms(); ++l) {
+								
+									int grid_2_for_index[3] = {i,j,l};
+									int grid_2_for_pos[3]   = {i + (getShape(1,0) - getShape(0,0)), j - (getShape(1,1) - getShape(0,1)), l};
+									int k2 = gridToIndex(grid_2_for_index);
+
+									if (k2 != -1){
+										double x2 = posAtomGrid(grid_2_for_pos,0);
+										double y2 = posAtomGrid(grid_2_for_pos,1);
+										double z2 = posAtomGrid(grid_2_for_pos,2);
+										
+										double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+										if (t != 0 || kh == k2){
+											array_i.push_back(kh + start_index);
+											array_j.push_back(k2 + start_index);
+											array_t.push_back(t);
+										}
+									}
+								}
+							}
+						}
+						
+						if (j0 + searchsize > getShape(1,1) - getShape(0,1)){
+						
+							for (int j = 0; j < j0 + searchsize - (getShape(1,1) - getShape(0,1)); ++j) {
+								for (int l = 0; l < getNumAtoms(); ++l) {
+								
+									int grid_2_for_index[3] = {i,j,l};
+									int grid_2_for_pos[3]   = {i + (getShape(1,0) - getShape(0,0)), j + (getShape(1,1) - getShape(0,1)), l};
+									int k2 = gridToIndex(grid_2_for_index);
+
+									if (k2 != -1){
+										double x2 = posAtomGrid(grid_2_for_pos,0);
+										double y2 = posAtomGrid(grid_2_for_pos,1);
+										double z2 = posAtomGrid(grid_2_for_pos,2);
+										
+										double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+										if (t != 0 || kh == k2){
+											array_i.push_back(kh + start_index);
+											array_j.push_back(k2 + start_index);
+											array_t.push_back(t);
+										}
+									}
+								}
+							}
+						}
+
+					}
+				} // end of i0 + searchsize > size of grid
+				
+				if (j0 - searchsize < 0){
+					for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
+						for (int j = j0 - searchsize + (getShape(1,1) - getShape(0,1)); j < getShape(1,1) - getShape(0,1); ++j) {
+							for (int l = 0; l < getNumAtoms(); ++l) {
+							
+								int grid_2_for_index[3] = {i,j,l};
+								int grid_2_for_pos[3]   = {i, j - (getShape(1,1) - getShape(0,1)), l};
+								int k2 = gridToIndex(grid_2_for_index);
+
+								if (k2 != -1){
+									double x2 = posAtomGrid(grid_2_for_pos,0);
+									double y2 = posAtomGrid(grid_2_for_pos,1);
+									double z2 = posAtomGrid(grid_2_for_pos,2);
+									
+									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+									if (t != 0 || kh == k2){
+										array_i.push_back(kh + start_index);
+										array_j.push_back(k2 + start_index);
+										array_t.push_back(t);
+									}
+								}
+							}
+						}
+					}
+				} // end of j0 - searchsize < 0
+						
+				if (j0 + searchsize > getShape(1,1) - getShape(0,1)){
+					for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
+						for (int j = 0; j < j0 + searchsize - (getShape(1,1) - getShape(0,1)); ++j) {
+							for (int l = 0; l < getNumAtoms(); ++l) {
+							
+								int grid_2_for_index[3] = {i,j,l};
+								int grid_2_for_pos[3]   = {i, j + (getShape(1,1) - getShape(0,1)), l};
+								int k2 = gridToIndex(grid_2_for_index);
+
+								if (k2 != -1){
+									double x2 = posAtomGrid(grid_2_for_pos,0);
+									double y2 = posAtomGrid(grid_2_for_pos,1);
+									double z2 = posAtomGrid(grid_2_for_pos,2);
+									
+									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+									if (t != 0 || kh == k2){
+										array_i.push_back(kh + start_index);
+										array_j.push_back(k2 + start_index);
+										array_t.push_back(t);
+									}
+								}
+							}
+						}
+					}
+				} // end of j0 + searchsize > size of grid
+			
+			}
+		}
+	} else if (solver_space == 1){
+
+		// Momentum space intralayer pairing is always block diagonal
+		for (int i = 0; i < getShape(1,0)  - getShape(0,0); ++i) {
+			for (int j = 0; j < getShape(1,1) - getShape(0,1); ++j) {
+				
+				
+				// In each unitcell, find all valid orbitals and pair them to each other completely
+				// For Momentum space, t is not used so just set it = 0;
+				std::vector<int> orbs_here;
+				
 				for (int l = 0; l < getNumAtoms(); ++l) {
 				
 					int grid_2[3] = {i,j,l};
 					int k2 = gridToIndex(grid_2);
 
 					if (k2 != -1){
-						double x2 = posAtomIndex(k2,0);
-						double y2 = posAtomIndex(k2,1);
-						double z2 = posAtomIndex(k2,2);
-						
-						double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-						if (t != 0 || kh == k2){
-							array_i.push_back(kh + start_index);
-							array_j.push_back(k2 + start_index);
-							array_t.push_back(t);
-						}
+						orbs_here.push_back(k2);
 					}
 				}
+				
+				int n_orbs = (int) orbs_here.size();
+				
+				for (int o1 = 0; o1 < n_orbs; ++o1){
+					for (int o2 = 0; o2 < n_orbs; ++o2){
+						array_i.push_back(orbs_here[o1] + start_index);
+						array_j.push_back(orbs_here[o2] + start_index);
+						array_t.push_back(0.0);
+					}
+				}
+		
 			}
-		}
-		
-		// periodic wrapping:
-		// solves for the 8 unique cases of (i,j) being "outside" the direct grid of the simulation
-		if (boundary_condition == 1){
-		
-			if (i0 - searchsize < 0){
-			
-				for(int i = i0 - searchsize + (getShape(1,0)  - getShape(0,0)); i < getShape(1,0)  - getShape(0,0); ++i){
-				
-					for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
-						for (int l = 0; l < getNumAtoms(); ++l) {
-						
-							int grid_2_for_index[3] = {i,j,l};
-							int grid_2_for_pos[3]   = {i - (getShape(1,0) - getShape(0,0)), j, l};
-							int k2 = gridToIndex(grid_2_for_index);
-
-							if (k2 != -1){
-								double x2 = posAtomGrid(grid_2_for_pos,0);
-								double y2 = posAtomGrid(grid_2_for_pos,1);
-								double z2 = posAtomGrid(grid_2_for_pos,2);
-								
-								double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-								if (t != 0 || kh == k2){
-									array_i.push_back(kh + start_index);
-									array_j.push_back(k2 + start_index);
-									array_t.push_back(t);
-								}
-							}
-						}
-					}
-					
-					if (j0 - searchsize < 0){
-					
-						for (int j = j0 - searchsize + (getShape(1,1) - getShape(0,1)); j < getShape(1,1) - getShape(0,1); ++j) {
-							for (int l = 0; l < getNumAtoms(); ++l) {
-							
-								int grid_2_for_index[3] = {i,j,l};
-								int grid_2_for_pos[3]   = {i - (getShape(1,0) - getShape(0,0)), j - (getShape(1,1) - getShape(0,1)), l};
-								int k2 = gridToIndex(grid_2_for_index);
-
-								if (k2 != -1){
-									double x2 = posAtomGrid(grid_2_for_pos,0);
-									double y2 = posAtomGrid(grid_2_for_pos,1);
-									double z2 = posAtomGrid(grid_2_for_pos,2);
-									
-									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-									if (t != 0 || kh == k2){
-										array_i.push_back(kh + start_index);
-										array_j.push_back(k2 + start_index);
-										array_t.push_back(t);
-									}
-								}
-							}
-						}
-					}
-					
-					if (j0 + searchsize > getShape(1,1) - getShape(0,1)){
-					
-						for (int j = 0; j < j0 + searchsize - (getShape(1,1) - getShape(0,1)); ++j) {
-							for (int l = 0; l < getNumAtoms(); ++l) {
-							
-								int grid_2_for_index[3] = {i,j,l};
-								int grid_2_for_pos[3]   = {i - (getShape(1,0) - getShape(0,0)), j + (getShape(1,1) - getShape(0,1)), l};
-								int k2 = gridToIndex(grid_2_for_index);
-
-								if (k2 != -1){
-									double x2 = posAtomGrid(grid_2_for_pos,0);
-									double y2 = posAtomGrid(grid_2_for_pos,1);
-									double z2 = posAtomGrid(grid_2_for_pos,2);
-									
-									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-									if (t != 0 || kh == k2){
-										array_i.push_back(kh + start_index);
-										array_j.push_back(k2 + start_index);
-										array_t.push_back(t);
-									}
-								}
-							}
-						}
-					}
-					
-					
-				}
-			}
-				
-			
-			if (i0 + searchsize > getShape(1,0)  - getShape(0,0)){
-			
-				for (int i = 0; i < i0 + searchsize - (getShape(1,0)  - getShape(0,0)); ++i){
-				
-								
-					for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
-						for (int l = 0; l < getNumAtoms(); ++l) {
-						
-							int grid_2_for_index[3] = {i,j,l};
-							int grid_2_for_pos[3]   = {i + (getShape(1,0) - getShape(0,0)), j, l};
-							int k2 = gridToIndex(grid_2_for_index);
-
-							if (k2 != -1){
-								double x2 = posAtomGrid(grid_2_for_pos,0);
-								double y2 = posAtomGrid(grid_2_for_pos,1);
-								double z2 = posAtomGrid(grid_2_for_pos,2);
-								
-								double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-								if (t != 0 || kh == k2){
-									array_i.push_back(kh + start_index);
-									array_j.push_back(k2 + start_index);
-									array_t.push_back(t);
-								}
-							}
-						}
-					}
-					
-					if (j0 - searchsize < 0){
-					
-						for (int j = j0 - searchsize + (getShape(1,1) - getShape(0,1)); j < getShape(1,1) - getShape(0,1); ++j) {
-							for (int l = 0; l < getNumAtoms(); ++l) {
-							
-								int grid_2_for_index[3] = {i,j,l};
-								int grid_2_for_pos[3]   = {i + (getShape(1,0) - getShape(0,0)), j - (getShape(1,1) - getShape(0,1)), l};
-								int k2 = gridToIndex(grid_2_for_index);
-
-								if (k2 != -1){
-									double x2 = posAtomGrid(grid_2_for_pos,0);
-									double y2 = posAtomGrid(grid_2_for_pos,1);
-									double z2 = posAtomGrid(grid_2_for_pos,2);
-									
-									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-									if (t != 0 || kh == k2){
-										array_i.push_back(kh + start_index);
-										array_j.push_back(k2 + start_index);
-										array_t.push_back(t);
-									}
-								}
-							}
-						}
-					}
-					
-					if (j0 + searchsize > getShape(1,1) - getShape(0,1)){
-					
-						for (int j = 0; j < j0 + searchsize - (getShape(1,1) - getShape(0,1)); ++j) {
-							for (int l = 0; l < getNumAtoms(); ++l) {
-							
-								int grid_2_for_index[3] = {i,j,l};
-								int grid_2_for_pos[3]   = {i + (getShape(1,0) - getShape(0,0)), j + (getShape(1,1) - getShape(0,1)), l};
-								int k2 = gridToIndex(grid_2_for_index);
-
-								if (k2 != -1){
-									double x2 = posAtomGrid(grid_2_for_pos,0);
-									double y2 = posAtomGrid(grid_2_for_pos,1);
-									double z2 = posAtomGrid(grid_2_for_pos,2);
-									
-									double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-									if (t != 0 || kh == k2){
-										array_i.push_back(kh + start_index);
-										array_j.push_back(k2 + start_index);
-										array_t.push_back(t);
-									}
-								}
-							}
-						}
-					}
-
-				}
-			} // end of i0 + searchsize > size of grid
-			
-			if (j0 - searchsize < 0){
-				for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
-					for (int j = j0 - searchsize + (getShape(1,1) - getShape(0,1)); j < getShape(1,1) - getShape(0,1); ++j) {
-						for (int l = 0; l < getNumAtoms(); ++l) {
-						
-							int grid_2_for_index[3] = {i,j,l};
-							int grid_2_for_pos[3]   = {i, j - (getShape(1,1) - getShape(0,1)), l};
-							int k2 = gridToIndex(grid_2_for_index);
-
-							if (k2 != -1){
-								double x2 = posAtomGrid(grid_2_for_pos,0);
-								double y2 = posAtomGrid(grid_2_for_pos,1);
-								double z2 = posAtomGrid(grid_2_for_pos,2);
-								
-								double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-								if (t != 0 || kh == k2){
-									array_i.push_back(kh + start_index);
-									array_j.push_back(k2 + start_index);
-									array_t.push_back(t);
-								}
-							}
-						}
-					}
-				}
-			} // end of j0 - searchsize < 0
-					
-			if (j0 + searchsize > getShape(1,1) - getShape(0,1)){
-				for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
-					for (int j = 0; j < j0 + searchsize - (getShape(1,1) - getShape(0,1)); ++j) {
-						for (int l = 0; l < getNumAtoms(); ++l) {
-						
-							int grid_2_for_index[3] = {i,j,l};
-							int grid_2_for_pos[3]   = {i, j + (getShape(1,1) - getShape(0,1)), l};
-							int k2 = gridToIndex(grid_2_for_index);
-
-							if (k2 != -1){
-								double x2 = posAtomGrid(grid_2_for_pos,0);
-								double y2 = posAtomGrid(grid_2_for_pos,1);
-								double z2 = posAtomGrid(grid_2_for_pos,2);
-								
-								double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
-								if (t != 0 || kh == k2){
-									array_i.push_back(kh + start_index);
-									array_j.push_back(k2 + start_index);
-									array_t.push_back(t);
-								}
-							}
-						}
-					}
-				}
-			} // end of j0 + searchsize > size of grid
-		
 		}
 	}
-
 }
 
 
@@ -564,6 +630,54 @@ void Sheet::setInverse(){
 	
 }
 
+void Sheet::setReciprocal(){
+
+	b.resize(3);
+	for (int i = 0; i < 3; ++i)
+		b[i].resize(3);
+	
+	double denom1 = 0.0;
+	double denom2 = 0.0;
+	double denom3 = 0.0;
+	
+	for (int j = 0; j < 3; ++j) {
+		denom1 += a[0][j]*crossProd(a[1],a[2],j);
+		denom2 += a[1][j]*crossProd(a[2],a[0],j);
+		denom3 += a[2][j]*crossProd(a[0],a[1],j);
+	}
+	
+	for (int k = 0; k < 3; ++k){
+		b[0][k] = 2*M_PI*crossProd(a[1],a[2],k)/denom1;
+		b[1][k] = 2*M_PI*crossProd(a[2],a[0],k)/denom2;
+		b[2][k] = 2*M_PI*crossProd(a[0],a[1],k)/denom3;
+	}
+	
+	/*
+	for (int l = 0; l < 3; ++l){
+		printf("b[%d] = [%lf, %lf, %lf] \n", l, b[l][0], b[l][1], b[l][2]);
+	}
+	*/
+
+}
+
+double Sheet::crossProd(std::vector<double> x, std::vector<double> y, int dim){
+
+	if (dim == 0){
+		return ( x[1]*y[2] - x[2]*y[1] );
+	} else if (dim == 1) {
+		return ( x[2]*y[0] - x[0]*y[2] );
+	} else if (dim == 2) {
+		return ( x[0]*y[1] - x[1]*y[0] );
+	} else {
+		return 0;
+	}
+
+}
+
 double Sheet::getInverse(int i, int j){
 	return a_inverse[i][j];
+}
+
+double Sheet::getReciprocal(int i, int j){
+	return b[i][j];
 }

@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 				if (in_string == "END_SHEET") {
 					getline(in_line,in_string,' ');
 					if (current_sheet == atoi(in_string.c_str()) - 1) {
-						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat,boundary_condition);
+						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat,boundary_condition,0);
 						heights[current_sheet] = height;
 						angles[current_sheet] = angle;
 					}
@@ -280,7 +280,17 @@ int main(int argc, char** argv) {
 						opts.setParam("observable_type",1);
 					}
 				}
-
+				
+				if (in_string == "SOLVER_SPACE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					if (in_string[0] == 'R'){
+						opts.setParam("solver_space",0);
+					} else if (in_string[0] == 'M'){
+						opts.setParam("solver_space",1);
+					}
+				}
+				
 				if (in_string == "USE_B_FIELD"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -365,6 +375,11 @@ int main(int argc, char** argv) {
 	if (num_sheets > 1 && boundary_condition == 1){
 		printf("!!WARNING: multiple sheet periodic run detected! Periodic boundary conditions not yet implemented for interlayer coupling! \n");
 		return -1;
+	}
+	
+	// update solver_space (i.e. sheets need to know solver_space, but no gaurentee it was set before sdata were input)
+	for (int i = 0; i < num_sheets; ++i){
+		s_data[i].solver_space = opts.getInt("solver_space");
 	}
 	
 	// Create the locality object with the sheet input data
