@@ -5,6 +5,8 @@
  * Created on January 27, 2016, 2:39 PM
  */
 #include <complex>
+#include <Eigen/Dense>
+
 
 #define MKL_Complex16 std::complex<double>
 
@@ -86,6 +88,9 @@ class SpMatrix {
 		// Matrix-vector Multiplication
 		void vectorMultiply(double*, double*, double, double);
 		void vectorMultiply(std::complex<double>*, std::complex<double>*, std::complex<double>, std::complex<double>);
+		
+		// Dense conversion
+		void denseConvert(Eigen::MatrixXd&);
 		
 		// Diagnostic functions
 		int getNumRows();

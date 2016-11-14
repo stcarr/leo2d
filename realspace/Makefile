@@ -18,7 +18,7 @@ ifeq ($(PLATFORM),ODYSSEY)
 CC = g++
 MPICC = mpicxx
 MATFLAGS = -DUSE_MKL
-LOCALFLAGS = -lmkl_rt -lpthread -liomp5 -lfftw3
+LOCALFLAGS = -lmkl_rt -lpthread -liomp5
 endif
 
 # Block for VESTA/MIRA
@@ -34,8 +34,8 @@ endif
 ifeq ($(PLATFORM),DEFAULT)
 CC = g++
 MPICC = mpicxx
-MATFLAGS = 
-LOCALFLAGS = -lfftw3 
+MATFLAGS = -I/home/tfuser/software/eigen-eigen-26667be4f70b
+LOCALFLAGS = -L/home/tfuser/Work/TerraFERMA/lib -lfftw3 
 endif
 
 

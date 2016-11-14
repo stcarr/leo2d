@@ -40,6 +40,7 @@ Mpi_job_params::Mpi_job_params() {
 	solver_type = 0;
 	observable_type = 0;
 	solver_space = 0;
+	diagonalize = 0;
 	
 	poly_order = 20;
 	
@@ -62,6 +63,7 @@ Mpi_job_params::Mpi_job_params(const Mpi_job_params& orig){
 		solver_type = orig.getInt("solver_type");
 		observable_type = orig.getInt("observable_type");
 		solver_space = orig.getInt("solver_space");
+		diagonalize = orig.getInt("diagonalize");
 		
 		num_target_sheets = orig.getInt("num_target_sheets");
 		poly_order = orig.getInt("poly_order");
@@ -97,6 +99,7 @@ void Mpi_job_params::loadLocParams(Loc_params opts){
 	solver_type = opts.getInt("solver_type");
 	observable_type = opts.getInt("observable_type");
 	solver_space = opts.getInt("solver_space");
+	diagonalize = opts.getInt("diagonalize");
 	
 	num_target_sheets = opts.getInt("num_target_sheets");
 	target_sheets = new int[num_target_sheets];
@@ -127,6 +130,8 @@ void Mpi_job_params::setParam(std::string tag, int val){
 		observable_type = val;
 	if (tag == "solver_space")
 		solver_space = val;
+	if (tag == "diagonalize")
+		diagonalize = val;
 	if (tag == "poly_order")
 		poly_order = val;
 	if (tag == "magOn")
@@ -219,6 +224,8 @@ int Mpi_job_params::getInt(std::string tag) const{
 		return observable_type;
 	if (tag == "solver_space")
 		return solver_space;
+	if (tag == "diagonalize")
+		return diagonalize;
 	if (tag == "num_target_sheets")
 		return num_target_sheets;
 	if (tag == "poly_order")
@@ -353,6 +360,7 @@ void Mpi_job_params::sendParams(int target, int tag){
 		
 			sendInt(observable_type,target,tag);
 			sendInt(solver_space,target,tag);
+			sendInt(diagonalize,target,tag);
 
 			sendInt(jobID,target,tag);
 			sendInt(max_jobs,target,tag);
@@ -389,6 +397,7 @@ void Mpi_job_params::recvParams(int from){
 		
 			recvInt(from,"observable_type");
 			recvInt(from,"solver_space");
+			recvInt(from,"diagonalize");
 		
 			recvInt(from,"jobID");
 			recvInt(from,"max_jobs");
@@ -448,7 +457,7 @@ void Mpi_job_params::sendIntVec(int* val, int dim, int target, int tag){
 				val,		 		// input buffer
 				dim,				// size of buffer
 				MPI::INT,			// type of buffer
-				target,				// rank to receive
+				target,				// r*ank to receive
 				tag);				// tag to label
 
 }

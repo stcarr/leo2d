@@ -369,6 +369,20 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 	#endif
 }
 
+void SpMatrix::denseConvert(Eigen::MatrixXd &H_in){
+
+		for (int r = 0; r < nrows; ++r){
+		
+			int begin = rowPointer[r];
+			int end = rowPointer[r+1];
+			
+			for (int i = begin; i < end; ++i){
+				H_in(r,colIndex[i]) = val[i];
+			}
+		}
+
+}
+
 int SpMatrix::getNumRows(){
 	return nrows;
 }

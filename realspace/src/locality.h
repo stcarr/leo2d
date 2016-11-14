@@ -128,11 +128,16 @@ class Locality {
 		// Computes Local Electron-Electron Correlation using 2D Chebyshev KPM methods
 		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
 		
+		// Direct solver using Eigen package
+		void computeEigen(double*, double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
+		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
 		
 		// Calculates the on-site energy in the presence of a gated electric field
 		double onSiteE(double, double, double, double);
+		
+		
 		
 		// Prints out timing information
 		void save();
