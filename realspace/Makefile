@@ -11,13 +11,13 @@ EXECUTABLE = LEO2D
 
 DEBUG = -g -O0
 
-PLATFORM = DEFAULT
+PLATFORM = ODYSSEY
 
 # Block for Odyssey
 ifeq ($(PLATFORM),ODYSSEY)
 CC = g++
 MPICC = mpicxx
-MATFLAGS = -DUSE_MKL
+MATFLAGS = -DUSE_MKL -I/n/home12/stcarr/soft/eigen-eigen-26667be4f70b
 LOCALFLAGS = -lmkl_rt -lpthread -liomp5
 endif
 
