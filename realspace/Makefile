@@ -9,7 +9,8 @@ SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = LEO2D
 
-DEBUG = -g -O0
+# DEBUG = -g -O0
+DEBUG = 
 
 PLATFORM = ODYSSEY
 

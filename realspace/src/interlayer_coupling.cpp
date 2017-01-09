@@ -266,6 +266,7 @@ double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double
 	}
 	// mat == 2,3: WSe2,MoSe2 bilayer
 	// This is for Se-Se interaction
+	
 	else if ((mat1 == 2 || mat1 == 3) && (mat2 == 2 || mat2 == 3)){
 		nu_sigma 	=  2.559;
 		R_sigma 	=  3.337;

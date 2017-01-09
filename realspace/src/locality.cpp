@@ -875,13 +875,28 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				
 				outFile << "\n";
 			} else if (diagonalize == 1){
+				
+				// job_size = local_max_index + local_max_index^2
+				// so we use quadratic formula to solve for local_max_index
+				
+				int job_size = result_array[job].size();
+				int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
+				
 			
 				outFile << "EIGS: ";
-				
-				for(int j = 0; j < result_array[job].size() - 1; ++j){
+				for(int j = 0; j < local_max_index - 1; ++j){
 					outFile << result_array[job][j] << ", ";
 				}
-				outFile << result_array[job][result_array[job].size() - 1] << "\n" << "\n";
+				outFile << result_array[job][local_max_index - 1] << "\n";
+				
+				outFile << "VECS: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				outFile << "\n";
 				
 			}
 			
@@ -1098,7 +1113,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		// Saves T values
 		double* T_array;
-		double* eigenvector_array;
 		if (observable_type == 0){
 		
 			if (diagonalize == 0){
@@ -1108,9 +1122,25 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 			} else if (diagonalize == 1) {
 			
-				T_array = new double[local_max_index];
+				T_array = new double[local_max_index + local_max_index*local_max_index];
+			
+			
+				double* eigenvalue_array;
+				eigenvalue_array = new double[local_max_index];
+				double* eigenvector_array;
 				eigenvector_array = new double[local_max_index*local_max_index];
-				computeEigen(T_array, eigenvector_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_arr);
+				
+				computeEigen(eigenvalue_array, eigenvector_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_arr);
+				
+				for (int i = 0; i < local_max_index; ++i){
+					T_array[i] = eigenvalue_array[i];
+				}
+				for (int i = 0; i < local_max_index*local_max_index; ++i){
+					T_array[i + local_max_index] = eigenvector_array[i];
+				}
+				
+				delete eigenvalue_array;
+				delete eigenvector_array;
 				
 			}
 
@@ -1130,7 +1160,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			if (diagonalize == 0){
 				length = poly_order*num_targets;
 			} else if (diagonalize == 1){
-				length = local_max_index;
+				length = local_max_index + local_max_index*local_max_index;
 			}
 		} else if (observable_type == 1){
 			length = poly_order*poly_order*num_targets;
@@ -1158,7 +1188,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// Cleanup C++ allocated memory
 		delete T_array;
 		delete alpha_0_arr;
-
 		
 		// End of while(1) means we wait for another instruction from root
 		}
@@ -2434,8 +2463,8 @@ void Locality::computeEigen(double* eigvals, double* eigvecs, SpMatrix &H, SpMat
 	printf("Running EigenSolver... \n");
 	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(H_dense);
 	
-	Eigen::VectorXd::Map(&eigvals[0], es.eigenvalues().size()) = es.eigenvalues();
-	//Eigen::MatrixXd::Map(&eigvecs[0], es.eigenvectors().size()) = es.eigenvectors();
+	Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
+	Eigen::MatrixXd::Map(&eigvecs[0], local_max_index, local_max_index) = es.eigenvectors();
 	
 	//double* eigvecs[local_max_index*local_max_index];
 	//eigvecs = es.eigenvectors();
