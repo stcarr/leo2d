@@ -21,7 +21,7 @@ Interlayer_coupling::~Interlayer_coupling() {
 
 double interlayer_term(double x1_in, double y1_in, double z1_in, double x2_in, double y2_in, double z2_in, int orbit1, int orbit2, double theta1, double theta2, int mat1, int mat2) {
 
-	if (mat1 == 0 && mat2 == 0) {
+	if ((mat1 == 0 && mat2 == 0) || (mat1 == 5 && mat2 == 5)) {
 		return inter_graphene(x1_in,y1_in,x2_in,y2_in,orbit1,orbit2,theta1,theta2);
 	}
 	

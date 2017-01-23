@@ -9,8 +9,12 @@
 #define SHEET_H
 #include <vector>
 #include <string>
+#include <sstream>
+#include <fstream>
+#include <cstdlib>
 #include "sdata.h"
 #include "intralayer_coupling.h"
+
 
 
 class Sheet {
@@ -24,12 +28,17 @@ class Sheet {
         std::vector<std::vector<double> > atom_pos;
         std::vector<std::vector<std::vector<int> > > grid_array;
         std::vector<std::vector<int> > index_array;
+		std::vector<std::vector<double> > pos_array;
 		bool ranSetup;
         void setIndex();
+		void loadIndexRealspace();
+		void loadIndexConfiguration();
 		void setInverse();
 		double a_inverse[2][2];
 		int boundary_condition;
 		int solver_space;
+		int strain_type;
+		std::string strain_file;
 		
         
     public:

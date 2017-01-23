@@ -53,6 +53,8 @@ Sheet::Sheet(Sdata input){
 	mat = input.mat;
 	
 	solver_space = input.solver_space;
+	strain_type = input.strain_type;
+	strain_file = input.strain_file;
 	
 	// If momentum space, compute reciprocal lattice
 	if (solver_space == 1){
@@ -60,7 +62,22 @@ Sheet::Sheet(Sdata input){
 	}
 	
 	// Set indexing
-	setIndex();
+	
+	// no strain
+	if (strain_type == 0) {
+		setIndex();
+	}
+	
+	// strain from a realspace basis of form x,y,z,i,j,o
+	if (strain_type == 1) {
+		loadIndexRealspace();
+	}
+	
+	// strain from a configuration space basis of form b_x,b_y,o
+	if (strain_type == 2) {
+		loadIndexConfiguration();
+	}
+	
 	
 	// Determine inverse of the grid -> position matrix
 	// (i.e. get the position -> grid matrix)
@@ -80,10 +97,13 @@ Sheet::Sheet(const Sheet& orig) {
     atom_pos = orig.atom_pos;
 	mat = orig.mat;
 	solver_space = orig.solver_space;
+	strain_type = orig.strain_type;
+	strain_file = orig.strain_file;
 
 	max_index = orig.max_index;
     grid_array = orig.grid_array;
     index_array = orig.index_array;
+	pos_array = orig.pos_array;
 	
 	for (int i = 0; i < 2; ++i)
 		for (int j = 0; j < 2; ++j)
@@ -172,18 +192,157 @@ void Sheet::setIndex(){
 }
 
 // ---------------------------------------
+//    Sets Indexing via a .dat file of
+//  real-space positions and grid coords.
+// ---------------------------------------
+void Sheet::loadIndexRealspace(){
+
+	// Determine the size of the grid which will be populated with orbitals
+    int height = max_shape[0] - min_shape[0];
+    int width = max_shape[1] - min_shape[1];
+    int depth = atom_types.size();
+
+	// k represents the index of the orbital
+    int k = 0;
+ 
+	// We generate a 3D array which gives the index at grid position (i,j,l)
+	// loop over the grid size, (i,j,l), where l is over the orbitals in the unit cell
+    grid_array.resize(height);
+    for (int i = 0; i < height; ++i) {
+        grid_array[i].resize(width);
+
+        for (int j = 0; j < width; ++j){
+            grid_array[i][j].resize(depth);
+			for(int d = 0; d < depth; ++ d){
+				grid_array[i][j][d] = -1;
+			}
+		}
+	}
+	
+		
+	std::string line;
+	std::ifstream in_file;
+	in_file.open(strain_file.c_str());
+	if (in_file.is_open())
+	{
+		while ( getline(in_file,line) ) {
+			
+			std::vector<std::string> val;
+			std::stringstream ss(line); // Turn the string into a stream.
+			std::string tok;
+
+			while(getline(ss, tok, ' ')) {
+				if (tok != ""){
+					val.push_back(tok);
+				}
+			}
+			
+			//for (int i = 0; i < val.size(); i++)
+				//printf("val[%d] = %s, length = %d \n", i,val[i].c_str(),val[i].size());
+			
+			double pos[3];
+			
+			// real-space position of this orbital
+			pos[0] = atof(val[0].c_str());
+			pos[1] = atof(val[1].c_str());
+			pos[2] = atof(val[2].c_str());
+			
+			//printf("pos of atom %d is [%lf, %lf, %lf] \n",k,pos[0],pos[1],pos[2]);
+			
+			// grid position of this orbital
+			int i = atoi(val[3].c_str()) - min_shape[0];
+			int j = atoi(val[4].c_str()) - min_shape[1];
+			int l = atoi(val[5].c_str()) - 1;
+			
+			// we relabel the input so that it matches our unit-cell modeling
+			if (l == 0){
+				l = 1;
+				
+			} else if (l == 1){
+				l = 0;
+				i = i + 1;
+				j = j + 1;
+			}
+			
+			if (i >= 0 && j >= 0  && i < height && j < width) {
+			
+				// Add it if it is valid to the shape of the sheet
+				if(checkShape(pos)) {
+					//printf("%d at [%lf, %lf, %lf] \n",k,pos[0],pos[1],pos[2]);
+					grid_array[i][j][l] = k;
+					
+					std::vector<double> temp_pos;
+					temp_pos.push_back(pos[0]);
+					temp_pos.push_back(pos[1]);
+					temp_pos.push_back(pos[2]);
+					pos_array.push_back(temp_pos);
+					
+					//printf("%d, %lf, %lf, %lf, %d, %d, %d \n",k,pos[0],pos[1],pos[2],i,j,l);
+					
+					++k;
+				} 
+				// Otherwise it gets index -1 to signify no orbital is there
+				else {
+					grid_array[i][j][l] = -1;
+				}
+			}
+            
+		}
+	}
+	
+	// save the max_index
+    max_index = k;
+	
+	// Now we create the inverse matrix, i.e. that returns a grid position for a specific k
+    index_array.resize(k);
+	
+	// it is a 2D array of shape max_index x 3
+    for (int y = 0; y < k; ++y){
+        index_array[y].resize(3);
+    }
+    
+	// Loop over the grid_array and use it to populate our index_array
+    int temp_grid[3] = {0,0,0};
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j){
+            for (int l = 0; l < depth; ++l){
+                int k_here = grid_array[i][j][l];
+                if (k_here != -1){
+                    int index_here[3] = {i,j,l};
+                    for (int x = 0; x < 3; ++x){
+                        index_array[k_here][x] = index_here[x];
+                    }
+                }
+            }
+        }
+  
+    }
+
+}
+
+void Sheet::loadIndexConfiguration(){
+
+}
+
+// ---------------------------------------
 // Returns the position from orbital index
 //       dim: (x = 0, y = 1, z = 2)
 // 		  just calls posAtomGrid!!
 // ---------------------------------------
 double Sheet::posAtomIndex(int index, int dim){
-    int grid_here[3];
     
-    for (int x = 0; x < 3; ++x){
-        grid_here[x] = index_array[index][x];
-    }
-    
-    return posAtomGrid(grid_here, dim);
+	if (strain_type == 0) {
+		int grid_here[3];
+		
+		for (int x = 0; x < 3; ++x){
+			grid_here[x] = index_array[index][x];
+		}
+		
+		return posAtomGrid(grid_here, dim);
+	} else {
+		
+		return pos_array[index][dim];
+	}
 }
 
 // ------------------------------------
@@ -192,36 +351,41 @@ double Sheet::posAtomIndex(int index, int dim){
 // ------------------------------------
 double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
     
+		if (strain_type != 0){
+			return pos_array[ grid_array[ grid_index[0] ][ grid_index[1] ][ grid_index[2] ] ][ dim ];
+		
+		} else {
     
-        int i = grid_index[0] + min_shape[0];
-        int j = grid_index[1] + min_shape[1];
-        int l = grid_index[2];
-        
-		double x;
-		double y;
-		double z;
-		
-		// Simply multiply the grid by the unit cell vectors 
-		// and add the orbital's position in the unit cell
-		if (solver_space == 0){
-			x = i*a[0][0] + j*a[0][1] + atom_pos[l][0];
-			y = i*a[1][0] + j*a[1][1] + atom_pos[l][1];
-			z = atom_pos[l][2]; // We here assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
+			int i = grid_index[0] + min_shape[0];
+			int j = grid_index[1] + min_shape[1];
+			int l = grid_index[2];
+			
+			double x;
+			double y;
+			double z;
+			
+			// Simply multiply the grid by the unit cell vectors 
+			// and add the orbital's position in the unit cell
+			if (solver_space == 0){
+				x = i*a[0][0] + j*a[0][1] + atom_pos[l][0];
+				y = i*a[1][0] + j*a[1][1] + atom_pos[l][1];
+				z = atom_pos[l][2]; // We here assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
 
-		} else if (solver_space == 1){
-			x = i*b[0][0] + j*b[0][1];
-			y = i*b[1][0] + j*b[1][1];		
-			z = 0;
+			} else if (solver_space == 1){
+				x = i*b[0][0] + j*b[0][1];
+				y = i*b[1][0] + j*b[1][1];		
+				z = 0;
+			}
+			
+			//printf("x,y,z = [%lf, %lf, %lf] \n",x,y,z);
+			
+			if (dim == 0)
+				return x;
+			if (dim == 1)
+				return y;
+			if (dim == 2)
+				return z;
 		}
-        
-		//printf("x,y,z = [%lf, %lf, %lf] \n",x,y,z);
-		
-        if (dim == 0)
-            return x;
-        if (dim == 1)
-            return y;
-        if (dim == 2)
-            return z;
 }
 
 // ---------------------------------------------------------
@@ -256,7 +420,6 @@ int Sheet::gridToIndex(int (&grid_index)[3]){
     int i = grid_index[0];
     int j = grid_index[1];
     int l = grid_index[2];
-	
 	
     if (i >= 0 && i < max_shape[0] - min_shape[0])
 		if (j >= 0 && j < max_shape[1] - min_shape[1])
@@ -330,7 +493,8 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 			pos_here[1] = posAtomIndex(kh,1);
 			pos_here[2] = posAtomIndex(kh,2);
 			
-			//printf("index %d pos_here = [%lf,%lf,%lf] \n",kh,pos_here[0],pos_here[1],pos_here[2]);
+			//if (kh == 0)
+				//printf("index %d [%d,%d,%d]: pos_here = [%lf,%lf,%lf] \n",kh,i0,j0,l0,pos_here[0],pos_here[1],pos_here[2]);
 			
 			for (int i = std::max(0, i0 - searchsize); i < std::min(getShape(1,0)  - getShape(0,0), i0 + searchsize); ++i) {
 				for (int j = std::max(0,j0 - searchsize); j < std::min(getShape(1,1) - getShape(0,1), j0 + searchsize); ++j) {
@@ -346,6 +510,10 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 							
 							double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
 							if (t != 0 || kh == k2){
+							
+								//if (kh == 0 || k2 == 0)
+									//printf("adding term at search [i,j,l] = [%d, %d, %d]: [%d,%d] = %lf \n",i,j,l,kh,k2,t);
+									
 								array_i.push_back(kh + start_index);
 								array_j.push_back(k2 + start_index);
 								array_t.push_back(t);

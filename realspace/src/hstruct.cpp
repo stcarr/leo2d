@@ -497,6 +497,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 	std::vector<std::vector<int> > t_list;
 	
 	int solver_type = opts.getInt("solver_type");
+	int strain_type = opts.getInt("strain_type");
 	
 	if (solver_type == 1 || solver_type == 2) {
 	
@@ -523,6 +524,49 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 		
 		t_list.push_back(temp_list);
 		
+	}
+		
+	// for strain jobs we do a grid of targets around the center orbital, controlled by two free parameters given below.
+	if (solver_type == 5) {
+		
+		// target sampling grid size, makes(2n+1)^2 samples
+		
+		// int tsg = 2;
+		int tsg = 4;
+		// target sampling spacing, # of unit cells between each sample
+		int tss = 10;
+		
+		int num_target_sheets = opts.getInt("num_target_sheets");
+		std::vector<int> target_sheets = opts.getVecInt("target_sheets");
+		
+		for (int i = -tsg; i < tsg+1; ++i){
+			for (int j = -tsg; j < tsg+1; ++j){
+			
+				std::vector<int> temp_list;
+				
+				for (int s_index = 0; s_index < num_target_sheets; ++s_index){
+			
+					int target_sheet = target_sheets[s_index];
+					int num_orbs = sheets[target_sheet].getNumAtoms();
+					
+					int target_x_offset = ( sheets[target_sheet].getShape(1,0) - sheets[target_sheet].getShape(0,0) ) / 2;
+					int target_y_offset = ( sheets[target_sheet].getShape(1,1) - sheets[target_sheet].getShape(0,1) ) / 2;
+					int temp_grid[4] = {target_x_offset + i*tss, target_y_offset + j*tss,0,target_sheet};
+					int temp_index = gridToIndex(temp_grid);
+				
+					if (temp_index != -1){
+						for (int orb = 0; orb < num_orbs; ++orb){
+							temp_list.push_back(temp_index + orb);
+						}
+					}
+					
+				}
+				
+					
+				t_list.push_back(temp_list);
+			}
+		}
+	
 	}
 	
 	return t_list;

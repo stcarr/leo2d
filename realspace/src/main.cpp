@@ -63,6 +63,9 @@ int main(int argc, char** argv) {
 	double height = 0;
 	double angle = 0;
 	
+	// File name for the strained position or configuration data
+	std::string strain_file;
+	
 	// ------------------------------------------------------
 	// Solver methods and b-shift options in Loc_params class
 	// ------------------------------------------------------
@@ -137,7 +140,8 @@ int main(int argc, char** argv) {
 				if (in_string == "END_SHEET") {
 					getline(in_line,in_string,' ');
 					if (current_sheet == atoi(in_string.c_str()) - 1) {
-						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat,boundary_condition,0);
+						// last two entries are 0, for solver_type and strain_type. They may be set later in the input file
+						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat,boundary_condition,0,0,strain_file);
 						heights[current_sheet] = height;
 						angles[current_sheet] = angle;
 					}
@@ -219,6 +223,11 @@ int main(int argc, char** argv) {
 				}
 				
 				
+				if (in_string == "STRAIN_FILE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					strain_file = in_string;
+				}				
 				
 				if (in_string == "INTRA_SEARCHSIZE"){
 					getline(in_line,in_string,' ');
@@ -268,6 +277,8 @@ int main(int argc, char** argv) {
 						opts.setParam("solver_type",3);
 					} else if (in_string == "VD_FILE"){
 						opts.setParam("solver_type",4);
+					} else if (in_string == "STRAIN_CENTER"){
+						opts.setParam("solver_type",5);
 					}
 				}
 				
@@ -291,13 +302,24 @@ int main(int argc, char** argv) {
 					}
 				}
 				
+				if (in_string == "STRAIN_TYPE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					
+					if (in_string[0] == 'N'){ // STRAIN_TYPE = NONE
+						opts.setParam("strain_type",0);
+					} else if (in_string[0] == 'R'){ // STRAIN_TYPE = REALSPACE
+						opts.setParam("strain_type",1);
+					} else if (in_string[0] == 'C'){ // STRAIN_TYPE = CONFIGURATION
+						opts.setParam("strain_type",2);
+					}
+				}
+				
 				if (in_string == "DIAGONALIZE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
 				}
-				
-				
 				
 				if (in_string == "USE_B_FIELD"){
 					getline(in_line,in_string,' ');
@@ -388,6 +410,7 @@ int main(int argc, char** argv) {
 	// update solver_space (i.e. sheets need to know solver_space, but no gaurentee it was set before sdata were input)
 	for (int i = 0; i < num_sheets; ++i){
 		s_data[i].solver_space = opts.getInt("solver_space");
+		s_data[i].strain_type = opts.getInt("strain_type");
 	}
 	
 	// Create the locality object with the sheet input data

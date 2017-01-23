@@ -15,7 +15,7 @@
 class Sdata {
         
     public:
-        Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int, int, int);
+        Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int, int, int, int, std::string);
         Sdata(const Sdata& orig);
 		Sdata();
         ~Sdata();
@@ -26,6 +26,8 @@ class Sdata {
 		std::vector<std::vector<double> > atom_pos; //atom_pos[i][x] = orbital i's displacement from the unit cell origin in the xth-dimension direction
 		int mat;
 		int solver_space;
+		int strain_type;
+		std::string strain_file;
 
 };
 

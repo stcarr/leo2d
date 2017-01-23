@@ -18,6 +18,7 @@ Loc_params::Loc_params() {
 		nShifts = 1;
 		num_shift_sheets = 1;
 		solver_type = 0;
+		strain_type = 0;
 		observable_type = 0;
 		solver_space = 0;
 		diagonalize = 0;
@@ -47,6 +48,7 @@ Loc_params::Loc_params(const Loc_params& orig){
 		nShifts = orig.getInt("nShifts");
 		num_shift_sheets = orig.getInt("num_shift_sheets");
 		solver_type = orig.getInt("solver_type");
+		strain_type = orig.getInt("strain_type");
 		observable_type = orig.getInt("observable_type");
 		solver_space = orig.getInt("solver_space");
 		diagonalize = orig.getInt("diagonalize");
@@ -87,6 +89,8 @@ void Loc_params::setParam(std::string tag, int val){
 		num_shift_sheets = val;
 	if (tag == "solver_type")
 		solver_type = val;
+	if (tag == "strain_type")
+		strain_type = val;
 	if (tag == "observable_type")
 		observable_type = val;
 	if (tag == "solver_space")
@@ -158,6 +162,8 @@ int Loc_params::getInt(std::string tag) const{
 		return num_shift_sheets;
 	if (tag == "solver_type")
 		return solver_type;
+	if (tag == "strain_type")
+		return strain_type;
 	if (tag == "observable_type")
 		return observable_type;
 	if (tag == "solver_space")
@@ -221,9 +227,36 @@ void Loc_params::printParams(){
 
 		printf(" T Input parameters for Locality object: \n");
 		printf(" | nShifts = %d \n", nShifts);
-		printf(" | solver_type = %d \n", solver_type);
-		printf(" | observable_type = %d \n", observable_type);
-		printf(" | solver_space = %d \n",solver_space);
+		
+		if (solver_type == 1)
+			printf(" | solver_type = SQUARE \n");
+		else if (solver_type == 2)
+			printf(" | solver_type = LINECUT \n");
+		else if (solver_type == 3)
+			printf(" | solver_type = VACANCY DEFECTS ABOUT CENTER \n");
+		else if (solver_type == 4)
+			printf(" | solver_type = VACANDY DEFECTS FROM FILE \n");
+		else if (solver_type == 5)
+			printf(" | solver_type = STRAIN SAMPLING ABOUT CENTER \n");
+			
+		if (strain_type == 0)
+			printf(" | strain_type = NONE \n");
+		else if (solver_type == 1)
+			printf(" | strain_type = REALSPACE FILE \n");
+		else if (solver_type == 2)
+			printf(" | strain_type = CONFIGURATION FILE \n");
+	
+	
+		if (observable_type == 0)
+			printf(" | observable_type = DOS \n");
+		else if (observable_type == 1)
+			printf(" | observable_type = CONDUCTIVITY \n");
+		
+		if (solver_space == 0)
+			printf(" | solver_space = REALSPACE \n");
+		else if (solver_space == 1)
+			printf(" | solver_space = MOMENTUMSPACE \n");
+		
 		printf(" | diagonalize = %d \n", diagonalize);
 		printf(" | poly_order = %d \n",poly_order);
 		printf(" | intra_searchsize = %d \n", intra_searchsize);

@@ -13,6 +13,7 @@
 
 double intralayer_term(double, double, double, double, double, double, int, int, int);
 double intralayer_graphene(double, double, double, double, double, double);
+double intralayer_strain_graphene(double, double, double, double, double, double);
 double intralayer_tmdc(double, double, double, double, double, double, int, int, int);
 
 #endif /* INTRALAYER_COUPLING_H */

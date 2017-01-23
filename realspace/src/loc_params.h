@@ -19,6 +19,7 @@ class Loc_params {
 		int solver_type;
 		int observable_type;
 		int solver_space;
+		int strain_type;
 		int diagonalize;
 		int fft_from_file;
 		int intra_searchsize;

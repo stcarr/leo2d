@@ -179,7 +179,6 @@ void Locality::constructGeom(){
 	
 	std::vector<std::vector<int> > v_work;
 	std::vector<std::vector<int> > target_indices;
-		
 	
 	if (rank == root){
 	
@@ -198,7 +197,7 @@ void Locality::constructGeom(){
 		
 		// Get Vacancies if solver_type == 3 or 4
 		
-		if (solver_type == 1 || solver_type == 2){
+		if (solver_type == 1 || solver_type == 2 || solver_type == 5){
 			target_indices = h.getTargetList(opts);
 		}
 		
@@ -439,7 +438,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 		//printf("rank %d entering constructMatrix(). \n", rank);
 
 	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
-	if(solver_type < 5){
+	if(solver_type < 6){
 		if (rank == root) {
 			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,intra_pairs,intra_pairs_t,v_work,target_indices);
 		} else {
@@ -630,6 +629,41 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				jobArray.push_back(tempJob);
 			}
 		}
+		
+		// Strain solver(s)
+		
+		if (solver_type == 5){
+		
+			maxJobs = (int)target_indices.size();
+			
+			for (int i = 0; i < maxJobs; ++i){
+			
+				Mpi_job_params tempJob;
+				
+				double shifts[num_sheets*3];
+
+				for(int s = 0; s < num_sheets ; ++s){
+					shifts[s*3 + 0] = 0;
+					shifts[s*3 + 1] = 0;
+					shifts[s*3 + 2] = 0;
+				}
+				
+				int n_targets = (int)target_indices[i].size();
+				int targets[n_targets];
+				for (int t = 0; t < n_targets; ++ t){
+					targets[t] = target_indices[i][t];
+				}
+							
+				tempJob.loadLocParams(opts);
+				tempJob.setParam("shifts",shifts,num_sheets,3);
+				tempJob.setParam("target_list",targets,n_targets);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				jobArray.push_back(tempJob);
+				
+			}
+		}
+
 	} else if (solver_space == 1) {
 	// !! MOMENTUM SPACE TO DO !!
 	// if Momentum-space, want all sheets to always have the same "shift" (q value)
@@ -714,8 +748,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			}
 		}
 		
-		if (solver_type == 3 || solver_type == 4){
-			printf("!!WARNING!!: Momentum-space (solver_space = M) is NOT compatible with vacancy solvers. \n");
+		if (solver_type == 3 || solver_type == 4 || solver_type == 5){
+			printf("!!WARNING!!: Momentum-space mode (solver_space = M) is NOT compatible with vacancy/strain solvers. \n");
 		}
 	
 	}
