@@ -524,10 +524,39 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 		
 		t_list.push_back(temp_list);
 		
+	} else if (solver_type == 3) {
+
+		// Selects a 3x3 grid of unit-cells as targets, centered at the origin of the disk for each sheet
+
+		std::vector<int> temp_list;
+
+		int num_target_sheets = opts.getInt("num_target_sheets");
+		std::vector<int> target_sheets = opts.getVecInt("target_sheets");
+
+		for (int s_index = 0; s_index < num_target_sheets; ++s_index){
+			int target_sheet = target_sheets[s_index];
+
+
+			int target_x_offset = ( sheets[target_sheet].getShape(1,0) - sheets[target_sheet].getShape(0,0) ) / 2;
+			int target_y_offset = ( sheets[target_sheet].getShape(1,1) - sheets[target_sheet].getShape(0,1) ) / 2;
+
+			for (int i = -1; i < 2; ++i){
+					for (int j = -1; j < 2; ++j){
+							int temp_grid[4] = {target_x_offset + i,target_y_offset + j,0,target_sheet};
+							int temp_index = gridToIndex(temp_grid);
+
+							int num_orbs = sheets[target_sheet].getNumAtoms();
+
+							for (int orb = 0; orb < num_orbs; ++orb){
+									temp_list.push_back(temp_index + orb);
+							}
+					}
+			}
+				
+		}
 	}
-		
 	// for strain jobs we do a grid of targets around the center orbital, controlled by two free parameters given below.
-	if (solver_type == 5) {
+	else if (solver_type == 5) {
 		
 		// target sampling grid size, makes(2n+1)^2 samples
 		

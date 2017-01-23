@@ -201,10 +201,16 @@ void Locality::constructGeom(){
 			target_indices = h.getTargetList(opts);
 		}
 		
+		// no vacancies added...
 		if (solver_type == 3){
-			//v_work = h.getVacancyList(center_index[0],nShifts);
+			target_indices = h.getTargetList(opts);
+			std::vector<int> temp_v_work;
+			temp_v_work.push_back(-1);
+			v_work.push_back(temp_v_work);
+            //v_work = h.getVacancyList(center_index[0],nShifts);
 		}
 		
+		// load vacancies from file
 		if (solver_type == 4){
 			getVacanciesFromFile(v_work, target_indices);
 		}
