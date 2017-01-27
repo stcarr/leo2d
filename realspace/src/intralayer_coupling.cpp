@@ -35,8 +35,8 @@ double intralayer_term(double x1, double y1, double z1, double x2, double y2, do
 
 double intralayer_graphene(double x1, double y1, double z1, double x2, double y2, double z2){
 
-	double delta = 0.3;
-	double alpha = 2.4595121467478056;
+	double delta = 0.1;
+	double alpha = 2.4768;
 	double alpha2 = alpha*alpha;
 
 	double r_sq = (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
@@ -73,8 +73,8 @@ double intralayer_graphene(double x1, double y1, double z1, double x2, double y2
 
 double intralayer_strain_graphene(double x1, double y1, double z1, double x2, double y2, double z2){
 
-	double delta = 0.1;
-	double alpha = 2.4768;
+	double delta = 0.5;
+	double alpha = 2.4595121467478056;
 	double alpha2 = alpha*alpha;
 
 	double r_sq = (x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1);
