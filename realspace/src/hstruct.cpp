@@ -591,8 +591,8 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 					
 				}
 				
-					
-				t_list.push_back(temp_list);
+				if (!temp_list.empty())	
+					t_list.push_back(temp_list);
 			}
 		}
 	

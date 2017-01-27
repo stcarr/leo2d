@@ -254,39 +254,72 @@ void Sheet::loadIndexRealspace(){
 			int j = atoi(val[4].c_str()) - min_shape[1];
 			int l = atoi(val[5].c_str()) - 1;
 			
-			// we relabel the input so that it matches our unit-cell modeling
-			if (l == 0){
-				l = 1;
-				
-			} else if (l == 1){
-				l = 0;
-				i = i + 1;
-				j = j + 1;
-			}
+			// "grid" size should be roughly:
+			// max in x dir: 200 + 400*sc_width Angstroms
+			// max in y dir: 100 + 200*sc_height Angstroms
+			// so we should always pick sc_height ~ 2*sc_width
 			
-			if (i >= 0 && j >= 0  && i < height && j < width) {
+			// these choices should work up to r ~ 1000 Angstroms.
+			int sc_width = 2;
+			int sc_height = 4;
 			
-				// Add it if it is valid to the shape of the sheet
-				if(checkShape(pos)) {
-					//printf("%d at [%lf, %lf, %lf] \n",k,pos[0],pos[1],pos[2]);
-					grid_array[i][j][l] = k;
+			for (int x_sc = -sc_width; x_sc < sc_width+1; x_sc++) {
+				for(int y_sc = -sc_height; y_sc < sc_height+1; y_sc++) {
+			
+					// Assuming data = [x,y,z,i,j,o]
+					// We need to first add supercell offsets:
+					// East  (+x): [402.1358, 0, 0, 164,  -1, 0]
+					// North (+y): [0, 232.1734, 0, -54, 109, 0]
 					
-					std::vector<double> temp_pos;
-					temp_pos.push_back(pos[0]);
-					temp_pos.push_back(pos[1]);
-					temp_pos.push_back(pos[2]);
-					pos_array.push_back(temp_pos);
+					int i_temp = i + 164*x_sc -  54*y_sc;
+					int j_temp = j - 1*x_sc   + 109*y_sc;
+					int l_temp = l;
 					
-					//printf("%d, %lf, %lf, %lf, %d, %d, %d \n",k,pos[0],pos[1],pos[2],i,j,l);
+					double pos_x = pos[0] + 402.1358*x_sc;
+					double pos_y = pos[1] + 232.1734*y_sc;
+					double pos_z = pos[2];
+			
+					// then we relabel the input so that it 
+					// matches our unit-cell modelling for monolayer
 					
-					++k;
-				} 
-				// Otherwise it gets index -1 to signify no orbital is there
-				else {
-					grid_array[i][j][l] = -1;
+					if (l_temp == 0){
+						l_temp = 1;
+						
+					} else if (l == 1){
+						l_temp = 0;
+						i_temp = i_temp + 1;
+						j_temp = j_temp + 1;
+					}
+					
+					double new_pos[3];
+					new_pos[0] = pos_x;
+					new_pos[1] = pos_y;
+					new_pos[2] = pos_z;
+					
+					if (i_temp >= 0 && j_temp >= 0  && i_temp < height && j_temp < width) {
+					
+						// Add it if it is valid to the shape of the sheet
+						if(checkShape(new_pos)) {
+							//printf("%d at [%lf, %lf, %lf] \n",k,pos[0],pos[1],pos[2]);
+							grid_array[i_temp][j_temp][l_temp] = k;
+							
+							std::vector<double> temp_pos;
+							temp_pos.push_back(pos_x);
+							temp_pos.push_back(pos_y);
+							temp_pos.push_back(pos_z);
+							pos_array.push_back(temp_pos);
+							
+							printf("%d, %lf, %lf, %lf, %d, %d, %d \n",k,pos_x,pos_y,pos_z,i_temp,j_temp,l_temp);
+							
+							++k;
+						} 
+						// Otherwise it gets index -1 to signify no orbital is there
+						else {
+							grid_array[i_temp][j_temp][l_temp] = -1;
+						}
+					}
 				}
 			}
-            
 		}
 	}
 	
