@@ -309,7 +309,7 @@ void Sheet::loadIndexRealspace(){
 							temp_pos.push_back(pos_z);
 							pos_array.push_back(temp_pos);
 							
-							printf("%d, %lf, %lf, %lf, %d, %d, %d \n",k,pos_x,pos_y,pos_z,i_temp,j_temp,l_temp);
+							//printf("%d, %lf, %lf, %lf, %d, %d, %d \n",k,pos_x,pos_y,pos_z,i_temp,j_temp,l_temp);
 							
 							++k;
 						} 
