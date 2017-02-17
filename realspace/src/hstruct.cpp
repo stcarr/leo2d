@@ -135,7 +135,6 @@ double Hstruct::posAtomIndex(int k, int dim){
             current_sheet += 1;
         }
     }
-    	
     double local_x = sheets[s].posAtomIndex(k - current_index,0);
     double local_y = sheets[s].posAtomIndex(k - current_index,1);
     double local_z = sheets[s].posAtomIndex(k - current_index,2);
@@ -143,7 +142,6 @@ double Hstruct::posAtomIndex(int k, int dim){
     double theta;
 	
 	// If we are in Momentum-space, we need to have sheet 0 have the geometry of sheet 1, so we swap the angles
-	
 	if (solver_space == 0) {
 		theta = angles[s];
 	} else if (solver_space == 1) {
@@ -156,7 +154,6 @@ double Hstruct::posAtomIndex(int k, int dim){
 
 	// NEED TO FIX SHIFTS !! (but they are not used in current implementation)
 	// should rotate AFTER shifts, not before
-	
     if (dim == 0){
         double x = local_x*cos(theta) - local_y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0) + shifts[s][2]*sheets[s].getUnit(2,0);
         return x;

@@ -117,7 +117,7 @@ class Locality {
 		void generateH(SpMatrix&,Mpi_job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
 		
 		// Creates and returns SpMatrix objects and an array of target vectors for Electron-Electron Correlation KPM
-		void generateCondH(SpMatrix&,SpMatrix&,double*,Mpi_job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
+		void generateCondH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Mpi_job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
 	
 		// Creates and returns SpMatrix object representing H for a specific Momentum-space job
 		void generateMomH(SpMatrix&, Mpi_job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
@@ -129,7 +129,7 @@ class Locality {
 		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
 		
 		// Direct solver using Eigen package
-		void computeEigen(double*, double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
+		void computeEigen(double*, double*, double*, double*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
 		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);

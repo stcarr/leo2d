@@ -895,67 +895,69 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		
 		//outFile << job_name << " Chebyshev T value outputs for job " << job+1 << ":\n";
 		
-		if (observable_type == 0){
-		
-			if (diagonalize == 0){
-				outFile << "T:   ";
-				
-				for(int j = 0; j < poly_order-1; ++j){
-					outFile << polys[j] << ", ";
+		if (diagonalize == 0){
+			if (observable_type == 0){
+			
+				if (diagonalize == 0){
+					outFile << "T:   ";
+					
+					for(int j = 0; j < poly_order-1; ++j){
+						outFile << polys[j] << ", ";
+					}
+					outFile << polys[poly_order-1] << "\n";
+					
+					for(int t = 0; t < num_targets; ++t){
+						outFile << target_list[t] << ": ";
+						for(int j = 0; j < poly_order-1; ++j){
+							outFile << result_array[job][j + t*poly_order] << ", ";
+						}
+						outFile << result_array[job][poly_order-1 + t*poly_order] << "\n";
+					}
+					
+					outFile << "\n";
 				}
-				outFile << polys[poly_order-1] << "\n";
+				
+			} else if (observable_type == 1){
+				
+				outFile << "T: \n";
 				
 				for(int t = 0; t < num_targets; ++t){
-					outFile << target_list[t] << ": ";
-					for(int j = 0; j < poly_order-1; ++j){
-						outFile << result_array[job][j + t*poly_order] << ", ";
+					outFile << target_list[t] << ": \n";
+					for (int r = 0; r < poly_order; ++r){
+						for(int j = 0; j < poly_order-1; ++j){
+							outFile << result_array[job][j + r*poly_order + t*poly_order*poly_order] << ", ";
+						}
+						outFile << result_array[job][poly_order-1 + r*poly_order + t*poly_order*poly_order] << "\n";
 					}
-					outFile << result_array[job][poly_order-1 + t*poly_order] << "\n";
-				}
+				}	
 				
 				outFile << "\n";
-			} else if (diagonalize == 1){
-				
-				// job_size = local_max_index + local_max_index^2
-				// so we use quadratic formula to solve for local_max_index
-				
-				int job_size = result_array[job].size();
-				int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
-				
 			
-				outFile << "EIGS: ";
-				for(int j = 0; j < local_max_index - 1; ++j){
-					outFile << result_array[job][j] << ", ";
-				}
-				outFile << result_array[job][local_max_index - 1] << "\n";
-				
-				outFile << "VECS: \n";
-				for(int j = 0; j < local_max_index; ++j){
-					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
-					}
-					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-				}
-				outFile << "\n";
-				
 			}
+		} else if (diagonalize == 1){
+				
+			// job_size = local_max_index + local_max_index^2
+			// so we use quadratic formula to solve for local_max_index
 			
-		} else if (observable_type == 1){
+			int job_size = result_array[job].size();
+			int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
 			
-			outFile << "T: \n";
-			
-			for(int t = 0; t < num_targets; ++t){
-				outFile << target_list[t] << ": \n";
-				for (int r = 0; r < poly_order; ++r){
-					for(int j = 0; j < poly_order-1; ++j){
-						outFile << result_array[job][j + r*poly_order + t*poly_order*poly_order] << ", ";
-					}
-					outFile << result_array[job][poly_order-1 + r*poly_order + t*poly_order*poly_order] << "\n";
-				}
-			}	
-			
-			outFile << "\n";
 		
+			outFile << "EIGS: ";
+			for(int j = 0; j < local_max_index - 1; ++j){
+				outFile << result_array[job][j] << ", ";
+			}
+			outFile << result_array[job][local_max_index - 1] << "\n";
+			
+			outFile << "J_X: \n";
+			for(int j = 0; j < local_max_index; ++j){
+				for (int m = 0; m < local_max_index - 1; ++m){
+					outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+				}
+				outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+			}
+			outFile << "\n";
+			
 		}
 	}
 	
@@ -1124,18 +1126,19 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		SpMatrix H;
 		SpMatrix dxH;
-		double* alpha_0_arr = new double[num_targets*local_max_index];
-		
+		SpMatrix dyH;
+		double* alpha_0_x_arr = new double[num_targets*local_max_index];
+		double* alpha_0_y_arr = new double[num_targets*local_max_index];
+
 		if (solver_space == 0){
-			if (observable_type == 0){ // DOS
+			if (observable_type == 0 && diagonalize == 0){ // DOS
 				generateH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
-			} else if (observable_type == 1) { // Conductivity
-				generateCondH(H, dxH, alpha_0_arr, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
+			} else if (observable_type == 1 || diagonalize == 1) { // Conductivity
+				generateCondH(H, dxH, dyH, alpha_0_x_arr, alpha_0_y_arr, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 			}
 		} else if (solver_space == 1){
 			generateMomH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		}
-		
 		// !! MOMENTUM SPACE TO DO !!
 		// if solver_space == 1: Instead call generateMomH
 		// generateMomH: 
@@ -1153,59 +1156,66 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		// Saves T values
 		double* T_array;
-		if (observable_type == 0){
-		
-			if (diagonalize == 0){
-			
-				T_array = new double[poly_order*num_targets];
-				computeDosKPM(T_array,H,jobIn,current_index_reduction,local_max_index);
+		if (diagonalize == 0){
+			if (observable_type == 0){
 				
-			} else if (diagonalize == 1) {
+					T_array = new double[poly_order*num_targets];
+					computeDosKPM(T_array,H,jobIn,current_index_reduction,local_max_index);
+
+			} else if (observable_type == 1){
 			
-				T_array = new double[local_max_index + local_max_index*local_max_index];
-			
-			
-				double* eigenvalue_array;
-				eigenvalue_array = new double[local_max_index];
-				double* eigenvector_array;
-				eigenvector_array = new double[local_max_index*local_max_index];
-				
-				computeEigen(eigenvalue_array, eigenvector_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_arr);
-				
-				for (int i = 0; i < local_max_index; ++i){
-					T_array[i] = eigenvalue_array[i];
-				}
-				for (int i = 0; i < local_max_index*local_max_index; ++i){
-					T_array[i + local_max_index] = eigenvector_array[i];
-				}
-				
-				delete eigenvalue_array;
-				delete eigenvector_array;
+				T_array = new double[poly_order*poly_order*num_targets];
+				computeCondKPM(T_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_x_arr);
 				
 			}
-
-		} else if (observable_type == 1){
+			
+		} else if (diagonalize == 1) {
+			
+			T_array = new double[local_max_index + local_max_index*local_max_index];
 		
-			T_array = new double[poly_order*poly_order*num_targets];
-			computeCondKPM(T_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_arr);
+		
+			double* eigenvalue_array;
+			eigenvalue_array = new double[local_max_index];
+			double* eigenvector_array;
+			eigenvector_array = new double[local_max_index*local_max_index];
+			double* j_x;
+			j_x = new double[local_max_index*local_max_index];
+			double* j_y;
+			j_y = new double[local_max_index*local_max_index];
+			
+			computeEigen(eigenvalue_array, eigenvector_array, j_x, j_y, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
+			
+			for (int i = 0; i < local_max_index; ++i){
+				T_array[i] = eigenvalue_array[i];
+			}
+			for (int i = 0; i < local_max_index*local_max_index; ++i){
+				T_array[i + local_max_index] = j_x[i];
+			}
+			
+			delete eigenvalue_array;
+			delete eigenvector_array;
+			delete j_x;
+			delete j_y;
 			
 		}
+		
+		
 		
 		// Save time at which solver finished
 		time_t tempEnd;
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);	
 		int length;
-		if (observable_type == 0){
-			if (diagonalize == 0){
+		if (diagonalize == 0){
+			if (observable_type == 0){
 				length = poly_order*num_targets;
-			} else if (diagonalize == 1){
-				length = local_max_index + local_max_index*local_max_index;
+			} else if (observable_type == 1){
+				length = poly_order*poly_order*num_targets;
 			}
-		} else if (observable_type == 1){
-			length = poly_order*poly_order*num_targets;
+		} else if (diagonalize == 1){
+			length = local_max_index + local_max_index*local_max_index;
 		}
-		
+			
 		// Notify root about incoming data size
 		MPI::COMM_WORLD.Send(	
 					&length,
@@ -1227,7 +1237,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 		// Cleanup C++ allocated memory
 		delete T_array;
-		delete alpha_0_arr;
+		delete alpha_0_x_arr;
+		delete alpha_0_y_arr;
 		
 		// End of while(1) means we wait for another instruction from root
 		}
@@ -1455,7 +1466,7 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 	
 }
 
-void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 	
 	int solver_type = jobIn.getInt("solver_type");
 	int magOn = jobIn.getInt("magOn");
@@ -1485,6 +1496,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 	
 	H.setup(max_nnz, local_max_index, local_max_index);
 	dxH.setup(max_nnz, local_max_index, local_max_index);
+	dyH.setup(max_nnz, local_max_index, local_max_index);
 
 	
 	int* col_index = H.allocColIndx();
@@ -1492,21 +1504,26 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 	
 	int* col_index_dx = dxH.allocColIndx();
 	int* row_pointer_dx = dxH.allocRowPtr();
-
+	
+	int* col_index_dy = dyH.allocColIndx();
+	int* row_pointer_dy = dyH.allocRowPtr();
 	
 	double* v;
 	double* v_dx;
+	double* v_dy;
 	std::complex<double>* v_c;
 	std::complex<double>* v_c_dx;
-
+	std::complex<double>* v_c_dy;
 	
 	if (magOn == 0){
 		v = H.allocRealVal();
 		v_dx = dxH.allocRealVal();
+		v_dy = dyH.allocRealVal();
 	}
 	else if (magOn == 1){
 		v_c = H.allocCpxVal();
 		v_c_dx = dxH.allocCpxVal();
+		v_c_dy = dyH.allocCpxVal();
 	}
 
 	// Count the current element, i.e. "i = input_counter"
@@ -1528,6 +1545,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 		// Save starting point of row k
 		row_pointer[k] = input_counter;
 		row_pointer_dx[k] = input_counter;
+		row_pointer_dy[k] = input_counter;
 		
 		// While we are still at the correct index in our intra_pairs list:
 		bool same_index1 = true;
@@ -1555,6 +1573,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 			
 				col_index[input_counter] = new_k - current_index_reduction[new_k];
 				col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+				col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
 				
 				double t;
 				
@@ -1574,7 +1593,8 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 				
 				if (magOn == 0){
 					v[input_counter] = t;
-					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t;
+					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t; // (delta_x)*t
+					v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*t; // (delta_y)*t
 				}
 				else if (magOn == 1) {
 					
@@ -1585,7 +1605,8 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 					
 					double pPhase = peierlsPhase(x1, x2, y1, y2, B);
 					v_c[input_counter] = std::polar(t, pPhase);
-					v_c_dx[input_counter] = std::polar((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t,pPhase);
+					v_c_dx[input_counter] = std::polar((x1 - x2)*t,pPhase); // (delta_x)*t
+					v_c_dy[input_counter] = std::polar((y1 - y2)*t,pPhase); // (delta_y)*t
 				}
 				++input_counter;
 			}
@@ -1620,7 +1641,8 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 				
 				col_index[input_counter] = new_k - current_index_reduction[new_k];
 				col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
-				
+				col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
+
 				// get the position of both orbitals
 				double x1 = i2pos[k_i*3 + 0];
 				double y1 = i2pos[k_i*3 + 1];
@@ -1648,11 +1670,14 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 					if (magOn == 0){
 						v[input_counter] = t;
 						v_dx[input_counter] = (x1 - x2)*t;
+						v_dy[input_counter] = (y1 - y2)*t;
 					}
 					else if (magOn == 1){
 						double pPhase = peierlsPhase(x1, x2, y1, y2, B);
 						v_c[input_counter] = std::polar(t, pPhase);
 						v_c_dx[input_counter] = std::polar((x1 - x2)*t, pPhase);
+						v_c_dy[input_counter] = std::polar((y1 - y2)*t, pPhase);
+
 					}
 					//printf("inter [%d,%d] = %lf \n",k,new_k,t);
 					++input_counter;
@@ -1667,15 +1692,16 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 	// Save the end point + 1 of the last row
 	row_pointer[local_max_index] = input_counter;
 	row_pointer_dx[local_max_index] = input_counter;
-	
+	row_pointer_dy[local_max_index] = input_counter;
+
 	int num_targets = jobIn.getInt("num_targets");
 	int* target_list = jobIn.getIntVec("target_list");
 	
 	for (int t = 0; t < num_targets; ++t){
-		printf("target = %d, local_max_index = %d \n", target_list[t], local_max_index);
+		//printf("target = %d, local_max_index = %d \n", target_list[t], local_max_index);
 		
 		int target_here = target_list[t] - current_index_reduction[target_list[t]];
-		printf("target_here = %d \n",target_here);
+		//printf("target_here = %d \n",target_here);
 		
 		double* target_vec = new double[local_max_index];
 		for (int i = 0; i < local_max_index; ++i){
@@ -1684,16 +1710,21 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, double* alpha_0_arr, Mp
 		
 		target_vec[target_here] = 1;
 		
-		double temp_vec[local_max_index];
+		double temp_vec_x[local_max_index];
+		double temp_vec_y[local_max_index];
+
 		for (int i = 0; i < local_max_index; ++i){
-			temp_vec[i] = 0;
+			temp_vec_x[i] = 0;
+			temp_vec_y[i] = 0;
 		}
 		
-		dxH.vectorMultiply(target_vec,temp_vec,1,0);
-		
+		dxH.vectorMultiply(target_vec,temp_vec_x,1,0);
+		dyH.vectorMultiply(target_vec,temp_vec_y,1,0);
+
 		// want < 0 | dxH, not dxH | 0 >, so need to use: Transpose( < 0 | dxH ) = - dxH | 0 >
 		for (int i = 0; i < local_max_index; ++ i){
-			alpha_0_arr[t*local_max_index + i] = -temp_vec[i];
+			alpha_0_x_arr[t*local_max_index + i] = -temp_vec_x[i];
+			alpha_0_y_arr[t*local_max_index + i] = -temp_vec_y[i];
 		}
 		
 		delete target_vec;
@@ -2463,6 +2494,9 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 					double temp_vec[local_max_index];
 					dxH.vectorMultiply(T_j, temp_vec,1,0);
 					
+					// Now we do <alpha|dxH|beta> = <0|dxH T_n(H) dxH T_m(H)|0>
+					// where <alpha| = <0|dxH T_n(H)
+					// and   |beta > = T_m(H)|0>
 					double temp_sum = 0;
 					for (int i = 0; i < local_max_index; ++i){
 						temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
@@ -2496,18 +2530,59 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 
 }
 
-void Locality::computeEigen(double* eigvals, double* eigvecs, SpMatrix &H, SpMatrix &dxH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
+void Locality::computeEigen(double* eigvals, double* eigvecs, double* j_x, double* j_y, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	Eigen::MatrixXd H_dense = Eigen::MatrixXd::Zero(local_max_index,local_max_index);
 	H.denseConvert(H_dense);
 	printf("Running EigenSolver... \n");
 	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(H_dense);
+	printf("EigenSolver complete! \n");
 	
 	Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 	Eigen::MatrixXd::Map(&eigvecs[0], local_max_index, local_max_index) = es.eigenvectors();
 	
-	//double* eigvecs[local_max_index*local_max_index];
-	//eigvecs = es.eigenvectors();
+	// now we compute <n|j|m>, the current correlation matrix
+	// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
+	for(int i = 0; i < local_max_index; ++i){
+	
+		// holds vector |n>
+		double temp_i[local_max_index];
+		
+		for(int k = 0; k < local_max_index; ++k){
+			temp_i[k] = eigvecs[i*local_max_index + k];
+		}
+	
+		for(int j = 0; j < local_max_index; ++j){
+		
+		
+			// holds vector |m> 
+			double temp_j[local_max_index];
+			
+			for(int k = 0; k < local_max_index; ++k){
+				temp_j[k] = eigvecs[j*local_max_index + k];
+			}
+			
+			double temp_out_x[local_max_index];
+			double temp_out_y[local_max_index];
+			
+			dxH.vectorMultiply(temp_j, temp_out_x, 1, 0);
+			dyH.vectorMultiply(temp_j, temp_out_y, 1, 0);
+			
+			// store the <n|j|m> results
+			
+			double temp_sum_x = 0;
+			double temp_sum_y = 0;
+			
+			for(int k = 0; k < local_max_index; ++k){
+				temp_sum_x = temp_sum_x + temp_out_x[k]*temp_i[k];
+				temp_sum_y = temp_sum_x + temp_out_y[k]*temp_i[k];
+			}
+			
+			j_x[i*local_max_index + j] = temp_sum_x;
+			j_y[i*local_max_index + j] = temp_sum_y;
+		}
+	}
+	
 }
 
 double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){
