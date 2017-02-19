@@ -956,6 +956,15 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				}
 				outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
 			}
+			
+			outFile << "J_Y: \n";
+			for(int j = 0; j < local_max_index; ++j){
+				for (int m = 0; m < local_max_index - 1; ++m){
+					outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + m] << ", ";
+				}
+				outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+			}
+			
 			outFile << "\n";
 			
 		}
@@ -1171,7 +1180,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 		} else if (diagonalize == 1) {
 			
-			T_array = new double[local_max_index + local_max_index*local_max_index];
+			T_array = new double[local_max_index + 2*local_max_index*local_max_index];
 		
 		
 			double* eigenvalue_array;
@@ -1190,6 +1199,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 			for (int i = 0; i < local_max_index*local_max_index; ++i){
 				T_array[i + local_max_index] = j_x[i];
+				T_array[i + local_max_index + local_max_index*local_max_index] = j_y[i];
 			}
 			
 			delete eigenvalue_array;
@@ -1213,7 +1223,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				length = poly_order*poly_order*num_targets;
 			}
 		} else if (diagonalize == 1){
-			length = local_max_index + local_max_index*local_max_index;
+			length = local_max_index + 2*local_max_index*local_max_index;
 		}
 			
 		// Notify root about incoming data size
