@@ -328,7 +328,8 @@ void Locality::constructGeom(){
 		for (int k = 0; k < max_index; ++k)
 			printf("%lf, %lf, %lf \n",index_to_pos_x[k],index_to_pos_y[k],index_to_pos_z[k]);
 		*/
-		//
+		//	
+		
 		
 		
 		
@@ -1064,18 +1065,25 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 			std::vector< std::vector<double> > b1 = getReciprocal(sdata[0].a);
 			
+			b1[1][0] = -b1[1][0];
+			
+			printf("b = [%lf %lf ; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+			
 			for (int i = 0; i < max_index; ++i) {
 			
-				int s = index_to_grid[i*4 + 3];
-				if (s == 0){
+				//int s = index_to_grid[i*4 + 3];
+				int s = 0;
+				//if (s == 0){
 					i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
 					i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[1][0] + shifts[s*3 + 1]*b1[1][1];
 					i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
-				} if (s == 1){
+				/**} if (s == 1){
 					i2pos[i*3 + 0] = -index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
-					i2pos[i*3 + 1] = -index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[1][0] + shifts[s*3 + 1]*b1[1][1];
+					i2pos[i*3 + 1] = -index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[0][1] + shifts[s*3 + 1]*b1[1][1];
 					i2pos[i*3 + 2] = -index_to_pos[i*3 + 2];
 				}
+				**/
 			
 			}
 		
@@ -1797,6 +1805,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 
 	int solver_type = jobIn.getInt("solver_type");
+	int jobID = jobIn.getInt("jobID");
 	int magOn = jobIn.getInt("magOn");
 	int elecOn = jobIn.getInt("elecOn");
 	double B = jobIn.getDouble("B");
@@ -1828,11 +1837,14 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 	std::vector< std::vector< std::vector<double> > > R_array; // (num_sheets) x (N_R) x (3) array of real-space positions
 	std::vector< std::vector< std::vector< std::vector<double> > > > bloch_t_array; // (num_sheets) x (N_R) x (num_orbitals) x (num_orbitals) of real-space t_ij coupling values
 	
+	// Start loop over sheets to create bloch-theory monolayer bands
 	for (int s = 0; s < num_sheets; ++s){
 	
 		int N_R = 0;
 		
+		// Array of real-space lattice positions R
 		std::vector< std::vector<double> > temp_R_array;
+		// Array of bloch hopping parameters t (i.e. 2x2 blocks for 2 band graphene model)
 		std::vector< std::vector< std::vector<double> > > temp_bloch_t_array;
 		
 		std::vector<std::vector<double> > a = sdata[s].a;
@@ -1921,6 +1933,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 	// Load FFTW data into Interlayer_coupling object
 	
 	// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
+	// They define the settings used to generate the interlayer_fft.dat file 
 		int n_x = 20;
 		int n_y = 20;
 		int L_x = 20;
@@ -1992,8 +2005,6 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 				// Need to do monolayer bloch theory here!
 				
 				// finding pairing between k_i and new_k
-				
-
 				// and the orbit tag in their respective unit-cell
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
@@ -2097,7 +2108,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 				
 				// double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (std::abs(t) != 0){
-					
+				//if (0){ // wapping this with above line turns off intralayer coupling
 					if (k_i <= new_k){
 						v_c[input_counter] = t/energy_rescale;
 					} else if (k_i > new_k) {
@@ -2125,7 +2136,14 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 	/*
 	std::ofstream outFile;
 	const char* extension = "_matrix_real.dat";
-	outFile.open ((job_name + extension).c_str());
+	
+	std::stringstream ss;
+    ss << jobID;
+
+    std::string jobID_str;
+    ss >> jobID_str;
+	
+	outFile.open ((job_name + "_" + jobID_str + "_" + extension).c_str());
 	
 	for(int i = 0; i < local_max_index; ++i){
 		int start_index = row_pointer[i];
@@ -2610,8 +2628,9 @@ std::vector< std::vector<double> > Locality::getReciprocal(std::vector< std::vec
 
 	std::vector< std::vector<double> > b;
 	b.resize(3);
-	for (int i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i){
 		b[i].resize(3);
+	}
 	
 	double denom1 = 0.0;
 	double denom2 = 0.0;

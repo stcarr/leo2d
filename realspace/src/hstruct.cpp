@@ -174,7 +174,18 @@ double Hstruct::posAtomIndex(int k, int dim){
 // --------------------------------------------
 int Hstruct::findNearest(double (&pos)[3],int s, int dim){
 
-	double theta = angles[s];
+	double theta = 0;
+	
+	if (solver_space == 0) {
+		theta = angles[s];
+	} else if (solver_space == 1) {
+		if (s == 0) {
+			theta = angles[1];
+		} else if (s == 1) {
+			theta = angles[0];
+		}
+	}
+	
 	double x = pos[0];
 	double y = pos[1];
 	double z = pos[2];
@@ -227,6 +238,8 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 	// loop over all orbitals (kh = "k here")
 	for (int kh = 0; kh < max_index; ++kh){
 		
+		//printf("kh = %d \n",kh);
+		
 		// Get the current grid information (ih = i "here")
 		int ih = index_array[kh][0];
 		int jh = index_array[kh][1];
@@ -247,6 +260,9 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 			int j0 = findNearest(pos_here, sh - 1, 1);
 			int s0 = sh - 1;
 
+			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
+
+			
 			// find the base_index we need to add to the local sheet index on sheet s0
 			int base_index = 0;
 			for(int s = 0; s < s0; ++s)
@@ -261,6 +277,14 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 						
 						// Current index
 						int k2 = sheets[s0].gridToIndex(grid_2);
+						/*
+						if (i == i0 && j == j0){
+							printf("center k2 = %d \n", k2+base_index);
+						}						
+						if (kh == 90)
+							printf("k2 = %d \n",k2+base_index);
+						*/
+						
 						
 						// Check if an orbital exists here (i.e. k = -1 if no orbital exists at that grid position)
 						if (k2 != -1){
@@ -275,6 +299,12 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 								pair_here.push_back(kh);
 								pair_here.push_back(k2 + base_index);
 								pair_array.push_back(pair_here);
+								/*
+								if (kh == 60 || k2 + base_index == 60){
+									printf("[%d, %d] \n",kh, k2 + base_index);
+									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
+								}
+								*/
 							}
 						}
 					}
@@ -289,7 +319,9 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 			int i0 = findNearest(pos_here, sh + 1, 0);
 			int j0 = findNearest(pos_here, sh + 1, 1);
 			int s0 = sh + 1;
-			
+
+			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
+		
 			// prints how index 0 is paired to the grid above it (used as a troubleshooting print)
 			//if (kh == 0)
 			//	printf("index %d: [%d,%d,%d] to [%d,%d,%d] \n",kh,ih,jh,sh,i0,j0,s0);
@@ -308,7 +340,11 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 												
 						// Current index
 						int k2 = sheets[s0].gridToIndex(grid_2);
-						
+						/*
+						if (i == i0 && j == j0){
+							printf("center k2 = %d \n", k2+base_index);
+						}
+						*/
 						// Check if an orbital exists here (i.e. k = -1 if no orbital exists at that grid position)						
 						if (k2 != -1){
 
@@ -322,6 +358,12 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 								pair_here.push_back(kh);
 								pair_here.push_back(k2 + base_index);
 								pair_array.push_back(pair_here);
+								/*
+								if (kh == 60 || k2 + base_index == 60){
+									printf("[%d, %d] \n",kh, k2 + base_index);
+									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
+								}
+								*/
 							}
 						}
 					}
