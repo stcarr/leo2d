@@ -266,13 +266,15 @@ void Locality::constructGeom(){
 					int n_y = 20;
 					int L_x = 20;
 					int L_y = 20;
-					int length_x = 2;
-					int length_y = 2;
+					int length_x = 4;
+					int length_y = 4;
 					std::string fft_file = "interlayer_fft.dat";
 				//
 				
 				printf("Making *fft.dat file. \n");
-				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, fft_file);
+				double area_1 = h.getUnitArea(0);
+				double area_2 = h.getUnitArea(1);
+				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, area_1, area_2, fft_file);
 				
 				// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
 				
@@ -724,7 +726,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 			for (int i = 0; i < maxJobs; ++i){
 			
-				double x = (1.0/((double) maxJobs))*i;
+				//double x = (1.0/((double) maxJobs))*i;
+				double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/5;
 				
 				double shifts[num_sheets*3];
 				Mpi_job_params tempJob;
@@ -1938,8 +1941,8 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 		int n_y = 20;
 		int L_x = 20;
 		int L_y = 20;
-		int length_x = 2;
-		int length_y = 2;
+		int length_x = 4;
+		int length_y = 4;
 		std::string fft_file = "interlayer_fft.dat";
 	//
 	
@@ -2101,10 +2104,27 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 				
 				
 				if (k_i <= new_k){
-					t = std::complex<double>(7.4308*fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),7.4308*fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
+					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				} else if (k_i > new_k) {
-					t = std::complex<double>(7.4308*fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),7.4308*fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
+					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
 				}
+				
+				// following used for debugging specific elements of H
+				/*
+				if ( (k_i == 555 && new_k == 931) ) {
+					printf("interpair: [%d, %d] \n",k_i, new_k);
+					printf("orbits = [%d, %d] \n",orbit1, orbit2);
+					printf("pos1 = [%lf, %lf, %lf] \n", x1, y1, z1);
+					printf("pos2 = [%lf, %lf, %lf] \n", x2, y2, z2);
+					printf("dr = [%lf, %lf] \n", dx, dy);
+					printf("abs(t) = %lf \n",std::abs(t));
+					double temp_verbose;
+					temp_verbose = fftw_inter.interp_fft_v(dx,dy,orbit1,orbit2,0);
+					temp_verbose = fftw_inter.interp_fft_v(dx,dy,orbit1,orbit2,1);
+					printf("----------------------------- \n");
+				}
+				*/
+				
 				
 				// double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (std::abs(t) != 0){
@@ -2143,7 +2163,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
     std::string jobID_str;
     ss >> jobID_str;
 	
-	outFile.open ((job_name + "_" + jobID_str + "_" + extension).c_str());
+	outFile.open ((job_name + "_" + jobID_str  + extension).c_str());
 	
 	for(int i = 0; i < local_max_index; ++i){
 		int start_index = row_pointer[i];

@@ -75,6 +75,9 @@ void load_fftw_complex(std::vector< std::vector<fftw_complex*> > &out, std::stri
 				break;
 			}
 			
+			// debugging print statement
+			//printf("load: [x_size, y_size] = [%d, %d] \n",x_size, y_size);
+			
 			
 			fftw_complex* temp_out;
 			temp_out = (fftw_complex*) fftw_malloc(x_size*y_size*2*sizeof(fftw_complex));
@@ -82,6 +85,16 @@ void load_fftw_complex(std::vector< std::vector<fftw_complex*> > &out, std::stri
 			for (int i = 0; i < 2*x_size; i++)
 				for (int j = 0; j < y_size; j++)
 					fin >> temp_out[j + i*y_size][0];
+			
+			// following prints loaded matrix to terminal, for debugging
+			/*
+			for (int i = 0; i < 2*x_size; i++){
+				for (int j = 0; j < y_size; j++){
+					printf("%lf, ",temp_out[j + i*y_size][0]);
+				}
+				printf(" \n");
+			}
+			*/
 			
 			// Now get complex data for this orbit pairing
 			
@@ -141,11 +154,47 @@ double Interlayer_coupling::interp_fft(double x_input, double y_input, int o1, i
 	
 	if (y < 0)
 		y = -y; // we use the y-symmetry in a FFT of purely real input data
-	if (x < 0 || x > 2*x_s || y > y_s)
+	if (x < 0 || x > 2*x_s - 1 || y > y_s - 1) // here we do "- 1" to prevent wrap-around errors (i.e. interpolating at [2*x_s,y] would sample [0,y+1] for right-hand points!!
 		return 0;
 		
 	int x_int = int(x);
 	int y_int = int(y);
+
+	double value = interp_4point(x-x_int,y-y_int, data[y_int + x_int*y_s][entry], data[y_int + (x_int+1)*y_s][entry], data[y_int+1 + x_int*y_s][entry],data[y_int+1+(x_int+1)*y_s][entry]);
+	return value;
+
+}
+
+// verbose version of above call, for debugging purposes
+double Interlayer_coupling::interp_fft_v(double x_input, double y_input, int o1, int o2, int entry) {
+
+	// (x_input, y_input) is location at which you want to know the (interpolated) value of the fftw_complex data
+	// o1, o2 are two two orbitals whose interlayer coupling you are computing
+	// entry is 0 for real and 1 for imaginary part
+	
+	fftw_complex* data;
+	data = fftw_data[o1][o2];
+	
+	int x_s = length_x*L_x;
+	int y_s = length_y*L_y;
+	double x = x_input*L_x/M_PI+x_s;
+	double y = y_input*L_y/M_PI;
+	
+	printf("[x_s, y_s] = [%d, %d] \n",x_s,y_s);
+	printf("[x,y] = [%lf, %lf] \n",x,y);
+	
+	if (y < 0)
+		y = -y; // we use the y-symmetry in a FFT of purely real input data
+	if (x < 0 || x > 2*x_s - 1 || y > y_s - 1) // here we do "- 1" to prevent wrap-around errors (i.e. interpolating at [2*x_s,y] would sample [0,y+1] for right-hand points!!
+		return 0;
+		
+	
+		
+	int x_int = int(x);
+	int y_int = int(y);
+	
+	printf("[x_int, y_int] = [%d, %d] \n",x_int, y_int);
+	printf("[data] = [%lf, %lf, %lf, %lf] \n",data[y_int + x_int*y_s][entry], data[y_int + (x_int+1)*y_s][entry], data[y_int+1 + x_int*y_s][entry],data[y_int+1+(x_int+1)*y_s][entry]);
 
 	double value = interp_4point(x-x_int,y-y_int, data[y_int + x_int*y_s][entry], data[y_int + (x_int+1)*y_s][entry], data[y_int+1 + x_int*y_s][entry],data[y_int+1+(x_int+1)*y_s][entry]);
 	return value;

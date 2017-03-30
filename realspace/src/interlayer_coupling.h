@@ -32,6 +32,8 @@ class Interlayer_coupling{
 		~Interlayer_coupling();
 		
 		double interp_fft(double, double, int, int, int);
+		double interp_fft_v(double, double, int, int, int);
+
 		void fft_setup(int, int, int, int, std::string);
 
 };

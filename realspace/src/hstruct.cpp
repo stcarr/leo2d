@@ -251,6 +251,14 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 		pos_here[0] = posAtomIndex(kh,0);
 		pos_here[1] = posAtomIndex(kh,1);
 		pos_here[2] = posAtomIndex(kh,2);
+		
+		// If in momentum space, take reciprocal, i.e. K couples to -K (NOT K couples to K)
+		if (solver_space == 1){
+			pos_here[0] = -pos_here[0];
+			pos_here[1] = -pos_here[1];
+			pos_here[2] = -pos_here[2];
+		}
+		
 	
 		// if we are not on the "lowest" sheet, we look for pairs from the sheet above
 		if (sh > 0) {
@@ -299,12 +307,12 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 								pair_here.push_back(kh);
 								pair_here.push_back(k2 + base_index);
 								pair_array.push_back(pair_here);
-								/*
-								if (kh == 60 || k2 + base_index == 60){
+								// /*
+								if (kh == 1 || k2 + base_index == 1){
 									printf("[%d, %d] \n",kh, k2 + base_index);
 									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
 								}
-								*/
+								// */
 							}
 						}
 					}
@@ -478,6 +486,22 @@ void Hstruct::getIndexToPos(double* array_in,int dim){
 
 }
 
+double Hstruct::getUnitArea(int s){
+
+	double a11 = sheets[s].getUnit(0,0);
+	double a12 = sheets[s].getUnit(1,0);
+	double a21 = sheets[s].getUnit(0,1);
+	double a22 = sheets[s].getUnit(1,1);
+	
+	double area = (a11*a22 - a12*a21);
+	if (area > 0){
+		return area;
+	} else {
+		return -area;
+	}
+	
+}
+
 std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int nShifts){
 
 	std::vector<std::vector<int> > v_list;
@@ -641,7 +665,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 
 }
 
-void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,int length_y, std::string fft_file){
+void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x, int length_y, double A1, double A2, std::string fft_file){
 
 	// !!!!!!!! WARNING !!!!!!!!! 
 	//This is hard-coded for a "perfect" (no E,B,vacancies, or strain) twisted bilayer, momentum-space is not expected to work well for more general systems, use real-space instead!
@@ -652,6 +676,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 	// length_i is the total length in the i direction in momentum-space to save, i.e. in K: <----- L_i ------>
 	// o_1,o_2 are the orbitals of interest for this FFT
 	// theta is the relative angle between 1 and 2*L_x
+	// A1, A2 are real-space areas of each layer's unit cell
 	// fft_file is the desired file name for the output
 	
 	int num_orb_1 = sheets[0].getNumAtoms();
@@ -705,14 +730,14 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 					else
 						y_pos = -dy*j + dy*(y_size-1);
 						
-					in[j + i*y_size] = interlayer_term(0 + o1_shift_x, 0 + o1_shift_y, z1, x_pos + o2_shift_x, y_pos + o2_shift_y, z2, o1, o2, 0, theta, mat1, mat2);
+					in[j + i*y_size] = interlayer_term(0 + o1_shift_x, 0 + o1_shift_y, z1, x_pos + o2_shift_x, y_pos + o2_shift_y, z2, o1, o2, 0, theta, mat1, mat2)/(sqrt(A1*A2));
 					
 				}
 			}
 			
 			fftw_execute(p);
 
-			double rescale = 4*M_PI*M_PI*n_x*n_y;
+			double rescale = n_x*n_y;
 			
 			for (int i = 0; i < x_size*y_size2; i++){
 				out[i][0] = out[i][0]/rescale;

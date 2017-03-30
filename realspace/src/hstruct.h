@@ -52,11 +52,12 @@ class Hstruct {
 		std::vector<std::vector<int> > getIndexArray();
 		int gridToIndex(int (&grid_index)[4]);
 		void getIndexToPos(double*,int);
+		double getUnitArea(int);
 		
 		std::vector<std::vector<int> > getVacancyList(int,int);
 		std::vector<std::vector<int> > getTargetList(Loc_params);
 		
-		void makeInterFFTFile(int, int, int, int, int, int, std::string);
+		void makeInterFFTFile(int, int, int, int, int, int, double, double, std::string);
 
 
 };
