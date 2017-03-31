@@ -940,11 +940,18 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			}
 		} else if (diagonalize == 1){
 				
-			// job_size = local_max_index + local_max_index^2
+			// job_size = local_max_index + 2*local_max_index^2
+			// 0 = 2*(lmi)^2 + (lmi) - job_size, a = 2, b = 1, c = -job_size
+			// so roots = (-b +- sqrt(b^1 - 4*a*c))/(2*a)
+			//			= (-1 + sqrt(1 + 8*job_size)/(4))
 			// so we use quadratic formula to solve for local_max_index
 			
 			int job_size = result_array[job].size();
-			int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
+			
+			// old definition of lmi (for only 1 j matrix, not 2 (j_x AND j_y):
+			// int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
+			
+			int local_max_index = (int) ( (-1.0 + sqrt(1.0 + 8.0*job_size)) / 4.0 );
 			
 		
 			outFile << "EIGS: ";
@@ -2591,6 +2598,9 @@ void Locality::computeEigen(double* eigvals, double* eigvecs, double* j_x, doubl
 	
 	// now we compute <n|j|m>, the current correlation matrix
 	// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
+	
+	// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
+	
 	for(int i = 0; i < local_max_index; ++i){
 	
 		// holds vector |n>
@@ -2621,6 +2631,8 @@ void Locality::computeEigen(double* eigvals, double* eigvecs, double* j_x, doubl
 			double temp_sum_x = 0;
 			double temp_sum_y = 0;
 			
+			
+			// Can implement matrix-vector multiplication...
 			for(int k = 0; k < local_max_index; ++k){
 				temp_sum_x = temp_sum_x + temp_out_x[k]*temp_i[k];
 				temp_sum_y = temp_sum_x + temp_out_y[k]*temp_i[k];
