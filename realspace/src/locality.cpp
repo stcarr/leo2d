@@ -519,6 +519,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	int observable_type = opts.getInt("observable_type");
 	int solver_space = opts.getInt("solver_space");
 	int diagonalize = opts.getInt("diagonalize");
+	int d_vecs = opts.getInt("d_vecs");
+	int d_cond = opts.getInt("d_cond");
 	
 	int maxJobs;
 	int nShifts;
@@ -951,32 +953,94 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			// old definition of lmi (for only 1 j matrix, not 2 (j_x AND j_y):
 			// int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
 			
-			int local_max_index = (int) ( (-1.0 + sqrt(1.0 + 8.0*job_size)) / 4.0 );
+			int local_max_index;
 			
-		
+			if (d_vecs + d_cond == 0){
+				local_max_index = job_size;
+			} else if (d_vecs == 1 && d_cond == 0){
+				local_max_index = (int) ( (-1.0 + sqrt(1.0 + 4.0*job_size)) / 2.0 );
+			} else if (d_vecs == 0 && d_cond == 1){
+				local_max_index = (int) ( (-1.0 + sqrt(1.0 + 8.0*job_size)) / 4.0 );
+			} else if (d_vecs == 1 && d_cond == 1){
+				local_max_index = (int) ( (-1.0 + sqrt(1.0 + 12.0*job_size)) / 6.0 );			
+			}
+			
 			outFile << "EIGS: ";
 			for(int j = 0; j < local_max_index - 1; ++j){
 				outFile << result_array[job][j] << ", ";
 			}
 			outFile << result_array[job][local_max_index - 1] << "\n";
 			
-			outFile << "J_X: \n";
-			for(int j = 0; j < local_max_index; ++j){
-				for (int m = 0; m < local_max_index - 1; ++m){
-					outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
-				}
-				outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-			}
+			// Control for output printing
+			// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
 			
-			outFile << "J_Y: \n";
-			for(int j = 0; j < local_max_index; ++j){
-				for (int m = 0; m < local_max_index - 1; ++m){
-					outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + m] << ", ";
-				}
-				outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-			}
+			if (d_vecs == 1 && d_cond == 0){
 			
-			outFile << "\n";
+			
+				outFile << "VECS: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				
+				outFile << "\n";
+				
+				
+			} else if (d_vecs == 0 && d_cond == 1){
+
+
+				outFile << "J_X: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				
+				outFile << "J_Y: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				
+				outFile << "\n";
+			
+
+			
+			} else if (d_vecs == 1 && d_cond == 1){
+
+
+				outFile << "VECS: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				
+				outFile << "J_X: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + 1*local_max_index*local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + 1*local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				
+				outFile << "J_Y: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << result_array[job][local_max_index + 2*local_max_index*local_max_index + j*local_max_index + m] << ", ";
+					}
+					outFile << result_array[job][local_max_index + 2*local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				}
+				
+				outFile << "\n";
+			
+			}			
 			
 		}
 	}
@@ -1019,6 +1083,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		int observable_type = jobIn.getInt("observable_type");
 		int solver_space = jobIn.getInt("solver_space");
 		int diagonalize = jobIn.getInt("diagonalize");
+		int d_vecs =  jobIn.getInt("d_vecs");
+		int d_cond =  jobIn.getInt("d_cond");
 		
 		// If worker gets STOPTAG it ends this method
 		if (solver_type == -1) {
@@ -1198,9 +1264,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 		} else if (diagonalize == 1) {
 			
-			T_array = new double[local_max_index + 2*local_max_index*local_max_index];
-		
-		
+			if (d_vecs + d_cond == 0){
+				T_array = new double[local_max_index];
+			} else if (d_vecs == 1 && d_cond == 0){
+				T_array = new double[local_max_index + 1*local_max_index*local_max_index];
+			} else if (d_vecs == 0 && d_cond == 1){
+				T_array = new double[local_max_index + 2*local_max_index*local_max_index];
+			} else if (d_vecs == 1 && d_cond == 1){
+				T_array = new double[local_max_index + 3*local_max_index*local_max_index];			
+			}
+			
 			double* eigenvalue_array;
 			eigenvalue_array = new double[local_max_index];
 			double* eigenvector_array;
@@ -1215,19 +1288,41 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			for (int i = 0; i < local_max_index; ++i){
 				T_array[i] = eigenvalue_array[i];
 			}
-			for (int i = 0; i < local_max_index*local_max_index; ++i){
-				T_array[i + local_max_index] = j_x[i];
-				T_array[i + local_max_index + local_max_index*local_max_index] = j_y[i];
+			
+			
+			if (d_vecs == 1 && d_cond == 0){
+				printf("2 \n");
+				for (int i = 0; i < local_max_index*local_max_index; ++i){
+					T_array[i + local_max_index] = eigenvector_array[i];
+				}	
+				printf("3 \n");
+				
+			} else if (d_vecs == 0 && d_cond == 1){
+			
+				for (int i = 0; i < local_max_index*local_max_index; ++i){
+					T_array[i + local_max_index] = j_x[i];
+					T_array[i + local_max_index + local_max_index*local_max_index] = j_y[i];
+				}
+				
+			} else if (d_vecs == 1 && d_cond == 1){
+			
+				for (int i = 0; i < local_max_index*local_max_index; ++i){
+					T_array[i + local_max_index] = eigenvector_array[i];
+				}
+
+				for (int i = 0; i < local_max_index*local_max_index; ++i){
+					T_array[i + local_max_index + 1*local_max_index*local_max_index] = j_x[i];
+					T_array[i + local_max_index + 2*local_max_index*local_max_index] = j_y[i];
+				}
+				
 			}
 			
 			delete eigenvalue_array;
 			delete eigenvector_array;
 			delete j_x;
 			delete j_y;
-			
 		}
-		
-		
+
 		
 		// Save time at which solver finished
 		time_t tempEnd;
@@ -1241,7 +1336,17 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				length = poly_order*poly_order*num_targets;
 			}
 		} else if (diagonalize == 1){
-			length = local_max_index + 2*local_max_index*local_max_index;
+		
+			if (d_vecs == 0 && d_cond == 0){
+				length = local_max_index;
+			} else if (d_vecs == 1 && d_cond == 0){
+				length = local_max_index + 1*local_max_index*local_max_index;
+			} else if (d_vecs == 0 && d_cond == 1){
+				length = local_max_index + 2*local_max_index*local_max_index;
+			} else if (d_vecs == 1 && d_cond == 1){
+				length = local_max_index + 3*local_max_index*local_max_index;			
+			}
+			
 		}
 			
 		// Notify root about incoming data size
@@ -1263,7 +1368,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
 			
-		// Cleanup C++ allocated memory
+		// Cleanup allocated memory
 		delete T_array;
 		delete alpha_0_x_arr;
 		delete alpha_0_y_arr;
@@ -1497,6 +1602,7 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 	
 	int solver_type = jobIn.getInt("solver_type");
+	int diagonalize = jobIn.getInt("diagonalize");
 	int magOn = jobIn.getInt("magOn");
 	int elecOn = jobIn.getInt("elecOn");
 	double B = jobIn.getDouble("B");
@@ -1724,38 +1830,39 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 	int num_targets = jobIn.getInt("num_targets");
 	int* target_list = jobIn.getIntVec("target_list");
-	
-	for (int t = 0; t < num_targets; ++t){
-		//printf("target = %d, local_max_index = %d \n", target_list[t], local_max_index);
-		
-		int target_here = target_list[t] - current_index_reduction[target_list[t]];
-		//printf("target_here = %d \n",target_here);
-		
-		double* target_vec = new double[local_max_index];
-		for (int i = 0; i < local_max_index; ++i){
-			target_vec[i] = 0;
-		}
-		
-		target_vec[target_here] = 1;
-		
-		double temp_vec_x[local_max_index];
-		double temp_vec_y[local_max_index];
+	if (diagonalize != 1){
+		for (int t = 0; t < num_targets; ++t){
+			//printf("target = %d, local_max_index = %d \n", target_list[t], local_max_index);
+			
+			int target_here = target_list[t] - current_index_reduction[target_list[t]];
+			//printf("target_here = %d \n",target_here);
+			
+			double* target_vec = new double[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				target_vec[i] = 0;
+			}
+			
+			target_vec[target_here] = 1;
+			
+			double temp_vec_x[local_max_index];
+			double temp_vec_y[local_max_index];
 
-		for (int i = 0; i < local_max_index; ++i){
-			temp_vec_x[i] = 0;
-			temp_vec_y[i] = 0;
-		}
-		
-		dxH.vectorMultiply(target_vec,temp_vec_x,1,0);
-		dyH.vectorMultiply(target_vec,temp_vec_y,1,0);
+			for (int i = 0; i < local_max_index; ++i){
+				temp_vec_x[i] = 0;
+				temp_vec_y[i] = 0;
+			}
+			
+			dxH.vectorMultiply(target_vec,temp_vec_x,1,0);
+			dyH.vectorMultiply(target_vec,temp_vec_y,1,0);
 
-		// want < 0 | dxH, not dxH | 0 >, so need to use: Transpose( < 0 | dxH ) = - dxH | 0 >
-		for (int i = 0; i < local_max_index; ++ i){
-			alpha_0_x_arr[t*local_max_index + i] = -temp_vec_x[i];
-			alpha_0_y_arr[t*local_max_index + i] = -temp_vec_y[i];
+			// want < 0 | dxH, not dxH | 0 >, so need to use: Transpose( < 0 | dxH ) = - dxH | 0 >
+			for (int i = 0; i < local_max_index; ++ i){
+				alpha_0_x_arr[t*local_max_index + i] = -temp_vec_x[i];
+				alpha_0_y_arr[t*local_max_index + i] = -temp_vec_y[i];
+			}
+			
+			delete target_vec;
 		}
-		
-		delete target_vec;
 	}
 	
 	/*
@@ -2587,11 +2694,15 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 
 void Locality::computeEigen(double* eigvals, double* eigvecs, double* j_x, double* j_y, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
+	
+	int d_cond = jobIn.getInt("d_cond");
+	
 	Eigen::MatrixXd H_dense = Eigen::MatrixXd::Zero(local_max_index,local_max_index);
 	H.denseConvert(H_dense);
 	printf("Running EigenSolver... \n");
 	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(H_dense);
 	printf("EigenSolver complete! \n");
+	
 	
 	Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 	Eigen::MatrixXd::Map(&eigvecs[0], local_max_index, local_max_index) = es.eigenvectors();
@@ -2601,47 +2712,60 @@ void Locality::computeEigen(double* eigvals, double* eigvecs, double* j_x, doubl
 	
 	// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
 	
-	for(int i = 0; i < local_max_index; ++i){
-	
-		// holds vector |n>
-		double temp_i[local_max_index];
+	if (d_cond == 1){
 		
-		for(int k = 0; k < local_max_index; ++k){
-			temp_i[k] = eigvecs[i*local_max_index + k];
-		}
-	
-		for(int j = 0; j < local_max_index; ++j){
+		for(int i = 0; i < local_max_index; ++i){
 		
-		
-			// holds vector |m> 
-			double temp_j[local_max_index];
+			// holds vector |n>
+			double temp_i[local_max_index];
 			
 			for(int k = 0; k < local_max_index; ++k){
-				temp_j[k] = eigvecs[j*local_max_index + k];
+				temp_i[k] = eigvecs[i*local_max_index + k];
 			}
-			
-			double temp_out_x[local_max_index];
-			double temp_out_y[local_max_index];
-			
-			dxH.vectorMultiply(temp_j, temp_out_x, 1, 0);
-			dyH.vectorMultiply(temp_j, temp_out_y, 1, 0);
-			
-			// store the <n|j|m> results
-			
-			double temp_sum_x = 0;
-			double temp_sum_y = 0;
+		
+			for(int j = 0; j < local_max_index; ++j){
 			
 			
-			// Can implement matrix-vector multiplication...
-			for(int k = 0; k < local_max_index; ++k){
-				temp_sum_x = temp_sum_x + temp_out_x[k]*temp_i[k];
-				temp_sum_y = temp_sum_x + temp_out_y[k]*temp_i[k];
+				// holds vector |m> 
+				double* temp_j= new double[local_max_index];
+				
+				for(int k = 0; k < local_max_index; ++k){
+					temp_j[k] = eigvecs[j*local_max_index + k];
+					//printf("temp_j[%d] = %lf \n",k,temp_j[k]);
+				}
+				
+				double* temp_out_x = new double[local_max_index];
+				double* temp_out_y = new double[local_max_index];
+				
+				dxH.vectorMultiply(temp_j, temp_out_x, 1, 0);
+				dyH.vectorMultiply(temp_j, temp_out_y, 1, 0);
+				
+				// store the <n|j|m> results
+				
+				double temp_sum_x = 0;
+				double temp_sum_y = 0;
+				
+				
+				// Can implement matrix-vector multiplication...
+				for(int k = 0; k < local_max_index; ++k){
+					temp_sum_x = temp_sum_x + temp_out_x[k]*temp_i[k];
+					temp_sum_y = temp_sum_x + temp_out_y[k]*temp_i[k];
+					
+					//printf("temp_out_x[%d] = %lf \n",k,temp_out_x[k]);
+					//printf("temp_i[k] = %lf \n",temp_i[k]);
+					//printf("temp_sum_x = %lf \n",temp_sum_x);
+				}
+				
+				j_x[i*local_max_index + j] = temp_sum_x;
+				j_y[i*local_max_index + j] = temp_sum_y;
+				//printf("temp_sum_x = %lf, temp_sum_y = %lf \n",temp_sum_x,temp_sum_y);
+				delete temp_j;
+				delete temp_out_x;
+				delete temp_out_y;
 			}
-			
-			j_x[i*local_max_index + j] = temp_sum_x;
-			j_y[i*local_max_index + j] = temp_sum_y;
 		}
 	}
+	
 	
 }
 

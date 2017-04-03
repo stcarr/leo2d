@@ -321,6 +321,18 @@ int main(int argc, char** argv) {
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
 				}
 				
+				if (in_string == "D_VECS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("d_vecs",atoi(in_string.c_str()));
+				}
+				
+				if (in_string == "D_COND"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("d_cond",atoi(in_string.c_str()));
+				}
+				
 				if (in_string == "USE_B_FIELD"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

@@ -41,6 +41,8 @@ Mpi_job_params::Mpi_job_params() {
 	observable_type = 0;
 	solver_space = 0;
 	diagonalize = 0;
+	d_vecs = 1;
+	d_cond = 1;
 	
 	poly_order = 20;
 	
@@ -64,6 +66,8 @@ Mpi_job_params::Mpi_job_params(const Mpi_job_params& orig){
 		observable_type = orig.getInt("observable_type");
 		solver_space = orig.getInt("solver_space");
 		diagonalize = orig.getInt("diagonalize");
+		d_vecs = orig.getInt("d_vecs");
+		d_cond = orig.getInt("d_cond");		
 		
 		num_target_sheets = orig.getInt("num_target_sheets");
 		poly_order = orig.getInt("poly_order");
@@ -100,6 +104,8 @@ void Mpi_job_params::loadLocParams(Loc_params opts){
 	observable_type = opts.getInt("observable_type");
 	solver_space = opts.getInt("solver_space");
 	diagonalize = opts.getInt("diagonalize");
+	d_vecs = opts.getInt("d_vecs");
+	d_cond = opts.getInt("d_cond");	
 	
 	num_target_sheets = opts.getInt("num_target_sheets");
 	target_sheets = new int[num_target_sheets];
@@ -132,6 +138,10 @@ void Mpi_job_params::setParam(std::string tag, int val){
 		solver_space = val;
 	if (tag == "diagonalize")
 		diagonalize = val;
+	if (tag == "d_vecs")
+		d_vecs = val;
+	if (tag == "d_cond")
+		d_cond = val;
 	if (tag == "poly_order")
 		poly_order = val;
 	if (tag == "magOn")
@@ -226,6 +236,10 @@ int Mpi_job_params::getInt(std::string tag) const{
 		return solver_space;
 	if (tag == "diagonalize")
 		return diagonalize;
+	if (tag == "d_vecs")
+		return d_vecs;
+	if (tag == "d_cond")
+		return d_cond;
 	if (tag == "num_target_sheets")
 		return num_target_sheets;
 	if (tag == "poly_order")
@@ -361,6 +375,8 @@ void Mpi_job_params::sendParams(int target, int tag){
 			sendInt(observable_type,target,tag);
 			sendInt(solver_space,target,tag);
 			sendInt(diagonalize,target,tag);
+			sendInt(d_vecs,target,tag);
+			sendInt(d_cond,target,tag);
 
 			sendInt(jobID,target,tag);
 			sendInt(max_jobs,target,tag);
@@ -398,6 +414,8 @@ void Mpi_job_params::recvParams(int from){
 			recvInt(from,"observable_type");
 			recvInt(from,"solver_space");
 			recvInt(from,"diagonalize");
+			recvInt(from,"d_vecs");
+			recvInt(from,"d_cond");
 		
 			recvInt(from,"jobID");
 			recvInt(from,"max_jobs");

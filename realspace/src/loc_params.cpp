@@ -22,6 +22,8 @@ Loc_params::Loc_params() {
 		observable_type = 0;
 		solver_space = 0;
 		diagonalize = 0;
+		d_vecs = 1;
+		d_cond = 1;
 		fft_from_file = 0;
 		intra_searchsize = 5;
 		inter_searchsize = 5;
@@ -52,6 +54,8 @@ Loc_params::Loc_params(const Loc_params& orig){
 		observable_type = orig.getInt("observable_type");
 		solver_space = orig.getInt("solver_space");
 		diagonalize = orig.getInt("diagonalize");
+		d_vecs = orig.getInt("d_vecs");
+		d_cond = orig.getInt("d_cond");
 		fft_from_file = orig.getInt("fft_from_file");
 		intra_searchsize = orig.getInt("intra_searchsize");
 		inter_searchsize = orig.getInt("inter_searchsize");
@@ -97,6 +101,10 @@ void Loc_params::setParam(std::string tag, int val){
 		solver_space = val;
 	if (tag == "diagonalize")
 		diagonalize = val;
+	if (tag == "d_vecs")
+		d_vecs = val;
+	if (tag == "d_cond")
+		d_cond = val;	
 	if (tag == "fft_from_file")
 		fft_from_file = val;
 	if (tag == "intra_searchsize")
@@ -170,6 +178,10 @@ int Loc_params::getInt(std::string tag) const{
 		return solver_space;
 	if (tag == "diagonalize")
 		return diagonalize;
+	if (tag == "d_vecs")
+		return d_vecs;
+	if (tag == "d_cond")
+		return d_cond;
 	if (tag == "fft_from_file")
 		return fft_from_file;
 	if (tag == "intra_searchsize")
@@ -258,6 +270,10 @@ void Loc_params::printParams(){
 			printf(" | solver_space = MOMENTUMSPACE \n");
 		
 		printf(" | diagonalize = %d \n", diagonalize);
+		if (diagonalize == 1){
+			printf(" | d_vecs = %d \n", d_vecs);
+			printf(" | d_cond = %d \n", d_cond);
+		}
 		printf(" | poly_order = %d \n",poly_order);
 		printf(" | intra_searchsize = %d \n", intra_searchsize);
 		printf(" | inter_searchsize = %d \n", inter_searchsize);
