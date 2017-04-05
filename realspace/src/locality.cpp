@@ -519,6 +519,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	int observable_type = opts.getInt("observable_type");
 	int solver_space = opts.getInt("solver_space");
 	int diagonalize = opts.getInt("diagonalize");
+	int d_weights = opts.getInt("d_weights");
 	int d_vecs = opts.getInt("d_vecs");
 	int d_cond = opts.getInt("d_cond");
 	
@@ -942,105 +943,110 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			}
 		} else if (diagonalize == 1){
 				
-			// job_size = local_max_index + 2*local_max_index^2
-			// 0 = 2*(lmi)^2 + (lmi) - job_size, a = 2, b = 1, c = -job_size
-			// so roots = (-b +- sqrt(b^1 - 4*a*c))/(2*a)
-			//			= (-1 + sqrt(1 + 8*job_size)/(4))
-			// so we use quadratic formula to solve for local_max_index
+			// job_size = b*local_max_index + a*local_max_index^2
+			// 0 = a*(lmi)^2 + b*(lmi) - job_size
+			// a, b vary, and c = -job_size
+			// so root = (-b + sqrt(b^2 - 4*a*c))/(2*a)
+			// i.e. we use quadratic formula to solve for local_max_index
 			
 			int job_size = result_array[job].size();
 			
-			// old definition of lmi (for only 1 j matrix, not 2 (j_x AND j_y):
-			// int local_max_index = (int) ( (-1.0 + sqrt(1 + 4*job_size)) / 2.0 );
-			
 			int local_max_index;
+			// No matrix-like component
+			int a = 0;
+			// 1 Vector-like component (eigenvalues)
+			int b = 1;
+			// job_size is always c;
+			int c = job_size;
 			
-			if (d_vecs + d_cond == 0){
-				local_max_index = job_size;
-			} else if (d_vecs == 1 && d_cond == 0){
-				local_max_index = (int) ( (-1.0 + sqrt(1.0 + 4.0*job_size)) / 2.0 );
-			} else if (d_vecs == 0 && d_cond == 1){
-				local_max_index = (int) ( (-1.0 + sqrt(1.0 + 8.0*job_size)) / 4.0 );
-			} else if (d_vecs == 1 && d_cond == 1){
-				local_max_index = (int) ( (-1.0 + sqrt(1.0 + 12.0*job_size)) / 6.0 );			
+			// Printing eigenvalue weights (projected onto target orbitals)
+			if (d_weights == 1){
+				b = b + num_targets;
 			}
 			
+			// Printing eigenvectors (one Matrix-like component)
+			if (d_vecs == 1){
+				a = a + 1;
+			}
+			
+			// Printing J_i current-current correlation (two Matrix-like components) 
+			if (d_cond == 1){
+				a = a + 2;
+			}
+			
+			if (a != 0) {
+				local_max_index = (int) ( (-b + sqrt(b*b + 4*a*c)) / (2*a) );
+			} else {
+				local_max_index = (int) job_size/b;
+			}
+			
+			printf("local_max_index = %d \n",local_max_index);
 			outFile << "EIGS: ";
 			for(int j = 0; j < local_max_index - 1; ++j){
 				outFile << result_array[job][j] << ", ";
 			}
 			outFile << result_array[job][local_max_index - 1] << "\n";
+			outFile << "\n";
 			
 			// Control for output printing
 			// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
 			
-			if (d_vecs == 1 && d_cond == 0){
+			if (d_weights == 1){
+			
+				outFile << "WEIGHTS: \n";
+
+				for(int t = 0; t < num_targets; ++t){
+					outFile << target_list[t] << ": ";
+					for(int j = 0; j < local_max_index - 1; ++j){
+						outFile << result_array[job][(t+1)*local_max_index + j] << ", ";
+					}
+					outFile << result_array[job][(t+1)*local_max_index + local_max_index - 1] << "\n";
+				}	
+				
+				outFile << "\n";
+			
+			}
+			
+			if (d_vecs == 1){
 			
 			
 				outFile << "VECS: \n";
 				for(int j = 0; j < local_max_index; ++j){
 					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+						outFile << result_array[job][b*local_max_index + j*local_max_index + m] << ", ";
 					}
-					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+					outFile << result_array[job][b*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
 				}
 				
 				outFile << "\n";
 				
 				
-			} else if (d_vecs == 0 && d_cond == 1){
+			}
+			
+			if (d_cond == 1){
 
 
 				outFile << "J_X: \n";
 				for(int j = 0; j < local_max_index; ++j){
 					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
+						outFile << result_array[job][b*local_max_index + (a-2)*local_max_index*local_max_index + j*local_max_index + m] << ", ";
 					}
-					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+					outFile << result_array[job][b*local_max_index + (a-2)*local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
 				}
 				
 				outFile << "J_Y: \n";
 				for(int j = 0; j < local_max_index; ++j){
 					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + m] << ", ";
+						outFile << result_array[job][b*local_max_index + (a-1)*local_max_index*local_max_index + j*local_max_index + m] << ", ";
 					}
-					outFile << result_array[job][local_max_index + local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+					outFile << result_array[job][b*local_max_index + (a-1)*local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
 				}
 				
 				outFile << "\n";
 			
 
 			
-			} else if (d_vecs == 1 && d_cond == 1){
-
-
-				outFile << "VECS: \n";
-				for(int j = 0; j < local_max_index; ++j){
-					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + j*local_max_index + m] << ", ";
-					}
-					outFile << result_array[job][local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-				}
-				
-				outFile << "J_X: \n";
-				for(int j = 0; j < local_max_index; ++j){
-					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + 1*local_max_index*local_max_index + j*local_max_index + m] << ", ";
-					}
-					outFile << result_array[job][local_max_index + 1*local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-				}
-				
-				outFile << "J_Y: \n";
-				for(int j = 0; j < local_max_index; ++j){
-					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][local_max_index + 2*local_max_index*local_max_index + j*local_max_index + m] << ", ";
-					}
-					outFile << result_array[job][local_max_index + 2*local_max_index*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-				}
-				
-				outFile << "\n";
-			
-			}			
+			} 
 			
 		}
 	}
@@ -1085,6 +1091,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		int diagonalize = jobIn.getInt("diagonalize");
 		int d_vecs =  jobIn.getInt("d_vecs");
 		int d_cond =  jobIn.getInt("d_cond");
+		int d_weights = jobIn.getInt("d_weights");
 		
 		// If worker gets STOPTAG it ends this method
 		if (solver_type == -1) {
@@ -1101,6 +1108,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double vacancy_chance = jobIn.getDouble("vacancy_chance");
 		
 		int num_targets = jobIn.getInt("num_targets");
+		int* target_list = jobIn.getIntVec("target_list");
 		int poly_order = jobIn.getInt("poly_order");
 		
 		double* shifts = jobIn.getDoubleMat("shifts");
@@ -1263,62 +1271,72 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 			
 		} else if (diagonalize == 1) {
+		
+			int a = 0;
+			int b = 1;
 			
-			if (d_vecs + d_cond == 0){
-				T_array = new double[local_max_index];
-			} else if (d_vecs == 1 && d_cond == 0){
-				T_array = new double[local_max_index + 1*local_max_index*local_max_index];
-			} else if (d_vecs == 0 && d_cond == 1){
-				T_array = new double[local_max_index + 2*local_max_index*local_max_index];
-			} else if (d_vecs == 1 && d_cond == 1){
-				T_array = new double[local_max_index + 3*local_max_index*local_max_index];			
+			if (d_weights == 1){
+				b = b + num_targets;
 			}
+			if (d_vecs == 1){
+				a = a + 1;
+			}
+			if (d_cond == 1){
+				a = a + 2;
+			}
+			
+			T_array = new double[b*local_max_index + a*local_max_index*local_max_index];
 			
 			double* eigenvalue_array;
 			eigenvalue_array = new double[local_max_index];
 			double* eigenvector_array;
 			eigenvector_array = new double[local_max_index*local_max_index];
+			double* weight_array;
+			weight_array = new double[local_max_index*num_targets];
 			double* j_x;
 			j_x = new double[local_max_index*local_max_index];
 			double* j_y;
 			j_y = new double[local_max_index*local_max_index];
 			
-			computeEigen(eigenvalue_array, eigenvector_array, j_x, j_y, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
+			computeEigen(eigenvalue_array, eigenvector_array, weight_array, j_x, j_y, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
 			
 			for (int i = 0; i < local_max_index; ++i){
 				T_array[i] = eigenvalue_array[i];
 			}
 			
+			if (d_weights == 1){
 			
-			if (d_vecs == 1 && d_cond == 0){
-				printf("2 \n");
-				for (int i = 0; i < local_max_index*local_max_index; ++i){
-					T_array[i + local_max_index] = eigenvector_array[i];
-				}	
-				printf("3 \n");
-				
-			} else if (d_vecs == 0 && d_cond == 1){
-			
-				for (int i = 0; i < local_max_index*local_max_index; ++i){
-					T_array[i + local_max_index] = j_x[i];
-					T_array[i + local_max_index + local_max_index*local_max_index] = j_y[i];
+				for (int t = 0; t < num_targets; ++t){
+					int tar_here = target_list[t];
+					for (int i = 0; i < local_max_index; ++i){
+						double w = eigenvector_array[i + tar_here*local_max_index];
+						T_array[(t+1)*local_max_index + i] = w*w;
+					}
 				}
-				
-			} else if (d_vecs == 1 && d_cond == 1){
+			
+			}
+			
+			
+			if (d_vecs == 1){
 			
 				for (int i = 0; i < local_max_index*local_max_index; ++i){
-					T_array[i + local_max_index] = eigenvector_array[i];
-				}
-
-				for (int i = 0; i < local_max_index*local_max_index; ++i){
-					T_array[i + local_max_index + 1*local_max_index*local_max_index] = j_x[i];
-					T_array[i + local_max_index + 2*local_max_index*local_max_index] = j_y[i];
+					T_array[b*local_max_index + i] = eigenvector_array[i];
 				}
 				
 			}
 			
+			if (d_cond == 1){
+			
+				for (int i = 0; i < local_max_index*local_max_index; ++i){
+					T_array[i + b*local_max_index + (a-2)*local_max_index*local_max_index] = j_x[i];
+					T_array[i + b*local_max_index + (a-1)*local_max_index*local_max_index] = j_y[i];
+				}
+				
+			} 
+			
 			delete eigenvalue_array;
 			delete eigenvector_array;
+			delete weight_array;
 			delete j_x;
 			delete j_y;
 		}
@@ -1337,15 +1355,19 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 		} else if (diagonalize == 1){
 		
-			if (d_vecs == 0 && d_cond == 0){
-				length = local_max_index;
-			} else if (d_vecs == 1 && d_cond == 0){
-				length = local_max_index + 1*local_max_index*local_max_index;
-			} else if (d_vecs == 0 && d_cond == 1){
-				length = local_max_index + 2*local_max_index*local_max_index;
-			} else if (d_vecs == 1 && d_cond == 1){
-				length = local_max_index + 3*local_max_index*local_max_index;			
+			int a = 0;
+			int b = 1;
+			
+			if (d_weights == 1){
+				b = b + num_targets;
 			}
+			if (d_vecs == 1){
+				a = a + 1;
+			}
+			if (d_cond == 1){
+				a = a + 2;
+			}
+			length = b*local_max_index + a*local_max_index*local_max_index;
 			
 		}
 			
@@ -2692,10 +2714,11 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 
 }
 
-void Locality::computeEigen(double* eigvals, double* eigvecs, double* j_x, double* j_y, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigen(double* eigvals, double* eigvecs, double* weights, double* j_x, double* j_y, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	
 	int d_cond = jobIn.getInt("d_cond");
+	int d_weights = jobIn.getInt("d_weights");
 	
 	Eigen::MatrixXd H_dense = Eigen::MatrixXd::Zero(local_max_index,local_max_index);
 	H.denseConvert(H_dense);

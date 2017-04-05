@@ -321,6 +321,12 @@ int main(int argc, char** argv) {
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
 				}
 				
+				if (in_string == "D_WEIGHTS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("d_weights",atoi(in_string.c_str()));
+				}
+				
 				if (in_string == "D_VECS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

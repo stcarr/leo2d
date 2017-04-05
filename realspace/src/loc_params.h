@@ -21,6 +21,7 @@ class Loc_params {
 		int solver_space;
 		int strain_type;
 		int diagonalize;
+		int d_weights;
 		int d_vecs;
 		int d_cond;
 		int fft_from_file;

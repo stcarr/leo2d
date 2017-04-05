@@ -41,8 +41,9 @@ Mpi_job_params::Mpi_job_params() {
 	observable_type = 0;
 	solver_space = 0;
 	diagonalize = 0;
-	d_vecs = 1;
-	d_cond = 1;
+	d_weights = 1;
+	d_vecs = 0;
+	d_cond = 0;
 	
 	poly_order = 20;
 	
@@ -66,6 +67,7 @@ Mpi_job_params::Mpi_job_params(const Mpi_job_params& orig){
 		observable_type = orig.getInt("observable_type");
 		solver_space = orig.getInt("solver_space");
 		diagonalize = orig.getInt("diagonalize");
+		d_weights = orig.getInt("d_weights");
 		d_vecs = orig.getInt("d_vecs");
 		d_cond = orig.getInt("d_cond");		
 		
@@ -104,6 +106,7 @@ void Mpi_job_params::loadLocParams(Loc_params opts){
 	observable_type = opts.getInt("observable_type");
 	solver_space = opts.getInt("solver_space");
 	diagonalize = opts.getInt("diagonalize");
+	d_weights = opts.getInt("d_weights");
 	d_vecs = opts.getInt("d_vecs");
 	d_cond = opts.getInt("d_cond");	
 	
@@ -138,6 +141,8 @@ void Mpi_job_params::setParam(std::string tag, int val){
 		solver_space = val;
 	if (tag == "diagonalize")
 		diagonalize = val;
+	if (tag == "d_weights")
+		d_weights = val;
 	if (tag == "d_vecs")
 		d_vecs = val;
 	if (tag == "d_cond")
@@ -236,6 +241,8 @@ int Mpi_job_params::getInt(std::string tag) const{
 		return solver_space;
 	if (tag == "diagonalize")
 		return diagonalize;
+	if (tag == "d_weights")
+		return d_weights;
 	if (tag == "d_vecs")
 		return d_vecs;
 	if (tag == "d_cond")
@@ -349,7 +356,7 @@ void Mpi_job_params::printCheb(std::ofstream& outFile){
 	}
 	
 	outFile << "NUM_VAC = " << num_vacancies << "\n";
-	if (num_vacancies != 0){
+	if (vacancy_list[0] != -1){
 		outFile << "VAC_LIST: ";
 		for (int v = 0; v < num_vacancies-1; ++v){
 			outFile << vacancy_list[v] << ", ";
@@ -375,6 +382,7 @@ void Mpi_job_params::sendParams(int target, int tag){
 			sendInt(observable_type,target,tag);
 			sendInt(solver_space,target,tag);
 			sendInt(diagonalize,target,tag);
+			sendInt(d_weights,target,tag);
 			sendInt(d_vecs,target,tag);
 			sendInt(d_cond,target,tag);
 
@@ -414,6 +422,7 @@ void Mpi_job_params::recvParams(int from){
 			recvInt(from,"observable_type");
 			recvInt(from,"solver_space");
 			recvInt(from,"diagonalize");
+			recvInt(from,"d_weights");
 			recvInt(from,"d_vecs");
 			recvInt(from,"d_cond");
 		

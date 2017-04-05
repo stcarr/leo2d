@@ -129,7 +129,7 @@ class Locality {
 		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
 		
 		// Direct solver using Eigen package
-		void computeEigen(double*, double*, double*, double*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
+		void computeEigen(double*, double*, double*, double*, double*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
 		
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);

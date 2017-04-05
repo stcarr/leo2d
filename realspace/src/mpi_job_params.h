@@ -28,6 +28,7 @@ class Mpi_job_params {
 		int observable_type;
 		int solver_space;
 		int diagonalize;
+		int d_weights;
 		int d_vecs;
 		int d_cond;
 		
