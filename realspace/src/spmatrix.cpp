@@ -418,13 +418,12 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double 
 	}
 
 	#ifdef USE_MKL
-		char mv_type = 'N';
+		char mm_type = 'N';
 		char matdescra[6] = {'G',' ',' ','C',' ',' '};
 
 		// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
 		mkl_dcsrmm(
-			&mv_type,		// Specifies operator, transpose or not	
-			&mv_type,		// Specifies operator, transpose or not
+			&mm_type,		// Specifies operator, transpose or not	
 			&nrows_A,		// Number of rows in matrix A (rows of C)
 			&ncols_C,		// Number of cols in matrix C (rows of B)
 			&ncols_A, 		// Number of internal cols/rows of A/B (summed over)

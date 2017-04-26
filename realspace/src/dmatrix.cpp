@@ -177,7 +177,7 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 
 	#ifdef USE_MKL
 		char mv_type = 'N';
-
+		int v_stride = 1;
 		// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
 		dgemv(
 			&mv_type,		// Specifies operator, transpose or not	
@@ -187,10 +187,10 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 			val,			// nonzero elements
 			&nrows,			// leading dimension (we do not skip any elements)
 			vec_in,			// input vector
-			1,				// increment/iterator of vec_in (how to move in memory, starting at the pointer)
+			&v_stride,		// increment/iterator of vec_in (how to move in memory, starting at the pointer)
 			&beta,			// scalar BETA
 			vec_out,		// output vector
-			1				// increment/iterator of vec_out (see above)	
+			&v_stride		// increment/iterator of vec_out (see above)	
 			);
 		/*
 		for (int i = 0; i < nrows; ++i)
@@ -223,20 +223,20 @@ void DMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> 
 	}
 	#ifdef USE_MKL
 	char mv_type = 'N';
-
+	int v_stride = 1;
 	// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
 	zgemv(
 		&mv_type,		// Specifies operator, transpose or not	
 		&nrows,			// Number of rows in matrix
 		&ncols,			// Number of cols in matrix
 		&alpha,			// scalar ALPHA
-		val,			// nonzero elements
+		val_c,			// nonzero elements
 		&nrows,			// leading dimension (we do not skip any elements)
 		vec_in,			// input vector
-		1,				// increment/iterator of vec_in (how to move in memory, starting at the pointer)
+		&v_stride,		// increment/iterator of vec_in (how to move in memory, starting at the pointer)
 		&beta,			// scalar BETA
 		vec_out,		// output vector
-		1				// increment/iterator of vec_out (see above)	
+		&v_stride		// increment/iterator of vec_out (see above)	
 		);
 		
 	#else
@@ -300,12 +300,11 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta) 
 	}
 	
 	#ifdef USE_MKL
-		char mv_type = 'N';
-
+		char mm_type = 'N';
 		// C := alpha*op( A )*op( B ) + beta*C,
 		dgemm(
-			&A_mode,		// Specifies operator on A, transpose or not	
-			&B_mode,		// Specifies operator on B, transpose or not
+			&mm_type,		// Specifies operator on A, transpose or not	
+			&mm_type,		// Specifies operator on B, transpose or not
 			&nrows_A,		// Number of rows in matrix A (rows of C)
 			&ncols_C,		// Number of cols in matrix C (cols of B)
 			&ncols_A,		// Number of internal cols/rows of A/B (summed over)
@@ -316,7 +315,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta) 
 			&nrows_B,		// leading dimension (we do not skip any elements)
 			&beta,			// scalar BETA
 			val_C,			// output matrix
-			&nrows_C,		// increment/iterator of vec_out (see above)	
+			&nrows_C		// increment/iterator of vec_out (see above)	
 			);
 			
 	#else
@@ -453,7 +452,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 			&nrows_B,		// leading dimension (we do not skip any elements)
 			&beta,			// scalar BETA
 			val_C,			// output matrix
-			&nrows_C,		// increment/iterator of vec_out (see above)	
+			&nrows_C		// increment/iterator of vec_out (see above)	
 			);
 			
 	#else
