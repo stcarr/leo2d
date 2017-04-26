@@ -12,6 +12,7 @@
 #include "hstruct.h"
 #include "interlayer_coupling.h"
 #include "spmatrix.h"
+#include "dmatrix.h"
 #include "loc_params.h"
 #include "mpi_job_params.h"
 
@@ -113,6 +114,9 @@ class Locality {
 		// Construct and solve the tight binding problem. Also saves output files
 		void constructMatrix(int*,double*,int*,int*,double*,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 		
+		// Updates the index_to_pos array for a specific job's orbital positions (i.e. with shift and strain)
+		void setConfigPositions(double*, double*, int*, Mpi_job_params);
+		
 		// Creates and returns a SpMatrix object representing H for a specific job
 		void generateH(SpMatrix&,Mpi_job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
 		
@@ -129,8 +133,9 @@ class Locality {
 		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
 		
 		// Direct solver using Eigen package
-		void computeEigen(double*, double*, double*, double*, double*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
-		
+		void computeEigen(double*, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
+		void computeEigenComplex(std::complex<double>*,std::complex<double>*,std::complex<double>*, std::complex<double>*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
+
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
 		

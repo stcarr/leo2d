@@ -1,5 +1,5 @@
 /* 
- * File:   hstruct.cpp
+ * File:   spmatrix.cpp
  * Author: Stephen Carr
  * Based on MATKIT from the FILTLAN package
  * 
@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdexcept>
  
 #ifdef USE_MKL
 	#include "mkl.h"
@@ -129,6 +130,7 @@ SpMatrix::~SpMatrix() {
 		delete [] val_c;
 	}
 	
+
 	delete [] colIndex;
 	delete [] rowPointer;
 
@@ -241,8 +243,8 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 
 	if (vec_out == NULL) {
 		// allocate memory
-		vec_out = new double[nrows];
-		for (int i = 0; i < nrows; ++i){
+		vec_out = new double[ncols];
+		for (int i = 0; i < ncols; ++i){
 			vec_out[i] = 0.0;
 			}
 	}
@@ -369,7 +371,110 @@ void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double>
 	#endif
 }
 
+// Sparse Matrix - Dense Matrix Multiplication
+void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta) {
+
+	// A = this matrix
+	// C := alpha*A*B + beta*C,
+
+	int ncols_A = ncols;
+	int nrows_A = nrows;
+	
+	int ncols_B = B.getNumCols();
+	int nrows_B = B.getNumRows();
+	
+	if (ncols_A != nrows_B){
+		throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
+	}
+	
+	double* val_B;
+	val_B = B.getValPtr();
+	
+	double* val_C;
+	int nval_C;
+	
+	int ncols_C;
+	int nrows_C;
+	
+	if (C.getValPtr() == NULL){
+	
+		ncols_C = ncols_B;
+		nrows_C = nrows_A;
+	
+		C.setup(nrows_C,ncols_C);
+		nval_C = nrows_C*ncols_C;
+		val_C = C.allocRealVal();
+	
+	} else {
+		ncols_C = C.getNumCols();
+		nrows_C= C.getNumRows();
+		
+		if (nrows_A != ncols_C || ncols_B != nrows_C){
+			throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
+		}
+
+		nval_C = ncols_C*nrows_C;
+		val_C = C.getValPtr();
+	}
+
+	#ifdef USE_MKL
+		char mv_type = 'N';
+		char matdescra[6] = {'G',' ',' ','C',' ',' '};
+
+		// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
+		mkl_dcsrmm(
+			&mv_type,		// Specifies operator, transpose or not	
+			&mv_type,		// Specifies operator, transpose or not
+			&nrows_A,		// Number of rows in matrix A (rows of C)
+			&ncols_C,		// Number of cols in matrix C (rows of B)
+			&ncols_A, 		// Number of internal cols/rows of A/B (summed over)
+			&alpha,			// scalar ALPHA
+			matdescra,		// Specifies type of matrix, *char
+			val,			// nonzero elements of matrix A
+			colIndex,		// row indices
+			rowPointer,		// begin of col pointer
+			rowPointer + 1,	// end of col pointer
+			val_B,			// pointer for values of matrix B
+			&nrows_B,		// leading dimension of B (different if this is a submatrix problem)
+			&beta,			// scalar BETA
+			val_C,			// pointer for values of matrix C
+			&nrows_C		// leading dimension of C (different if this is a submatrix problem)
+			);
+	#else
+		for (int r = 0; r < nrows_A; ++r){
+			for (int c = 0; c < ncols_B; ++ c){
+		
+				double temp_sum = 0.0;
+				
+				int begin = rowPointer[r];
+				int end = rowPointer[r+1];
+				
+				for (int i = begin; i < end; ++i){
+					temp_sum += val[i]*val_B[c*nrows_B + colIndex[i]];
+				}
+				
+				val_C[c*nrows_C + r] = alpha*temp_sum + beta*val_C[c*nrows_C + r];
+			}
+		}
+	#endif
+
+}
+
 void SpMatrix::denseConvert(Eigen::MatrixXd &H_in){
+	// Column Major order
+	for (int r = 0; r < nrows; ++r){
+	
+		int begin = rowPointer[r];
+		int end = rowPointer[r+1];
+		
+		for (int i = begin; i < end; ++i){
+			H_in(r,colIndex[i]) = val[i];
+		}
+	}
+
+}
+
+void SpMatrix::denseConvert(Eigen::MatrixXcd &H_in){
 
 		for (int r = 0; r < nrows; ++r){
 		
@@ -377,11 +482,12 @@ void SpMatrix::denseConvert(Eigen::MatrixXd &H_in){
 			int end = rowPointer[r+1];
 			
 			for (int i = begin; i < end; ++i){
-				H_in(r,colIndex[i]) = val[i];
+				H_in(r,colIndex[i]) = val_c[i];
 			}
 		}
 
 }
+
 
 int SpMatrix::getNumRows(){
 	return nrows;

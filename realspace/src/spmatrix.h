@@ -1,12 +1,12 @@
 /* 
- * File:   locality.h
+ * File:   spmatrix.h
  * Author: Stephen Carr
  *
  * Created on January 27, 2016, 2:39 PM
  */
 #include <complex>
 #include <Eigen/Dense>
-
+#include "dmatrix.h"
 
 #define MKL_Complex16 std::complex<double>
 
@@ -89,8 +89,12 @@ class SpMatrix {
 		void vectorMultiply(double*, double*, double, double);
 		void vectorMultiply(std::complex<double>*, std::complex<double>*, std::complex<double>, std::complex<double>);
 		
+		// Matrix-Matrix Multiplication
+		void denseMatrixMultiply(DMatrix&, DMatrix&, double, double);
+
 		// Dense conversion
 		void denseConvert(Eigen::MatrixXd&);
+		void denseConvert(Eigen::MatrixXcd&);
 		
 		// Diagnostic functions
 		int getNumRows();

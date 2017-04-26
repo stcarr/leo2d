@@ -695,13 +695,15 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 			
 			int mat1 = sheets[0].getMat();
 			int mat2 = sheets[1].getMat();
-			int z1 = heights[0];
-			int z2 = heights[1];
+			double z1 = heights[0];
+			double z2 = heights[1];
 			
 			double o1_shift_x = sheets[0].getOrbPos(o1,0);
 			double o1_shift_y = sheets[0].getOrbPos(o1,1);
+			double o1_shift_z = sheets[0].getOrbPos(o1,2);
 			double o2_shift_x = sheets[1].getOrbPos(o2,0);
 			double o2_shift_y = sheets[1].getOrbPos(o2,1); 
+			double o2_shift_z = sheets[0].getOrbPos(o2,2);
 			
 			double x_pos,y_pos;
 			int x_size = n_x*(2*L_x)+2;
@@ -729,8 +731,9 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 						y_pos = -dy*j;
 					else
 						y_pos = -dy*j + dy*(y_size-1);
-						
-					in[j + i*y_size] = interlayer_term(0 + o1_shift_x, 0 + o1_shift_y, z1, x_pos + o2_shift_x, y_pos + o2_shift_y, z2, o1, o2, 0, theta, mat1, mat2)/(sqrt(A1*A2));
+					
+					//printf("[%lf, %lf, %lf, %lf, %lf, %lf, %d, %d, 0, %lf, %d, %d] \n", o1_shift_x, o1_shift_y, z1, x_pos+o2_shift_x, y_pos+o2_shift_y, z2, o1, o2, theta, mat1, mat2);
+					in[j + i*y_size] = interlayer_term(0 + o1_shift_x, 0 + o1_shift_y, z1 + o1_shift_z, x_pos + o2_shift_x, y_pos + o2_shift_y, z2 + o2_shift_z, o1, o2, 0, theta, mat1, mat2)/(sqrt(A1*A2));
 					
 				}
 			}

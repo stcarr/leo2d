@@ -347,6 +347,8 @@ double inter_tmdc(double x1_in, double y1_in, double z1_in, double x2_in, double
 		delta_z = -delta_z;
 	}
 	
+	//printf("XX_sep = %lf, delta_z = %lf \n", XX_sep, delta_z);
+	
 	double delta = 0.05;
 	if ((delta_z > XX_sep - delta) && (delta_z < XX_sep + delta)) {
 	
