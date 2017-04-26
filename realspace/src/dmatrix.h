@@ -43,6 +43,9 @@ class DMatrix {
 		// Empty Constructor
 		DMatrix();
 		
+		// Copy Constructor
+		DMatrix(const DMatrix&);
+		
 		// Zero constructor
 		DMatrix(int,int);
 		
@@ -71,6 +74,7 @@ class DMatrix {
 		
 		// Value accessing
 		double* getValPtr();
+		void getValCopy(double*) const;
 		void setVal(double* ptr);
 		void squareAllVals();
 		
@@ -86,8 +90,8 @@ class DMatrix {
 		void eleMatrixMultiply(DMatrix&, DMatrix&, double, double);
 		
 		// Diagnostic functions
-		int getNumRows();
-		int getNumCols();
+		int getNumRows() const;
+		int getNumCols() const;
 		double getFirstVal();
 
 };
