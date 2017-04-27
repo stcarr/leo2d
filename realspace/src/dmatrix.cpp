@@ -30,6 +30,16 @@ DMatrix::DMatrix() {
 }
 
 
+DMatrix::DMatrix(const DMatrix& orig){
+
+	nrows = orig.getNumRows();
+	ncols = orig.getNumCols();
+	nval = nrows*ncols;
+	val = new double[nval];
+	orig.getValCopy(val);
+
+}
+
 // a constructor for an nr-by-nc (sparse) matrix of zeros
 DMatrix::DMatrix(int nr, int nc) {
     nrows = nr;
@@ -138,6 +148,14 @@ void DMatrix::setup(int nr, int nc, std::complex<double> *val_c0) {
 
 double* DMatrix::getValPtr(){
 	return val;
+}
+
+void DMatrix::getValCopy(double* val_copy) const{
+
+	for (int i = 0; i < nval; ++i){
+		val_copy[i] = val[i];
+	}
+
 }
 
 void DMatrix::setVal(double* ptr){
@@ -442,9 +460,9 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 		dgemm(
 			&A_type,		// Specifies operator on A, transpose or not	
 			&B_type,		// Specifies operator on B, transpose or not
-			&nrows_A,		// Number of rows in matrix A (rows of C)
-			&ncols_B,		// Number of cols in matrix B (cols of C)
-			&ncols_A,		// Number of internal cols/rows of A/B (summed over)
+			&nrows_C,		// Number of rows in matrix A (rows of C)
+			&ncols_C,		// Number of cols in matrix C (cols of B)
+			&k_internal,		// Number of internal cols/rows of A/B (summed over)
 			&alpha,			// scalar ALPHA
 			val,			// elements of matrix A
 			&nrows_A,		// leading dimension (we do not skip any elements)
@@ -543,11 +561,11 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 
 }
 
-int DMatrix::getNumRows(){
+int DMatrix::getNumRows() const{
 	return nrows;
 }
 
-int DMatrix::getNumCols(){
+int DMatrix::getNumCols() const{
 	return ncols;
 }
 
