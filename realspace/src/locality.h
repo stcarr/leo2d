@@ -84,11 +84,11 @@ class Locality {
 		
 		void rootChebSolve(int*,double*,int*,int*,double*,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 		void workerChebSolve(int*,double*,int*,int*,double*);
-		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&);
+		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Loc_params);
 		
 		std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
 		double crossProd(std::vector<double> x, std::vector<double> y, int dim);
-
+		void writeBufferToFile(double*, int, std::string);
 		
 		// MPI Communication flags
 		static const int WORKTAG = 1;
@@ -141,8 +141,6 @@ class Locality {
 		
 		// Calculates the on-site energy in the presence of a gated electric field
 		double onSiteE(double, double, double, double);
-		
-		
 		
 		// Prints out timing information
 		void save();

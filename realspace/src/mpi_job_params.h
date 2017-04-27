@@ -32,6 +32,9 @@ class Mpi_job_params {
 		int d_vecs;
 		int d_cond;
 		
+		int mlmc;
+		int clusterID;
+		
 		int num_target_sheets;
 		int* target_sheets;
 		int poly_order;

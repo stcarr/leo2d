@@ -15,7 +15,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <string>
 #include <math.h>
 
 #include <Eigen/Dense>
@@ -79,47 +78,124 @@ void Locality::setup(Loc_params opts_in){
 	*/
 }
 
-void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t){
+void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Loc_params opts){
 	
-	std::string line;
-	std::ifstream in_file;
-	in_file.open("vacancies.dat");
-	if (in_file.is_open())
-	{
-		while ( getline(in_file,line) ) {
-			
-			std::vector<int> temp_v;
-			std::vector<int> temp_t;
-			
-			std::istringstream in_line(line);
+	int solver_type = opts.getInt("solver_type");
+	
+	// MLMC method
+	if (solver_type == 3){
+
+		std::string line;
+		std::ifstream in_file;
+		in_file.open("vacancies.dat");
 		
-			std::string in_string;
+		int jobID = -1;
+		int clusterID = -1;
+		std::vector<int> temp_v;
+		std::vector<int> temp_ids;
+		
+		if (in_file.is_open())
+		{
+			while ( getline(in_file,line) ) {
+				
+				std::istringstream in_line(line);
+				std::string in_string;
 			
-			while ( getline(in_line, in_string, '=') )	{
-				
-				if (in_string == "JOB"){
-				
-					std::string v_line;
-					std::string t_line;
+				while ( getline(in_line, in_string, ' ') )	{
 					
-					getline(in_file,v_line);
-					getline(in_file,t_line);
+					if (in_string == "JOBID"){
 					
-					std::istringstream in_v_line(v_line);
-					std::istringstream in_t_line(t_line);
+						// push back the previous job if this is not the first one
+						if (jobID != -1){
+							temp_ids.push_back(jobID);
+							temp_ids.push_back(clusterID);
+							t.push_back(temp_ids);
+							v.push_back(temp_v);
+						}
 					
-					while ( getline(in_v_line, in_string, ',') )	{
-						temp_v.push_back(atoi(in_string.c_str()) - 1);
-					}
-					while ( getline(in_t_line, in_string, ',') )	{
-						temp_t.push_back(atoi(in_string.c_str()) - 1);
+						// get jobID
+						getline(in_line,in_string,' ');
+						getline(in_line,in_string,' ');
+						jobID = atoi(in_string.c_str());
 					}
 					
-					v.push_back(temp_v);
-					t.push_back(temp_t);
+					if (in_string == "CLUSTERID"){
+					
+						// get clusterID
+						getline(in_line,in_string,' ');
+						getline(in_line,in_string,' ');
+						clusterID = atoi(in_string.c_str());
+					}
+					
+					if (in_string == "VAC"){
+						
+						// gets the "=" sign
+						getline(in_line,in_string,' ');
+						
+						// gets all vacancies (NO SPACES!)
+						std::string v_line;
+						getline(in_line,v_line,' ');
+						std::istringstream in_v_line(v_line);
+						
+						while ( getline(in_v_line, in_string, ',') )	{
+							temp_v.push_back(atoi(in_string.c_str()) - 1);
+						}
+
+					}
 					
 				}
+			}
+		}
+		
+		// and make sure to push back the last job!
+		temp_ids.push_back(jobID);
+		temp_ids.push_back(clusterID);
+		t.push_back(temp_ids);
+		v.push_back(temp_v);
+	}	
+	
+	if (solver_type == 4) {
+		
+		std::string line;
+		std::ifstream in_file;
+		in_file.open("vacancies.dat");
+		if (in_file.is_open())
+		{
+			while ( getline(in_file,line) ) {
 				
+				std::vector<int> temp_v;
+				std::vector<int> temp_t;
+				
+				std::istringstream in_line(line);
+			
+				std::string in_string;
+				
+				while ( getline(in_line, in_string, '=') )	{
+					
+					if (in_string == "JOB"){
+					
+						std::string v_line;
+						std::string t_line;
+						
+						getline(in_file,v_line);
+						getline(in_file,t_line);
+						
+						std::istringstream in_v_line(v_line);
+						std::istringstream in_t_line(t_line);
+						
+						while ( getline(in_v_line, in_string, ',') )	{
+							temp_v.push_back(atoi(in_string.c_str()) - 1);
+						}
+						while ( getline(in_t_line, in_string, ',') )	{
+							temp_t.push_back(atoi(in_string.c_str()) - 1);
+						}
+						
+						v.push_back(temp_v);
+						t.push_back(temp_t);
+						
+					}
+					
+				}
 			}
 		}
 	}
@@ -195,24 +271,28 @@ void Locality::constructGeom(){
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();
 		
-		// Get Vacancies if solver_type == 3 or 4
-		
+		// These are Twist or Strain solver types, so we only need to get targets
 		if (solver_type == 1 || solver_type == 2 || solver_type == 5){
 			target_indices = h.getTargetList(opts);
 		}
 		
-		// no vacancies added...
+		
+		// MLMC of vacancy defects, loads vacancies in job creation loop later
 		if (solver_type == 3){
+		
+			// Old code, no longer needed as all vacancy loading in rootChebSolve() now
+			/*
 			target_indices = h.getTargetList(opts);
 			std::vector<int> temp_v_work;
 			temp_v_work.push_back(-1);
 			v_work.push_back(temp_v_work);
             //v_work = h.getVacancyList(center_index[0],nShifts);
+			*/
 		}
 		
 		// load vacancies from file
 		if (solver_type == 4){
-			getVacanciesFromFile(v_work, target_indices);
+			getVacanciesFromFile(v_work, target_indices, opts);
 		}
 		
 		
@@ -602,7 +682,56 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		
 		// Vacancy solvers
 		
-		if (solver_type == 3 || solver_type == 4){
+		// With MLMC
+		
+		if (solver_type == 3){
+		
+			std::vector< std::vector<int> > mlmc_vacs;
+			std::vector< std::vector<int> > mlmc_ids;
+
+			getVacanciesFromFile(mlmc_vacs, mlmc_ids, opts);
+			
+			maxJobs = (int)mlmc_vacs.size();
+			
+			for (int i = 0; i < maxJobs; ++i){
+			
+				Mpi_job_params tempJob;
+				
+				// get jobID and clusterID
+				
+				
+				
+				// no shifts
+				double shifts[num_sheets*3];
+
+				for(int s = 0; s < num_sheets ; ++s){
+					shifts[s*3 + 0] = 0;
+					shifts[s*3 + 1] = 0;
+					shifts[s*3 + 2] = 0;
+				}
+
+				int n_vac = (int)mlmc_vacs[i].size();
+				int vacancies[n_vac];
+				
+				for (int v = 0; v < n_vac; ++v){
+					vacancies[v] = mlmc_vacs[i][v];
+				}
+				
+				tempJob.loadLocParams(opts);
+				tempJob.setParam("shifts",shifts,num_sheets,3);
+				//tempJob.setParam("target_list",targets,n_targets);
+				tempJob.setParam("vacancy_list",vacancies,n_vac);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				jobArray.push_back(tempJob);				
+			
+			}
+		
+		}
+		
+		// Without MLMC
+		
+		if (solver_type == 4){
 		
 			maxJobs = (int)v_work.size();
 			
@@ -2906,7 +3035,6 @@ void Locality::computeEigen(double* eigvals, DMatrix &eigvecs, DMatrix &M_xx, DM
 	
 }
 
-
 void Locality::computeEigenComplex(std::complex<double>* eigvals, std::complex<double>* eigvecs, std::complex<double>*j_x, std::complex<double>* j_y, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	
@@ -3043,6 +3171,17 @@ double Locality::crossProd(std::vector<double> x, std::vector<double> y, int dim
 		return 0;
 	}
 
+}
+
+void Locality::writeBufferToFile(double* buff, int length, std::string file){
+	// Writes a buffer of doubles to a file in binary
+	
+	// Need ios library, and some other bugs left to be sorted out
+	/*
+	std::ofstream fout(file, ios::out | ios::binary);
+	fout.write(buff, length*sizeof(double));
+	fout.close();
+	*/
 }
 
 void Locality::save(){

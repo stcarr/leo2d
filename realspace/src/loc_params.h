@@ -32,6 +32,12 @@ class Loc_params {
 		int magOn;
 		int elecOn;
 		
+		int mlmc;
+		int mlmc_max_level;
+		int mlmc_level;
+		int mlmc_num_clusters;
+		int mlmc_cluster_size;
+		
 		double energy_rescale;
 		double energy_shift;
 		double B;

@@ -339,6 +339,38 @@ int main(int argc, char** argv) {
 					opts.setParam("d_cond",atoi(in_string.c_str()));
 				}
 				
+				
+				// MLMC parameters
+				
+				if (in_string == "MLMC"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc",atoi(in_string.c_str()));
+				}				
+				
+				if (in_string == "MLMC_MAX_LEVEL"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc_max_level",atoi(in_string.c_str()));
+				}				
+				if (in_string == "MLMC_LEVEL"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc_level",atoi(in_string.c_str()));
+				}				
+				if (in_string == "MLMC_NUM_CLUSTERS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc_num_clusters",atoi(in_string.c_str()));
+				}				
+				if (in_string == "MLMC_CLUSTER_SIZE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc_cluster_size",atoi(in_string.c_str()));
+				}
+				
+				// E,B field parameters
+				
 				if (in_string == "USE_B_FIELD"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

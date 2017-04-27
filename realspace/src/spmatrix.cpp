@@ -417,6 +417,16 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double 
 		val_C = C.getValPtr();
 	}
 
+	/*
+	
+	// DO NOT USE mkl_dcsrmm HERE
+	// If one uses 0-based indexing (i.e. matdescra[4] == 'C', i.e. C,C++) then the dense matrix MUST be in row major order
+	// For column-major order dense matrices, one must use 1-based indexing (matdescra[4] == 'F', i.e. Fortran)
+	//
+	// We want to do lots of dense x dense matrix multiplication, but only one sparse x dense matrix multiplication
+	// Unfortunately, I think this means we just ignore the MKL package for this method -Stephen
+	
+	
 	#ifdef USE_MKL
 		char mm_type = 'N';
 		char matdescra[6] = {'G',' ',' ','C',' ',' '};
@@ -440,8 +450,9 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double 
 			&nrows_C		// leading dimension of C (different if this is a submatrix problem)
 			);
 	#else
+	*/
 		for (int r = 0; r < nrows_A; ++r){
-			for (int c = 0; c < ncols_B; ++ c){
+			for (int c = 0; c < ncols_B; ++c){
 		
 				double temp_sum = 0.0;
 				
@@ -455,7 +466,8 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double 
 				val_C[c*nrows_C + r] = alpha*temp_sum + beta*val_C[c*nrows_C + r];
 			}
 		}
-	#endif
+
+	// #endif
 
 }
 

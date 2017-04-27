@@ -45,6 +45,9 @@ Mpi_job_params::Mpi_job_params() {
 	d_vecs = 0;
 	d_cond = 0;
 	
+	mlmc = 0;
+	clusterID = -1;
+	
 	poly_order = 20;
 	
 	magOn = 0;
@@ -70,6 +73,9 @@ Mpi_job_params::Mpi_job_params(const Mpi_job_params& orig){
 		d_weights = orig.getInt("d_weights");
 		d_vecs = orig.getInt("d_vecs");
 		d_cond = orig.getInt("d_cond");		
+		
+		mlmc = orig.getInt("mlmc");
+		clusterID = orig.getInt("clusterID");
 		
 		num_target_sheets = orig.getInt("num_target_sheets");
 		poly_order = orig.getInt("poly_order");
@@ -109,6 +115,8 @@ void Mpi_job_params::loadLocParams(Loc_params opts){
 	d_weights = opts.getInt("d_weights");
 	d_vecs = opts.getInt("d_vecs");
 	d_cond = opts.getInt("d_cond");	
+	
+	mlmc = opts.getInt("mlmc");
 	
 	num_target_sheets = opts.getInt("num_target_sheets");
 	target_sheets = new int[num_target_sheets];
@@ -153,6 +161,11 @@ void Mpi_job_params::setParam(std::string tag, int val){
 		magOn = val;
 	if (tag == "elecOn")
 		elecOn = val;
+	if (tag == "mlmc")
+		mlmc = val;
+	if (tag == "clusterID")
+		clusterID = val;
+
 }
 
 void Mpi_job_params::setParam(std::string tag, double val){
@@ -261,6 +274,10 @@ int Mpi_job_params::getInt(std::string tag) const{
 		return num_targets;
 	if (tag == "num_vacancies")
 		return num_vacancies;
+	if (tag == "mlmc")
+		return mlmc;
+	if (tag == "clusterID")
+		return clusterID;
 		
 	printf("WARNING: Mpi_job_params variable <%s> not found. \n", tag.c_str());
 }
@@ -336,38 +353,78 @@ void Mpi_job_params::printCheb(std::ofstream& outFile){
 
 	outFile << "JOBID = " << jobID << " \n";
 	
-	outFile << "SHEET: SHIFT_X, SHIFT_Y, SHIFT_Z \n";
-	for (int s = 0; s < num_sheets; ++s){
-		outFile << s+1 << "    : ";
-		outFile << shifts[s*3 + 0] << ", ";
-		outFile << shifts[s*3 + 1] << ", ";
-		outFile << shifts[s*3 + 2] << " \n";
-	}
+	if (solver_type == 1|| solver_type == 2) {
 	
-	outFile << "NUM_TAR = " << num_targets << "\n";
-	if (num_targets != 0){
-		outFile << "TAR_LIST: ";
-		for (int t = 0; t < num_targets-1; ++t){
-			outFile << target_list[t] << ", ";
+		outFile << "SHEET: SHIFT_X, SHIFT_Y, SHIFT_Z \n";
+		for (int s = 0; s < num_sheets; ++s){
+			outFile << s+1 << "    : ";
+			outFile << shifts[s*3 + 0] << ", ";
+			outFile << shifts[s*3 + 1] << ", ";
+			outFile << shifts[s*3 + 2] << " \n";
 		}
-		outFile << target_list[num_targets - 1] << " \n";
-	} else {
-		outFile << "NO_TAR \n";
+	
 	}
 	
-	outFile << "NUM_VAC = " << num_vacancies << "\n";
-	if (vacancy_list[0] != -1){
-		outFile << "VAC_LIST: ";
-		for (int v = 0; v < num_vacancies-1; ++v){
-			outFile << vacancy_list[v] << ", ";
+	if (solver_type == 3) {
+	
+	outFile << "CLUSTERID = " << clusterID << " \n";
+	
+		/*
+		outFile << "NUM_TAR = " << num_targets << "\n";
+		if (num_targets != 0){
+			outFile << "TAR_LIST: ";
+			for (int t = 0; t < num_targets-1; ++t){
+				outFile << target_list[t] << ", ";
+			}
+			outFile << target_list[num_targets - 1] << " \n";
+		} else {
+			outFile << "NO_TAR \n";
 		}
-		outFile << vacancy_list[num_vacancies - 1] << " \n";
-	} else {
-		outFile << "NO_VAC \n";
+		*/
+		
+		outFile << "NUM_VAC = " << num_vacancies << "\n";
+		if (vacancy_list[0] != -1){
+			outFile << "VAC_LIST: ";
+			for (int v = 0; v < num_vacancies-1; ++v){
+				outFile << vacancy_list[v] << ", ";
+			}
+			outFile << vacancy_list[num_vacancies - 1] << " \n";
+		} else {
+			outFile << "NO_VAC \n";
+		}
+		
 	}
 	
-	outFile << "MAG_ON  = " << magOn  << ", B = " << B << " \n";
-	outFile << "ELEC_ON = " << elecOn << ", E = " << E << " \n";
+	if (solver_type == 4) {
+	
+		outFile << "NUM_TAR = " << num_targets << "\n";
+		if (num_targets != 0){
+			outFile << "TAR_LIST: ";
+			for (int t = 0; t < num_targets-1; ++t){
+				outFile << target_list[t] << ", ";
+			}
+			outFile << target_list[num_targets - 1] << " \n";
+		} else {
+			outFile << "NO_TAR \n";
+		}
+		
+		outFile << "NUM_VAC = " << num_vacancies << "\n";
+		if (vacancy_list[0] != -1){
+			outFile << "VAC_LIST: ";
+			for (int v = 0; v < num_vacancies-1; ++v){
+				outFile << vacancy_list[v] << ", ";
+			}
+			outFile << vacancy_list[num_vacancies - 1] << " \n";
+		} else {
+			outFile << "NO_VAC \n";
+		}
+		
+	}
+	
+	if (magOn == 1 || elecOn == 1) {
+		outFile << "MAG_ON  = " << magOn  << ", B = " << B << " \n";
+		outFile << "ELEC_ON = " << elecOn << ", E = " << E << " \n";
+	}
 	
 	
 }
@@ -385,6 +442,9 @@ void Mpi_job_params::sendParams(int target, int tag){
 			sendInt(d_weights,target,tag);
 			sendInt(d_vecs,target,tag);
 			sendInt(d_cond,target,tag);
+			
+			sendInt(mlmc,target,tag);
+			sendInt(clusterID,target,tag);
 
 			sendInt(jobID,target,tag);
 			sendInt(max_jobs,target,tag);
@@ -425,6 +485,9 @@ void Mpi_job_params::recvParams(int from){
 			recvInt(from,"d_weights");
 			recvInt(from,"d_vecs");
 			recvInt(from,"d_cond");
+			
+			recvInt(from,"mlmc");
+			recvInt(from,"clusterID");
 		
 			recvInt(from,"jobID");
 			recvInt(from,"max_jobs");

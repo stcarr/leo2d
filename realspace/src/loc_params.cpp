@@ -33,11 +33,17 @@ Loc_params::Loc_params() {
 		magOn = 0;
 		elecOn = 0;
 		
-		energy_rescale = 20;
-		energy_shift = 0;
-		B = 0;
-		E = 0;
-		vacancy_chance = 0;
+		mlmc = 0;
+		mlmc_max_level = 1;
+		mlmc_level = 0;
+		mlmc_num_clusters = 0;
+		mlmc_cluster_size = 4;
+		
+		energy_rescale = 20.0;
+		energy_shift = 0.0;
+		B = 0.0;
+		E = 0.0;
+		vacancy_chance = 0.0;
 		
 		int* shift_sheets;
 		
@@ -65,6 +71,12 @@ Loc_params::Loc_params(const Loc_params& orig){
 		poly_order = orig.getInt("poly_order");
 		magOn = orig.getInt("magOn");
 		elecOn = orig.getInt("elecOn");
+		
+		mlmc = orig.getInt("mlmc");
+		mlmc_max_level = orig.getInt("mlmc_max_level");
+		mlmc_level = orig.getInt("mlmc_level");
+		mlmc_num_clusters = orig.getInt("mlmc_num_clusters");
+		mlmc_cluster_size = orig.getInt("mlmc_cluster_size");
 		
 		energy_rescale = orig.getDouble("energy_rescale");
 		energy_shift = orig.getDouble("energy_shift");
@@ -123,6 +135,16 @@ void Loc_params::setParam(std::string tag, int val){
 		magOn = val;
 	if (tag == "elecOn")
 		elecOn = val;
+	if (tag == "mlmc")
+		mlmc = val;
+	if (tag == "mlmc_max_level")
+		mlmc_max_level = val;		
+	if (tag == "mlmc_level")
+		mlmc_level = val;
+	if (tag == "mlmc_num_clusters")
+		mlmc_num_clusters = val;
+	if (tag == "mlmc_cluster_size")
+		mlmc_cluster_size = val;
 		
 }
 
@@ -202,6 +224,16 @@ int Loc_params::getInt(std::string tag) const{
 		return magOn;
 	if (tag == "elecOn")
 		return elecOn;
+	if (tag == "mlmc")
+		return mlmc;
+	if (tag == "mlmc_max_level")
+		return mlmc_max_level ;		
+	if (tag == "mlmc_level")
+		return mlmc_level;
+	if (tag == "mlmc_num_clusters")
+		return mlmc_num_clusters;
+	if (tag == "mlmc_cluster_size")
+		return mlmc_cluster_size;
 
 }
 
