@@ -78,9 +78,9 @@ void Locality::setup(Loc_params opts_in){
 	*/
 }
 
-void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Loc_params opts){
+void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Loc_params opts_in){
 	
-	int solver_type = opts.getInt("solver_type");
+	int solver_type = opts_in.getInt("solver_type");
 	
 	// MLMC method
 	if (solver_type == 3){
@@ -1788,6 +1788,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 }
 
 void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+
+	int intra_searchsize = opts.getInt("intra_searchsize");
 	
 	int solver_type = jobIn.getInt("solver_type");
 	int diagonalize = jobIn.getInt("diagonalize");
@@ -1908,22 +1910,93 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
 				// Otherwise we enter the value just with rescaling
 				}
-				else
+				else {
 					t = intra_pairs_t[intra_counter]/energy_rescale;
+				}
+
+				double new_pos_shift_x = 0.0;
+				double new_pos_shift_y = 0.0;
+				
+				int boundary_condition = sdata[index_to_grid[k_i*4 + 3]].boundary_condition;
+
+				if (boundary_condition == 1){
+					
+					int s = index_to_grid[k_i*4 + 3];
+					
+					std::vector<std::vector<double> > uc = sdata[s].a;
+					std::vector<int> max_shape = sdata[s].max_shape;
+					std::vector<int> min_shape = sdata[s].min_shape;
+					
+					int i_stride = max_shape[0] - min_shape[0];
+					int j_stride = max_shape[1] - min_shape[1];
+				
+					int grid_i = index_to_grid[k_i*4 + 0]; 
+					int grid_j = index_to_grid[k_i*4 + 1];
+					
+					int new_grid_i = index_to_grid[new_k*4 + 0];
+					int new_grid_j = index_to_grid[new_k*4 + 1];
+					
+					/*
+					printf("iss = %d, i_stride = %d, y_stride = %d \n", intra_searchsize, i_stride, j_stride);
+					printf("uc_i = [%lf, %lf] \n",uc[0][0], uc[1][0]);
+					printf("uc_j = [%lf, %lf] \n",uc[0][1], uc[1][1]);
+					printf("[%d, %d] -> [%d, %d] \n",grid_i,grid_j, new_grid_i,new_grid_j);
+					*/
+					
+					if (grid_i - new_grid_i > intra_searchsize){
+					
+						new_pos_shift_x = new_pos_shift_x + i_stride*uc[0][0];
+						new_pos_shift_y = new_pos_shift_y + i_stride*uc[1][0];
+					
+					}
+					
+					if (new_grid_i - grid_i > intra_searchsize){
+					
+						new_pos_shift_x = new_pos_shift_x - i_stride*uc[0][0];
+						new_pos_shift_y = new_pos_shift_y - i_stride*uc[1][0];
+					
+					}
+					
+					if (grid_j - new_grid_j > intra_searchsize){
+					
+						new_pos_shift_x = new_pos_shift_x + j_stride*uc[0][1];
+						new_pos_shift_y = new_pos_shift_y + j_stride*uc[1][1];
+					
+					}
+					
+					if (new_grid_j - grid_j > intra_searchsize){
+					
+						new_pos_shift_x = new_pos_shift_x - j_stride*uc[0][1];
+						new_pos_shift_y = new_pos_shift_y - j_stride*uc[1][1];
+					
+					}
+					
+				}
 				
 				//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
 				
 				if (magOn == 0){
+				
+					// Debug for periodic wrapping conditions
+					
+					// /*
+					if (((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0]) > 10 || (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0]) < -10) && ((i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]) > 10 || (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]) < -10) ){
+						printf("t = %lf \n", t);
+						printf("old dr^2 = %lf \n", ((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*(i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])+(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])) );
+						printf("new dr^2 = %lf \n",((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)*(i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)+(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]- new_pos_shift_y)*(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]- new_pos_shift_y)));
+					}
+					// */
+				
 					v[input_counter] = t;
-					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t; // (delta_x)*t
-					v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*t; // (delta_y)*t
+					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)*t; // (delta_x)*t
+					v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1] - new_pos_shift_y)*t; // (delta_y)*t
 				}
 				else if (magOn == 1) {
 					
 					double x1 = i2pos[k_i*3 + 0];
 					double y1 = i2pos[k_i*3 + 1];
-					double x2 = i2pos[new_k*3 + 0];
-					double y2 = i2pos[new_k*3 + 1];
+					double x2 = i2pos[new_k*3 + 0] + new_pos_shift_x;
+					double y2 = i2pos[new_k*3 + 1] + new_pos_shift_y;
 					
 					double pPhase = peierlsPhase(x1, x2, y1, y2, B);
 					v_c[input_counter] = std::polar(t, pPhase);
