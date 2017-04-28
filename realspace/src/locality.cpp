@@ -1979,13 +1979,13 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				
 					// Debug for periodic wrapping conditions
 					
-					// /*
+					/*
 					if (((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0]) > 10 || (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0]) < -10) && ((i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]) > 10 || (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]) < -10) ){
 						printf("t = %lf \n", t);
 						printf("old dr^2 = %lf \n", ((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*(i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])+(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])) );
 						printf("new dr^2 = %lf \n",((i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)*(i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)+(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]- new_pos_shift_y)*(i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1]- new_pos_shift_y)));
 					}
-					// */
+					*/
 				
 					v[input_counter] = t;
 					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)*t; // (delta_x)*t
