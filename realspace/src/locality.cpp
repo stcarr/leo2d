@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <math.h>
+#include <unistd.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
@@ -107,16 +108,21 @@ void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vect
 					
 						// push back the previous job if this is not the first one
 						if (jobID != -1){
+							printf("jobID = %d, clusterID = %d \n",jobID,clusterID);
 							temp_ids.push_back(jobID);
 							temp_ids.push_back(clusterID);
 							t.push_back(temp_ids);
 							v.push_back(temp_v);
+							
+							temp_ids.clear();
+							temp_v.clear();
 						}
 					
 						// get jobID
 						getline(in_line,in_string,' ');
 						getline(in_line,in_string,' ');
 						jobID = atoi(in_string.c_str());
+						
 					}
 					
 					if (in_string == "CLUSTERID"){
@@ -693,13 +699,11 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 			maxJobs = (int)mlmc_vacs.size();
 			
+			printf("maxJobs = %d \n",maxJobs);
+			
 			for (int i = 0; i < maxJobs; ++i){
 			
 				Mpi_job_params tempJob;
-				
-				// get jobID and clusterID
-				
-				
 				
 				// no shifts
 				double shifts[num_sheets*3];
@@ -721,7 +725,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				tempJob.setParam("shifts",shifts,num_sheets,3);
 				//tempJob.setParam("target_list",targets,n_targets);
 				tempJob.setParam("vacancy_list",vacancies,n_vac);
-				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("jobID",mlmc_ids[i][0]);
+				tempJob.setParam("clusterID",mlmc_ids[i][1]);
 				tempJob.setParam("max_jobs",maxJobs);
 				jobArray.push_back(tempJob);				
 			
@@ -860,7 +865,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			for (int i = 0; i < maxJobs; ++i){
 			
 				//double x = (1.0/((double) maxJobs))*i;
-				double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/5;
+				double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(5*5);
 				
 				double shifts[num_sheets*3];
 				Mpi_job_params tempJob;
@@ -1072,90 +1077,199 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 			}
 		} else if (diagonalize == 1){
-			
-			int local_max_index = (int) result_array[job][0];
-			
-			// No matrix-like component in local_max_index
-			int a = 0;
-			// 1 Vector-like component in local_max_index (eigenvalues)
-			int b = 1;
-			// No matrix-like component in poly_order
-			int c = 0;
-			
-			// Printing eigenvalue weights (projected onto target orbitals)
-			if (d_weights == 1){
-				b = b + num_targets;
-			}
-			
-			// Printing eigenvectors (one Matrix-like component)
-			if (d_vecs == 1){
-				a = a + 1;
-			}
-			
-			// Printing M_xx current-current correlation (one Matrix-like components) 
-			if (d_cond == 1){
-				c = c + 1;
-			}
-
-			outFile << "EIGS: ";
-			for(int j = 0; j < local_max_index - 1; ++j){
-				outFile << result_array[job][1 + j] << ", ";
-			}
-			outFile << result_array[job][1 + local_max_index - 1] << "\n";
-			outFile << "\n";
-			
-			// Control for output printing
-			// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
-			
-			if (d_weights == 1){
-			
-				outFile << "WEIGHTS: \n";
-
-				for(int t = 0; t < num_targets; ++t){
-					outFile << target_list[t] << ": ";
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << result_array[job][1 + (t+1)*local_max_index + j] << ", ";
-					}
-					outFile << result_array[job][1 + (t+1)*local_max_index + local_max_index - 1] << "\n";
-				}	
+		
+			if (solver_type == 4){
 				
-				outFile << "\n";
-			
-			}
-			
-			if (d_vecs == 1){
-			
-			
-				outFile << "VECS: \n";
-				for(int j = 0; j < local_max_index; ++j){
-					for (int m = 0; m < local_max_index - 1; ++m){
-						outFile << result_array[job][1 + b*local_max_index + j*local_max_index + m] << ", ";
-					}
-					outFile << result_array[job][1 + b*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+				int local_max_index = (int) result_array[job][0];
+				
+				// No matrix-like component in local_max_index
+				int a = 0;
+				// 1 Vector-like component in local_max_index (eigenvalues)
+				int b = 1;
+				// No matrix-like component in poly_order
+				int c = 0;
+				
+				// Printing eigenvalue weights (projected onto target orbitals)
+				if (d_weights == 1){
+					b = b + num_targets;
 				}
 				
-				outFile << "\n";
-				
-				
-			}
-			
-			if (d_cond == 1){
-
-
-				outFile << "M_XX: \n";
-				for(int j = 0; j < poly_order; ++j){
-					for (int m = 0; m < poly_order - 1; ++m){
-						outFile << result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index + j*poly_order + m] << ", ";
-					}
-					outFile << result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index + j*poly_order + poly_order - 1] << "\n";
+				// Printing eigenvectors (one Matrix-like component)
+				if (d_vecs == 1){
+					a = a + 1;
 				}
 				
-				outFile << "\n";
-			
+				// Printing M_xx current-current correlation (one Matrix-like components) 
+				if (d_cond == 1){
+					c = c + 1;
+				}
 
-			
-			} 
-			
+				outFile << "EIGS: ";
+				for(int j = 0; j < local_max_index - 1; ++j){
+					outFile << result_array[job][1 + j] << ", ";
+				}
+				outFile << result_array[job][1 + local_max_index - 1] << "\n";
+				outFile << "\n";
+				
+				// Control for output printing
+				// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
+				
+				if (d_weights == 1){
+				
+					outFile << "WEIGHTS: \n";
+
+					for(int t = 0; t < num_targets; ++t){
+						outFile << target_list[t] << ": ";
+						for(int j = 0; j < local_max_index - 1; ++j){
+							outFile << result_array[job][1 + (t+1)*local_max_index + j] << ", ";
+						}
+						outFile << result_array[job][1 + (t+1)*local_max_index + local_max_index - 1] << "\n";
+					}	
+					
+					outFile << "\n";
+				
+				}
+				
+				if (d_vecs == 1){
+				
+				
+					outFile << "VECS: \n";
+					for(int j = 0; j < local_max_index; ++j){
+						for (int m = 0; m < local_max_index - 1; ++m){
+							outFile << result_array[job][1 + b*local_max_index + j*local_max_index + m] << ", ";
+						}
+						outFile << result_array[job][1 + b*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+					}
+					
+					outFile << "\n";
+					
+					
+				}
+				
+				if (d_cond == 1){
+				
+				// Use to write M_xx to a binary file, M_XX.dat
+				// writeBufferToFile(&result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index], poly_order*poly_order, std::string("M_XX.dat"));
+
+
+					outFile << "M_XX: \n";
+					for(int j = 0; j < poly_order; ++j){
+						for (int m = 0; m < poly_order - 1; ++m){
+							outFile << result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index + j*poly_order + m] << ", ";
+						}
+						outFile << result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index + j*poly_order + poly_order - 1] << "\n";
+					}
+					
+					outFile << "\n";
+					
+				}
+				
+			} else if (solver_type == 3) {
+				
+				int local_max_index = (int) result_array[job][0];
+				
+				// No matrix-like component in local_max_index
+				int a = 0;
+				// 1 Vector-like component in local_max_index (eigenvalues)
+				int b = 1;
+				// No matrix-like component in poly_order
+				int c = 0;
+				
+				// Printing eigenvalue weights (projected onto target orbitals)
+				if (d_weights == 1){
+					b = b + num_targets;
+				}
+				
+				// Printing eigenvectors (one Matrix-like component)
+				if (d_vecs == 1){
+					a = a + 1;
+				}
+				
+				// Printing M_xx current-current correlation (one Matrix-like components) 
+				if (d_cond == 1){
+					c = c + 1;
+				}
+
+				outFile << "EIGS: ";
+				for(int j = 0; j < local_max_index - 1; ++j){
+					outFile << result_array[job][1 + j] << ", ";
+				}
+				outFile << result_array[job][1 + local_max_index - 1] << "\n";
+				outFile << "\n";
+				
+				// Control for output printing
+				// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
+				
+				if (d_weights == 1){
+				
+					outFile << "WEIGHTS: \n";
+
+					for(int t = 0; t < num_targets; ++t){
+						outFile << target_list[t] << ": ";
+						for(int j = 0; j < local_max_index - 1; ++j){
+							outFile << result_array[job][1 + (t+1)*local_max_index + j] << ", ";
+						}
+						outFile << result_array[job][1 + (t+1)*local_max_index + local_max_index - 1] << "\n";
+					}	
+					
+					outFile << "\n";
+				
+				}
+				
+				if (d_vecs == 1){
+				
+				
+					outFile << "VECS: \n";
+					for(int j = 0; j < local_max_index; ++j){
+						for (int m = 0; m < local_max_index - 1; ++m){
+							outFile << result_array[job][1 + b*local_max_index + j*local_max_index + m] << ", ";
+						}
+						outFile << result_array[job][1 + b*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
+					}
+					
+					outFile << "\n";
+					
+					
+				}
+				
+				if (d_cond == 1){
+					
+					// Use to write M_xx to a binary file, M_XX_J<jobID>.dat
+					
+					int jobID = jobArray[job].getInt("jobID");
+					
+					std::string cwd = get_current_dir_name();
+					
+					system("mkdir temp");
+					
+					
+					std::string M_xx_filename;
+					M_xx_filename.append(cwd);
+					M_xx_filename.append( "/temp/");
+					
+					if (jobID > 99){
+						M_xx_filename.append("M_XX_J");
+					} else if (jobID > 9){
+						M_xx_filename.append("M_XX_J0");
+					} else {
+						M_xx_filename.append("M_XX_J00");
+					}
+					
+					std::ostringstream temp_ss;
+					
+					temp_ss << jobID;
+					M_xx_filename.append(temp_ss.str());
+					M_xx_filename.append(".bin");
+					
+					// Debugging output
+					//printf(M_xx_filename.c_str());
+					//printf("\n");
+					
+					writeBufferToFile(&result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index], poly_order*poly_order, M_xx_filename);
+					
+				}
+		
+			} 	
 		}
 	}
 	
@@ -1752,14 +1866,12 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		}
 	} else if (solver_space == 1){
 	
-		// Here we define Lattice 1 as " A = q + K "
-		// and we define Lattice 2 as " B = q - K' "
-		// This is done to take care of the the fact that the code looks for K - K' close to zero for inter-pairs (inherited from real space)
-		// but in Momentum space the pairs that are "close" should K + K' close to zero!
-		// However the monolayer bloch states depend on the sign of K, so we need to make this substitution so the monolayer terms are correct
+		// Here we define new positions as " A = q + K "
 		
 		std::vector< std::vector<double> > b1 = getReciprocal(sdata[0].a);
 		
+		
+		// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 		b1[1][0] = -b1[1][0];
 		
 		printf("b = [%lf %lf ; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
@@ -2422,7 +2534,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 		
 			int skip_here2 = 0;
 		
-			// if the first index of intra_pairs changes, we stop
+			// if the first index of inter_pairs changes, we stop
 			if (inter_pairs[inter_counter*2 + 0] != k_i) {
 				same_index2 = false;
 				continue; // go to "while(same_index2)" which will end this loop
@@ -2467,7 +2579,6 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 				
 				
 				// Momentum-space Interlayer coupling is evaluated at k = k2 + k1 - q
-				// This is because we defined k1 = q + K orig, and k2 = q - K' original, and THAT was done because we did not want to change the code for inter-pairs in hstruct
 				
 				double dx = x2 + x1 - shift_x;
 				double dy = y2 + y1 - shift_y;
@@ -3250,11 +3361,11 @@ void Locality::writeBufferToFile(double* buff, int length, std::string file){
 	// Writes a buffer of doubles to a file in binary
 	
 	// Need ios library, and some other bugs left to be sorted out
-	/*
-	std::ofstream fout(file, ios::out | ios::binary);
-	fout.write(buff, length*sizeof(double));
+	// /*
+	std::ofstream fout(file.c_str(), std::ios::binary);
+	fout.write(reinterpret_cast<char*>(buff), std::streamsize(sizeof(double)*length));
 	fout.close();
-	*/
+	// */
 }
 
 void Locality::save(){

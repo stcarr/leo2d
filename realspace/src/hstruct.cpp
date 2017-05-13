@@ -695,6 +695,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 			
 			int mat1 = sheets[0].getMat();
 			int mat2 = sheets[1].getMat();
+			
 			double z1 = heights[0];
 			double z2 = heights[1];
 			
@@ -703,7 +704,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 			double o1_shift_z = sheets[0].getOrbPos(o1,2);
 			double o2_shift_x = sheets[1].getOrbPos(o2,0);
 			double o2_shift_y = sheets[1].getOrbPos(o2,1); 
-			double o2_shift_z = sheets[0].getOrbPos(o2,2);
+			double o2_shift_z = sheets[1].getOrbPos(o2,2);
 			
 			double x_pos,y_pos;
 			int x_size = n_x*(2*L_x)+2;
@@ -738,7 +739,27 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 				}
 			}
 			
+			// !!! START DEBUG !!!
+			// Debug on the "in" matrix
+			/*
+			
+			// consider [0,1] off-diagonal term (was causing issues).
+			if (o1 == 0 && o2 == 1){
+				std::ofstream fout_debug("interlayer_input_1_to_2.dat");
+				for (int i = 0; i < x_size; i++){
+					for (int j = 0; j < y_size; j++){
+						fout_debug << in[j + i*y_size] << " ";
+					}
+					fout_debug << std::endl;
+				}
+				fout_debug.close();
+			}
+			
+			*/
+			// !!! END DEBUG !!!
+			
 			fftw_execute(p);
+			
 
 			double rescale = n_x*n_y;
 			

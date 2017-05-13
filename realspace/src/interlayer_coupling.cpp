@@ -152,16 +152,34 @@ double Interlayer_coupling::interp_fft(double x_input, double y_input, int o1, i
 	double x = x_input*L_x/M_PI+x_s;
 	double y = y_input*L_y/M_PI;
 	
-	if (y < 0)
-		y = -y; // we use the y-symmetry in a FFT of purely real input data
-	if (x < 0 || x > 2*x_s - 1 || y > y_s - 1) // here we do "- 1" to prevent wrap-around errors (i.e. interpolating at [2*x_s,y] would sample [0,y+1] for right-hand points!!
-		return 0;
+	// Keep track of odd/even nature of discrete FT symmetry
+	double sign = 1;
+	
+	if (y < 0){
 		
+		y = -y; // we use the y-symmetry in a FFT of purely real input data
+		
+		if (x >= 1){
+			x =  2*x_s - x; // also need to flip the x-axis about its center (the first x row stays the same though)!
+		}
+		
+		if (entry == 1){
+			sign = -1; // complex part is odd, real part is even
+		}
+		
+		
+	}
+	
+	if (x < 0 || x > 2*x_s - 1 || y > y_s - 1){ // here we do "- 1" to prevent wrap-around errors (i.e. interpolating at [2*x_s,y] would sample [0,y+1] for right-hand points!!
+		return 0;
+	}
+	
 	int x_int = int(x);
 	int y_int = int(y);
 
 	double value = interp_4point(x-x_int,y-y_int, data[y_int + x_int*y_s][entry], data[y_int + (x_int+1)*y_s][entry], data[y_int+1 + x_int*y_s][entry],data[y_int+1+(x_int+1)*y_s][entry]);
-	return value;
+	
+	return sign*value;
 
 }
 

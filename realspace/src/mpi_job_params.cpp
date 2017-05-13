@@ -362,6 +362,17 @@ void Mpi_job_params::printCheb(std::ofstream& outFile){
 			outFile << shifts[s*3 + 1] << ", ";
 			outFile << shifts[s*3 + 2] << " \n";
 		}
+		
+		outFile << "NUM_TAR = " << num_targets << "\n";
+		if (num_targets != 0){
+			outFile << "TAR_LIST: ";
+			for (int t = 0; t < num_targets-1; ++t){
+				outFile << target_list[t] << ", ";
+			}
+			outFile << target_list[num_targets - 1] << " \n";
+		} else {
+			outFile << "NO_TAR \n";
+		}
 	
 	}
 	

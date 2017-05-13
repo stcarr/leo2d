@@ -273,7 +273,7 @@ int main(int argc, char** argv) {
 						opts.setParam("solver_type",1);
 					} else if (in_string == "LC"){
 						opts.setParam("solver_type",2);
-					} else if (in_string == "VD_CENTER"){
+					} else if (in_string == "MLMC_VAC"){
 						opts.setParam("solver_type",3);
 					} else if (in_string == "VD_FILE"){
 						opts.setParam("solver_type",4);
