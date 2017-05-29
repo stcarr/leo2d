@@ -46,7 +46,10 @@ Mpi_job_params::Mpi_job_params() {
 	d_cond = 0;
 	
 	mlmc = 0;
-	clusterID = -1;
+	mlmc_clusterID = -1;
+	mlmc_level = 1;
+	mlmc_num_clusters = 0;
+	mlmc_cluster_size = 4;	
 	
 	poly_order = 20;
 	
@@ -75,7 +78,11 @@ Mpi_job_params::Mpi_job_params(const Mpi_job_params& orig){
 		d_cond = orig.getInt("d_cond");		
 		
 		mlmc = orig.getInt("mlmc");
-		clusterID = orig.getInt("clusterID");
+		mlmc_clusterID = orig.getInt("mlmc_clusterID");
+		mlmc_level = orig.getInt("mlmc_level");
+		mlmc_num_clusters = orig.getInt("mlmc_num_clusters");
+		mlmc_cluster_size = orig.getInt("mlmc_cluster_size");	
+
 		
 		num_target_sheets = orig.getInt("num_target_sheets");
 		poly_order = orig.getInt("poly_order");
@@ -117,6 +124,9 @@ void Mpi_job_params::loadLocParams(Loc_params opts){
 	d_cond = opts.getInt("d_cond");	
 	
 	mlmc = opts.getInt("mlmc");
+	mlmc_level = opts.getInt("mlmc_level");
+	mlmc_num_clusters = opts.getInt("mlmc_num_clusters");
+	mlmc_cluster_size = opts.getInt("mlmc_cluster_size");	
 	
 	num_target_sheets = opts.getInt("num_target_sheets");
 	target_sheets = new int[num_target_sheets];
@@ -163,8 +173,14 @@ void Mpi_job_params::setParam(std::string tag, int val){
 		elecOn = val;
 	if (tag == "mlmc")
 		mlmc = val;
-	if (tag == "clusterID")
-		clusterID = val;
+	if (tag == "mlmc_clusterID")
+		mlmc_clusterID = val;
+	if (tag == "mlmc_level")
+		mlmc_level = val;
+	if (tag == "mlmc_num_clusters")
+		mlmc_num_clusters = val;
+	if (tag == "mlmc_cluster_size")
+		mlmc_cluster_size = val;	
 
 }
 
@@ -276,8 +292,14 @@ int Mpi_job_params::getInt(std::string tag) const{
 		return num_vacancies;
 	if (tag == "mlmc")
 		return mlmc;
-	if (tag == "clusterID")
-		return clusterID;
+	if (tag == "mlmc_clusterID")
+		return mlmc_clusterID;
+	if (tag == "mlmc_level")
+		return mlmc_level;
+	if (tag == "mlmc_num_clusters")
+		return mlmc_num_clusters;
+	if (tag == "mlmc_cluster_size")
+		return mlmc_cluster_size;	
 		
 	printf("WARNING: Mpi_job_params variable <%s> not found. \n", tag.c_str());
 }
@@ -378,7 +400,7 @@ void Mpi_job_params::printCheb(std::ofstream& outFile){
 	
 	if (solver_type == 3) {
 	
-	outFile << "CLUSTERID = " << clusterID << " \n";
+	outFile << "CLUSTERID = " << mlmc_clusterID << " \n";
 	
 		/*
 		outFile << "NUM_TAR = " << num_targets << "\n";
@@ -455,8 +477,11 @@ void Mpi_job_params::sendParams(int target, int tag){
 			sendInt(d_cond,target,tag);
 			
 			sendInt(mlmc,target,tag);
-			sendInt(clusterID,target,tag);
-
+			sendInt(mlmc_clusterID,target,tag);
+			sendInt(mlmc_level,target,tag);
+			sendInt(mlmc_num_clusters,target,tag);
+			sendInt(mlmc_cluster_size,target,tag);
+		
 			sendInt(jobID,target,tag);
 			sendInt(max_jobs,target,tag);
 		
@@ -498,8 +523,11 @@ void Mpi_job_params::recvParams(int from){
 			recvInt(from,"d_cond");
 			
 			recvInt(from,"mlmc");
-			recvInt(from,"clusterID");
-		
+			recvInt(from,"mlmc_clusterID");
+			recvInt(from,"mlmc_level");
+			recvInt(from,"mlmc_num_clusters");
+			recvInt(from,"mlmc_cluster_size");
+			
 			recvInt(from,"jobID");
 			recvInt(from,"max_jobs");
 

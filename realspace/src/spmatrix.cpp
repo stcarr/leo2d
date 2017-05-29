@@ -284,6 +284,8 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 			printf("vec_out[%d] = %lf \n",i,vec_out[i]);		
 		*/
 	#elif USE_ESSL
+		// !! STILL BUGGED !!
+		// ESSL is annoying and only used at ALCF so this development is paused for now
 					
 		double orig_vec[nrows];
 		for (int i = 0; i < nrows; ++i){
@@ -419,7 +421,7 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double 
 
 	/*
 	
-	// DO NOT USE mkl_dcsrmm HERE
+	// !! DO NOT USE mkl_dcsrmm HERE !!
 	// If one uses 0-based indexing (i.e. matdescra[4] == 'C', i.e. C,C++) then the dense matrix MUST be in row major order
 	// For column-major order dense matrices, one must use 1-based indexing (matdescra[4] == 'F', i.e. Fortran)
 	//

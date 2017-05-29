@@ -1,22 +1,25 @@
 /* 
- * File:   mpi_job_params.h
+ * File:   mpi_job_results.h
  * Author: Stephen
  * 
- * Created on September 15, 2016, 2:52 PM
+ * Created on May 24, 2017, 1:53 PM
  */
 
-#ifndef MPI_JOB_PARAMS_H
-#define MPI_JOB_PARAMS_H
+#ifndef MPI_JOB_RESULTS_H
+#define MPI_JOB_RESULTS_H
 
 #include "loc_params.h"
+#include "mpi_job_params.h"
 
 #include <string>
 #include <vector>
 #include <fstream>
 
-class Mpi_job_params {
+class Mpi_job_results {
     private:
 	
+		// job variables (same as mpi_job_params)
+		
 		int jobID;
 		int max_jobs;
 	
@@ -55,14 +58,29 @@ class Mpi_job_params {
 		
 		int num_vacancies;
 		int* vacancy_list;
+		
 	
 	public:
 	
-        Mpi_job_params();
-        Mpi_job_params(const Mpi_job_params& orig);
-        ~Mpi_job_params();
+		// Result variables
+		
+		std::vector< std::vector<double> > cheb_coeffs;
+		std::vector<double> eigenvalues;
+		std::vector< std::vector<double> > eigenweights;
+		std::vector< std::vector<double> > eigenvectors;
+		std::vector< std::vector<double> > M_xx;
+		std::vector< std::vector<double> > M_xy;
+		std::vector< std::vector<double> > M_yy;
+		
+        Mpi_job_results();
+        Mpi_job_results(const Mpi_job_results& orig);
+        ~Mpi_job_results();
 		
 		void loadLocParams(Loc_params opts);
+		void loadJobParams(Mpi_job_params opts);
+		
+		void saveResult(std::string, std::vector<double>);
+		void saveResult(std::string, std::vector< std::vector<double> >);
 		
         void setParam(std::string, int);
 		void setParam(std::string, double);
@@ -71,6 +89,9 @@ class Mpi_job_params {
 		void setParam(std::string, int*, int, int);
 		void setParam(std::string, double*, int, int);
 		
+		std::vector<double> getResultVec(std::string);
+		std::vector< std::vector<double> > getResultMat(std::string);
+		
 		int getInt(std::string) const;
 		double getDouble(std::string) const;
 		int* getIntVec(std::string) const;
@@ -78,10 +99,20 @@ class Mpi_job_params {
 		int* getIntMat(std::string) const;
 		double* getDoubleMat(std::string) const;
 		
+		void save(std::ofstream&);
 		void printParams();
-		void printCheb(std::ofstream&);
+		void printHeader(std::ofstream&);
 		
-		void sendParams(int, int);
+		void mlmc_load(std::string);
+		void mlmc_save(std::string);
+		void mlmc_average(Mpi_job_results);
+		void mlmc_variance(Mpi_job_results);
+		void mlmc_cluster_average(Mpi_job_results,Mpi_job_results);
+		void mlmc_cluster_variance(Mpi_job_results,Mpi_job_results);
+		
+		void conductivtyTransform();
+		
+		void send(int, int);
 		void sendInt(int, int, int);
 		void sendDouble(double, int, int);
 		void sendIntVec(int*, int, int, int);
@@ -89,13 +120,20 @@ class Mpi_job_params {
 		void sendIntMat(int*, int, int, int, int);
 		void sendDoubleMat(double*, int, int, int, int);
 		
-		void recvParams(int);
+		void CPP_sendDoubleVec(std::vector<double>, int, int);
+		void CPP_sendDoubleMat(std::vector< std::vector<double> >, int, int);		
+		
+		int recv_spool();
+		void recv(int);
 		void recvInt(int, std::string);
 		void recvDouble(int, std::string);
 		void recvIntVec(int, std::string);
 		void recvDoubleVec(int, std::string);
 		void recvIntMat(int, std::string);
 		void recvDoubleMat(int, std::string);
+		
+		void CPP_recvDoubleVec(int, std::string);
+		void CPP_recvDoubleMat(int, std::string);
 };
 
-#endif /* MPI_JOB_PARAMS_H */
+#endif /* MPI_JOB_RESULTS_H */

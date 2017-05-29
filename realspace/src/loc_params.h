@@ -37,6 +37,10 @@ class Loc_params {
 		int mlmc_level;
 		int mlmc_num_clusters;
 		int mlmc_cluster_size;
+		std::string mlmc_out_root;
+		std::string mlmc_temp_root;
+		
+		std::string vacancy_file;
 		
 		double energy_rescale;
 		double energy_shift;

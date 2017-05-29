@@ -38,6 +38,10 @@ Loc_params::Loc_params() {
 		mlmc_level = 0;
 		mlmc_num_clusters = 0;
 		mlmc_cluster_size = 4;
+		mlmc_out_root = "";
+		mlmc_temp_root = "";
+		
+		vacancy_file = "vacancies.dat";
 		
 		energy_rescale = 20.0;
 		energy_shift = 0.0;
@@ -77,6 +81,10 @@ Loc_params::Loc_params(const Loc_params& orig){
 		mlmc_level = orig.getInt("mlmc_level");
 		mlmc_num_clusters = orig.getInt("mlmc_num_clusters");
 		mlmc_cluster_size = orig.getInt("mlmc_cluster_size");
+		mlmc_out_root = orig.getString("mlmc_out_root");
+		mlmc_temp_root = orig.getString("mlmc_temp_root");
+		
+		vacancy_file = orig.getString("vacancy_file");
 		
 		energy_rescale = orig.getDouble("energy_rescale");
 		energy_shift = orig.getDouble("energy_shift");
@@ -178,7 +186,13 @@ void Loc_params::setParam(std::string tag, std::string val){
 	
 	if (tag == "job_name")
 		job_name = val;
-	
+	if (tag == "mlmc_out_root")
+		mlmc_out_root = val;
+	if (tag == "mlmc_temp_root")
+		mlmc_temp_root = val;
+	if (tag == "vacancy_file")
+		vacancy_file = val;
+
 }
 
 void Loc_params::setParam(std::string tag, std::vector<int> val){
@@ -263,7 +277,13 @@ std::string Loc_params::getString(std::string tag) const{
 	
 	if (tag == "job_name")
 		return job_name;
-	
+	if (tag == "mlmc_out_root")
+		return mlmc_out_root;
+	if (tag == "mlmc_temp_root")
+		return mlmc_temp_root;
+	if (tag == "vacancy_file")
+		return vacancy_file;
+		
 }
 
 std::vector<int> Loc_params::getVecInt(std::string tag) const{
@@ -283,7 +303,7 @@ void Loc_params::printParams(){
 		else if (solver_type == 2)
 			printf(" | solver_type = LINECUT \n");
 		else if (solver_type == 3)
-			printf(" | solver_type = VACANCY DEFECTS ABOUT CENTER \n");
+			printf(" | solver_type = VACANCY DEFECTS WITH MLMC \n");
 		else if (solver_type == 4)
 			printf(" | solver_type = VACANDY DEFECTS FROM FILE \n");
 		else if (solver_type == 5)

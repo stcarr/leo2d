@@ -505,17 +505,6 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 
 	if (solver_space == 0) { 
 		for (int kh = 0; kh < max_index; ++kh){
-				
-			// Manually add the diagonal elements
-			/*
-			array_i.push_back(kh + start_index);
-			array_j.push_back(kh + start_index);
-			array_t.push_back(0);
-			*/
-			
-			//int searchsize = 10;
-			
-
 			
 			int i0 = index_array[kh][0];
 			int j0 = index_array[kh][1];

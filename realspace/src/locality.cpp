@@ -25,7 +25,7 @@
 	
 Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
-	// Set all of the run-specific options for matrix construction and paramters of the solver method used.
+	// Set all of the geometry options for matrix construction
 
 	job_name = "HSTRUCT_TEST";
 
@@ -44,7 +44,8 @@ Locality::~Locality() {
 }
 
 void Locality::setup(Loc_params opts_in){
-// Edits run-specific options for matrix constructions and parameters of the solver method (to edit settings from the constructor)
+	
+	// Controls run-specific parameters of the solver methods
 	
 	opts = opts_in;
 	job_name = opts.getString("job_name");
@@ -53,42 +54,19 @@ void Locality::setup(Loc_params opts_in){
 		opts.printParams();
 	}
 	
-	/*
-	nShifts = opts.getInt("nShifts");
-
-	// H construction and Chebyshev options
-	solver_type = opts.getInt("solver_type");
-    energy_rescale = opts.getDouble("energy_rescale");
-	energy_shift = opts.getDouble("energy_shift");
-	poly_order = opts.getInt("poly_order");
-	
-	// Magnetic field options
-	magOn = opts.getInt("magOn");
-	B = opts.getDouble("B");
-	
-	// Electric field options
-	elecOn = opts.getInt("elecOn");
-	E = opts.getDouble("E");
-	
-	// Vacancy options
-	vacancy_chance = opts.getDouble("vacancy_chance");
-	
-	// Local DOS targets
-	num_target_sheets = opts.getInt("num_target_sheets");
-	target_sheets = opts.getVecInt("target_sheets");
-	*/
 }
 
 void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Loc_params opts_in){
 	
 	int solver_type = opts_in.getInt("solver_type");
+	std::string vacancy_file = opts.getString("vacancy_file");
 	
 	// MLMC method
 	if (solver_type == 3){
 
 		std::string line;
 		std::ifstream in_file;
-		in_file.open("vacancies.dat");
+		in_file.open(vacancy_file.c_str());
 		
 		int jobID = -1;
 		int clusterID = -1;
@@ -108,7 +86,7 @@ void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vect
 					
 						// push back the previous job if this is not the first one
 						if (jobID != -1){
-							printf("jobID = %d, clusterID = %d \n",jobID,clusterID);
+							//printf("jobID = %d, clusterID = %d \n",jobID,clusterID);
 							temp_ids.push_back(jobID);
 							temp_ids.push_back(clusterID);
 							t.push_back(temp_ids);
@@ -346,7 +324,7 @@ void Locality::constructGeom(){
 		
 		if (solver_space == 1){
 			if (fft_from_file == 0){
-			
+				// Generate FFT of interlayer coupling for Momentum space
 				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 					int n_x = 20;
 					int n_y = 20;
@@ -368,8 +346,6 @@ void Locality::constructGeom(){
 				// !! also when putting data[o1][o2] into H, will need to multiply every interlayer term by sqrt(Area(RL_1)*Area(RL_2))
 				// !! Using real-space area: This term is ~ 4*pi^2/sqrt(Area1*Area2) ~ 7.4308 for tBLG
 		
-
-
 			} else {
 				printf("Warning: Not creating FFT file, assuming a *fft.dat file exists in current directory. \n");
 			}
@@ -610,6 +586,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	int d_vecs = opts.getInt("d_vecs");
 	int d_cond = opts.getInt("d_cond");
 	
+	int mlmc = opts.getInt("mlmc");
+	
 	int maxJobs;
 	int nShifts;
 	
@@ -617,9 +595,16 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	int length;
 	
 	std::vector<Mpi_job_params> jobArray;
+	Mlmc_handler mlmc_h;
+	
+	if (mlmc == 1){
+		mlmc_h.setup(opts);
+	}
 	
 	int num_sheets = (int)sdata.size();
 
+	// Make job arrays
+	
 	if (solver_space == 0) {
 	
 		// Uniform sample over a grid
@@ -699,7 +684,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 			maxJobs = (int)mlmc_vacs.size();
 			
-			printf("maxJobs = %d \n",maxJobs);
+			//printf("maxJobs = %d \n",maxJobs);
 			
 			for (int i = 0; i < maxJobs; ++i){
 			
@@ -726,7 +711,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				//tempJob.setParam("target_list",targets,n_targets);
 				tempJob.setParam("vacancy_list",vacancies,n_vac);
 				tempJob.setParam("jobID",mlmc_ids[i][0]);
-				tempJob.setParam("clusterID",mlmc_ids[i][1]);
+				tempJob.setParam("mlmc_clusterID",mlmc_ids[i][1]);
 				tempJob.setParam("max_jobs",maxJobs);
 				jobArray.push_back(tempJob);				
 			
@@ -813,8 +798,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 	} else if (solver_space == 1) {
 	// !! MOMENTUM SPACE TO DO !!
-	// if Momentum-space, want all sheets to always have the same "shift" (q value)
-	// Can still have a LC and grid sampling, and maybe even a "high-symm LC" which does Gamma->M->K->Gamma
+	// "high-symm LC" which does Gamma->M->K->Gamma
 		
 		// Square sampling
 		if (solver_type == 1){
@@ -864,8 +848,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			
 			for (int i = 0; i < maxJobs; ++i){
 			
-				//double x = (1.0/((double) maxJobs))*i;
-				double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(5*5);
+				double x = (1.0/((double) maxJobs))*i;
+				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(5*5);
 				
 				double shifts[num_sheets*3];
 				Mpi_job_params tempJob;
@@ -902,10 +886,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	
 	}
 	
+	// Now do the job send/recv loop
 	
 	MPI::Status status;
 	
-	std::vector<std::vector<double> > result_array;
+	//std::vector<std::vector<double> > result_array;
+	//result_array.resize(maxJobs);
+	
+	std::vector<Mpi_job_results> result_array;
 	result_array.resize(maxJobs);
 	
 	// try to give each worker its first job
@@ -915,385 +903,91 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		
 			sendRootWork(jobArray[currentJob], r);
 			++currentJob;					// one more job sent out!
+			printf("rank %d has sent job to worker rank %d (%d/%d) \n", rank, r, currentJob, maxJobs);
+			
 		}
 		
 	}
 	
 	
-	printf("rank %d has sent first batch of work... \n", rank);
+	// printf("rank %d has sent first batch of work... \n", rank);
 	
 	// Receive results and dispense new work
 	
 	while (currentJob < maxJobs) {
 	
-		int jobTag;
-		MPI::COMM_WORLD.Recv(				// get size of incoming work
-					&length,
-					1,
-					MPI::INT,
-					MPI::ANY_SOURCE,
-					MPI::ANY_TAG,
-					status);				// keeps tag and source information
+		int source;
+		Mpi_job_results temp_result;
 		
-		double results[length];
+		source = temp_result.recv_spool();
 		
-		MPI::COMM_WORLD.Recv(	
-					results,					// get result from worker
-					length,
-					MPI::DOUBLE,
-					status.Get_source(),
-					MPI::ANY_TAG);
-
-		jobTag = status.Get_tag();
-
-		std::vector<double> temp_result;
-		for (int i = 0; i < length; ++i){
-			temp_result.push_back(results[i]);
-			}
-			
-		result_array[jobTag-1] = (temp_result);
+		int jobTag = temp_result.getInt("jobID");
 		
-		sendRootWork(jobArray[currentJob], status.Get_source());
+		if (mlmc == 0){
+			result_array[jobTag-1] = (temp_result);
+		} else if (mlmc == 1){
+			mlmc_h.process(temp_result);
+		}
+		
+		sendRootWork(jobArray[currentJob], source);
 		++currentJob;						// one more job sent out!
-		printf("rank %d has sent job to worker rank %d. \n", rank, status.Get_source());
+		printf("rank %d has sent job to worker rank %d (%d/%d) \n", rank, source, currentJob, maxJobs);
 	}
 	
 	// Receive final work
+	// and tell workers to exit workerMatrixSolve()
 	
-	for (int r = 1; r < size; ++r){
+	int r_done = 0;
 	
-		int length;
-		int jobTag;
+	while (r_done < size-1){
+	
+		int source;
+		Mpi_job_results temp_result;
 		
-		MPI::COMM_WORLD.Recv(				// get size of incoming work
-					&length,
-					1,
-					MPI::INT,
-					MPI::ANY_SOURCE,
-					MPI::ANY_TAG,
-					status);				// keeps tag and source information
+		source = temp_result.recv_spool();
 		
-		double results[length];
+		int jobTag = temp_result.getInt("jobID");
 		
-		MPI::COMM_WORLD.Recv(	
-					results,					// get result from worker
-					length,
-					MPI::DOUBLE,
-					status.Get_source(),
-					MPI::ANY_TAG);
-					
-		jobTag = status.Get_tag();
-		
-		std::vector<double> temp_result;
-		for (int i = 0; i < length; ++i){
-			//printf("eigenvalue check: %lf \n", result[i]);
-			temp_result.push_back(results[i]);
-			}
-			
-		result_array[jobTag-1] = temp_result;
+		if (mlmc == 0){
+			result_array[jobTag-1] = (temp_result);
+		} else if (mlmc == 1){
+			mlmc_h.process(temp_result);	
+		}
 	
-		printf("rank %d has received final work from rank %d. \n", rank, r);
-		//if (result_array.size() == maxJobs)
-			//break;
-	}
-	
-	// Tell workers to exit workerMatrixSolve()
-	
-	for (int r = 1; r < size; ++r){
-		printf("rank %d sending STOPTAG to rank %d. \n", rank, r);
+		printf("rank %d has received final work from rank %d. \n", rank, source);
 		
 		Mpi_job_params tempJob;
 		
 		// solver_type == -1 is the STOPTAG for workers
 		tempJob.setParam("solver_type", -1);
 		
-		sendRootWork(tempJob, r);
+		sendRootWork(tempJob, source);
+		++r_done;
 		
-		printf("rank %d sent STOPTAG successfully. \n", rank);
 	}
 	
-	int poly_order = opts.getInt("poly_order");
-	double* polys = new double[poly_order];
-	for (int i = 0; i < poly_order; ++i){
-		polys[i] = i;
-	}
-	
-	int num_target_sheets = opts.getInt("num_target_sheets");
-	std::vector<int> target_sheets = opts.getVecInt("target_sheets");
-	
-	std::cout << "Saving " << job_name << ".cheb to disk. \n";
+	if (mlmc == 0){
 
-	
-	std::ofstream outFile;
-	const char* extension =".cheb";
-	outFile.open ((job_name + extension).c_str());
-	
-	for (int job = 0; job < maxJobs; ++job){
-	
-		int num_targets = jobArray[job].getInt("num_targets");
-		int* target_list = jobArray[job].getIntVec("target_list");
-
-		jobArray[job].printCheb(outFile);
+		std::cout << "Saving " << job_name << ".cheb to disk. \n";
+		std::ofstream outFile;
+		const char* extension =".cheb";
+		outFile.open ((job_name + extension).c_str());
 		
-		//outFile << job_name << " Chebyshev T value outputs for job " << job+1 << ":\n";
-		
-		if (diagonalize == 0){
-			if (observable_type == 0){
-			
-				if (diagonalize == 0){
-					outFile << "T:   ";
-					
-					for(int j = 0; j < poly_order-1; ++j){
-						outFile << polys[j] << ", ";
-					}
-					outFile << polys[poly_order-1] << "\n";
-					
-					for(int t = 0; t < num_targets; ++t){
-						outFile << target_list[t] << ": ";
-						for(int j = 0; j < poly_order-1; ++j){
-							outFile << result_array[job][j + t*poly_order] << ", ";
-						}
-						outFile << result_array[job][poly_order-1 + t*poly_order] << "\n";
-					}
-					
-					outFile << "\n";
-				}
-				
-			} else if (observable_type == 1){
-				
-				outFile << "T: \n";
-				
-				for(int t = 0; t < num_targets; ++t){
-					outFile << target_list[t] << ": \n";
-					for (int r = 0; r < poly_order; ++r){
-						for(int j = 0; j < poly_order-1; ++j){
-							outFile << result_array[job][j + r*poly_order + t*poly_order*poly_order] << ", ";
-						}
-						outFile << result_array[job][poly_order-1 + r*poly_order + t*poly_order*poly_order] << "\n";
-					}
-				}	
-				
-				outFile << "\n";
-			
-			}
-		} else if (diagonalize == 1){
-		
-			if (solver_type == 4){
-				
-				int local_max_index = (int) result_array[job][0];
-				
-				// No matrix-like component in local_max_index
-				int a = 0;
-				// 1 Vector-like component in local_max_index (eigenvalues)
-				int b = 1;
-				// No matrix-like component in poly_order
-				int c = 0;
-				
-				// Printing eigenvalue weights (projected onto target orbitals)
-				if (d_weights == 1){
-					b = b + num_targets;
-				}
-				
-				// Printing eigenvectors (one Matrix-like component)
-				if (d_vecs == 1){
-					a = a + 1;
-				}
-				
-				// Printing M_xx current-current correlation (one Matrix-like components) 
-				if (d_cond == 1){
-					c = c + 1;
-				}
-
-				outFile << "EIGS: ";
-				for(int j = 0; j < local_max_index - 1; ++j){
-					outFile << result_array[job][1 + j] << ", ";
-				}
-				outFile << result_array[job][1 + local_max_index - 1] << "\n";
-				outFile << "\n";
-				
-				// Control for output printing
-				// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
-				
-				if (d_weights == 1){
-				
-					outFile << "WEIGHTS: \n";
-
-					for(int t = 0; t < num_targets; ++t){
-						outFile << target_list[t] << ": ";
-						for(int j = 0; j < local_max_index - 1; ++j){
-							outFile << result_array[job][1 + (t+1)*local_max_index + j] << ", ";
-						}
-						outFile << result_array[job][1 + (t+1)*local_max_index + local_max_index - 1] << "\n";
-					}	
-					
-					outFile << "\n";
-				
-				}
-				
-				if (d_vecs == 1){
-				
-				
-					outFile << "VECS: \n";
-					for(int j = 0; j < local_max_index; ++j){
-						for (int m = 0; m < local_max_index - 1; ++m){
-							outFile << result_array[job][1 + b*local_max_index + j*local_max_index + m] << ", ";
-						}
-						outFile << result_array[job][1 + b*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-					}
-					
-					outFile << "\n";
-					
-					
-				}
-				
-				if (d_cond == 1){
-				
-				// Use to write M_xx to a binary file, M_XX.dat
-				// writeBufferToFile(&result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index], poly_order*poly_order, std::string("M_XX.dat"));
-
-
-					outFile << "M_XX: \n";
-					for(int j = 0; j < poly_order; ++j){
-						for (int m = 0; m < poly_order - 1; ++m){
-							outFile << result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index + j*poly_order + m] << ", ";
-						}
-						outFile << result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index + j*poly_order + poly_order - 1] << "\n";
-					}
-					
-					outFile << "\n";
-					
-				}
-				
-			} else if (solver_type == 3) {
-				
-				int local_max_index = (int) result_array[job][0];
-				
-				// No matrix-like component in local_max_index
-				int a = 0;
-				// 1 Vector-like component in local_max_index (eigenvalues)
-				int b = 1;
-				// No matrix-like component in poly_order
-				int c = 0;
-				
-				// Printing eigenvalue weights (projected onto target orbitals)
-				if (d_weights == 1){
-					b = b + num_targets;
-				}
-				
-				// Printing eigenvectors (one Matrix-like component)
-				if (d_vecs == 1){
-					a = a + 1;
-				}
-				
-				// Printing M_xx current-current correlation (one Matrix-like components) 
-				if (d_cond == 1){
-					c = c + 1;
-				}
-
-				outFile << "EIGS: ";
-				for(int j = 0; j < local_max_index - 1; ++j){
-					outFile << result_array[job][1 + j] << ", ";
-				}
-				outFile << result_array[job][1 + local_max_index - 1] << "\n";
-				outFile << "\n";
-				
-				// Control for output printing
-				// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
-				
-				if (d_weights == 1){
-				
-					outFile << "WEIGHTS: \n";
-
-					for(int t = 0; t < num_targets; ++t){
-						outFile << target_list[t] << ": ";
-						for(int j = 0; j < local_max_index - 1; ++j){
-							outFile << result_array[job][1 + (t+1)*local_max_index + j] << ", ";
-						}
-						outFile << result_array[job][1 + (t+1)*local_max_index + local_max_index - 1] << "\n";
-					}	
-					
-					outFile << "\n";
-				
-				}
-				
-				if (d_vecs == 1){
-				
-				
-					outFile << "VECS: \n";
-					for(int j = 0; j < local_max_index; ++j){
-						for (int m = 0; m < local_max_index - 1; ++m){
-							outFile << result_array[job][1 + b*local_max_index + j*local_max_index + m] << ", ";
-						}
-						outFile << result_array[job][1 + b*local_max_index + j*local_max_index + local_max_index - 1] << "\n";
-					}
-					
-					outFile << "\n";
-					
-					
-				}
-				
-				if (d_cond == 1){
-					
-					// Use to write M_xx to a binary file, M_XX_J<jobID>.dat
-					
-					int jobID = jobArray[job].getInt("jobID");
-					
-					std::string cwd = get_current_dir_name();
-					
-					system("mkdir temp");
-					
-					
-					std::string M_xx_filename;
-					M_xx_filename.append(cwd);
-					M_xx_filename.append( "/temp/");
-					
-					if (jobID > 99){
-						M_xx_filename.append("M_XX_J");
-					} else if (jobID > 9){
-						M_xx_filename.append("M_XX_J0");
-					} else {
-						M_xx_filename.append("M_XX_J00");
-					}
-					
-					std::ostringstream temp_ss;
-					
-					temp_ss << jobID;
-					M_xx_filename.append(temp_ss.str());
-					M_xx_filename.append(".bin");
-					
-					// Debugging output
-					//printf(M_xx_filename.c_str());
-					//printf("\n");
-					
-					writeBufferToFile(&result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index], poly_order*poly_order, M_xx_filename);
-					
-				}
-		
-			} 	
+		for (int job = 0; job < maxJobs; ++job){
+			result_array[job].save(outFile);
 		}
+		
+		outFile.close();
+
+	} else if (mlmc == 1){
+		mlmc_h.save();
 	}
 	
-	outFile.close();
-	
-	delete polys;
 }
 
 void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
 	
 	MPI::Status status;
-	/*
-	double work[2];
-	work[0] = 0;
-	work[1] = 0;
-	
-	// figure out the Chebyshev polynomial coefficients for each energy sample range
-	
-	// p is the maximum order of the Chebyshev polynomial
-	
-	int p = poly_order;
-	
-	// Sheet solving information
-	*/
 	
 	// ---------------------
 	// Enter MPI worker loop
@@ -1305,21 +999,22 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		jobIn.recvParams(root);
 		
+		int solver_type = jobIn.getInt("solver_type");
+
+		// If worker gets solver_type = -1 it ends this loop
+		if (solver_type == -1) {
+			//printf("rank %d received STOPTAG. \n", rank);
+			return;
+		}
+		
 		int jobID = jobIn.getInt("jobID");
 		int max_jobs = jobIn.getInt("max_jobs");
-		int solver_type = jobIn.getInt("solver_type");
 		int observable_type = jobIn.getInt("observable_type");
 		int solver_space = jobIn.getInt("solver_space");
 		int diagonalize = jobIn.getInt("diagonalize");
 		int d_vecs =  jobIn.getInt("d_vecs");
 		int d_cond =  jobIn.getInt("d_cond");
 		int d_weights = jobIn.getInt("d_weights");
-		
-		// If worker gets STOPTAG it ends this method
-		if (solver_type == -1) {
-			//printf("rank %d received STOPTAG. \n", rank);
-			return;
-		}
 		
 
 		// If not STOPTAG, start timing the solver
@@ -1335,7 +1030,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		
 		double* shifts = jobIn.getDoubleMat("shifts");
 		
-		printf("rank %d received a job (%d/%d) \n", rank, jobID,max_jobs);
+		//printf("rank %d received a job (%d/%d) \n", rank, jobID,max_jobs);
 		
 		// ------------------------------------------------------
 		// Determine the work-specific positions of every orbital
@@ -1345,7 +1040,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double i2pos[max_index*3];
 
 		setConfigPositions(i2pos, index_to_pos, index_to_grid, jobIn);
-		
+
 		// Keep track of variables for vacancy simulation
 		
 		int local_max_index = max_index;
@@ -1376,6 +1071,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			
 			current_index_reduction[max_index] = vacancy_counter;
 			local_max_index = max_index - vacancy_counter;
+			
 			/*
 			printf("First few vacancies = [");
 			for (int j = 0; j < 6; ++j){
@@ -1412,7 +1108,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		} else if (solver_space == 1){
 			generateMomH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		}
-		// !! MOMENTUM SPACE TO DO !!
+		
 		// if solver_space == 1: Instead call generateMomH
 		// generateMomH: 
 		// 			needs to always be complex
@@ -1420,63 +1116,77 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		//			should check that there are no vacancies
 		//			needs to do bloch-theory on the intralayer blocks
 		//			needs to call the interpolate FFT file for interlayer and sample at r2 - r1 + q (i.e. the "shift")
-		//
-		// Has same input format as generateH(...), because shift is stored in jobIn!
 		
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
-		
-		// Saves T values
-		double* T_array;
+
+		Mpi_job_results results_out;
+		results_out.loadJobParams(jobIn);
+
 		if (diagonalize == 0){
 			if (observable_type == 0){
 				
-					T_array = new double[poly_order*num_targets];
-					computeDosKPM(T_array,H,jobIn,current_index_reduction,local_max_index);
+					std::vector< std::vector<double> > cheb_coeffs;
+					cheb_coeffs.resize(num_targets);
+					
+					
+					for (int t = 0; t < num_targets; ++t){
+						cheb_coeffs[t].resize(poly_order);
+					}
+					
+					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
+							
+					results_out.cheb_coeffs = cheb_coeffs;
+
 
 			} else if (observable_type == 1){
 			
-				T_array = new double[poly_order*poly_order*num_targets];
-				computeCondKPM(T_array, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_x_arr);
+					std::vector< std::vector<double> > cheb_coeffs;
+					cheb_coeffs.resize(num_targets);
+					
+					for (int t = 0; t < num_targets; ++t){
+						cheb_coeffs[t].resize(poly_order);
+					}
+					
+				computeCondKPM(&cheb_coeffs[0][0], H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_x_arr);
+				
+				//results_out.cheb_coeffs = cheb_coeffs;
 				
 			}
 			
 		} else if (diagonalize == 1) {
-		
-			int a = 0;
-			int b = 1;
-			int c = 0;
-			
-			if (d_weights == 1){
-				b = b + num_targets;
-			}
-			if (d_vecs == 1){
-				a = a + 1;
-			}
-			if (d_cond == 1){
-				c = c + 1;
-			}
-			
-			T_array = new double[1 + b*local_max_index + a*local_max_index*local_max_index + c*poly_order*poly_order];
 			
 			if (solver_space == 0){
 			
-				double* eigenvalue_array;
-				eigenvalue_array = new double[local_max_index];
+				std::vector<double> eigenvalue_array;
+				eigenvalue_array.resize(local_max_index);
 				
 				DMatrix eigvecs;
 				
 				DMatrix M_xx;
 				DMatrix M_yy;
 				DMatrix M_xy;
-				
+								
 				computeEigen(eigenvalue_array, eigvecs, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
-				T_array[0] = (double)local_max_index;				
 				
+				//T_array[0] = (double)local_max_index;
+				
+				std::vector< std::vector<double> > eigenweights;
+				std::vector< std::vector<double> > eigenvectors;
+				std::vector< std::vector<double> > cond_xx;
+				std::vector< std::vector<double> > cond_yy;
+				std::vector< std::vector<double> > cond_xy;
+				
+				
+				results_out.eigenvalues = eigenvalue_array;
+
+				/*
 				for (int i = 0; i < local_max_index; ++i){
 					T_array[1 + i] = eigenvalue_array[i];
+					
 				}
+				*/
 				
 				double* eigenvector_array;
 				eigenvector_array = eigvecs.getValPtr();
@@ -1484,20 +1194,43 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				if (d_weights == 1){
 				
 					for (int t = 0; t < num_targets; ++t){
+					
 						int tar_here = target_list[t];
+						std::vector<double> temp_vec;
+						
 						for (int i = 0; i < local_max_index; ++i){
 							double w = eigenvector_array[i + tar_here*local_max_index];
-							T_array[1 + (t+1)*local_max_index + i] = w*w;
+							temp_vec.push_back(w*w);
 						}
+						
+						eigenweights.push_back(temp_vec);
 					}
+					
+					results_out.eigenweights = eigenweights;
 				
 				}
 				
 				if (d_vecs == 1){
 				
+					for (int j = 0; j < local_max_index; ++j){
+					
+						std::vector<double> temp_vec;
+						
+						for (int i = 0; i < local_max_index; ++i){
+							double w = eigenvector_array[i + j*local_max_index];
+							temp_vec.push_back(w);
+						}
+						
+						eigenvectors.push_back(temp_vec);
+					}
+					
+					results_out.eigenvectors = eigenvectors;
+				
+					/*
 					for (int i = 0; i < local_max_index*local_max_index; ++i){
 						T_array[1 + b*local_max_index + i] = eigenvector_array[i];
 					}
+					*/
 					
 				}
 				
@@ -1505,18 +1238,43 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				
 					double* val_M_xx;
 					val_M_xx = M_xx.getValPtr();
+					
+					double* val_M_yy;
+					val_M_yy = M_yy.getValPtr();
+					
+					double* val_M_xy;
+					val_M_xy = M_xy.getValPtr();
 				
-					for (int i = 0; i < poly_order*poly_order; ++i){
-						T_array[1 + b*local_max_index + a*local_max_index*local_max_index + i] = val_M_xx[i];
+					for (int i = 0; i < poly_order; ++i){
+						std::vector<double> temp_xx;
+						std::vector<double> temp_yy;
+						std::vector<double> temp_xy;
+						
+						for (int j = 0; j < poly_order; ++j) {
+							temp_xx.push_back(val_M_xx[i + j*poly_order]);
+							temp_yy.push_back(val_M_yy[i + j*poly_order]);
+							temp_xy.push_back(val_M_xy[i + j*poly_order]);
+						}
+						
+						cond_xx.push_back(temp_xx);
+						cond_yy.push_back(temp_yy);
+						cond_xy.push_back(temp_xy);
+						
+						results_out.M_xx = cond_xx;
+						results_out.M_yy = cond_yy;
+						results_out.M_xy = cond_xy;
+						
+						//T_array[1 + b*local_max_index + a*local_max_index*local_max_index + i] = val_M_xx[i];
+
 					}
 					
 				}
-				
-				
-				delete eigenvalue_array;
 
-				
 			} else if (solver_space == 1){
+			
+			
+				// Need to write for complex std::vectors 
+				/*
 			
 				std::complex<double>* eigenvalue_array;
 				eigenvalue_array = new std::complex<double>[local_max_index];
@@ -1553,70 +1311,28 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				delete j_x;				
 				delete j_y;	
 			
-			
+				*/
 			}
+			
 		
 		}
 		
-
 		// Save time at which solver finished
 		time_t tempEnd;
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);
 		
-		int length;
-		if (diagonalize == 0){
-			if (observable_type == 0){
-				length = poly_order*num_targets;
-			} else if (observable_type == 1){
-				length = poly_order*poly_order*num_targets;
-			}
-		} else if (diagonalize == 1){
+		results_out.send(root, jobID);
 
-			int a = 0;
-			int b = 1;
-			int c = 0;
-			
-			if (d_weights == 1){
-				b = b + num_targets;
-			}
-			if (d_vecs == 1){
-				a = a + 1;
-			}
-			if (d_cond == 1){
-				c = c + 1;
-			}
-			
-			length = 1 + b*local_max_index + a*local_max_index*local_max_index + c*poly_order*poly_order;
-			
-		}
-
-		// Notify root about incoming data size
-		MPI::COMM_WORLD.Send(	
-					&length,
-					1,
-					MPI::INT,
-					root,
-					jobID);
-
-		// Send root the density information
-		MPI::COMM_WORLD.Send(	
-					T_array,
-					length,
-					MPI::DOUBLE,
-					root,
-					jobID);
-	
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
 			
 		// Cleanup allocated memory
-		delete T_array;
 		delete alpha_0_x_arr;
 		delete alpha_0_y_arr;
-
+		
 		// End of while(1) means we wait for another instruction from root
-		}
+	}
 
 }
 
@@ -1874,8 +1590,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 		b1[1][0] = -b1[1][0];
 		
-		printf("b = [%lf %lf ; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
-		printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+		//printf("b = [%lf %lf ; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+		//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 		
 		for (int i = 0; i < max_index; ++i) {
 		
@@ -2102,8 +1818,8 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					v[input_counter] = t;
 					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0] - new_pos_shift_x)*t; // (delta_x)*t
 					v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1] - new_pos_shift_y)*t; // (delta_y)*t
-				}
-				else if (magOn == 1) {
+
+				} else if (magOn == 1) {
 					
 					double x1 = i2pos[k_i*3 + 0];
 					double y1 = i2pos[k_i*3 + 1];
@@ -2520,7 +2236,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 					t = t + std::polar(t_here,phase);
 				}
 				
-				
+				printf("[%d,%d] = %lf \n",k_i,new_k,t.real());
 				v_c[input_counter] = t/energy_rescale;
 				++input_counter;
 			}
@@ -2614,7 +2330,10 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 				
 				// double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (std::abs(t) != 0){
-				//if (0){ // wapping this with above line turns off intralayer coupling
+				//if (0){ // swapping this with above line turns off interlayer coupling
+				
+				printf("[%d,%d] = %lf + %lf i \n",k_i,new_k,t.real(),t.imag());
+
 					if (k_i <= new_k){
 						v_c[input_counter] = t/energy_rescale;
 					} else if (k_i > new_k) {
@@ -2682,7 +2401,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 	
 }
 
-void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
@@ -2690,7 +2409,6 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 	
 	int num_targets = jobIn.getInt("num_targets");
 	int* target_list = jobIn.getIntVec("target_list");
-
 	
 	if (magOn == 0 && solver_space == 0){
 
@@ -2723,10 +2441,10 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 			}
 			
 			// first T value is always 1
-			T_array[0 + t_count*poly_order] = 1;
+			cheb_coeffs[t_count][0] = 1;
 			
 			// Next one is calculated simply
-			T_array[1 + t_count*poly_order] = T_j[target_index];
+			cheb_coeffs[t_count][1] = T_j[target_index];
 			
 			// Now loop algorithm up to poly_order to find all T values
 			// double alpha2 = 2;
@@ -2746,7 +2464,7 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 				}
 				
 				// get the jth entry
-				T_array[j + t_count*poly_order] = T_j[target_index];
+				cheb_coeffs[t_count][j] = T_j[target_index];
 				
 				// compute the next vector
 				H.vectorMultiply(T_j, T_next, 2, 0);
@@ -2766,8 +2484,8 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 					
 					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
 					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
-					T_array[2*j + t_count*poly_order ] = 2*an_an - T_array[0 + t_count*poly_order];
-					T_array[2*j + 1 + t_count*poly_order] = 2*anp_an - T_array[1 + t_count*poly_order ];
+					cheb_coeffs[t_count][2*j]     = 2*an_an  - cheb_coeffs[t_count][0];
+					cheb_coeffs[t_count][2*j + 1] = 2*anp_an - cheb_coeffs[t_count][1];
 
 				}
 
@@ -2811,10 +2529,10 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 			}
 			
 			// first T value is always 1
-			T_array[0 + t_count*poly_order] = 1;
+			cheb_coeffs[t_count][0] = 1;
 			
 			// Next one is calculated simply
-			T_array[1 + t_count*poly_order] = T_j[target_index].real();
+			cheb_coeffs[t_count][1] = T_j[target_index].real();
 			
 			// Now loop algorithm up to poly_order to find all T values
 			// double alpha2 = 2;
@@ -2834,7 +2552,7 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 				}
 				
 				// get the jth entry
-				T_array[j + t_count*poly_order] = T_j[target_index].real();
+				cheb_coeffs[t_count][j] = T_j[target_index].real();
 				
 				// compute the next vector
 				H.vectorMultiply(T_j, T_next, 2, 0);
@@ -2854,8 +2572,8 @@ void Locality::computeDosKPM(double* T_array, SpMatrix &H, Mpi_job_params jobIn,
 					
 					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
 					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1; 
-					T_array[2*j + t_count*poly_order] = 2*an_an - T_array[0 + t_count*poly_order];
-					T_array[2*j + 1 + t_count*poly_order] = 2*anp_an - T_array[1 + t_count*poly_order];
+					cheb_coeffs[t_count][2*j]     = 2*an_an  - cheb_coeffs[t_count][0];
+					cheb_coeffs[t_count][2*j + 1] = 2*anp_an - cheb_coeffs[t_count][1];
 
 				}
 				
@@ -3064,7 +2782,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 
 }
 
-void Locality::computeEigen(double* eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	
 	int d_cond = jobIn.getInt("d_cond");
@@ -3145,20 +2863,25 @@ void Locality::computeEigen(double* eigvals, DMatrix &eigvecs, DMatrix &M_xx, DM
 			}
 		}
 		
-		//printf("T_m(lambda_i) construction complete \n");
-
+		// Finish calculating the the M_ij tensors
 		
-		DMatrix temp_mat;
+		DMatrix temp_mat_xx;
+		J_xx.matrixMultiply(temp_mat_xx, cheb_eigvals, 1, 0);
+		cheb_eigvals.matrixMultiply(M_xx,temp_mat_xx, 1.0/local_max_index, 0, 'T', 'N');
 		
-		J_xx.matrixMultiply(temp_mat, cheb_eigvals, 1, 0);
-		//printf("temp_mat for M_xx calculation complete \n");
-		cheb_eigvals.matrixMultiply(M_xx,temp_mat, 1.0/local_max_index, 0, 'T', 'N');
+		DMatrix temp_mat_yy;
+		J_yy.matrixMultiply(temp_mat_yy, cheb_eigvals, 1, 0);
+		cheb_eigvals.matrixMultiply(M_yy,temp_mat_yy, 1.0/local_max_index, 0, 'T', 'N');
+				
+		DMatrix temp_mat_xy;
+		J_xy.matrixMultiply(temp_mat_xy, cheb_eigvals, 1, 0);
+		cheb_eigvals.matrixMultiply(M_xy,temp_mat_xy, 1.0/local_max_index, 0, 'T', 'N');
 		
-		//printf("M_xx calculation complete \n");
-
 	}
 	
 	
+	// Old method, does not do Chebyshev polynomials
+	// (i.e. we get an N x N matrix, not a p x p one, where N = local_max_index)
 	/*
 	if (d_cond == 1){
 		
@@ -3235,8 +2958,22 @@ void Locality::computeEigenComplex(std::complex<double>* eigvals, std::complex<d
 	Eigen::VectorXcd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 	Eigen::MatrixXcd::Map(&eigvecs[0], local_max_index, local_max_index) = es.eigenvectors();
 	
+	
+	
 	// now we compute <n|j|m>, the current correlation matrix
 	// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
+	
+	// !! Need to add Chebyshev projection of the current-current correlation matrix !!
+	// !! (Already programmed for real matrices, need to copy it over for complex) !!
+	
+	
+	
+	// Chebyshev polynomial method will go here
+	
+	
+	
+	
+	// !! Direct method, does N x N matrix instead of p x p matrix !!
 	
 	// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
 	
@@ -3357,16 +3094,18 @@ double Locality::crossProd(std::vector<double> x, std::vector<double> y, int dim
 
 }
 
+/*
 void Locality::writeBufferToFile(double* buff, int length, std::string file){
 	// Writes a buffer of doubles to a file in binary
 	
 	// Need ios library, and some other bugs left to be sorted out
-	// /*
+	
 	std::ofstream fout(file.c_str(), std::ios::binary);
 	fout.write(reinterpret_cast<char*>(buff), std::streamsize(sizeof(double)*length));
 	fout.close();
-	// */
+	
 }
+*/
 
 void Locality::save(){
 

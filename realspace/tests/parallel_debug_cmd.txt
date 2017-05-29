@@ -1,0 +1,1 @@
+mpirun -n 2 gnome-terminal -e "gdb -ex run --args ./LEO2D tests/tblg_test1.in"

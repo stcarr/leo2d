@@ -15,6 +15,8 @@
 #include "dmatrix.h"
 #include "loc_params.h"
 #include "mpi_job_params.h"
+#include "mpi_job_results.h"
+#include "mlmc_handler.h"
 
 #include "fftw3.h"
 
@@ -88,7 +90,7 @@ class Locality {
 		
 		std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
 		double crossProd(std::vector<double> x, std::vector<double> y, int dim);
-		void writeBufferToFile(double*, int, std::string);
+		// void writeBufferToFile(double*, int, std::string);
 		
 		// MPI Communication flags
 		static const int WORKTAG = 1;
@@ -127,13 +129,13 @@ class Locality {
 		void generateMomH(SpMatrix&, Mpi_job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
 	
 		// Computes Local DOS using Chebyshev KPM methods
-		void computeDosKPM(double*,SpMatrix&, Mpi_job_params,std::vector<int>,int);
+		void computeDosKPM(std::vector< std::vector<double> >&,SpMatrix&, Mpi_job_params,std::vector<int>,int);
 		
 		// Computes Local Electron-Electron Correlation using 2D Chebyshev KPM methods
 		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int, double*);
 		
 		// Direct solver using Eigen package
-		void computeEigen(double*, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
+		void computeEigen(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
 		void computeEigenComplex(std::complex<double>*,std::complex<double>*,std::complex<double>*, std::complex<double>*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
 
 		// Calculates Peierls phase between two hopping sites;

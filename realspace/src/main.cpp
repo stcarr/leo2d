@@ -369,6 +369,25 @@ int main(int argc, char** argv) {
 					opts.setParam("mlmc_cluster_size",atoi(in_string.c_str()));
 				}
 				
+				
+				if (in_string == "MLMC_OUT_ROOT"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc_out_root", in_string);
+					}
+
+				if (in_string == "MLMC_TEMP_ROOT"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mlmc_temp_root", in_string);
+					}					
+
+				if (in_string == "VACANCY_FILE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("vacancy_file", in_string);
+					}								
+				
 				// E,B field parameters
 				
 				if (in_string == "USE_B_FIELD"){
@@ -440,52 +459,56 @@ int main(int argc, char** argv) {
 			}
 		}
 		in_file.close();
-	}
-	
-	if (opts.getInt("poly_order")%4 != 0){
-		printf("!!WARNING!!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",opts.getInt("poly_order"));
-		return -1;
-	}
-	
-	if (opts.getInt("solver_type") == 3 && opts.getInt("nShifts")%2 == 0){
-		opts.setParam("nShifts",opts.getInt("nShifts") + 1);
-		printf("!!WARNING!!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",opts.getInt("nShifts"));
-	}
-	
-	if (num_sheets > 1 && boundary_condition == 1){
-		printf("!!WARNING: multiple sheet periodic run detected! Periodic boundary conditions not yet implemented for interlayer coupling! \n");
-		return -1;
-	}
-	
-	// update solver_space (i.e. sheets need to know solver_space, but no gaurentee it was set before sdata were input)
-	for (int i = 0; i < num_sheets; ++i){
-		s_data[i].solver_space = opts.getInt("solver_space");
-		s_data[i].strain_type = opts.getInt("strain_type");
-	}
-	
-	// Create the locality object with the sheet input data
-	Locality loc(s_data,heights,angles);
-	
-	// Start MPI within Locality object on each processor
-	int multi_rank_job = loc.initMPI(argc, argv);
-	if (multi_rank_job == -1){
-		printf("Error: Only 1 MPI rank detected (need to run with n > 1).\n");
+		
+		if (opts.getInt("poly_order")%4 != 0){
+			printf("!!WARNING!!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",opts.getInt("poly_order"));
+			return -1;
+		}
+		
+		if (opts.getInt("solver_type") == 3 && opts.getInt("nShifts")%2 == 0){
+			opts.setParam("nShifts",opts.getInt("nShifts") + 1);
+			printf("!!WARNING!!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",opts.getInt("nShifts"));
+		}
+		
+		if (num_sheets > 1 && boundary_condition == 1){
+			printf("!!WARNING: multiple sheet periodic run detected! Periodic boundary conditions not yet implemented for interlayer coupling! \n");
+			return -1;
+		}
+		
+		// update solver_space (i.e. sheets need to know solver_space, but no gaurentee it was set before sdata were input)
+		for (int i = 0; i < num_sheets; ++i){
+			s_data[i].solver_space = opts.getInt("solver_space");
+			s_data[i].strain_type = opts.getInt("strain_type");
+		}
+		
+		// Create the locality object with the sheet input data
+		Locality loc(s_data,heights,angles);
+		
+		// Start MPI within Locality object on each processor
+		int multi_rank_job = loc.initMPI(argc, argv);
+		if (multi_rank_job == -1){
+			printf("Error: Only 1 MPI rank detected (need to run with n > 1).\n");
+			loc.finMPI();
+			return -1;
+		}
+		
+		
+		// Simulation's solver is set with setup call to Locality object
+		loc.setup(opts);
+		
+		// Builds the geometry of the problem on the root node and then sends them to workers via MPI
+		loc.constructGeom();
+		
+		// Post processing operations. Save prints timing information from each node. File saves happen on the MPI loop from the root node!
+		loc.save();
+		
+		// End MPI processes and finish
 		loc.finMPI();
-		return -1;
+	
+	} else {
+		printf("Input file '%s' not found, stopping, \n",argv[1]);
+	
 	}
-	
-	
-	// Simulation's solver is set with setup call to Locality object
-	loc.setup(opts);
-	
-	// Builds the geometery of the problem on the root node and then sends them to workers via MPI
-	loc.constructGeom();
-	
-	// Post processing operations. Save prints timing information from each node. File saves happen on the MPI loop from the root node!
-	loc.save();
-	
-	// End MPI processes and finish
-	loc.finMPI();
 	
 	// No errors hopefully!
 	return 0;

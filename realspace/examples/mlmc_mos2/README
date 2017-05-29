@@ -1,0 +1,22 @@
+Some important notes:
+
+1) Levels are defined from l = 1 to l = L (max)
+
+2) Run each .in file from highest to lowest l (e.g. run ml_mos2_l2.in then ml_mos2_l1.in)
+
+3) The .in files must all have the same JOB_NAME parameter, or else they can't find each other's temp output
+
+4) The .in files must all have the same POLY_ORDER parameter, or else there will be segmentation faults!
+
+5) The job output goes <JOB_NAME>_L#_<TYPE>_M_<ij>.bin, where TYPE can be E (avg), V (variance), DE (CV avg), or DV (CV variance)
+
+6) The MLMC_NUM_CLUSTERS should be the number of non-cluster jobs from the previous (l+1) level
+
+7) Follow the template for the vacancies.dat file(s), setting clusterID = -1 if that job is not part of a CV of the (l+1) level
+
+8) clusterID = n will compare that job do the JOBID = n of the previous (l+1) level
+
+9) All outputs are in POLY_ORDER*POLY_ORDER binary format (of type double). To load in matlab do:
+	M = fread(fopen('FILENAME.bin'),[POLY_ORDER POLY_ORDER],'double'); fclose('all');
+
+10) The method has only been tested for two level MLMC, but should work for more complicated inputs. There will probably be bugs!

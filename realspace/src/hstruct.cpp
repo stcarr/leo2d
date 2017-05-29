@@ -152,8 +152,6 @@ double Hstruct::posAtomIndex(int k, int dim){
 		}
 	}
 
-	// NEED TO FIX SHIFTS !! (but they are not used in current implementation)
-	// should rotate AFTER shifts, not before
     if (dim == 0){
         double x = local_x*cos(theta) - local_y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0) + shifts[s][2]*sheets[s].getUnit(2,0);
         return x;
@@ -307,12 +305,12 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 								pair_here.push_back(kh);
 								pair_here.push_back(k2 + base_index);
 								pair_array.push_back(pair_here);
-								// /*
+								/*
 								if (kh == 1 || k2 + base_index == 1){
 									printf("[%d, %d] \n",kh, k2 + base_index);
 									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
 								}
-								// */
+								*/
 							}
 						}
 					}
@@ -423,55 +421,6 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
 		current_index += sheets[s].getMaxIndex();
 	}
 
-	/*
-	int searchsize = 10;
-	
-	
-	for (int kh = 0; kh < max_index; ++kh){
-		
-		// Manually add the diagonal elements, they are 0 in every model (energy offset is added in locality.cpp, not here)
-		array_i.push_back(kh);
-		array_j.push_back(kh);
-		array_t.push_back(0);
-		
-		int i0 = index_array[kh][0];
-		int j0 = index_array[kh][1];
-		int l0 = index_array[kh][2];
-		int s0 = index_array[kh][3];
-		
-		int mat = sheets[s0].getMat();
-		
-		double pos_here[3];
-		pos_here[0] = posAtomIndex(kh,0);
-		pos_here[1] = posAtomIndex(kh,1);
-		pos_here[2] = posAtomIndex(kh,2);
-		
-		for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
-			for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
-				for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
-				
-					int grid_2[4] = {i,j,l,s0};
-					int k2 = gridToIndex(grid_2);
-
-					if (k2 != -1){
-						double x2 = posAtomIndex(k2,0);
-						double y2 = posAtomIndex(k2,1);
-						double z2 = posAtomIndex(k2,2);
-						
-						int mat2 = sheets[index_array[k2][3]].getMat(); 
-						
-						double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, mat);
-						if (t != 0){
-							array_i.push_back(kh);
-							array_j.push_back(k2);
-							array_t.push_back(t);
-						}
-					}
-				}
-			}
-		}
-	}
-	*/
 }
 
 // ---------------------------------------------------------------
@@ -819,6 +768,8 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 
 			fftw_destroy_plan(p);
 			fftw_free(out);
+			
+			delete in;
 			
 		}
 	}
