@@ -1034,7 +1034,7 @@ void Mpi_job_results::conductivtyTransform(){
 				} else if (dim == 1) {
 					in[i*poly_order + j] = 2*g[i]*g[j]*M_yy[i][j];
 				} else if (dim == 2) {
-					in[i*poly_order + j] = 2*g[i]*g[j]*M_xx[i][j];
+					in[i*poly_order + j] = 2*g[i]*g[j]*M_xy[i][j];
 				}
 			}
 		}
