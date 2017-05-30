@@ -65,7 +65,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 	//printf("Entering mlmc_handler.process() \n");
 
-	//results.conductivtyTransform();
+	results.conductivtyTransform();
 
 	int jobID = results.getInt("jobID");
 	//printf("jobID = %d \n",jobID);

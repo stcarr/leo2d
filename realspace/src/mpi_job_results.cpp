@@ -1020,10 +1020,8 @@ void Mpi_job_results::conductivtyTransform(){
 
 	double g[poly_order];
 	for (int i = 0; i < poly_order; ++i){
-		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/poly_order; // Jackson coefficients
+		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(sqrt(2.0)*poly_order); // Jackson coefficients
 	}
-	
-	g[0] = g[0]/sqrt(2.0);
 	
 	for (int dim = 0; dim < 3; ++dim){
 		
