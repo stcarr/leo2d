@@ -8,6 +8,7 @@ MPI_SRC = main.cpp locality.cpp mpi_job_params.cpp mpi_job_results.cpp
 SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = LEO2D
+INSTALL_DIR = /usr/local/bin
 
 DEBUG = -g -O0
 #DEBUG = 
@@ -55,6 +56,9 @@ $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
 	$(COMP) $(MATFLAGS) $(DEBUG) -c $(addprefix $(SRC_DIR)/,$(notdir $(TARGET:.o=.cpp))) -o $@
 
 .PHONY: clean
+
+install:
+	cp $(EXECUTABLE) $(INSTALL_DIR)/$(EXECUTABLE)
 
 clean:
 	rm -f  $(EXECUTABLE) obj/*.o

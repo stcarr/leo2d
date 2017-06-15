@@ -40,6 +40,7 @@ class Mpi_job_results {
 		int mlmc_level;
 		int mlmc_num_clusters;
 		int mlmc_cluster_size;
+		int mlmc_current_num_samples;
 		
 		int num_target_sheets;
 		int* target_sheets;
@@ -72,6 +73,9 @@ class Mpi_job_results {
 		std::vector< std::vector<double> > M_xy;
 		std::vector< std::vector<double> > M_yy;
 		
+		std::vector<double> cpu_time;
+		std::vector<std::string> cpu_time_type;
+		
         Mpi_job_results();
         Mpi_job_results(const Mpi_job_results& orig);
         ~Mpi_job_results();
@@ -79,8 +83,7 @@ class Mpi_job_results {
 		void loadLocParams(Loc_params opts);
 		void loadJobParams(Mpi_job_params opts);
 		
-		void saveResult(std::string, std::vector<double>);
-		void saveResult(std::string, std::vector< std::vector<double> >);
+		void saveTiming(double, std::string);
 		
         void setParam(std::string, int);
 		void setParam(std::string, double);
@@ -88,6 +91,9 @@ class Mpi_job_results {
 		void setParam(std::string, double*, int);
 		void setParam(std::string, int*, int, int);
 		void setParam(std::string, double*, int, int);
+		void setParam(std::string, std::vector<double>);
+		void setParam(std::string, std::vector< std::vector<double> >);
+		void setParam(std::string, std::vector< std::string >);
 		
 		std::vector<double> getResultVec(std::string);
 		std::vector< std::vector<double> > getResultMat(std::string);
@@ -122,6 +128,7 @@ class Mpi_job_results {
 		
 		void CPP_sendDoubleVec(std::vector<double>, int, int);
 		void CPP_sendDoubleMat(std::vector< std::vector<double> >, int, int);		
+		void CPP_sendStrVec(std::vector< std::string >, int, int);		
 		
 		int recv_spool();
 		void recv(int);
@@ -134,6 +141,8 @@ class Mpi_job_results {
 		
 		void CPP_recvDoubleVec(int, std::string);
 		void CPP_recvDoubleMat(int, std::string);
+		void CPP_recvStrVec(int, std::string);
+
 };
 
 #endif /* MPI_JOB_RESULTS_H */

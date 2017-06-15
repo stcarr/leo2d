@@ -35,7 +35,6 @@ class Hstruct {
         void setShift(int, std::vector<double>);
 		
         double posAtomIndex(int, int);
-        double posAtomGrid(int (&grid_index)[3], int, int);
 		
         int findNearest(double (&pos)[3], int, int);
 		

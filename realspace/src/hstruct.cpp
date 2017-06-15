@@ -117,9 +117,9 @@ void Hstruct::setShift(int sheet, std::vector<double> b){
 //  (for dim: x = 0, y = 1, z = 2)
 // --------------------------------
 double Hstruct::posAtomIndex(int k, int dim){
-    if (k > max_index){
+    if (k < 0 || k > max_index){
         return 0;
-    }
+	}
     
     bool findSheet = true;
     int current_sheet = 0;
@@ -265,7 +265,20 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 			int i0 = findNearest(pos_here, sh - 1, 0);
 			int j0 = findNearest(pos_here, sh - 1, 1);
 			int s0 = sh - 1;
-
+			
+			
+			/*
+			// For debugging/checking findNearest()
+			int t_grid[4];
+			t_grid[0] = i0;
+			t_grid[1] = j0;
+			t_grid[2] = 0;
+			t_grid[3] = s0;
+			int c_k = gridToIndex(t_grid);
+			
+			printf("[%lf, %lf] -> [%lf, %lf] \n",pos_here[0],pos_here[1],posAtomIndex(c_k,0),posAtomIndex(c_k,1));
+			*/
+			
 			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
 
 			

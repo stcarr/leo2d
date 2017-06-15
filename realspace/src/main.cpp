@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < 3; ++i) {
 						getline(in_line,in_string,' ');
-						unitCell[i][0] = a*atof(in_string.c_str());
+						unitCell[0][i] = a*atof(in_string.c_str());
 					}
 				}
 				
@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < 3; ++i) {
 						getline(in_line,in_string,' ');
-						unitCell[i][1] = a*atof(in_string.c_str());
+						unitCell[1][i] = a*atof(in_string.c_str());
 					}
 				}
 				
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					for (int i = 0; i < 3; ++i) {
 						getline(in_line,in_string,' ');
-						unitCell[i][2] = a*atof(in_string.c_str());
+						unitCell[2][i] = a*atof(in_string.c_str());
 					}
 				}
 				
@@ -219,7 +219,10 @@ int main(int argc, char** argv) {
 				if (in_string == "ANGLE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					angle = atof(in_string.c_str());
+					// In Degrees:
+					angle = (2*M_PI*atof(in_string.c_str()))/(360.0);
+					// In Radians:
+					//angle = atof(in_string.c_str());
 				}
 				
 				

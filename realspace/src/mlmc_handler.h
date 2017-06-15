@@ -18,6 +18,13 @@
 class Mlmc_handler {
     private:
 	
+		Loc_params opts;
+	
+		int poly_order;
+		double energy_rescale;
+		double energy_shift;
+		int d_cond;
+	
 		std::string out_root;
 		std::string temp_root;
 		std::string prefix; 

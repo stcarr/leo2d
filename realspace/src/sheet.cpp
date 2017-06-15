@@ -399,14 +399,15 @@ double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
 			
 			// Simply multiply the grid by the unit cell vectors 
 			// and add the orbital's position in the unit cell
+			//printf("a[1] = [%lf, %lf], a[2] = [%lf, %lf] \n",a[0][0],a[0][1], a[1][0], a[1][1]);
 			if (solver_space == 0){
-				x = i*a[0][0] + j*a[0][1] + atom_pos[l][0];
-				y = i*a[1][0] + j*a[1][1] + atom_pos[l][1];
+				x = i*a[0][0] + j*a[1][0] + atom_pos[l][0];
+				y = i*a[0][1] + j*a[1][1] + atom_pos[l][1];
 				z = atom_pos[l][2]; // We here assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
 
 			} else if (solver_space == 1){
-				x = i*b[0][0] + j*b[0][1];
-				y = i*b[1][0] + j*b[1][1];		
+				x = i*b[0][0] + j*b[1][0];
+				y = i*b[0][1] + j*b[1][1];		
 				z = 0;
 			}
 			
@@ -813,8 +814,8 @@ void Sheet::setInverse(){
 	double det_a = a11*a22 - a12*a21;
 	
 	a_inverse[0][0] = a22/det_a;
-	a_inverse[0][1] = -a12/det_a;
-	a_inverse[1][0] = -a21/det_a;
+	a_inverse[0][1] = -a21/det_a;
+	a_inverse[1][0] = -a12/det_a;
 	a_inverse[1][1] = a11/det_a;
 	
 	

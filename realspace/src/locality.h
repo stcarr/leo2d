@@ -88,7 +88,7 @@ class Locality {
 		void workerChebSolve(int*,double*,int*,int*,double*);
 		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Loc_params);
 		
-		std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
+		std::vector< std::vector<double> > getReciprocal(int);
 		double crossProd(std::vector<double> x, std::vector<double> y, int dim);
 		// void writeBufferToFile(double*, int, std::string);
 		
@@ -136,7 +136,7 @@ class Locality {
 		
 		// Direct solver using Eigen package
 		void computeEigen(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
-		void computeEigenComplex(std::complex<double>*,std::complex<double>*,std::complex<double>*, std::complex<double>*, SpMatrix&, SpMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
+		void computeEigenComplex(std::vector<std::complex<double> >&,DMatrix&, SpMatrix&, Mpi_job_params, std::vector<int>, int);
 
 		// Calculates Peierls phase between two hopping sites;
 		double peierlsPhase(double, double, double, double, double);
@@ -146,6 +146,9 @@ class Locality {
 		
 		// Prints out timing information
 		void save();
+		
+		// Prints out job-averaged timing information
+		void printTiming(std::vector< Mpi_job_results >);
 		
 		// Ends MPI and finishes job
 		void finMPI();

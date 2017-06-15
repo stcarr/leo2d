@@ -17,6 +17,7 @@
 #include <string>
 #include <math.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
@@ -505,7 +506,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	time(&solveStart);
 	
 	int solver_type = opts.getInt("solver_type");
-	
+	//printf("Entering construct matrix \n");
 	//if (rank == print_rank)
 		//printf("rank %d entering constructMatrix(). \n", rank);
 
@@ -805,6 +806,44 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts*nShifts;
 			
+			std::vector< std::vector<double> > b1 = getReciprocal(0);
+			std::vector< std::vector<double> > b2 = getReciprocal(1);
+			
+			// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
+			//b1[1][0] = -b1[1][0];
+			//b2[1][0] = -b2[1][0];
+			
+			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+
+			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+			
+			double d_vec1[2];
+			double d_vec2[2];
+			
+			// Here we assume b1 ~ b2, the small angle limit of similar (or even identical) input lattices
+			
+			d_vec1[0] = b2[0][0] - b1[0][0];
+			d_vec1[1] = b2[0][1] - b1[0][1];
+			
+			d_vec2[0] = b2[1][0] - b1[1][0];
+			d_vec2[1] = b2[1][1] - b1[1][1];
+			
+			printf("d_vec1 = [%lf, %lf], d_vec2 = [%lf, %lf] \n",d_vec1[0],d_vec1[1],d_vec2[0],d_vec2[1]);
+			
+			// p1 and p2 are the K points of layer 1 and 2, respectively
+			
+			double p1[2];
+			double p2[2];
+			
+			p1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+			p1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+			
+			p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+			p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+			
+			printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+			
 			for (int i = 0; i < nShifts; ++i){
 				double x = (1.0/((double) nShifts))*i;
 				for (int j = 0; j < nShifts; ++j){
@@ -815,8 +854,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 					tempJob = Mpi_job_params();
 					
 					for(int s = 0; s < num_sheets; ++s){
-						shifts[s*3 + 0] = x;
-						shifts[s*3 + 1] = y;
+						shifts[s*3 + 0] = p1[0] + x*d_vec1[0] + y*d_vec2[0];
+						shifts[s*3 + 1] = p1[1] + x*d_vec1[1] + y*d_vec2[1];
 						shifts[s*3 + 2] = 0;
 					}
 								
@@ -846,18 +885,45 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts*nShifts;
 			
+			std::vector< std::vector<double> > b1 = getReciprocal(0);
+			std::vector< std::vector<double> > b2 = getReciprocal(1);
+			
+			
+			// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
+			//b1[1][0] = -b1[1][0];
+			//b2[1][0] = -b2[1][0];
+			
+			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+
+			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+			
+			double p1[2];
+			double p2[2];
+			
+			p1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+			p1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+			
+			p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+			p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+			
+			printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+			
 			for (int i = 0; i < maxJobs; ++i){
 			
-				double x = (1.0/((double) maxJobs))*i;
-				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(5*5);
+				//double x = (1.0/((double) maxJobs))*i;
+				double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
 				
 				double shifts[num_sheets*3];
 				Mpi_job_params tempJob;
 				tempJob = Mpi_job_params();
 				
 				for(int s = 0; s < num_sheets; ++s){
-					shifts[s*3 + 0] = x;
-					shifts[s*3 + 1] = x;
+					shifts[s*3 + 0] = (1.0-x)*p1[0] + (x)*p2[0];
+					shifts[s*3 + 1] = (1.0-x)*p1[1] + (x)*p2[1];
+					//shifts[s*3 + 0] = x*b1[0][0] + (1-x)*b1[1][0];
+					//shifts[s*3 + 1] = x*b1[0][1] + (1-x)*b1[1][1];					
 					shifts[s*3 + 2] = 0;
 				}
 							
@@ -983,6 +1049,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		mlmc_h.save();
 	}
 	
+	printTiming(result_array);
+	
 }
 
 void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
@@ -1007,6 +1075,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			return;
 		}
 		
+		Mpi_job_results results_out;
+		results_out.loadJobParams(jobIn);
+		
 		int jobID = jobIn.getInt("jobID");
 		int max_jobs = jobIn.getInt("max_jobs");
 		int observable_type = jobIn.getInt("observable_type");
@@ -1021,7 +1092,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		time_t tempStart;
 		time(&tempStart);
 		solverTimes.push_back(tempStart);
-
+		
+		clock_t timeStart;
+		timeStart = clock();
+		//results_out.saveTiming(timeStart, "START");
+		
 		double vacancy_chance = jobIn.getDouble("vacancy_chance");
 		
 		int num_targets = jobIn.getInt("num_targets");
@@ -1040,7 +1115,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double i2pos[max_index*3];
 
 		setConfigPositions(i2pos, index_to_pos, index_to_grid, jobIn);
-
+		clock_t timePos;
+		timePos = clock();
+		results_out.saveTiming( ( ((double)timePos) - ((double)timeStart) )/CLOCKS_PER_SEC, "POS_UPDATE");
+		
 		// Keep track of variables for vacancy simulation
 		
 		int local_max_index = max_index;
@@ -1109,6 +1187,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			generateMomH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		}
 		
+		setConfigPositions(i2pos, index_to_pos, index_to_grid, jobIn);
+		
+		clock_t timeMat;
+		timeMat = clock();
+		results_out.saveTiming( ( ((double)timeMat) - ((double)timePos) )/CLOCKS_PER_SEC, "MATRIX_GEN");
+		
 		// if solver_space == 1: Instead call generateMomH
 		// generateMomH: 
 		// 			needs to always be complex
@@ -1120,9 +1204,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
-
-		Mpi_job_results results_out;
-		results_out.loadJobParams(jobIn);
 
 		if (diagonalize == 0){
 			if (observable_type == 0){
@@ -1169,25 +1250,15 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 				DMatrix M_xy;
 								
 				computeEigen(eigenvalue_array, eigvecs, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
-				
-				//T_array[0] = (double)local_max_index;
-				
+								
 				std::vector< std::vector<double> > eigenweights;
 				std::vector< std::vector<double> > eigenvectors;
 				std::vector< std::vector<double> > cond_xx;
 				std::vector< std::vector<double> > cond_yy;
 				std::vector< std::vector<double> > cond_xy;
 				
-				
 				results_out.eigenvalues = eigenvalue_array;
 
-				/*
-				for (int i = 0; i < local_max_index; ++i){
-					T_array[1 + i] = eigenvalue_array[i];
-					
-				}
-				*/
-				
 				double* eigenvector_array;
 				eigenvector_array = eigvecs.getValPtr();
 				
@@ -1199,7 +1270,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 						std::vector<double> temp_vec;
 						
 						for (int i = 0; i < local_max_index; ++i){
-							double w = eigenvector_array[i + tar_here*local_max_index];
+							double w = eigenvector_array[i*local_max_index + tar_here];
 							temp_vec.push_back(w*w);
 						}
 						
@@ -1225,17 +1296,128 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					}
 					
 					results_out.eigenvectors = eigenvectors;
-				
-					/*
-					for (int i = 0; i < local_max_index*local_max_index; ++i){
-						T_array[1 + b*local_max_index + i] = eigenvector_array[i];
-					}
-					*/
 					
 				}
 				
-				if (d_cond == 1){
+				if (d_cond > 0){
 				
+					double* val_M_xx;
+					val_M_xx = M_xx.getValPtr();
+					
+				
+					for (int i = 0; i < poly_order; ++i){
+						std::vector<double> temp_xx;
+						
+						for (int j = 0; j < poly_order; ++j) {
+							temp_xx.push_back(val_M_xx[i + j*poly_order]);
+						}
+						
+						cond_xx.push_back(temp_xx);
+						
+						results_out.M_xx = cond_xx;
+						
+					}
+					
+					if (d_cond > 1){
+						
+						double* val_M_yy;
+						val_M_yy = M_yy.getValPtr();
+						
+						double* val_M_xy;
+						val_M_xy = M_xy.getValPtr();
+					
+						for (int i = 0; i < poly_order; ++i){
+							std::vector<double> temp_yy;
+							std::vector<double> temp_xy;
+							
+							for (int j = 0; j < poly_order; ++j) {
+								temp_yy.push_back(val_M_yy[i + j*poly_order]);
+								temp_xy.push_back(val_M_xy[i + j*poly_order]);
+							}
+							
+							cond_yy.push_back(temp_yy);
+							cond_xy.push_back(temp_xy);
+							
+							results_out.M_yy = cond_yy;
+							results_out.M_xy = cond_xy;					
+						
+						}
+					}
+				}
+
+			} else if (solver_space == 1){
+			
+			
+				// Need to write for complex std::vectors 
+				
+			
+				std::vector<std::complex<double> > eigenvalue_array;
+				eigenvalue_array.resize(local_max_index);
+				
+				DMatrix eigvecs;
+				
+				computeEigenComplex(eigenvalue_array, eigvecs, H, jobIn, current_index_reduction, local_max_index);
+				
+				std::vector< std::vector<double> > eigenweights;
+				std::vector< std::vector<double> > eigenvectors;
+				
+				/*
+				std::vector< std::vector< std::complex<double> > > cond_xx;
+				std::vector< std::vector< std::complex<double> > > cond_yy;
+				std::vector< std::vector< std::complex<double> > > cond_xy;
+				*/
+				
+				std::vector<double> eigenvalue_real_array;
+				eigenvalue_real_array.resize(local_max_index);
+				for (int i = 0; i < local_max_index; ++i){
+					eigenvalue_real_array[i] = eigenvalue_array[i].real();
+				}
+				
+				results_out.eigenvalues = eigenvalue_real_array;
+
+				std::complex<double>* eigenvector_array;
+				eigenvector_array = eigvecs.getCpxValPtr();
+				
+				if (d_weights == 1){
+				
+					for (int t = 0; t < num_targets; ++t){
+					
+						int tar_here = target_list[t];
+						std::vector<double> temp_vec;
+						
+						for (int i = 0; i < local_max_index; ++i){
+							std::complex<double> w1 = eigenvector_array[i*local_max_index + tar_here];
+							std::complex<double> w2 = w1*std::conj(w1);
+							temp_vec.push_back(w2.real());
+						}
+						
+						eigenweights.push_back(temp_vec);
+					}
+					
+					results_out.eigenweights = eigenweights;
+				
+				}
+				
+				if (d_vecs == 1){
+				
+					for (int j = 0; j < local_max_index; ++j){
+					
+						std::vector<double> temp_vec;
+						
+						for (int i = 0; i < local_max_index; ++i){
+							double w = eigenvector_array[i + j*local_max_index].real();
+							temp_vec.push_back(w);
+						}
+						
+						eigenvectors.push_back(temp_vec);
+					}
+					
+					results_out.eigenvectors = eigenvectors;
+					
+				}
+				
+				if (d_cond > 0){
+					/*
 					double* val_M_xx;
 					val_M_xx = M_xx.getValPtr();
 					
@@ -1264,63 +1446,25 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 						results_out.M_yy = cond_yy;
 						results_out.M_xy = cond_xy;
 						
-						//T_array[1 + b*local_max_index + a*local_max_index*local_max_index + i] = val_M_xx[i];
-
 					}
 					
-				}
-
-			} else if (solver_space == 1){
-			
-			
-				// Need to write for complex std::vectors 
-				/*
-			
-				std::complex<double>* eigenvalue_array;
-				eigenvalue_array = new std::complex<double>[local_max_index];
-				std::complex<double>* eigenvector_array;
-				eigenvector_array = new std::complex<double>[local_max_index*local_max_index];
-				std::complex<double>* j_x;
-				j_x = new std::complex<double>[local_max_index*local_max_index];
-				std::complex<double>* j_y;
-				j_y = new std::complex<double>[local_max_index*local_max_index];
+					*/
+				}			
 				
-				computeEigenComplex(eigenvalue_array, eigenvector_array, j_x, j_y, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
-				
-				T_array[0] = (double)local_max_index;
-			
-				for (int i = 0; i < local_max_index; ++i){
-					T_array[1 + i] = eigenvalue_array[i].real(); // just take real values, should be purely real anyway
-				}
-				
-				if (d_weights == 1){
-				
-					for (int t = 0; t < num_targets; ++t){
-						int tar_here = target_list[t];
-						for (int i = 0; i < local_max_index; ++i){
-							double w_r = eigenvector_array[i + tar_here*local_max_index].real();
-							double w_i = eigenvector_array[i + tar_here*local_max_index].imag();
-							T_array[1 + (t+1)*local_max_index + i] = w_r*w_r + w_i*w_i;
-						}
-					}
-				
-				}
-
-				delete eigenvalue_array;
-				delete eigenvector_array;	
-				delete j_x;				
-				delete j_y;	
-			
-				*/
 			}
 			
 		
 		}
 		
 		// Save time at which solver finished
+		
 		time_t tempEnd;
 		time(&tempEnd);
 		solverTimes.push_back(tempEnd);
+	
+		clock_t timeSolve;
+		timeSolve = clock();
+		results_out.saveTiming( ( ((double)timeSolve) - ((double)timeMat) )/((double)CLOCKS_PER_SEC), "SOLVER");
 		
 		results_out.send(root, jobID);
 
@@ -1575,8 +1719,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		
 			int s = index_to_grid[i*4 + 3];
 			
-			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*s1_a[0][0] + shifts[s*3 + 1]*s1_a[0][1];
-			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*s1_a[1][0] + shifts[s*3 + 1]*s1_a[1][1];
+			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*s1_a[0][0] + shifts[s*3 + 1]*s1_a[1][0];
+			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*s1_a[0][1] + shifts[s*3 + 1]*s1_a[1][1];
 			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 		
 		}
@@ -1584,23 +1728,15 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	
 		// Here we define new positions as " A = q + K "
 		
-		std::vector< std::vector<double> > b1 = getReciprocal(sdata[0].a);
-		
-		
-		// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
-		b1[1][0] = -b1[1][0];
-		
-		//printf("b = [%lf %lf ; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
-		//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
-		
 		for (int i = 0; i < max_index; ++i) {
 		
 			//int s = index_to_grid[i*4 + 3];
 			int s = 0;
 			//if (s == 0){
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[1][0] + shifts[s*3 + 1]*b1[1][1];
+				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0];
+				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+				//printf("pos[%d] = [%lf, %lf, %lf] \n",i,i2pos[i*3 + 0],i2pos[i*3 + 1],i2pos[i*3 + 2]);
 			/**} if (s == 1){
 				i2pos[i*3 + 0] = -index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
 				i2pos[i*3 + 1] = -index_to_pos[i*3 + 1] + shifts[s*3 + 0]*b1[0][1] + shifts[s*3 + 1]*b1[1][1];
@@ -2066,13 +2202,13 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 			
 				// unrotated variables
 				
-				double temp_x = i*a[0][0] + j*a[0][1];
-				double temp_y = i*a[1][0] + j*a[1][1];
+				double temp_x = i*a[0][0] + j*a[1][0];
+				double temp_y = i*a[0][1] + j*a[1][1];
 				double temp_z = 0;
 				
 				// rotated variables	
 				double x = temp_x*cos(theta) - temp_y*sin(theta);
-				double y = temp_y*cos(theta) + temp_x*sin(theta);
+				double y = temp_x*sin(theta) + temp_y*cos(theta);
 				double z = temp_z;
 				
 				
@@ -2236,7 +2372,7 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 					t = t + std::polar(t_here,phase);
 				}
 				
-				printf("[%d,%d] = %lf \n",k_i,new_k,t.real());
+				//printf("[%d,%d] = %lf \n",k_i,new_k,t.real());
 				v_c[input_counter] = t/energy_rescale;
 				++input_counter;
 			}
@@ -2332,8 +2468,9 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 				if (std::abs(t) != 0){
 				//if (0){ // swapping this with above line turns off interlayer coupling
 				
-				printf("[%d,%d] = %lf + %lf i \n",k_i,new_k,t.real(),t.imag());
+				//printf("[%d,%d] = %lf + %lf i \n",k_i,new_k,t.real(),t.imag());
 
+					// Controls Momentum Interlayer coupling (set to 0 to turn off interlayer interaction!)
 					if (k_i <= new_k){
 						v_c[input_counter] = t/energy_rescale;
 					} else if (k_i > new_k) {
@@ -2810,8 +2947,116 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 	// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
 	
-	if (d_cond == 1){
+	if (d_cond > 0){
 	
+		//int p = jobIn.getInt("poly_order");
+		// Compute J_x, J_y
+		DMatrix J_x;
+		DMatrix temp_matrix_x;
+		dxH.denseMatrixMultiply(temp_matrix_x, eigvecs, 1, 0);
+		eigvecs.matrixMultiply(J_x, temp_matrix_x, 1, 0,'T','N');
+		
+		//printf("J_x construction complete \n")
+
+		
+		int N = local_max_index;
+		DMatrix cheb_eigvals;
+		cheb_eigvals.setup(N,p);
+		double* v_cheb;
+		v_cheb = cheb_eigvals.allocRealVal();
+		
+		// COLUMN MAJOR ORDER (for Fortran MKL subroutines)
+		//
+		// Compute Cheby. coeffs. T_m(lambda_i) as a matrix
+		
+		for (int i = 0; i < N; ++i){
+			// m = 0
+			v_cheb[0*N + i] = 1;
+			v_cheb[1*N + i] = eigvals[i];
+		}
+		
+		// Chebyshev iteration on eigenvalues
+		for (int m = 2; m < p; ++m){
+			// start cheb iteration p
+			for (int i = 0; i < N; ++i){
+				v_cheb[m*N + i] = 2*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
+			}
+		}
+		
+		// Finish calculating the the M_ij tensors
+		
+		// J_xx element-wise via vdMul in MKL
+		DMatrix J_xx; 
+		J_x.eleMatrixMultiply(J_xx, J_x, 1, 0);
+		
+		DMatrix temp_mat_xx;
+		J_xx.matrixMultiply(temp_mat_xx, cheb_eigvals, 1, 0);
+		cheb_eigvals.matrixMultiply(M_xx,temp_mat_xx, 1.0/local_max_index, 0, 'T', 'N');
+		
+		if (d_cond > 1){
+
+		DMatrix J_y;
+		DMatrix temp_matrix_y;
+		dyH.denseMatrixMultiply(temp_matrix_y, eigvecs, 1, 0);
+		eigvecs.matrixMultiply(J_y, temp_matrix_y, 1, 0,'T','N');	
+		//printf("J_y construction complete \n");
+
+		// J_yy, J_xy, element-wise via vdMul in MKL
+		DMatrix J_yy;
+		J_y.eleMatrixMultiply(J_yy, J_y, 1, 0);
+		DMatrix J_xy;
+		J_x.eleMatrixMultiply(J_xy, J_y, 1, 0);
+		
+		//printf("J_ij construction complete \n");		
+		
+		DMatrix temp_mat_yy;
+		J_yy.matrixMultiply(temp_mat_yy, cheb_eigvals, 1, 0);
+		cheb_eigvals.matrixMultiply(M_yy,temp_mat_yy, 1.0/local_max_index, 0, 'T', 'N');
+				
+		DMatrix temp_mat_xy;
+		J_xy.matrixMultiply(temp_mat_xy, cheb_eigvals, 1, 0);
+		cheb_eigvals.matrixMultiply(M_xy,temp_mat_xy, 1.0/local_max_index, 0, 'T', 'N');
+		
+		}
+		
+	}
+	
+}
+
+void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, DMatrix &eigvecs, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+
+
+	int d_cond = jobIn.getInt("d_cond");
+	int d_weights = jobIn.getInt("d_weights");
+	int p = jobIn.getInt("poly_order");
+	
+	Eigen::MatrixXcd H_dense = Eigen::MatrixXcd::Zero(local_max_index,local_max_index);
+	H.denseConvert(H_dense);
+	//printf("Running EigenSolver... \n");
+	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(H_dense);
+	//printf("EigenSolver complete! \n");
+	
+	eigvecs.setup(local_max_index, local_max_index, 1);
+	
+	std::complex<double>* eigvecs_ptr;
+	eigvecs_ptr = eigvecs.allocCpxVal();
+
+	
+	Eigen::VectorXcd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
+	Eigen::MatrixXcd::Map(&eigvecs_ptr[0], local_max_index, local_max_index) = es.eigenvectors();
+	
+	// now we compute <n|j|m>, the current correlation matrix
+	// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
+
+	// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
+	
+	if (d_cond > 0){
+		
+		// NOT IMPLEMENTED YET
+		
+		/*
+		
+		
 		//int p = jobIn.getInt("poly_order");
 		// Compute J_x, J_y
 		DMatrix J_x;
@@ -2876,163 +3121,8 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 		DMatrix temp_mat_xy;
 		J_xy.matrixMultiply(temp_mat_xy, cheb_eigvals, 1, 0);
 		cheb_eigvals.matrixMultiply(M_xy,temp_mat_xy, 1.0/local_max_index, 0, 'T', 'N');
-		
+		*/
 	}
-	
-	
-	// Old method, does not do Chebyshev polynomials
-	// (i.e. we get an N x N matrix, not a p x p one, where N = local_max_index)
-	/*
-	if (d_cond == 1){
-		
-		for(int i = 0; i < local_max_index; ++i){
-		
-			// holds vector |n>
-			double temp_i[local_max_index];
-			
-			for(int k = 0; k < local_max_index; ++k){
-				temp_i[k] = eigvecs[i*local_max_index + k];
-			}
-		
-			for(int j = 0; j < local_max_index; ++j){
-			
-			
-				// holds vector |m> 
-				double* temp_j= new double[local_max_index];
-				
-				for(int k = 0; k < local_max_index; ++k){
-					temp_j[k] = eigvecs[j*local_max_index + k];
-					//printf("temp_j[%d] = %lf \n",k,temp_j[k]);
-				}
-				
-				double* temp_out_x = new double[local_max_index];
-				double* temp_out_y = new double[local_max_index];
-				
-				dxH.vectorMultiply(temp_j, temp_out_x, 1, 0);
-				dyH.vectorMultiply(temp_j, temp_out_y, 1, 0);
-				
-				// store the <n|j|m> results
-				
-				double temp_sum_x = 0;
-				double temp_sum_y = 0;
-				
-				
-				// Can implement matrix-vector multiplication...
-				for(int k = 0; k < local_max_index; ++k){
-					temp_sum_x = temp_sum_x + temp_out_x[k]*temp_i[k];
-					temp_sum_y = temp_sum_x + temp_out_y[k]*temp_i[k];
-					
-					//printf("temp_out_x[%d] = %lf \n",k,temp_out_x[k]);
-					//printf("temp_i[k] = %lf \n",temp_i[k]);
-					//printf("temp_sum_x = %lf \n",temp_sum_x);
-				}
-				
-				j_x[i*local_max_index + j] = temp_sum_x;
-				j_y[i*local_max_index + j] = temp_sum_y;
-				//printf("temp_sum_x = %lf, temp_sum_y = %lf \n",temp_sum_x,temp_sum_y);
-				delete temp_j;
-				delete temp_out_x;
-				delete temp_out_y;
-			}
-		}
-	}
-	
-	*/
-	
-	
-}
-
-void Locality::computeEigenComplex(std::complex<double>* eigvals, std::complex<double>* eigvecs, std::complex<double>*j_x, std::complex<double>* j_y, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
-
-	
-	int d_cond = jobIn.getInt("d_cond");
-	int d_weights = jobIn.getInt("d_weights");
-	
-	Eigen::MatrixXcd H_dense = Eigen::MatrixXcd::Zero(local_max_index,local_max_index);
-	H.denseConvert(H_dense);
-	printf("Running EigenSolver... \n");
-	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(H_dense);
-	printf("EigenSolver complete! \n");
-	
-	
-	Eigen::VectorXcd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
-	Eigen::MatrixXcd::Map(&eigvecs[0], local_max_index, local_max_index) = es.eigenvectors();
-	
-	
-	
-	// now we compute <n|j|m>, the current correlation matrix
-	// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
-	
-	// !! Need to add Chebyshev projection of the current-current correlation matrix !!
-	// !! (Already programmed for real matrices, need to copy it over for complex) !!
-	
-	
-	
-	// Chebyshev polynomial method will go here
-	
-	
-	
-	
-	// !! Direct method, does N x N matrix instead of p x p matrix !!
-	
-	// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
-	
-	// Need to rewrite for complex objects, or use templates
-	/*
-	if (d_cond == 1){
-		
-		for(int i = 0; i < local_max_index; ++i){
-		
-			// holds vector |n>
-			double temp_i[local_max_index];
-			
-			for(int k = 0; k < local_max_index; ++k){
-				temp_i[k] = eigvecs[i*local_max_index + k];
-			}
-		
-			for(int j = 0; j < local_max_index; ++j){
-			
-			
-				// holds vector |m> 
-				double* temp_j= new double[local_max_index];
-				
-				for(int k = 0; k < local_max_index; ++k){
-					temp_j[k] = eigvecs[j*local_max_index + k];
-					//printf("temp_j[%d] = %lf \n",k,temp_j[k]);
-				}
-				
-				double* temp_out_x = new double[local_max_index];
-				double* temp_out_y = new double[local_max_index];
-				
-				dxH.vectorMultiply(temp_j, temp_out_x, 1, 0);
-				dyH.vectorMultiply(temp_j, temp_out_y, 1, 0);
-				
-				// store the <n|j|m> results
-				
-				double temp_sum_x = 0;
-				double temp_sum_y = 0;
-				
-				
-				// Can implement matrix-vector multiplication...
-				for(int k = 0; k < local_max_index; ++k){
-					temp_sum_x = temp_sum_x + temp_out_x[k]*temp_i[k];
-					temp_sum_y = temp_sum_x + temp_out_y[k]*temp_i[k];
-					
-					//printf("temp_out_x[%d] = %lf \n",k,temp_out_x[k]);
-					//printf("temp_i[k] = %lf \n",temp_i[k]);
-					//printf("temp_sum_x = %lf \n",temp_sum_x);
-				}
-				
-				j_x[i*local_max_index + j] = temp_sum_x;
-				j_y[i*local_max_index + j] = temp_sum_y;
-				//printf("temp_sum_x = %lf, temp_sum_y = %lf \n",temp_sum_x,temp_sum_y);
-				delete temp_j;
-				delete temp_out_x;
-				delete temp_out_y;
-			}
-		}
-	}
-	*/
 	
 }
 
@@ -3047,8 +3137,24 @@ double Locality::onSiteE(double x, double y, double z, double E_in){
 	return z*E_in;
 }
 
-std::vector< std::vector<double> > Locality::getReciprocal(std::vector< std::vector<double> > a){
+std::vector< std::vector<double> > Locality::getReciprocal(int s){
 
+	std::vector< std::vector<double> > orig_a = sdata[s].a;
+	double theta = angles[s];
+	
+	std::vector< std::vector<double> > a;
+	a.resize(3);
+	a[0].resize(3);
+	a[1].resize(3);
+	a[2].resize(3);
+	
+	
+	for (int i = 0; i < 3; ++i){
+		a[i][0] = orig_a[i][0]*cos(theta) + -1.0*orig_a[i][1]*sin(theta);
+		a[i][1] = orig_a[i][0]*sin(theta) + orig_a[i][1]*cos(theta);
+		a[i][2] = orig_a[i][2];
+	}
+	
 	std::vector< std::vector<double> > b;
 	b.resize(3);
 	for (int i = 0; i < 3; ++i){
@@ -3142,6 +3248,52 @@ void Locality::save(){
 			difftime(solveEnd, solveStart));
 	}
 }
+
+void Locality::printTiming(std::vector< Mpi_job_results > results){
+
+	std::vector<std::vector<double> > times;
+	std::vector<std::string> tags;
+	
+	int num_r = results.size();
+	int num_t = results[0].cpu_time.size();
+	for (int t = 0; t < num_t; ++t){
+		tags.push_back(results[0].cpu_time_type[t]);
+	}
+	
+	// should eventually add some catch/throws to make sure every result has same # of times and types
+	
+	for (int r = 0; r < num_r; ++r){
+		std::vector<double> temp_times;
+		for (int t = 0; t < num_t; ++t){
+			temp_times.push_back(results[r].cpu_time[t]);
+		}
+		times.push_back(temp_times);
+	}
+	
+	std::vector<double> avg_times;
+	avg_times.resize(num_t);
+	
+	for (int r = 0; r < num_r; ++r){
+		for (int t = 0; t < num_t; ++t){
+			double temp_diff = times[r][t];
+			avg_times[t] = avg_times[t] + temp_diff/((double) num_r);
+		}
+	}
+	printf("=========- AVG TIMINGS -========\n");
+	for (int t = 0; t < num_t; ++t){
+		int text_length = tags[t].length();
+		printf("%s",tags[t].c_str());
+		if (text_length < 14) {
+			for (int s = 0; s < 14 - text_length; ++s){
+				printf(" ");
+			}
+		}
+		printf(": %lf sec \n",avg_times[t]);
+	}	
+	printf("================================\n");
+
+}
+
 
 void Locality::finMPI(){ 
 	//printf("rank %d finalizing MPI. \n", rank);

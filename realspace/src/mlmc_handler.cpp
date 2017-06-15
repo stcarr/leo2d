@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <stdlib.h>
+#include <math.h>
 
 Mlmc_handler::Mlmc_handler() {
 	
@@ -23,7 +24,18 @@ Mlmc_handler::~Mlmc_handler(){
 
 }
 
-void Mlmc_handler::setup(Loc_params opts){
+void Mlmc_handler::setup(Loc_params opts_in){
+	
+	opts = opts_in;
+	average.loadLocParams(opts);
+	variance.loadLocParams(opts);
+	cluster_average.loadLocParams(opts);
+	cluster_variance.loadLocParams(opts);
+	
+	poly_order = opts.getInt("poly_order");
+	energy_rescale = opts.getDouble("energy_rescale");
+	energy_shift = opts.getDouble("energy_shift");
+	d_cond = opts.getInt("d_cond");
 	
 	out_root = opts.getString("mlmc_out_root");
 	temp_root = opts.getString("mlmc_temp_root");
@@ -40,6 +52,8 @@ void Mlmc_handler::setup(Loc_params opts){
 		cluster_original.resize(mlmc_num_clusters);
 		
 		for (int i = 0; i < mlmc_num_clusters; ++i){
+		
+			cluster_original[i].loadLocParams(opts);
 		
 			std::string tar_file; // temp_root,prefix,mlmc_level+1,(i+1)
 			tar_file = temp_root;
@@ -65,8 +79,10 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 	//printf("Entering mlmc_handler.process() \n");
 
-	results.conductivtyTransform();
-
+	if (d_cond > 0){
+		results.conductivtyTransform();
+	}
+	
 	int jobID = results.getInt("jobID");
 	//printf("jobID = %d \n",jobID);
 	int mlmc_clusterID = results.getInt("mlmc_clusterID") ;
@@ -110,7 +126,6 @@ void Mlmc_handler::process(Mpi_job_results results){
 		
 		cluster_average.mlmc_cluster_average(cluster_original[mlmc_clusterID-1],results);
 		//printf("mlmc_handler.process() completed dE process \n");
-
 		cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],results);
 		//printf("mlmc_handler.process() completed dV process \n");
 	}
@@ -151,6 +166,23 @@ void Mlmc_handler::save(){
 	
 	average.mlmc_save(tar_average_file);
 	variance.mlmc_save(tar_variance_file);
+	
+	std::string tar_E_file;
+	tar_E_file = out_root;
+	tar_E_file.append("/");
+	tar_E_file.append(prefix);
+	tar_E_file.append("_L");
+	tar_E_file.append(o_lvl.str());
+	tar_E_file.append("_ENERGIES.bin");
+	
+	double E[poly_order];
+	for (int i = 0; i < poly_order; ++i){
+		E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+	}
+	
+	std::ofstream file_E(tar_E_file.c_str(), std::ofstream::binary);
+	char* buffer = (char*)E;
+	file_E.write(buffer, poly_order*(sizeof(double)/sizeof(char)));
 	
 	
 	// If we aren't on the top level also save cluster average and variance

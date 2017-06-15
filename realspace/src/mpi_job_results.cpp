@@ -54,7 +54,7 @@ Mpi_job_results::Mpi_job_results() {
 	mlmc_level = 1;
 	mlmc_num_clusters = 0;
 	mlmc_cluster_size = 4;	
-	
+	mlmc_current_num_samples = 1;
 	
 	poly_order = 20;
 	
@@ -114,6 +114,9 @@ Mpi_job_results::Mpi_job_results(const Mpi_job_results& orig){
 		M_xx = orig.M_xx;
 		M_yy = orig.M_yy;
 		M_xy = orig.M_xy;
+		
+		cpu_time = orig.cpu_time;
+		cpu_time_type = orig.cpu_time_type;
 		
 }
 
@@ -200,27 +203,10 @@ void Mpi_job_results::loadJobParams(Mpi_job_params orig){
 		
 }
 
-void Mpi_job_results::saveResult(std::string tag, std::vector<double> val){
+void Mpi_job_results::saveTiming(double t, std::string tag){
 
-	if (tag == "eigenvalues")
-		eigenvalues = val;
-
-}
-
-void Mpi_job_results::saveResult(std::string tag, std::vector< std::vector<double> > val){
-	
-	if (tag == "cheb_coeffs")
-		cheb_coeffs = val;
-	if (tag == "eigenweights")
-		eigenweights = val;
-	if (tag == "eigenvectors")
-		eigenvectors = val;
-	if (tag == "M_xx")
-		M_xx = val;
-	if (tag == "M_yy")
-		M_yy = val;
-	if (tag == "M_xy")
-		M_xy = val;
+	cpu_time.push_back(t);
+	cpu_time_type.push_back(tag);
 
 }
 
@@ -333,6 +319,39 @@ void Mpi_job_results::setParam(std::string tag, double *val, int dim1, int dim2)
 	} else {
 		printf("WARNING: Mpi_job_results variable <%s> not found. \n", tag.c_str());
 	}
+}
+
+void Mpi_job_results::setParam(std::string tag, std::vector<double> val){
+
+	if (tag == "eigenvalues")
+		eigenvalues = val;
+	if (tag == "cpu_time")
+		cpu_time = val;
+
+}
+
+void Mpi_job_results::setParam(std::string tag, std::vector< std::vector<double> > val){
+	
+	if (tag == "cheb_coeffs")
+		cheb_coeffs = val;
+	if (tag == "eigenweights")
+		eigenweights = val;
+	if (tag == "eigenvectors")
+		eigenvectors = val;
+	if (tag == "M_xx")
+		M_xx = val;
+	if (tag == "M_yy")
+		M_yy = val;
+	if (tag == "M_xy")
+		M_xy = val;
+
+}
+
+void Mpi_job_results::setParam(std::string tag, std::vector<std::string> val){
+
+	if (tag == "cpu_time_type")
+		cpu_time_type = val;
+
 }
 
 std::vector<double> Mpi_job_results::getResultVec(std::string tag) {
@@ -459,9 +478,7 @@ double* Mpi_job_results::getDoubleMat(std::string tag) const{
 
 void Mpi_job_results::save(std::ofstream& outFile) {
 
-
 	printHeader(outFile);
-	
 	if (diagonalize == 0){
 		if (observable_type == 0){
 		
@@ -503,14 +520,14 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 	} else if (diagonalize == 1){
 	
 		int local_max_index = eigenvalues.size();
-
 		outFile << "EIGS: ";
 		for(int j = 0; j < local_max_index - 1; ++j){
 			outFile << eigenvalues[j] << ", ";
 		}
 		outFile << eigenvalues[local_max_index - 1] << "\n";
+
 		outFile << "\n";
-		
+
 		// Control for output printing
 		// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
 		
@@ -545,7 +562,7 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 			
 		}
 		
-		if (d_cond == 1){
+		if (d_cond > 0){
 		
 			outFile << "M_XX: \n";
 			for(int j = 0; j < poly_order; ++j){
@@ -557,26 +574,27 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 			
 			outFile << "\n";
 
-			outFile << "M_YY: \n";
-			for(int j = 0; j < poly_order; ++j){
-				for (int m = 0; m < poly_order - 1; ++m){
-					outFile << M_yy[j][m] << ", ";
+				if (d_cond > 1){
+				outFile << "M_YY: \n";
+				for(int j = 0; j < poly_order; ++j){
+					for (int m = 0; m < poly_order - 1; ++m){
+						outFile << M_yy[j][m] << ", ";
+					}
+					outFile << M_yy[j][poly_order - 1] << "\n";
 				}
-				outFile << M_yy[j][poly_order - 1] << "\n";
-			}
-			
-			outFile << "\n";
-			
-			outFile << "M_XY: \n";
-			for(int j = 0; j < poly_order; ++j){
-				for (int m = 0; m < poly_order - 1; ++m){
-					outFile << M_xy[j][m] << ", ";
+				
+				outFile << "\n";
+				
+				outFile << "M_XY: \n";
+				for(int j = 0; j < poly_order; ++j){
+					for (int m = 0; m < poly_order - 1; ++m){
+						outFile << M_xy[j][m] << ", ";
+					}
+					outFile << M_xy[j][poly_order - 1] << "\n";
 				}
-				outFile << M_xy[j][poly_order - 1] << "\n";
+				
+				outFile << "\n";
 			}
-			
-			outFile << "\n";
-			
 			// Use to write M_xx to a binary file, M_XX_J<jobID>.dat
 			
 			/*
@@ -728,302 +746,366 @@ void Mpi_job_results::printHeader(std::ofstream& outFile){
 void Mpi_job_results::mlmc_load(std::string file_name){
 
 	// Use to load M_ij from a binary file
-	
-	std::string file_name_xx = file_name;
-	std::string file_name_yy = file_name;
-	std::string file_name_xy = file_name;
-	
-	file_name_xx.append("M_xx.bin");
-	file_name_yy.append("M_yy.bin");
-	file_name_xy.append("M_xy.bin");
-	
-	
-	std::ifstream file_xx(file_name_xx.c_str(), std::ifstream::binary);
-	file_xx.seekg(0, file_xx.end);
-    int sq_length_xx = (int) (file_xx.tellg()*sizeof(char))/sizeof(double);
-	int length_xx = sqrt(sq_length_xx);
-    file_xx.seekg(0, file_xx.beg);
-	M_xx.resize(length_xx);
-	for(int i = 0; i < length_xx; ++i){
-		M_xx[i].resize(length_xx);
-		char buffer[length_xx*(sizeof(double)/sizeof(char))];
-		file_xx.read(buffer, length_xx*(sizeof(double)/sizeof(char)));
-		double* doub_buffer = (double*) buffer;
-		std::vector<double> temp_vec(doub_buffer, doub_buffer + length_xx);
-		M_xx[i] = temp_vec;
+	if (d_cond > 0) {
+		
+		std::string file_name_xx = file_name;
+		
+		file_name_xx.append("M_xx.bin");
+		
+		
+		std::ifstream file_xx(file_name_xx.c_str(), std::ifstream::binary);
+		file_xx.seekg(0, file_xx.end);
+		int sq_length_xx = (int) (file_xx.tellg()*sizeof(char))/sizeof(double);
+		int length_xx = sqrt(sq_length_xx);
+		file_xx.seekg(0, file_xx.beg);
+		M_xx.resize(length_xx);
+		for(int i = 0; i < length_xx; ++i){
+			M_xx[i].resize(length_xx);
+			char buffer[length_xx*(sizeof(double)/sizeof(char))];
+			file_xx.read(buffer, length_xx*(sizeof(double)/sizeof(char)));
+			double* doub_buffer = (double*) buffer;
+			std::vector<double> temp_vec(doub_buffer, doub_buffer + length_xx);
+			M_xx[i] = temp_vec;
+		}
+		file_xx.close();
+		
+		if (d_cond > 1){
+		
+			std::string file_name_yy = file_name;
+			std::string file_name_xy = file_name;
+			
+			file_name_yy.append("M_yy.bin");
+			file_name_xy.append("M_xy.bin");
+			
+			std::ifstream file_yy(file_name_yy.c_str(), std::ifstream::binary);
+			file_yy.seekg(0, file_yy.end);
+			int sq_length_yy = (file_yy.tellg()*sizeof(char))/sizeof(double);
+			int length_yy = sqrt(sq_length_yy);
+			file_yy.seekg(0, file_yy.beg);
+			M_yy.resize(length_yy);
+			for(int i = 0; i < length_yy; ++i){
+				M_yy[i].resize(length_yy);
+				char buffer[length_yy*(sizeof(double)/sizeof(char))];
+				file_yy.read(buffer, length_yy*(sizeof(double)/sizeof(char)));
+				double* doub_buffer = (double*) buffer;
+				std::vector<double> temp_vec(doub_buffer, doub_buffer + length_yy);
+				M_yy[i] = temp_vec;
+			}
+			file_yy.close();
+			
+			std::ifstream file_xy(file_name_xy.c_str(), std::ifstream::binary);
+			file_xy.seekg(0, file_xy.end);
+			int sq_length_xy = (file_xy.tellg()*sizeof(char))/sizeof(double);
+			int length_xy = sqrt(sq_length_xy);
+			file_xy.seekg(0, file_xy.beg);
+			M_xy.resize(length_xy);
+			for(int i = 0; i < length_xy; ++i){
+				M_xy[i].resize(length_xy);
+				char buffer[length_xy*(sizeof(double)/sizeof(char))];
+				file_xy.read(buffer, length_xy*(sizeof(double)/sizeof(char)));
+				double* doub_buffer = (double*) buffer;
+				std::vector<double> temp_vec(doub_buffer, doub_buffer + length_xy);
+				M_xy[i] = temp_vec;
+			}
+			file_xy.close();
+		
+		}
 	}
-	file_xx.close();
-	
-	std::ifstream file_yy(file_name_yy.c_str(), std::ifstream::binary);
-	file_yy.seekg(0, file_yy.end);
-    int sq_length_yy = (file_yy.tellg()*sizeof(char))/sizeof(double);
-	int length_yy = sqrt(sq_length_yy);
-    file_yy.seekg(0, file_yy.beg);
-	M_yy.resize(length_yy);
-	for(int i = 0; i < length_yy; ++i){
-		M_yy[i].resize(length_yy);
-		char buffer[length_yy*(sizeof(double)/sizeof(char))];
-		file_yy.read(buffer, length_yy*(sizeof(double)/sizeof(char)));
-		double* doub_buffer = (double*) buffer;
-		std::vector<double> temp_vec(doub_buffer, doub_buffer + length_yy);
-		M_yy[i] = temp_vec;
-	}
-	file_yy.close();
-	
-	std::ifstream file_xy(file_name_xy.c_str(), std::ifstream::binary);
-	file_xy.seekg(0, file_xy.end);
-    int sq_length_xy = (file_xy.tellg()*sizeof(char))/sizeof(double);
-	int length_xy = sqrt(sq_length_xy);
-    file_xy.seekg(0, file_xy.beg);
-	M_xy.resize(length_xy);
-	for(int i = 0; i < length_xy; ++i){
-		M_xy[i].resize(length_xy);
-		char buffer[length_xy*(sizeof(double)/sizeof(char))];
-		file_xy.read(buffer, length_xy*(sizeof(double)/sizeof(char)));
-		double* doub_buffer = (double*) buffer;
-		std::vector<double> temp_vec(doub_buffer, doub_buffer + length_xy);
-		M_xy[i] = temp_vec;
-	}
-	file_xy.close();
-	
-	//printf("mlmc_load() lengths = [%d, %d, %d] \n",length_xx, length_yy, length_xy);
-	
 }
 
 void Mpi_job_results::mlmc_save(std::string file_name){
 
 
 	// Use to write M_ij to a binary file
-	
-	std::string file_name_xx = file_name;
-	std::string file_name_yy = file_name;
-	std::string file_name_xy = file_name;
-	
-	file_name_xx.append("M_xx.bin");
-	file_name_yy.append("M_yy.bin");
-	file_name_xy.append("M_xy.bin");
-	
-	std::ofstream file_xx(file_name_xx.c_str(), std::ofstream::binary);
-	for(size_t i = 0; i < M_xx.size(); i++ ){
-		if ( M_xx[i].size() > 0 ){
-		   char* buffer = (char*)(&M_xx[i][0]);
-		   file_xx.write(buffer, M_xx[i].size()*(sizeof(double)/sizeof(char)));
+	if (d_cond > 0) {
+		std::string file_name_xx = file_name;
+		
+		file_name_xx.append("M_xx.bin");
+		
+		std::ofstream file_xx(file_name_xx.c_str(), std::ofstream::binary);
+		for(size_t i = 0; i < M_xx.size(); i++ ){
+			if ( M_xx[i].size() > 0 ){
+			   char* buffer = (char*)(&M_xx[i][0]);
+			   file_xx.write(buffer, M_xx[i].size()*(sizeof(double)/sizeof(char)));
+			}
 		}
-	}
-	file_xx.close();
-	
-	std::ofstream file_yy(file_name_yy.c_str(), std::ofstream::binary);
-	for(size_t i = 0; i < M_yy.size(); i++ ){
-		if ( M_yy[i].size() > 0 ){
-		   char* buffer = (char*)(&M_yy[i][0]);
-		   file_yy.write(buffer, M_yy[i].size()*(sizeof(double)/sizeof(char)));
-		}
-	}
-	file_yy.close();
+		file_xx.close();
+		
+		if (d_cond > 1){
+		
+			std::string file_name_yy = file_name;
+			std::string file_name_xy = file_name;
+			
+			file_name_yy.append("M_yy.bin");
+			file_name_xy.append("M_xy.bin");
+			
+			std::ofstream file_yy(file_name_yy.c_str(), std::ofstream::binary);
+			for(size_t i = 0; i < M_yy.size(); i++ ){
+				if ( M_yy[i].size() > 0 ){
+				   char* buffer = (char*)(&M_yy[i][0]);
+				   file_yy.write(buffer, M_yy[i].size()*(sizeof(double)/sizeof(char)));
+				}
+			}
+			file_yy.close();
 
-	std::ofstream file_xy(file_name_xy.c_str(), std::ofstream::binary);
-	for(size_t i = 0; i < M_xy.size(); i++ ){
-		if ( M_xy[i].size() > 0 ){
-		   char* buffer = (char*)(&M_xy[i][0]);
-		   file_xy.write(buffer, M_xy[i].size()*(sizeof(double)/sizeof(char)));
+			std::ofstream file_xy(file_name_xy.c_str(), std::ofstream::binary);
+			for(size_t i = 0; i < M_xy.size(); i++ ){
+				if ( M_xy[i].size() > 0 ){
+				   char* buffer = (char*)(&M_xy[i][0]);
+				   file_xy.write(buffer, M_xy[i].size()*(sizeof(double)/sizeof(char)));
+				}
+			}
+			file_xy.close();
+			
 		}
 	}
-	file_xy.close();	
-
 }
 
 void Mpi_job_results::mlmc_average(Mpi_job_results samp){
 
-	if (M_xx.empty()){
-		M_xx = samp.M_xx;
-	} else {
-		for (int i = 0; i < (int) M_xx.size(); ++i){
-			for (int j = 0; j < (int) M_xx[i].size(); ++j){
-				M_xx[i][j] = M_xx[i][j] + samp.M_xx[i][j];	
-			}
-		}			
-	}
-	
-	if (M_yy.empty()){
-		M_yy = samp.M_yy;
-	} else {
-		for (int i = 0; i < (int) M_yy.size(); ++i){
-			for (int j = 0; j < (int) M_yy[i].size(); ++j){
-				M_yy[i][j] = M_yy[i][j] + samp.M_yy[i][j];	
-			}
-		}			
-	}	
+	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
+	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp 
 
-	if (M_xy.empty()){
-		M_xy = samp.M_xy;
-	} else {
-		for (int i = 0; i < (int) M_xy.size(); ++i){
-			for (int j = 0; j < (int) M_xy[i].size(); ++j){
-				M_xy[i][j] = M_xy[i][j] + samp.M_xy[i][j];	
+	if (d_cond > 0){
+
+		if (M_xx.empty() || mlmc_current_num_samples == 1){
+			M_xx = samp.M_xx;
+		} else {
+			for (int i = 0; i < (int) M_xx.size(); ++i){
+				for (int j = 0; j < (int) M_xx[i].size(); ++j){
+					M_xx[i][j] = M_xx[i][j]*s_t + samp.M_xx[i][j]*s_s;	
+				}
+			}			
+		}
+	
+		if (d_cond > 1){
+			
+			if (M_yy.empty() || mlmc_current_num_samples == 1){
+				M_yy = samp.M_yy;
+			} else {
+				for (int i = 0; i < (int) M_yy.size(); ++i){
+					for (int j = 0; j < (int) M_yy[i].size(); ++j){
+						M_yy[i][j] = M_yy[i][j]*s_t + samp.M_yy[i][j]*s_s;	
+					}
+				}			
+			}	
+
+			if (M_xy.empty() || mlmc_current_num_samples == 1){
+				M_xy = samp.M_xy;
+			} else {
+				for (int i = 0; i < (int) M_xy.size(); ++i){
+					for (int j = 0; j < (int) M_xy[i].size(); ++j){
+						M_xy[i][j] = M_xy[i][j]*s_t + samp.M_xy[i][j]*s_s;	
+					}
+				}			
 			}
-		}			
+			
+		}
 	}
 	
+	mlmc_current_num_samples++;
 }
 
 void Mpi_job_results::mlmc_variance(Mpi_job_results samp){
 
-	if (M_xx.empty()){
-		M_xx = samp.M_xx;
-	} else {
-		for (int i = 0; i < (int) M_xx.size(); ++i){
-			for (int j = 0; j < (int) M_xx[i].size(); ++j){
-				M_xx[i][j] = M_xx[i][j] + pow(samp.M_xx[i][j],2);
+	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
+	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp 
+
+	if (d_cond > 0){
+		
+		if (M_xx.empty() || mlmc_current_num_samples == 1){
+			M_xx = samp.M_xx;
+		} else {
+			for (int i = 0; i < (int) M_xx.size(); ++i){
+				for (int j = 0; j < (int) M_xx[i].size(); ++j){
+					M_xx[i][j] = M_xx[i][j]*s_t + pow(samp.M_xx[i][j],2)*s_s;
+				}
+			}			
+		}
+	
+		if (d_cond > 1){
+			
+			if (M_yy.empty() || mlmc_current_num_samples == 1){
+				M_yy = samp.M_yy;
+			} else {
+				for (int i = 0; i < (int) M_yy.size(); ++i){
+					for (int j = 0; j < (int) M_yy[i].size(); ++j){
+						M_yy[i][j] = M_yy[i][j]*s_t + pow(samp.M_yy[i][j],2)*s_s;	
+					}
+				}			
+			}	
+
+			if (M_xy.empty() || mlmc_current_num_samples == 1){
+				M_xy = samp.M_xy;
+			} else {
+				for (int i = 0; i < (int) M_xy.size(); ++i){
+					for (int j = 0; j < (int) M_xy[i].size(); ++j){
+						M_xy[i][j] = M_xy[i][j]*s_t + pow(samp.M_xy[i][j],2)*s_s;	
+					}
+				}			
 			}
-		}			
+			
+		}
 	}
 	
-	if (M_yy.empty()){
-		M_yy = samp.M_yy;
-	} else {
-		for (int i = 0; i < (int) M_yy.size(); ++i){
-			for (int j = 0; j < (int) M_yy[i].size(); ++j){
-				M_yy[i][j] = M_yy[i][j] + pow(samp.M_yy[i][j],2);	
-			}
-		}			
-	}	
-
-	if (M_xy.empty()){
-		M_xy = samp.M_xy;
-	} else {
-		for (int i = 0; i < (int) M_xy.size(); ++i){
-			for (int j = 0; j < (int) M_xy[i].size(); ++j){
-				M_xy[i][j] = M_xy[i][j] + pow(samp.M_xy[i][j],2);	
-			}
-		}			
-	}
-
+	mlmc_current_num_samples++;
 }
 
 void Mpi_job_results::mlmc_cluster_average(Mpi_job_results samp_orig,Mpi_job_results samp_cluster){
 
-	if (M_xx.empty()){
-		int size1 = (int) samp_orig.M_xx.size();
-		int size2 = (int) samp_orig.M_xx[0].size();
-		M_xx.resize(size1);
-		for (int i = 0; i < size1; ++i){
-			M_xx[i].resize(size2);
-			for (int j = 0; j < size2; ++j){
-				M_xx[i][j] = samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j];
+	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
+	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp 
+
+	if (d_cond > 0){
+		
+		if (M_xx.empty() || mlmc_current_num_samples == 1){
+			int size1 = (int) samp_orig.M_xx.size();
+			int size2 = (int) samp_orig.M_xx[0].size();
+			M_xx.resize(size1);
+			for (int i = 0; i < size1; ++i){
+				M_xx[i].resize(size2);
+				for (int j = 0; j < size2; ++j){
+					M_xx[i][j] = samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j];
+				}
 			}
+		} else {
+			for (int i = 0; i < (int) M_xx.size(); ++i){
+				for (int j = 0; j < (int) M_xx[i].size(); ++j){
+					M_xx[i][j] = M_xx[i][j]*s_t + (samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j])*s_s;	
+				}
+			}			
 		}
-	} else {
-		for (int i = 0; i < (int) M_xx.size(); ++i){
-			for (int j = 0; j < (int) M_xx[i].size(); ++j){
-				M_xx[i][j] = M_xx[i][j] + samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j];	
+	
+		if (d_cond > 1) {
+	
+			if (M_yy.empty() || mlmc_current_num_samples == 1){
+				int size1 = (int) samp_orig.M_yy.size();
+				int size2 = (int) samp_orig.M_yy[0].size();
+				M_yy.resize(size1);
+				for (int i = 0; i < size1; ++i){
+					M_yy[i].resize(size2);
+					for (int j = 0; j < size2; ++j){
+						M_yy[i][j] = samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j];
+					}
+				}
+			} else {
+				for (int i = 0; i < (int) M_yy.size(); ++i){
+					for (int j = 0; j < (int) M_yy[i].size(); ++j){
+						M_yy[i][j] = M_yy[i][j]*s_t + (samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j])*s_s;	
+					}
+				}			
 			}
-		}			
+
+			if (M_xy.empty() || mlmc_current_num_samples == 1){
+				int size1 = (int) samp_orig.M_xy.size();
+				int size2 = (int) samp_orig.M_xy[0].size();
+				M_xy.resize(size1);
+				for (int i = 0; i < size1; ++i){
+					M_xy[i].resize(size2);
+					for (int j = 0; j < size2; ++j){
+						M_xy[i][j] = samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j];
+					}
+				}
+			} else {
+				for (int i = 0; i < (int) M_xy.size(); ++i){
+					for (int j = 0; j < (int) M_xy[i].size(); ++j){
+						M_xy[i][j] = M_xy[i][j]*s_t + (samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j])*s_s;	
+					}
+				}			
+			}
+		
+		}
 	}
 	
-	if (M_yy.empty()){
-		int size1 = (int) samp_orig.M_yy.size();
-		int size2 = (int) samp_orig.M_yy[0].size();
-		M_yy.resize(size1);
-		for (int i = 0; i < size1; ++i){
-			M_yy[i].resize(size2);
-			for (int j = 0; j < size2; ++j){
-				M_yy[i][j] = samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j];
-			}
-		}
-	} else {
-		for (int i = 0; i < (int) M_yy.size(); ++i){
-			for (int j = 0; j < (int) M_yy[i].size(); ++j){
-				M_yy[i][j] = M_yy[i][j] + samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j];	
-			}
-		}			
-	}
-	
-	if (M_xy.empty()){
-		int size1 = (int) samp_orig.M_xy.size();
-		int size2 = (int) samp_orig.M_xy[0].size();
-		M_xy.resize(size1);
-		for (int i = 0; i < size1; ++i){
-			M_xy[i].resize(size2);
-			for (int j = 0; j < size2; ++j){
-				M_xy[i][j] = samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j];
-			}
-		}
-	} else {
-		for (int i = 0; i < (int) M_xy.size(); ++i){
-			for (int j = 0; j < (int) M_xy[i].size(); ++j){
-				M_xy[i][j] = M_xy[i][j] + samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j];	
-			}
-		}			
-	}
-	
+	mlmc_current_num_samples++;
 }
 
 void Mpi_job_results::mlmc_cluster_variance(Mpi_job_results samp_orig,Mpi_job_results samp_cluster){
 
-	if (M_xx.empty()){
-		int size1 = (int) samp_orig.M_xx.size();
-		int size2 = (int) samp_orig.M_xx[0].size();
-		M_xx.resize(size1);
-		for (int i = 0; i < size1; ++i){
-			M_xx[i].resize(size2);
-			for (int j = 0; j < size2; ++j){
-				M_xx[i][j] = pow(samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j],2);
-			}
-		}
-	} else {
-		for (int i = 0; i < (int) M_xx.size(); ++i){
-			for (int j = 0; j < (int) M_xx[i].size(); ++j){
-				M_xx[i][j] = M_xx[i][j] + pow(samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j],2);	
-			}
-		}			
-	}
+	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
+	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp 
 
-	if (M_yy.empty()){
-		int size1 = (int) samp_orig.M_yy.size();
-		int size2 = (int) samp_orig.M_yy[0].size();
-		M_yy.resize(size1);
-		for (int i = 0; i < size1; ++i){
-			M_yy[i].resize(size2);
-			for (int j = 0; j < size2; ++j){
-				M_yy[i][j] = pow(samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j],2);
+	if (d_cond > 0){
+	
+		if (M_xx.empty() || mlmc_current_num_samples == 1){
+			int size1 = (int) samp_orig.M_xx.size();
+			int size2 = (int) samp_orig.M_xx[0].size();
+			M_xx.resize(size1);
+			for (int i = 0; i < size1; ++i){
+				M_xx[i].resize(size2);
+				for (int j = 0; j < size2; ++j){
+					M_xx[i][j] = pow(samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j],2);
+				}
 			}
+		} else {
+			for (int i = 0; i < (int) M_xx.size(); ++i){
+				for (int j = 0; j < (int) M_xx[i].size(); ++j){
+					M_xx[i][j] = M_xx[i][j]*s_t + pow(samp_orig.M_xx[i][j] - samp_cluster.M_xx[i][j],2)*s_s;	
+				}
+			}			
 		}
-	} else {
-		for (int i = 0; i < (int) M_yy.size(); ++i){
-			for (int j = 0; j < (int) M_yy[i].size(); ++j){
-				M_yy[i][j] = M_yy[i][j] + pow(samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j],2);	
+
+	if (d_cond > 1){
+		
+			if (M_yy.empty() || mlmc_current_num_samples == 1){
+				int size1 = (int) samp_orig.M_yy.size();
+				int size2 = (int) samp_orig.M_yy[0].size();
+				M_yy.resize(size1);
+				for (int i = 0; i < size1; ++i){
+					M_yy[i].resize(size2);
+					for (int j = 0; j < size2; ++j){
+						M_yy[i][j] = pow(samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j],2);
+					}
+				}
+			} else {
+				for (int i = 0; i < (int) M_yy.size(); ++i){
+					for (int j = 0; j < (int) M_yy[i].size(); ++j){
+						M_yy[i][j] = M_yy[i][j]*s_t + pow(samp_orig.M_yy[i][j] - samp_cluster.M_yy[i][j],2)*s_s;	
+					}
+				}			
 			}
-		}			
+			
+			if (M_xy.empty() || mlmc_current_num_samples == 1){
+				int size1 = (int) samp_orig.M_xy.size();
+				int size2 = (int) samp_orig.M_xy[0].size();
+				M_xy.resize(size1);
+				for (int i = 0; i < size1; ++i){
+					M_xy[i].resize(size2);
+					for (int j = 0; j < size2; ++j){
+						M_xy[i][j] = pow(samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j],2);
+					}
+				}
+			} else {
+				for (int i = 0; i < (int) M_xy.size(); ++i){
+					for (int j = 0; j < (int) M_xy[i].size(); ++j){
+						M_xy[i][j] = M_xy[i][j]*s_t + pow(samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j],2)*s_s;	
+					}
+				}			
+			}
+			
+		}
 	}
 	
-	if (M_xy.empty()){
-		int size1 = (int) samp_orig.M_xy.size();
-		int size2 = (int) samp_orig.M_xy[0].size();
-		M_xy.resize(size1);
-		for (int i = 0; i < size1; ++i){
-			M_xy[i].resize(size2);
-			for (int j = 0; j < size2; ++j){
-				M_xy[i][j] = pow(samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j],2);
-			}
-		}
-	} else {
-		for (int i = 0; i < (int) M_xy.size(); ++i){
-			for (int j = 0; j < (int) M_xy[i].size(); ++j){
-				M_xy[i][j] = M_xy[i][j] + pow(samp_orig.M_xy[i][j] - samp_cluster.M_xy[i][j],2);	
-			}
-		}			
-	}
-	
+	mlmc_current_num_samples++;
 }
 
 void Mpi_job_results::conductivtyTransform(){
 
 	double g[poly_order];
 	for (int i = 0; i < poly_order; ++i){
-		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(sqrt(2.0)*poly_order); // Jackson coefficients
+		// Jackson coefficients
+		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(sqrt(2.0)*poly_order);
 	}
 	
-	for (int dim = 0; dim < 3; ++dim){
+	int dim_max = 0;
+	if (d_cond > 0){
+		dim_max = 1;
+		if (d_cond > 1){
+			dim_max = 3;
+		}
+	}
+	
+	for (int dim = 0; dim < dim_max; ++dim){
 		
 		double* in = new double[poly_order*poly_order];
 		
@@ -1056,6 +1138,7 @@ void Mpi_job_results::conductivtyTransform(){
 					M_xy[i][j] = out[i*poly_order + j];
 				}
 			}
+			// We put the Energies in the last column of the measure
 		}	
 		
 		fftw_destroy_plan(p);
@@ -1116,7 +1199,10 @@ void Mpi_job_results::send(int target, int tag){
 			CPP_sendDoubleMat(eigenvectors, target, tag);
 			CPP_sendDoubleMat(M_xx, target, tag);
 			CPP_sendDoubleMat(M_yy, target, tag);
-			CPP_sendDoubleMat(M_xy, target, tag);			
+			CPP_sendDoubleMat(M_xy, target, tag);
+
+			CPP_sendDoubleVec(cpu_time, target, tag);
+			CPP_sendStrVec(cpu_time_type, target, tag);
 		}
 	
 }
@@ -1189,6 +1275,9 @@ void Mpi_job_results::recv(int from){
 			CPP_recvDoubleMat(from,"M_xx");	
 			CPP_recvDoubleMat(from,"M_yy");
 			CPP_recvDoubleMat(from,"M_xy");
+			
+			CPP_recvDoubleVec(from,"cpu_time");
+			CPP_recvStrVec(from,"cpu_time_type");
 			
 		}
 }
@@ -1299,6 +1388,45 @@ void Mpi_job_results::sendDoubleMat(double* val, int dim1, int dim2, int target,
 				MPI::DOUBLE,		// type of buffer
 				target,				// rank to receive
 				tag);				// var to label
+
+}
+
+void Mpi_job_results::CPP_sendStrVec(std::vector<std::string> val, int target, int tag){
+
+	int dim;
+	
+	dim = val.size();
+	
+	MPI::Status status;
+	
+	MPI::COMM_WORLD.Send(	
+				&dim, 				// input buffer
+				1,					// size of buffer 
+				MPI::INT,			// type of buffer
+				target,				// rank to receive
+				tag);				// tag to label
+	
+	if (dim != 0){
+		for (int i = 0; i < dim; ++i) {
+					
+			int size = (int) val[i].length();
+
+			MPI::COMM_WORLD.Send(	
+						&size, 				// input buffer
+						1,					// size of buffer 
+						MPI::INT,			// type of buffer
+						target,				// rank to receive
+						tag);				// tag to label
+			
+			MPI::COMM_WORLD.Send(	
+						val[i].c_str(),		// input buffer
+						size,				// size of buffer
+						MPI::CHAR,			// type of buffer
+						target,				// rank to receive
+						tag);				// var to label
+					
+		}
+	}
 
 }
 
@@ -1565,7 +1693,57 @@ void Mpi_job_results::CPP_recvDoubleVec(int from, std::string var){
 				status.Get_tag(),	// should be the same tag?
 				status);			// keep MPI status information
 		
-		saveResult(var,val);
+		setParam(var,val);
+	}
+
+}
+
+void Mpi_job_results::CPP_recvStrVec(int from, std::string var){
+
+	int dim;
+	
+	std::vector<std::string> string_vec;
+	
+	MPI::Status status;
+	
+	MPI::COMM_WORLD.Recv(	
+				&dim, 				// input buffer
+				1,					// size of buffer 
+				MPI::INT,			// type of buffer
+				from,				// must come from "from"
+				MPI::ANY_TAG,		// any tag
+				status);			// keep MPI status information
+	
+	string_vec.resize(dim);
+	
+	if (dim != 0){
+		for (int i = 0; i < dim; ++i) {
+					
+			int size;
+			
+			MPI::COMM_WORLD.Recv(	
+						&size, 				// input buffer
+						1,					// size of buffer 
+						MPI::INT,			// type of buffer
+						from,				// must come from "from"
+						MPI::ANY_TAG,		// any tag
+						status);			// keep MPI status information
+			
+			char input[size];
+			
+			MPI::COMM_WORLD.Recv(	
+						input,				// input buffer
+						size,				// size of buffer
+						MPI::CHAR,			// type of buffer
+						from,				// must come from "from"
+						MPI::ANY_TAG,	    // any tag
+						status);			// keep MPI status information
+			
+			std::string string_temp(input,size);
+			string_vec[i] = string_temp;
+					
+		}
+		setParam(var,string_vec);
 	}
 
 }
@@ -1618,7 +1796,7 @@ void Mpi_job_results::CPP_recvDoubleMat(int from, std::string var){
 			}
 		}
 
-		saveResult(var,val);
+		setParam(var,val);
 
 	}
 

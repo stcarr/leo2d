@@ -62,6 +62,7 @@ class DMatrix {
 		// before construction setup
 		
 		void setup(int,int);
+		void setup(int,int,int);
 		
 		// after construction setup
 		void setup(int,int,double*);
@@ -74,8 +75,14 @@ class DMatrix {
 		
 		// Value accessing
 		double* getValPtr();
+		std::complex<double>* getCpxValPtr();
+
 		void getValCopy(double*) const;
-		void setVal(double* ptr);
+		void getValCopy(std::complex<double>*) const;
+
+		void setVal(double*);
+		void setVal(std::complex<double>* ptr);
+
 		void squareAllVals();
 		
 		// Matrix-vector Multiplication
@@ -85,13 +92,16 @@ class DMatrix {
 		// Matrix-matrix Multiplication
 		void matrixMultiply(DMatrix&, DMatrix&, double, double);
 		void matrixMultiply(DMatrix&, DMatrix&, double, double, char, char);
-		
+		void matrixMultiply(DMatrix&, DMatrix&, std::complex<double>, std::complex<double>);		
+		void matrixMultiply(DMatrix&, DMatrix&, std::complex<double>, std::complex<double>, char, char);
+
 		//
 		void eleMatrixMultiply(DMatrix&, DMatrix&, double, double);
 		
 		// Diagnostic functions
 		int getNumRows() const;
 		int getNumCols() const;
+		int getType() const;
 		double getFirstVal();
 
 };
