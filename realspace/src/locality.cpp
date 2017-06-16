@@ -1219,6 +1219,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
 							
 					results_out.cheb_coeffs = cheb_coeffs;
+					results_out.densityTransform();
 
 
 			} else if (observable_type == 1){

@@ -76,16 +76,16 @@ class Mpi_job_results {
 		std::vector<double> cpu_time;
 		std::vector<std::string> cpu_time_type;
 		
-        Mpi_job_results();
-        Mpi_job_results(const Mpi_job_results& orig);
-        ~Mpi_job_results();
+    Mpi_job_results();
+    Mpi_job_results(const Mpi_job_results& orig);
+    ~Mpi_job_results();
 		
 		void loadLocParams(Loc_params opts);
 		void loadJobParams(Mpi_job_params opts);
 		
 		void saveTiming(double, std::string);
 		
-        void setParam(std::string, int);
+    void setParam(std::string, int);
 		void setParam(std::string, double);
 		void setParam(std::string, int*, int);
 		void setParam(std::string, double*, int);
@@ -115,7 +115,8 @@ class Mpi_job_results {
 		void mlmc_variance(Mpi_job_results);
 		void mlmc_cluster_average(Mpi_job_results,Mpi_job_results);
 		void mlmc_cluster_variance(Mpi_job_results,Mpi_job_results);
-		
+
+    void densityTransform();
 		void conductivtyTransform();
 		
 		void send(int, int);

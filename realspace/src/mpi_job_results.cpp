@@ -1089,6 +1089,42 @@ void Mpi_job_results::mlmc_cluster_variance(Mpi_job_results samp_orig,Mpi_job_re
 	mlmc_current_num_samples++;
 }
 
+void Mpi_job_results::densityTransform() {
+
+	double g[poly_order];
+	double E[poly_order];
+	for (int i = 0; i < poly_order; ++i){
+		// Jackson coefficients
+		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
+		E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+	}
+	
+	//g[0] = 2*g[0];
+
+	for (int t = 0; t < cheb_coeffs.size(); ++t) {
+
+		int p = cheb_coeffs[t].size();
+			
+		double* in = new double[p];
+		
+		for (int i = 0; i < p; ++i){
+			in[i] = g[i]*cheb_coeffs[t][i];
+		}
+
+		double* out = new double[p];
+
+		fftw_plan fftplan;
+		fftplan = fftw_plan_r2r_1d(p,in,out,FFTW_REDFT01,FFTW_MEASURE);
+
+		fftw_execute(fftplan);
+		
+		for (int i = 0; i < p; ++i){
+			cheb_coeffs[t][i] = out[i]/(M_PI*sqrt( energy_rescale*energy_rescale - (E[i] - energy_shift)*(E[i] - energy_shift) ) );
+		}
+		
+	}
+}
+
 void Mpi_job_results::conductivtyTransform(){
 
 	double g[poly_order];
