@@ -1,8 +1,8 @@
-/* 
+/*
  * File:   dmatrix.cpp
  * Author: Stephen Carr
  * Based on MATKIT from the FILTLAN package
- * 
+ *
  * Created on April 12, 2017, 3:38 PM
  */
 
@@ -11,13 +11,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
- 
+
 #ifdef USE_MKL
 	#include "mkl.h"
 #elif USE_ESSL
-	#include <essl.h> 
+	#include <essl.h>
 #endif
- 
+
 // constructors
 // a constructor for an empty matrix
 DMatrix::DMatrix() {
@@ -51,7 +51,7 @@ DMatrix::DMatrix(int nr, int nc) {
 
 // a constructor for an nr-by-nc matrix
 DMatrix::DMatrix(int nr, int nc, double *val0) {
-    
+
 	type = 0;
 
 
@@ -66,7 +66,7 @@ DMatrix::DMatrix(int nr, int nc, double *val0) {
 
 // Complex constructor
 DMatrix::DMatrix(int nr, int nc, std::complex<double> *val_c0) {
-    
+
 	type = 1;
 
 	// set dimensions
@@ -84,7 +84,7 @@ DMatrix::~DMatrix(){
 	if (type == 0){
 		delete [] val;
 	}
-	
+
 	if (type == 1){
 		delete [] val_c;
 	}
@@ -94,25 +94,25 @@ DMatrix::~DMatrix(){
 
 
 void DMatrix::setup(int nr, int nc){
-	
+
 	nrows = nr;
 	ncols = nc;
 	nval  = nr*nc;
-	
+
 }
 
 void DMatrix::setup(int nr, int nc, int t){
-	
+
 	nrows = nr;
 	ncols = nc;
 	nval  = nr*nc;
 	type = t;
-	
+
 }
 
 // Real setup
-void DMatrix::setup(int nr, int nc, double *val0){   
-	
+void DMatrix::setup(int nr, int nc, double *val0){
+
 	type = 0;
 
 
@@ -135,7 +135,7 @@ double* DMatrix::allocRealVal(){
 
 // Complex setup
 void DMatrix::setup(int nr, int nc, std::complex<double> *val_c0) {
-    
+
 	type = 1;
 
 	// set dimensions
@@ -200,7 +200,7 @@ void DMatrix::squareAllVals(){
 	} else if (type == 1){
 		for (int i = 0; i < nval; ++i){
 			val_c[i] = val_c[i]*(std::conj(val_c[i]));
-		}	
+		}
 	}
 }
 
@@ -215,7 +215,7 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 			vec_out[i] = 0.0;
 			}
 	}
-		
+
 	/*
 	for (int i = 0; i < nrows; ++i){
 		printf("vec_in[%d] = %lf \n",i,vec_in[i]);
@@ -223,7 +223,7 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 		int end = rowPointer[nrows];
 		for (int j = 0; j < end; ++j){
 			printf("val[%d] = %lf \n",j,val[j]);
-		}	
+		}
 	}
 	*/
 
@@ -232,7 +232,7 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 		int v_stride = 1;
 		// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
 		dgemv(
-			&mv_type,		// Specifies operator, transpose or not	
+			&mv_type,		// Specifies operator, transpose or not
 			&nrows,			// Number of rows in matrix
 			&ncols,			// Number of cols in matrix
 			&alpha,			// scalar ALPHA
@@ -242,20 +242,20 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 			&v_stride,		// increment/iterator of vec_in (how to move in memory, starting at the pointer)
 			&beta,			// scalar BETA
 			vec_out,		// output vector
-			&v_stride		// increment/iterator of vec_out (see above)	
+			&v_stride		// increment/iterator of vec_out (see above)
 			);
 		/*
 		for (int i = 0; i < nrows; ++i)
-			printf("vec_out[%d] = %lf \n",i,vec_out[i]);		
+			printf("vec_out[%d] = %lf \n",i,vec_out[i]);
 		*/
 	#else
 	// Column-major matrix-vector product algorithm
 	for (int r = 0; r < nrows; ++r){
 		vec_out[r] = beta*vec_out[r];
 	}
-	
+
 	for (int c = 0; c < ncols; ++c){
-		
+
 		for (int r = 0; r < nrows; ++r){
 			vec_out[r] += alpha*val[c*nrows + r]*vec_in[c];
 		}
@@ -265,7 +265,7 @@ void DMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, doub
 }
 
 void DMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> *vec_out, std::complex<double> alpha, std::complex<double> beta) {
-	
+
 	if (vec_out == NULL) {
 		// allocate memory
 		vec_out = new std::complex<double>[ncols];
@@ -278,7 +278,7 @@ void DMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> 
 	int v_stride = 1;
 	// vec_out = alpha*A*vec_in + beta*vec_out if mv_type = 'N'
 	zgemv(
-		&mv_type,		// Specifies operator, transpose or not	
+		&mv_type,		// Specifies operator, transpose or not
 		&nrows,			// Number of rows in matrix
 		&ncols,			// Number of cols in matrix
 		&alpha,			// scalar ALPHA
@@ -288,17 +288,17 @@ void DMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> 
 		&v_stride,		// increment/iterator of vec_in (how to move in memory, starting at the pointer)
 		&beta,			// scalar BETA
 		vec_out,		// output vector
-		&v_stride		// increment/iterator of vec_out (see above)	
+		&v_stride		// increment/iterator of vec_out (see above)
 		);
-		
+
 	#else
 	// Column-major matrix-vector product algorithm
 	for (int r = 0; r < nrows; ++r){
 		vec_out[r] = beta*vec_out[r];
 	}
-	
+
 	for (int c = 0; c < ncols; ++c){
-		
+
 		for (int r = 0; r < nrows; ++r){
 			vec_out[r] += alpha*val_c[c*nrows + r]*vec_in[c];
 		}
@@ -313,7 +313,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta) 
 }
 
 void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, char A_type, char B_type) {
-	
+
 	// A = this matrix
 	// C := alpha*op( A )*op( B ) + beta*C,
 
@@ -321,10 +321,10 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 	if (type != 0){
 		throw std::invalid_argument("Using real matrixMultiply routine for non-real matrix! \n");
 	}
-	
+
 	int ncols_A = ncols;
 	int nrows_A = nrows;
-	
+
 	int ncols_B = B.getNumCols();
 	int nrows_B = B.getNumRows();
 
@@ -348,27 +348,27 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 				throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
 			}
 		}
-	}	
+	}
 
 	double* val_B;
 	val_B = B.getValPtr();
-	
+
 	double* val_C;
 	int nval_C;
-	
+
 	int ncols_C;
 	int nrows_C;
-	
+
 	int k_internal;
-	
+
 	if (C.getValPtr() == NULL){
-	
+
 		if (B_type == 'N'){
 			ncols_C = ncols_B;
 		} else if (B_type == 'T'){
 			ncols_C = nrows_B;
 		}
-		
+
 		if (A_type == 'N'){
 			nrows_C = nrows_A;
 			k_internal = ncols_A;
@@ -379,15 +379,15 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 			//printf("A = 'T' \n");
 
 		}
-	
+
 		C.setup(nrows_C,ncols_C);
 		nval_C = nrows_C*ncols_C;
 		val_C = C.allocRealVal();
-	
+
 	} else {
 		ncols_C = C.getNumCols();
 		nrows_C= C.getNumRows();
-		
+
 		if (A_type == 'N'){
 			if (B_type == 'N'){
 				if (nrows_A != nrows_C || ncols_B != ncols_C){
@@ -414,14 +414,14 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 		val_C = C.getValPtr();
 	}
 
-	
+
 	#ifdef USE_MKL
 		// A_type, B_type can be 'N' or 'T'
 		// 'N' For normal, 'T' for transpose
 
 		// C := alpha*op( A )*op( B ) + beta*C,
 		dgemm(
-			&A_type,		// Specifies operator on A, transpose or not	
+			&A_type,		// Specifies operator on A, transpose or not
 			&B_type,		// Specifies operator on B, transpose or not
 			&nrows_C,		// Number of rows in matrix A (rows of C)
 			&ncols_C,		// Number of cols in matrix C (cols of B)
@@ -433,16 +433,16 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 			&nrows_B,		// leading dimension (we do not skip any elements)
 			&beta,			// scalar BETA
 			val_C,			// output matrix
-			&nrows_C		// increment/iterator of vec_out (see above)	
+			&nrows_C		// increment/iterator of vec_out (see above)
 			);
-			
+
 	#else
 		for (int c = 0; c < ncols_C; ++c){
 			for (int r = 0; r < nrows_C; ++r){
 				val_C[c*nrows_C + r] = beta*val_C[c*nrows_C + r];
 			}
 		}
-		
+
 		//printf("ncols_C = %d, k_internal = %d, nrows_C = %d \n", ncols_C, k_internal, nrows_C);
 		for (int c = 0; c < ncols_C; ++c){
 			for (int k = 0; k < k_internal; ++k){
@@ -452,7 +452,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 						if (B_type == 'N'){
 							// Access C(r,c) += A(r,k)*B(k,c)
 							val_C[c*nrows_C + r] += alpha*val[k*nrows_A + r]*val_B[c*nrows_B + k];
-						} else if (B_type == 'T'){ 
+						} else if (B_type == 'T'){
 							// Access C(r,c) += A(r,k)*B(c,k)
 							val_C[c*nrows_C + r] += alpha*val[k*nrows_A + r]*val_B[k*nrows_B + c];
 						}
@@ -460,11 +460,11 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 						if (B_type == 'N'){
 							// Access C(r,c) += A(k,r)*B(k,c)
 							val_C[c*nrows_C + r] += alpha*val[r*nrows_A + k]*val_B[c*nrows_B + k];
-						} else if (B_type == 'T'){ 
+						} else if (B_type == 'T'){
 							// Access C(r,c) += A(k,r)*B(c,k)
 							val_C[c*nrows_C + r] += alpha*val[r*nrows_A + k]*val_B[k*nrows_B + c];
 						}
-					} 
+					}
 				}
 			}
 		}
@@ -476,11 +476,11 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha, std::complex<double> beta){
 
 	matrixMultiply(C,B,alpha,beta,'N','N');
-	
+
 }
 
 void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha, std::complex<double> beta, char A_type, char B_type) {
-	
+
 	// A = this matrix
 	// C := alpha*op( A )*op( B ) + beta*C,
 
@@ -488,10 +488,10 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 	if (type != 1){
 		throw std::invalid_argument("Using complex matrixMultiply routine for non-complex matrix! \n");
 	}
-	
+
 	int ncols_A = ncols;
 	int nrows_A = nrows;
-	
+
 	int ncols_B = B.getNumCols();
 	int nrows_B = B.getNumRows();
 
@@ -515,27 +515,27 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 				throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
 			}
 		}
-	}	
+	}
 
 	std::complex<double>* val_B_c;
 	val_B_c = B.getCpxValPtr();
-	
+
 	std::complex<double>* val_C_c;
 	int nval_C;
-	
+
 	int ncols_C;
 	int nrows_C;
-	
+
 	int k_internal;
-	
+
 	if (C.getCpxValPtr() == NULL){
-	
+
 		if (B_type == 'N'){
 			ncols_C = ncols_B;
 		} else if (B_type == 'T'){
 			ncols_C = nrows_B;
 		}
-		
+
 		if (A_type == 'N'){
 			nrows_C = nrows_A;
 			k_internal = ncols_A;
@@ -546,15 +546,15 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 			//printf("A = 'T' \n");
 
 		}
-	
+
 		C.setup(nrows_C,ncols_C,1);
 		nval_C = nrows_C*ncols_C;
 		val_C_c = C.allocCpxVal();
-	
+
 	} else {
 		ncols_C = C.getNumCols();
 		nrows_C= C.getNumRows();
-		
+
 		if (A_type == 'N'){
 			if (B_type == 'N'){
 				if (nrows_A != nrows_C || ncols_B != ncols_C){
@@ -581,14 +581,14 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 		val_C_c = C.getCpxValPtr();
 	}
 
-	
+
 	#ifdef USE_MKL
 		// A_type, B_type can be 'N' or 'T'
 		// 'N' For normal, 'T' for transpose
 
 		// C := alpha*op( A )*op( B ) + beta*C,
 		zgemm(
-			&A_type,		// Specifies operator on A, transpose or not	
+			&A_type,		// Specifies operator on A, transpose or not
 			&B_type,		// Specifies operator on B, transpose or not
 			&nrows_C,		// Number of rows in matrix A (rows of C)
 			&ncols_C,		// Number of cols in matrix C (cols of B)
@@ -600,16 +600,16 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 			&nrows_B,		// leading dimension (we do not skip any elements)
 			&beta,			// scalar BETA
 			val_C_c,		// output matrix
-			&nrows_C		// increment/iterator of vec_out (see above)	
+			&nrows_C		// increment/iterator of vec_out (see above)
 			);
-			
+
 	#else
 		for (int c = 0; c < ncols_C; ++c){
 			for (int r = 0; r < nrows_C; ++r){
 				val_C_c[c*nrows_C + r] = beta*val_C_c[c*nrows_C + r];
 			}
 		}
-		
+
 		//printf("ncols_C = %d, k_internal = %d, nrows_C = %d \n", ncols_C, k_internal, nrows_C);
 		for (int c = 0; c < ncols_C; ++c){
 			for (int k = 0; k < k_internal; ++k){
@@ -619,7 +619,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 						if (B_type == 'N'){
 							// Access C(r,c) += A(r,k)*B(k,c)
 							val_C_c[c*nrows_C + r] += alpha*val_c[k*nrows_A + r]*val_B_c[c*nrows_B + k];
-						} else if (B_type == 'T'){ 
+						} else if (B_type == 'T'){
 							// Access C(r,c) += A(r,k)*B(c,k)
 							val_C_c[c*nrows_C + r] += alpha*val_c[k*nrows_A + r]*val_B_c[k*nrows_B + c];
 						}
@@ -627,11 +627,11 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 						if (B_type == 'N'){
 							// Access C(r,c) += A(k,r)*B(k,c)
 							val_C_c[c*nrows_C + r] += alpha*val_c[r*nrows_A + k]*val_B_c[c*nrows_B + k];
-						} else if (B_type == 'T'){ 
+						} else if (B_type == 'T'){
 							// Access C(r,c) += A(k,r)*B(c,k)
 							val_C_c[c*nrows_C + r] += alpha*val_c[r*nrows_A + k]*val_B_c[k*nrows_B + c];
 						}
-					} 
+					}
 				}
 			}
 		}
@@ -641,28 +641,28 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 }
 
 void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta){
-	
+
 	// A = this matrix
 	// C := alpha*A.*B + beta*C,
 
 	int type_A = type;
 	int type_B = B.getType();
 	int type_C = C.getType();
-	
+
 	if (type_C == 0 && (type_A == 1 || type_B == 1)){
-		throw std::invalid_argument("C cannot be real if A or B are complex in C = A.*B \n");	
+		throw std::invalid_argument("C cannot be real if A or B are complex in C = A.*B \n");
 	}
-	
+
 	int ncols_A = ncols;
 	int nrows_A = nrows;
-	
+
 	int ncols_B = B.getNumCols();
 	int nrows_B = B.getNumRows();
-	
+
 	if (ncols_A != ncols_B || nrows_A != nrows_B){
 		throw std::invalid_argument("Matrix Size Mismatch for A,B dimensions in C = A.*B \n");
 	}
-	
+
 	double* val_B;
 	std::complex<double>* val_B_c;
 	if (type_B == 0){
@@ -670,29 +670,29 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 	} else if (type_B == 1){
 		val_B_c = B.getCpxValPtr();
 	}
-	
+
 	double* val_C;
 	std::complex<double>* val_C_c;
 
 	int nval_C;
-	
+
 	int ncols_C;
 	int nrows_C;
-	
+
 	if (type_C == 0){
 		if (C.getValPtr() == NULL){
-		
+
 			ncols_C = ncols_A;
 			nrows_C = nrows_A;
-		
+
 			C.setup(nrows_C,ncols_C);
 			nval_C = nrows_C*ncols_C;
 			val_C = C.allocRealVal();
-		
+
 		} else {
 			ncols_C = C.getNumCols();
 			nrows_C= C.getNumRows();
-			
+
 			if (nrows_C != nrows_A || ncols_C != ncols_A){
 				throw std::invalid_argument("Matrix Size Mismatch for C in C = A.*B \n");
 			}
@@ -702,27 +702,27 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 		}
 	} else if (type_C == 1){
 		if (C.getCpxValPtr() == NULL){
-		
+
 			ncols_C = ncols_A;
 			nrows_C = nrows_A;
-		
+
 			C.setup(nrows_C,ncols_C);
 			nval_C = nrows_C*ncols_C;
 			val_C_c= C.allocCpxVal();
-		
+
 		} else {
 			ncols_C = C.getNumCols();
 			nrows_C= C.getNumRows();
-			
+
 			if (nrows_C != nrows_A || ncols_C != ncols_A){
 				throw std::invalid_argument("Matrix Size Mismatch for C in C = A.*B \n");
 			}
 
 			nval_C = ncols_C*nrows_C;
 			val_C_c = C.getCpxValPtr();
-		}	
+		}
 	}
-	
+
 	if (type_C == 0){
 		for (int i = 0; i < nval_C; ++i){
 			val_C[i] = alpha*val[i]*val_B[i] + beta*val_C[i];
@@ -732,26 +732,26 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 			if (type_A == 0){
 				for (int i = 0; i < nval_C; ++i){
 					val_C_c[i] = alpha*val[i]*val_B[i] + beta*val_C_c[i];
-				}			
+				}
 			} else if (type_A == 1){
 				for (int i = 0; i < nval_C; ++i){
 					val_C_c[i] = alpha*val_c[i]*val_B[i] + beta*val_C_c[i];
-				}			
+				}
 			}
 		} else if (type_B == 1){
 			if (type_A == 0){
 				for (int i = 0; i < nval_C; ++i){
 					val_C_c[i] = alpha*val[i]*val_B_c[i] + beta*val_C_c[i];
-				}			
+				}
 			} else if (type_A == 1){
 				for (int i = 0; i < nval_C; ++i){
 					val_C_c[i] = alpha*val_c[i]*val_B_c[i] + beta*val_C_c[i];
-				}			
-			}		
+				}
+			}
 		}
-	
+
 	}
-	
+
 }
 
 int DMatrix::getNumRows() const{
