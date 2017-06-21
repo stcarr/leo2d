@@ -41,6 +41,14 @@ int main(int argc, char** argv) {
 	int current_sheet = -1;
 	vector<Sdata> s_data;
 	vector<double> heights, angles;
+	
+	// Supercell parameters (for periodic  boundary conditions)
+	double sc_a = 1.0;
+	vector< vector<double> > supercell;
+	supercell.resize(2);
+	supercell[0].resize(2);
+	supercell[1].resize(2);
+	
 	int mat = 0;
 
 	// ---------------------------------------------------------
@@ -122,6 +130,43 @@ int main(int argc, char** argv) {
 					boundary_condition = atoi(in_string.c_str());
 
 				}
+				
+				if (in_string == "SUPERCELL_ALPHA") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					sc_a = atof(in_string.c_str());
+				}
+				
+				if (in_string == "SUPERCELL1"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < 2; ++i) {
+						getline(in_line,in_string,' ');
+						supercell[0][i] = sc_a*atof(in_string.c_str());
+					}					
+				}
+				
+				if (in_string == "SUPERCELL2"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < 2; ++i) {
+						getline(in_line,in_string,' ');
+						supercell[1][i] = sc_a*atof(in_string.c_str());
+					}
+					opts.setParam("supercell",supercell);
+				}
+				
+				if (in_string == "K_SAMPLING") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("k_sampling",atoi(in_string.c_str()));
+				}
+				
+				if (in_string == "K_GRID") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("num_k1",atoi(in_string.c_str()));
+					getline(in_line,in_string,' ');
+					opts.setParam("num_k2",atoi(in_string.c_str()));
+				}
 
 				if (in_string == "NUM_SHEETS") {
 					getline(in_line,in_string,' ');
@@ -130,7 +175,7 @@ int main(int argc, char** argv) {
 					s_data.resize(num_sheets);
 					heights.resize(num_sheets);
 					angles.resize(num_sheets);
-          opts.setParam("num_sheets",num_sheets);
+					opts.setParam("num_sheets",num_sheets);
 					}
 
 				if (in_string == "START_SHEET") {
@@ -231,6 +276,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					strain_file = in_string;
+					opts.setParam("strain_file",strain_file);
 				}
 
 				if (in_string == "INTRA_SEARCHSIZE"){

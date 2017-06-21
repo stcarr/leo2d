@@ -97,6 +97,9 @@ class SpMatrix {
 		void denseConvert(Eigen::MatrixXd&);
 		void denseConvert(Eigen::MatrixXcd&);
 
+		// Real or Complex check
+		int getType();
+		
 		// Diagnostic functions
 		int getNumRows();
 		int getNumCols();

@@ -33,6 +33,7 @@ Job_params::Job_params() {
 	setParam("d_weights",i_zero);
 	setParam("d_vecs",i_zero);
 	setParam("d_cond",i_zero);
+	setParam("k_sampling",i_zero);
 	setParam("fft_from_file",i_zero);
 	setParam("intra_searchsize",5*i_one);
 	setParam("inter_searchsize",5*i_one);
@@ -49,6 +50,7 @@ Job_params::Job_params() {
 	setParam("mlmc_out_root","out");
 	setParam("mlmc_temp_root","temp");
 
+	setParam("mlmc_jobID",-1*i_one);
 	setParam("mlmc_clusterID",-1*i_one);
 
 	setParam("vacancy_file","vacancies.dat");

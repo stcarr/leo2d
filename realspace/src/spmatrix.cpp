@@ -604,7 +604,9 @@ void SpMatrix::denseConvert(Eigen::MatrixXcd &H_in){
 
 }
 
-
+int SpMatrix::getType(){
+	return type;
+}
 
 int SpMatrix::getNumRows(){
 	return nrows;

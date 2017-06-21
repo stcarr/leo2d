@@ -88,6 +88,7 @@ class Locality {
   		void workerChebSolve(int*,double*,int*,int*,double*);
   		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Job_params);
 
+		std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
   		std::vector< std::vector<double> > getReciprocal(int);
   		double crossProd(std::vector<double> x, std::vector<double> y, int dim);
   		// void writeBufferToFile(double*, int, std::string);
@@ -119,11 +120,11 @@ class Locality {
   		// Updates the index_to_pos array for a specific job's orbital positions (i.e. with shift and strain)
   		void setConfigPositions(double*, double*, int*, Job_params);
 
-  		// Creates and returns a SpMatrix object representing H for a specific job
-  		void generateH(SpMatrix&,Job_params,int*,double*,int*,int*,double*,std::vector<int>,int);
+  		// Creates and returns real SpMatrix objects and an array of target vectors for Electron-Electron Correlation
+  		void generateRealH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
 
-  		// Creates and returns SpMatrix objects and an array of target vectors for Electron-Electron Correlation KPM
-  		void generateCondH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
+  		// Creates and returns complex SpMatrix objects and an array of target vectors for Electron-Electron Correlation
+  		void generateCpxH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
 
   		// Creates and returns SpMatrix object representing H for a specific Momentum-space job
   		void generateMomH(SpMatrix&, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
