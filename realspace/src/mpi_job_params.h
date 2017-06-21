@@ -8,7 +8,6 @@
 #ifndef MPI_JOB_PARAMS_H
 #define MPI_JOB_PARAMS_H
 
-#include "loc_params.h"
 #include "job_params.h"
 #include <string>
 #include <vector>

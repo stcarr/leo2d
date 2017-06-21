@@ -14,7 +14,6 @@
 #include "spmatrix.h"
 #include "dmatrix.h"
 #include "job_params.h"
-#include "loc_params.h"
 //#include "mpi_job_params.h"
 #include "mpi_job_results.h"
 #include "mlmc_handler.h"

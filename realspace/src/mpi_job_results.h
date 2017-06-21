@@ -8,7 +8,6 @@
 #ifndef MPI_JOB_RESULTS_H
 #define MPI_JOB_RESULTS_H
 
-#include "loc_params.h"
 #include "mpi_job_params.h"
 
 #include <string>
