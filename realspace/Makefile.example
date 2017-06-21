@@ -1,17 +1,17 @@
-CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o spmatrix.o dmatrix.o loc_params.o mlmc_handler.o 
-MPI_OBJ = main.o locality.o mpi_job_params.o mpi_job_results.o 
+CC_OBJ = sheet.o hstruct.o sdata.o intralayer_coupling.o interlayer_coupling.o spmatrix.o dmatrix.o mlmc_handler.o 
+MPI_OBJ = main.o locality.o mpi_job_results.o job_params.o 
 
 OBJS = $(CC_OBJ) $(MPI_OBJ)
 
-CC_SRC = sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp dmatrix.cpp loc_params.cpp mlmc_handler.cpp
-MPI_SRC = main.cpp locality.cpp mpi_job_params.cpp mpi_job_results.cpp
+CC_SRC = sheet.cpp hstruct.cpp sdata.cpp intralayer_coupling.cpp spmatrix.cpp dmatrix.cpp mlmc_handler.cpp
+MPI_SRC = main.cpp locality.cpp mpi_job_results.cpp job_params.cpp
 SRC_DIR = src
 OUT_DIR = obj
 EXECUTABLE = LEO2D
-INSTALL_DIR = /usr/local/bin
+INSTALL_DIR = /usr/bin
 
-DEBUG = -g -O0
-#DEBUG = 
+#DEBUG = -g -O0
+DEBUG = 
 
 PLATFORM = DEFAULT
 
@@ -36,8 +36,8 @@ endif
 ifeq ($(PLATFORM),DEFAULT)
 CC = g++
 MPICC = mpicxx
-MATFLAGS = -I/home/tfuser/software/eigen-eigen-26667be4f70b
-LOCALFLAGS = -L/home/tfuser/Work/TerraFERMA/lib -lfftw3 
+MATFLAGS = -I/soft/eigen-eigen-67e894c6cd8f
+LOCALFLAGS = -lfftw3 
 endif
 
 
@@ -57,8 +57,10 @@ $(addprefix $(OUT_DIR)/,$(OBJS)) : $(addprefix $(SRC_DIR)/,$(OBJS:.o=.cpp))
 
 .PHONY: clean
 
+
 install:
 	cp $(EXECUTABLE) $(INSTALL_DIR)/$(EXECUTABLE)
+
 
 clean:
 	rm -f  $(EXECUTABLE) obj/*.o
@@ -74,5 +76,4 @@ test:
 		rm tblg_test$$num.cheb && cd .. && echo "test$$num exited with no errors."; \
 		num=`expr $$num + 1`; \
 	done; true
-
 
