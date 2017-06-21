@@ -450,7 +450,7 @@ void Hstruct::getIndexToPos(double* array_in,int dim){
 
 std::vector<std::vector<double> > Hstruct::getSupercellVecs(){
 
-  
+
 
 }
 
@@ -523,7 +523,7 @@ std::vector<std::vector<int> > Hstruct::getVacancyList(int center_index, int nSh
 
 }
 
-std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
+std::vector< std::vector<int> > Hstruct::getTargetList(Job_params opts){
 
 	std::vector<std::vector<int> > t_list;
 
@@ -535,7 +535,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 		std::vector<int> temp_list;
 
 		int num_target_sheets = opts.getInt("num_target_sheets");
-		std::vector<int> target_sheets = opts.getVecInt("target_sheets");
+		std::vector<int> target_sheets = opts.getIntVec("target_sheets");
 
 		for (int s_index = 0; s_index < num_target_sheets; ++s_index){
 
@@ -562,7 +562,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 		std::vector<int> temp_list;
 
 		int num_target_sheets = opts.getInt("num_target_sheets");
-		std::vector<int> target_sheets = opts.getVecInt("target_sheets");
+		std::vector<int> target_sheets = opts.getIntVec("target_sheets");
 
 		for (int s_index = 0; s_index < num_target_sheets; ++s_index){
 			int target_sheet = target_sheets[s_index];
@@ -597,7 +597,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Loc_params opts){
 		int tss = 10;
 
 		int num_target_sheets = opts.getInt("num_target_sheets");
-		std::vector<int> target_sheets = opts.getVecInt("target_sheets");
+		std::vector<int> target_sheets = opts.getIntVec("target_sheets");
 
 		for (int i = -tsg; i < tsg+1; ++i){
 			for (int j = -tsg; j < tsg+1; ++j){

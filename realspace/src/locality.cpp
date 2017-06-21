@@ -44,10 +44,9 @@ Locality::~Locality() {
 
 }
 
-void Locality::setup(Loc_params opts_in){
+void Locality::setup(Job_params opts_in){
 
 	// Controls run-specific parameters of the solver methods
-
 	opts = opts_in;
 	job_name = opts.getString("job_name");
 
@@ -57,7 +56,7 @@ void Locality::setup(Loc_params opts_in){
 
 }
 
-void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Loc_params opts_in){
+void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Job_params opts_in){
 
 	int solver_type = opts_in.getInt("solver_type");
 	std::string vacancy_file = opts.getString("vacancy_file");
@@ -523,13 +522,13 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 	time(&solveEnd);
 }
 
-void Locality::sendRootWork(Mpi_job_params jobIn, int target_r){
+void Locality::sendRootWork(Job_params jobIn, int target_r){
 
-	jobIn.sendParams(target_r,1);
+	jobIn.sendParams(target_r);
 
 }
 
-void Locality::recursiveShiftCalc(std::vector<Mpi_job_params>& jobArray, double* shifts, int solver_type, int nShifts, int maxJobs, int num_sheets, int num_shift_sheets, int* shift_sheets, std::vector< std::vector<int> > target_indices) {
+void Locality::recursiveShiftCalc(std::vector<Job_params>& jobArray, std::vector< std::vector<double> > shifts, int solver_type, int nShifts, int maxJobs, int num_sheets, int num_shift_sheets, std::vector<int> shift_sheets, std::vector< std::vector<int> > target_indices) {
 
 	// Uniform sample over a grid
 	if (solver_type == 1){
@@ -539,18 +538,18 @@ void Locality::recursiveShiftCalc(std::vector<Mpi_job_params>& jobArray, double*
 			int jobID = (int)jobArray.size() + 1;
 
 			int n_targets = (int)target_indices[0].size();
-			int targets[n_targets];
-
+			std::vector<int> targets;
+			targets.resize(n_targets);
 			for (int t = 0; t < n_targets; ++t){
 				targets[t] = target_indices[0][t];
 			}
 
-			Mpi_job_params tempJob;
-			tempJob.loadLocParams(opts);
-			tempJob.setParam("shifts",shifts,num_sheets,3);
+			Job_params tempJob(opts);
+			tempJob.setParam("shifts",shifts);
 			tempJob.setParam("jobID",jobID);
 			tempJob.setParam("max_jobs",maxJobs);
-			tempJob.setParam("target_list",targets,n_targets);
+			tempJob.setParam("num_targets",n_targets);
+			tempJob.setParam("target_list",targets);
 			jobArray.push_back(tempJob);
 
 		} else {
@@ -563,9 +562,9 @@ void Locality::recursiveShiftCalc(std::vector<Mpi_job_params>& jobArray, double*
 					double x = (1.0/(double) (nShifts))*i;
 					double y = (1.0/(double) (nShifts))*j;
 
-					shifts[tar_sheet*3 + 0] = x;
-					shifts[tar_sheet*3 + 1] = y;
-					shifts[tar_sheet*3 + 2] = 0;
+					shifts[tar_sheet][0] = x;
+					shifts[tar_sheet][1] = y;
+					shifts[tar_sheet][2] = 0;
 
 					recursiveShiftCalc(jobArray, shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets-1, shift_sheets, target_indices);
 
@@ -596,7 +595,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 	int currentJob = 0;
 	int length;
 
-	std::vector<Mpi_job_params> jobArray;
+	std::vector<Job_params> jobArray;
 	Mlmc_handler mlmc_h;
 
 	if (mlmc == 1){
@@ -613,17 +612,17 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 		if (solver_type == 1) {
 			nShifts = opts.getInt("nShifts");
 			int num_shift_sheets = opts.getInt("num_shift_sheets");
-			int* shift_sheets = opts.getIntVec("shift_sheets");
+			std::vector<int> shift_sheets = opts.getIntVec("shift_sheets");
 
 			maxJobs = pow(nShifts*nShifts,num_shift_sheets);
 
-			double shifts[num_sheets*3];
-
+			std::vector< std::vector<double> > shifts;
+			shifts.resize(num_sheets);
 			for (int s = 0; s < num_sheets; ++s){
-				shifts[s*3 + 0] = 0;
-				shifts[s*3 + 1] = 0;
-				shifts[s*3 + 2] = 0;
-
+				shifts[s].resize(3);
+				shifts[s][0] = 0;
+				shifts[s][1] = 0;
+				shifts[s][2] = 0;
 			}
 
 			recursiveShiftCalc(jobArray,shifts, solver_type, nShifts, maxJobs, num_sheets, num_shift_sheets, shift_sheets, target_indices);
@@ -640,22 +639,23 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 				double x = (1.0/((double) maxJobs))*i;
 
-				double shifts[num_sheets*3];
-				Mpi_job_params tempJob;
-				tempJob = Mpi_job_params();
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
 
-				for(int s = 0; s < num_sheets - 1; ++s){
-					shifts[s*3 + 0] = 0;
-					shifts[s*3 + 1] = 0;
-					shifts[s*3 + 2] = 0;
+				for(int s = 0; s < num_sheets; ++s){
+					shifts[s].resize(3);
+					shifts[s][0] = 0;
+					shifts[s][1] = 0;
+					shifts[s][2] = 0;
 				}
 
-				shifts[(num_sheets-1)*3 + 0] = x;
-				shifts[(num_sheets-1)*3 + 1] = x;
-				shifts[(num_sheets-1)*3 + 2] = 0;
+				shifts[num_sheets-1][0] = x;
+				shifts[num_sheets-1][1] = x;
+				shifts[num_sheets-1][2] = 0;
 
 				int n_targets = (int)target_indices[0].size();
-				int targets[n_targets];
+				std::vector<int> targets;
+				targets.resize(n_targets);
 
 				for (int t = 0; t < n_targets; ++t){
 					targets[t] = target_indices[0][t];
@@ -663,11 +663,12 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 
 
-				tempJob.loadLocParams(opts);
-				tempJob.setParam("shifts",shifts,num_sheets,3);
+				Job_params tempJob(opts);
+				tempJob.setParam("shifts",shifts);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
-				tempJob.setParam("target_list",targets,n_targets);
+				tempJob.setParam("num_targets",n_targets);
+				tempJob.setParam("target_list",targets);
 				jobArray.push_back(tempJob);
 
 			}
@@ -690,28 +691,39 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 			for (int i = 0; i < maxJobs; ++i){
 
-				Mpi_job_params tempJob;
-
 				// no shifts
-				double shifts[num_sheets*3];
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
 
 				for(int s = 0; s < num_sheets ; ++s){
-					shifts[s*3 + 0] = 0;
-					shifts[s*3 + 1] = 0;
-					shifts[s*3 + 2] = 0;
+					shifts[s].resize(3);
+					shifts[s][0] = 0;
+					shifts[s][1] = 0;
+					shifts[s][2] = 0;
 				}
 
 				int n_vac = (int)mlmc_vacs[i].size();
-				int vacancies[n_vac];
 
+				std::vector<int> vacancies;
+				vacancies.resize(n_vac);
 				for (int v = 0; v < n_vac; ++v){
 					vacancies[v] = mlmc_vacs[i][v];
 				}
 
-				tempJob.loadLocParams(opts);
-				tempJob.setParam("shifts",shifts,num_sheets,3);
+				int n_targets = (int)mlmc_ids[i].size();
+				std::vector<int> targets;
+				targets.resize(n_targets);
+
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = mlmc_ids[i][t];
+				}
+
+
+				Job_params tempJob(opts);
+				tempJob.setParam("shifts",shifts);
 				//tempJob.setParam("target_list",targets,n_targets);
-				tempJob.setParam("vacancy_list",vacancies,n_vac);
+				tempJob.setParam("vacancy_list",vacancies);
+				tempJob.setParam("target_list",targets);
 				tempJob.setParam("jobID",mlmc_ids[i][0]);
 				tempJob.setParam("mlmc_clusterID",mlmc_ids[i][1]);
 				tempJob.setParam("max_jobs",maxJobs);
@@ -729,35 +741,34 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 			for (int i = 0; i < maxJobs; ++i){
 
-				Mpi_job_params tempJob;
-
-				double shifts[num_sheets*3];
-
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
 				for(int s = 0; s < num_sheets ; ++s){
-					shifts[s*3 + 0] = 0;
-					shifts[s*3 + 1] = 0;
-					shifts[s*3 + 2] = 0;
+					shifts.resize(3);
+					shifts[s][0] = 0;
+					shifts[s][1] = 0;
+					shifts[s][2] = 0;
 				}
 
 				int n_vac = (int)v_work[i].size();
-				int vacancies[n_vac];
-
+				std::vector<int> vacancies;
+				vacancies.resize(n_vac);
 				for (int v = 0; v < n_vac; ++v){
 					vacancies[v] = v_work[i][v];
 				}
 
 				int n_targets = (int)target_indices[i].size();
-				int targets[n_targets];
-
+				std::vector<int> targets;
+				targets.resize(n_targets);
 				for (int t = 0; t < n_targets; ++t){
 					targets[t] = target_indices[i][t];
 				}
 
 
-				tempJob.loadLocParams(opts);
-				tempJob.setParam("shifts",shifts,num_sheets,3);
-				tempJob.setParam("target_list",targets,n_targets);
-				tempJob.setParam("vacancy_list",vacancies,n_vac);
+				Job_params tempJob(opts);
+				tempJob.setParam("shifts",shifts);
+				tempJob.setParam("target_list",targets);
+				tempJob.setParam("vacancy_list",vacancies);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
 				jobArray.push_back(tempJob);
@@ -772,25 +783,25 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 			for (int i = 0; i < maxJobs; ++i){
 
-				Mpi_job_params tempJob;
-
-				double shifts[num_sheets*3];
-
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
 				for(int s = 0; s < num_sheets ; ++s){
-					shifts[s*3 + 0] = 0;
-					shifts[s*3 + 1] = 0;
-					shifts[s*3 + 2] = 0;
+					shifts[s].resize(3);
+					shifts[s*3][0] = 0;
+					shifts[s*3][1] = 0;
+					shifts[s*3][2] = 0;
 				}
 
 				int n_targets = (int)target_indices[i].size();
-				int targets[n_targets];
+				std::vector<int> targets;
+				targets.resize(n_targets);
 				for (int t = 0; t < n_targets; ++ t){
 					targets[t] = target_indices[i][t];
 				}
 
-				tempJob.loadLocParams(opts);
-				tempJob.setParam("shifts",shifts,num_sheets,3);
-				tempJob.setParam("target_list",targets,n_targets);
+				Job_params tempJob(opts);
+				tempJob.setParam("shifts",shifts);
+				tempJob.setParam("target_list",targets);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
 				jobArray.push_back(tempJob);
@@ -850,30 +861,30 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				for (int j = 0; j < nShifts; ++j){
 					double y = (1.0/((double) nShifts))*j;
 
-					double shifts[num_sheets*3];
-					Mpi_job_params tempJob;
-					tempJob = Mpi_job_params();
-
+					std::vector< std::vector<double> > shifts;
+					shifts.resize(3);
 					for(int s = 0; s < num_sheets; ++s){
-						shifts[s*3 + 0] = p1[0] + x*d_vec1[0] + y*d_vec2[0];
-						shifts[s*3 + 1] = p1[1] + x*d_vec1[1] + y*d_vec2[1];
-						shifts[s*3 + 2] = 0;
+						shifts[s].resize(3);
+						shifts[s][0] = p1[0] + x*d_vec1[0] + y*d_vec2[0];
+						shifts[s][1] = p1[1] + x*d_vec1[1] + y*d_vec2[1];
+						shifts[s][2] = 0;
 					}
 
 					int n_targets = (int)target_indices[0].size();
-					int targets[n_targets];
-
+					std::vector<int> targets;
+					targets.resize(n_targets);
 					for (int t = 0; t < n_targets; ++t){
 						targets[t] = target_indices[0][t];
 					}
 
 
 
-					tempJob.loadLocParams(opts);
-					tempJob.setParam("shifts",shifts,num_sheets,3);
+					Job_params tempJob;
+					tempJob = Job_params(opts);
+					tempJob.setParam("shifts",shifts);
 					tempJob.setParam("jobID",i*nShifts + j + 1);
 					tempJob.setParam("max_jobs",maxJobs);
-					tempJob.setParam("target_list",targets,n_targets);
+					tempJob.setParam("target_list",targets);
 					jobArray.push_back(tempJob);
 				}
 
@@ -916,32 +927,30 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 				double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
 				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
 
-				double shifts[num_sheets*3];
-				Mpi_job_params tempJob;
-				tempJob = Mpi_job_params();
-
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
 				for(int s = 0; s < num_sheets; ++s){
-					shifts[s*3 + 0] = (1.0-x)*p1[0] + (x)*p2[0];
-					shifts[s*3 + 1] = (1.0-x)*p1[1] + (x)*p2[1];
-					//shifts[s*3 + 0] = x*b1[0][0] + (1-x)*b1[1][0];
-					//shifts[s*3 + 1] = x*b1[0][1] + (1-x)*b1[1][1];
-					shifts[s*3 + 2] = 0;
+					shifts.resize(3);
+					shifts[s][0] = (1.0-x)*p1[0] + (x)*p2[0];
+					shifts[s][1] = (1.0-x)*p1[1] + (x)*p2[1];
+					//shifts[s][0] = x*b1[0][0] + (1-x)*b1[1][0];
+					//shifts[s][1] = x*b1[0][1] + (1-x)*b1[1][1];
+					shifts[s][2] = 0;
 				}
 
 				int n_targets = (int)target_indices[0].size();
-				int targets[n_targets];
-
+				std::vector<int> targets;
+				targets.resize(n_targets);
 				for (int t = 0; t < n_targets; ++t){
 					targets[t] = target_indices[0][t];
 				}
 
-
-
-				tempJob.loadLocParams(opts);
-				tempJob.setParam("shifts",shifts,num_sheets,3);
+				Job_params tempJob;
+				tempJob = Job_params(opts);
+				tempJob.setParam("shifts",shifts);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
-				tempJob.setParam("target_list",targets,n_targets);
+				tempJob.setParam("target_list",targets);
 				jobArray.push_back(tempJob);
 
 			}
@@ -1023,7 +1032,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 		printf("rank %d has received final work from rank %d. \n", rank, source);
 
-		Mpi_job_params tempJob;
+		Job_params tempJob;
 
 		// solver_type == -1 is the STOPTAG for workers
 		tempJob.setParam("solver_type", -1);
@@ -1057,17 +1066,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t) {
 
 	MPI::Status status;
-
 	// ---------------------
 	// Enter MPI worker loop
 	// ---------------------
-
 	while (1) {
 
-		Mpi_job_params jobIn;
-
+		Job_params jobIn;
 		jobIn.recvParams(root);
-
 		int solver_type = jobIn.getInt("solver_type");
 
 		// If worker gets solver_type = -1 it ends this loop
@@ -1100,13 +1105,15 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		//results_out.saveTiming(timeStart, "START");
 
 		double vacancy_chance = jobIn.getDouble("vacancy_chance");
-
 		int num_targets = jobIn.getInt("num_targets");
-		int* target_list = jobIn.getIntVec("target_list");
+		std::vector<int> target_list;
+		if (num_targets > 0){
+			target_list = jobIn.getIntVec("target_list");
+		}
+
 		int poly_order = jobIn.getInt("poly_order");
 
-		double* shifts = jobIn.getDoubleMat("shifts");
-
+		std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 		//printf("rank %d received a job (%d/%d) \n", rank, jobID,max_jobs);
 
 		// ------------------------------------------------------
@@ -1131,8 +1138,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		// Vacancy creation loop
 
 		int num_vacancies = jobIn.getInt("num_vacancies");
-		int* vac_list = jobIn.getIntVec("vacancy_list");
-
+		std::vector<int> vac_list;
+		if (num_vacancies > 0){
+			vac_list = jobIn.getIntVec("vacancy_list");
+		}
 
 		if (solver_type == 3 || solver_type == 4){
 			for (int i = 0; i < max_index; ++i){
@@ -1493,7 +1502,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 
 }
 
-void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::generateH(SpMatrix &H, Job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 
 	int solver_type = jobIn.getInt("solver_type");
 	int magOn = jobIn.getInt("magOn");
@@ -1714,11 +1723,11 @@ void Locality::generateH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, 
 
 }
 
-void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* index_to_grid, Mpi_job_params jobIn){
+void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* index_to_grid, Job_params jobIn){
 
 	int solver_type = jobIn.getInt("solver_type");
 	int solver_space = jobIn.getInt("solver_space");
-	double* shifts = jobIn.getDoubleMat("shifts");
+	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
 	double s1_a[2][2];
 	for (int i = 0; i < 2; ++i){
@@ -1732,8 +1741,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 			int s = index_to_grid[i*4 + 3];
 
-			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0]*s1_a[0][0] + shifts[s*3 + 1]*s1_a[1][0];
-			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 0]*s1_a[0][1] + shifts[s*3 + 1]*s1_a[1][1];
+			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s][0]*s1_a[0][0] + shifts[s][1]*s1_a[1][0];
+			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s][0]*s1_a[0][1] + shifts[s][1]*s1_a[1][1];
 			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 
 		}
@@ -1746,8 +1755,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 			//int s = index_to_grid[i*4 + 3];
 			int s = 0;
 			//if (s == 0){
-				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s*3 + 0];
-				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s*3 + 1];
+				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s][0];
+				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s][1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 				//printf("pos[%d] = [%lf, %lf, %lf] \n",i,i2pos[i*3 + 0],i2pos[i*3 + 1],i2pos[i*3 + 2]);
 			/**} if (s == 1){
@@ -1764,7 +1773,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 }
 
-void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 
 	int intra_searchsize = opts.getInt("intra_searchsize");
 
@@ -1776,8 +1785,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	double E = jobIn.getDouble("E");
 	double energy_rescale = jobIn.getDouble("energy_rescale");
 	double energy_shift = jobIn.getDouble("energy_shift");
-	double* k_vec;
-	k_vec = jobIn.getDoubleVec("k");
+	//std::vector<double> k_vec = jobIn.getDoubleVec("k");
 
 	//jobIn.printParams();
 
@@ -2069,7 +2077,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	row_pointer_dy[local_max_index] = input_counter;
 
 	int num_targets = jobIn.getInt("num_targets");
-	int* target_list = jobIn.getIntVec("target_list");
+	std::vector<int> target_list = jobIn.getIntVec("target_list");
 	if (diagonalize != 1){
 		for (int t = 0; t < num_targets; ++t){
 			//printf("target = %d, local_max_index = %d \n", target_list[t], local_max_index);
@@ -2159,7 +2167,7 @@ void Locality::generateCondH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 }
 
-void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 
 	int solver_type = jobIn.getInt("solver_type");
 	int jobID = jobIn.getInt("jobID");
@@ -2170,10 +2178,10 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 	double energy_rescale = jobIn.getDouble("energy_rescale");
 	double energy_shift = jobIn.getDouble("energy_shift");
 
-	double* shifts = jobIn.getDoubleMat("shifts");
+	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
-	double shift_x = shifts[0];
-	double shift_y = shifts[1];
+	double shift_x = shifts[0][0];
+	double shift_y = shifts[0][1];
 
 	// Indexes how many inter terms we have entered so far
 	int inter_counter = 0;
@@ -2553,14 +2561,14 @@ void Locality::generateMomH(SpMatrix &H, Mpi_job_params jobIn, int* index_to_gri
 
 }
 
-void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
 	int solver_space = jobIn.getInt("solver_space");
 
 	int num_targets = jobIn.getInt("num_targets");
-	int* target_list = jobIn.getIntVec("target_list");
+	std::vector<int> target_list = jobIn.getIntVec("target_list");
 
 	if (magOn == 0 && solver_space == 0){
 
@@ -2744,14 +2752,14 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 	} // end magOn == 1 block
 }
 
-void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
+void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
 
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
 
 	int num_targets = jobIn.getInt("num_targets");
-	int* target_list = jobIn.getIntVec("target_list");
+	std::vector<int> target_list = jobIn.getIntVec("target_list");
 
 	if (magOn == 0){
 
@@ -2934,7 +2942,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Mpi_j
 
 }
 
-void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 
 	int d_cond = jobIn.getInt("d_cond");
@@ -3038,7 +3046,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 }
 
-void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Mpi_job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 
 	int d_cond = jobIn.getInt("d_cond");

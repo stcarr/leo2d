@@ -11,53 +11,53 @@
 
 #include "sheet.h"
 #include "interlayer_coupling.h"
-#include "mpi_job_params.h"
+#include "job_params.h"
 
 class Hstruct {
     private:
-        int max_index;
-        int max_sheets;
-		int solver_space;
+      int max_index;
+      int max_sheets;
+  		int solver_space;
 
-        std::vector<Sheet> sheets;
-        std::vector<double> angles;
-        std::vector<double> heights;
-        std::vector<std::vector<double> > shifts;
-		std::vector<std::vector<int> > index_array;
+      std::vector<Sheet> sheets;
+      std::vector<double> angles;
+      std::vector<double> heights;
+      std::vector<std::vector<double> > shifts;
+      std::vector<std::vector<int> > index_array;
 
-        void setIndex();
+      void setIndex();
 
     public:
-        Hstruct(std::vector<Sheet>,std::vector<double>,std::vector<double>,int);
-        Hstruct(const Hstruct& orig);
-        ~Hstruct();
+      Hstruct(std::vector<Sheet>,std::vector<double>,std::vector<double>,int);
+      Hstruct(const Hstruct& orig);
+      ~Hstruct();
 
-        void setShift(int, std::vector<double>);
+      void setShift(int, std::vector<double>);
 
-        double posAtomIndex(int, int);
+      double posAtomIndex(int, int);
 
-        int findNearest(double (&pos)[3], int, int);
+      int findNearest(double (&pos)[3], int, int);
 
-        double interHamiltonian();
-        double totalHamiltonian();
+      double interHamiltonian();
+      double totalHamiltonian();
 
-        double localitySweep(int, double, double);
+      double localitySweep(int, double, double);
 
-        double hUpdate();
-        int getMaxIndex();
+      double hUpdate();
+      int getMaxIndex();
 
-        void getInterPairs(std::vector<std::vector<int> >&,int);
-		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,int);
-		std::vector<std::vector<int> > getIndexArray();
-		int gridToIndex(int (&grid_index)[4]);
-		void getIndexToPos(double*,int);
-    std::vector<std::vector<double> > getSupercellVecs();
-		double getUnitArea(int);
+      void getInterPairs(std::vector<std::vector<int> >&,int);
+  		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,int);
+  		std::vector<std::vector<int> > getIndexArray();
+  		int gridToIndex(int (&grid_index)[4]);
+  		void getIndexToPos(double*,int);
+      std::vector<std::vector<double> > getSupercellVecs();
+  		double getUnitArea(int);
 
-		std::vector<std::vector<int> > getVacancyList(int,int);
-		std::vector<std::vector<int> > getTargetList(Loc_params);
+  		std::vector<std::vector<int> > getVacancyList(int,int);
+  		std::vector<std::vector<int> > getTargetList(Job_params);
 
-		void makeInterFFTFile(int, int, int, int, int, int, double, double, std::string);
+  		void makeInterFFTFile(int, int, int, int, int, int, double, double, std::string);
 
 
 };
