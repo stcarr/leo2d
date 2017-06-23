@@ -44,6 +44,7 @@ Mpi_job_results::Mpi_job_results() {
 	solver_type = 0;
 	observable_type = 0;
 	solver_space = 0;
+	verbose_save = 1;
 	diagonalize = 0;
 	d_weights = 1;
 	d_vecs = 0;
@@ -134,6 +135,7 @@ void Mpi_job_results::loadLocParams(Job_params opts){
 	observable_type = opts.getInt("observable_type");
 	solver_space = opts.getInt("solver_space");
 	diagonalize = opts.getInt("diagonalize");
+	verbose_save = opts.getInt("verbose_save");
 	d_weights = opts.getInt("d_weights");
 	d_vecs = opts.getInt("d_vecs");
 	d_cond = opts.getInt("d_cond");
@@ -161,6 +163,7 @@ void Mpi_job_results::loadLocParams(Job_params opts){
 }
 
 void Mpi_job_results::loadJobParams(Job_params orig){
+
 		jobID = orig.getInt("jobID");
 		max_jobs = orig.getInt("max_jobs");
 
@@ -172,6 +175,7 @@ void Mpi_job_results::loadJobParams(Job_params orig){
 		observable_type = orig.getInt("observable_type");
 		solver_space = orig.getInt("solver_space");
 		diagonalize = orig.getInt("diagonalize");
+		verbose_save = orig.getInt("verbose_save");
 		d_weights = orig.getInt("d_weights");
 		d_vecs = orig.getInt("d_vecs");
 		d_cond = orig.getInt("d_cond");
@@ -244,6 +248,8 @@ void Mpi_job_results::setParam(std::string tag, int val){
 		solver_space = val;
 	if (tag == "diagonalize")
 		diagonalize = val;
+	if (tag == "verbose_save")
+		verbose_save = val;
 	if (tag == "d_weights")
 		d_weights = val;
 	if (tag == "d_vecs")
@@ -412,6 +418,8 @@ int Mpi_job_results::getInt(std::string tag) const{
 		return solver_space;
 	if (tag == "diagonalize")
 		return diagonalize;
+	if (tag == "verbose_save")
+		return verbose_save;
 	if (tag == "d_weights")
 		return d_weights;
 	if (tag == "d_vecs")
@@ -498,159 +506,180 @@ double* Mpi_job_results::getDoubleMat(std::string tag) const{
 
 void Mpi_job_results::save(std::ofstream& outFile) {
 
-	printHeader(outFile);
-	if (diagonalize == 0){
-		if (observable_type == 0){
+	if (verbose_save != 0){
+		printHeader(outFile);
+	}
 
-			if (diagonalize == 0){
+	if (verbose_save != 0){
+
+		if (diagonalize == 0){
+			if (observable_type == 0){
+
+				if (diagonalize == 0){
+
+					outFile << "T: \n";
+
+					for(int t = 0; t < num_targets; ++t){
+						outFile << target_list[t] << ": ";
+						for(int j = 0; j < poly_order-1; ++j){
+							outFile << cheb_coeffs[t][j] << ", ";
+						}
+						outFile << cheb_coeffs[t][poly_order-1] << "\n";
+					}
+
+					outFile << "\n";
+				}
+
+			} else if (observable_type == 1){
+
+				/*
 
 				outFile << "T: \n";
 
 				for(int t = 0; t < num_targets; ++t){
+					outFile << target_list[t] << ": \n";
+					for (int r = 0; r < poly_order; ++r){
+						for(int j = 0; j < poly_order-1; ++j){
+							outFile << result_array[job][j + r*poly_order + t*poly_order*poly_order] << ", ";
+						}
+						outFile << result_array[job][poly_order-1 + r*poly_order + t*poly_order*poly_order] << "\n";
+					}
+				}
+
+				outFile << "\n";
+				*/
+
+			}
+		} else if (diagonalize == 1){
+
+			int local_max_index = eigenvalues.size();
+			outFile << "EIGS: ";
+			for(int j = 0; j < local_max_index - 1; ++j){
+				outFile << eigenvalues[j] << ", ";
+			}
+			outFile << eigenvalues[local_max_index - 1] << "\n";
+
+			outFile << "\n";
+
+			// Control for output printing
+			// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
+
+			if (d_weights == 1){
+
+				outFile << "WEIGHTS: \n";
+
+				for(int t = 0; t < num_targets; ++t){
 					outFile << target_list[t] << ": ";
-					for(int j = 0; j < poly_order-1; ++j){
-						outFile << cheb_coeffs[t][j] << ", ";
+					for(int j = 0; j < local_max_index - 1; ++j){
+						outFile << eigenweights[t][j] << ", ";
 					}
-					outFile << cheb_coeffs[t][poly_order-1] << "\n";
+					outFile << eigenweights[t][local_max_index - 1] << "\n";
 				}
 
 				outFile << "\n";
+
 			}
 
-		} else if (observable_type == 1){
+			if (d_vecs == 1){
 
-			/*
 
-			outFile << "T: \n";
-
-			for(int t = 0; t < num_targets; ++t){
-				outFile << target_list[t] << ": \n";
-				for (int r = 0; r < poly_order; ++r){
-					for(int j = 0; j < poly_order-1; ++j){
-						outFile << result_array[job][j + r*poly_order + t*poly_order*poly_order] << ", ";
+				outFile << "VECS: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << eigenvectors[j][m] << ", ";
 					}
-					outFile << result_array[job][poly_order-1 + r*poly_order + t*poly_order*poly_order] << "\n";
+					outFile << eigenvectors[j][local_max_index - 1] << "\n";
 				}
+
+				outFile << "\n";
+
 			}
 
-			outFile << "\n";
-			*/
+			if (d_cond > 0){
 
-		}
-	} else if (diagonalize == 1){
-
-		int local_max_index = eigenvalues.size();
-		outFile << "EIGS: ";
-		for(int j = 0; j < local_max_index - 1; ++j){
-			outFile << eigenvalues[j] << ", ";
-		}
-		outFile << eigenvalues[local_max_index - 1] << "\n";
-
-		outFile << "\n";
-
-		// Control for output printing
-		// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
-
-		if (d_weights == 1){
-
-			outFile << "WEIGHTS: \n";
-
-			for(int t = 0; t < num_targets; ++t){
-				outFile << target_list[t] << ": ";
-				for(int j = 0; j < local_max_index - 1; ++j){
-					outFile << eigenweights[t][j] << ", ";
-				}
-				outFile << eigenweights[t][local_max_index - 1] << "\n";
-			}
-
-			outFile << "\n";
-
-		}
-
-		if (d_vecs == 1){
-
-
-			outFile << "VECS: \n";
-			for(int j = 0; j < local_max_index; ++j){
-				for (int m = 0; m < local_max_index - 1; ++m){
-					outFile << eigenvectors[j][m] << ", ";
-				}
-				outFile << eigenvectors[j][local_max_index - 1] << "\n";
-			}
-
-			outFile << "\n";
-
-		}
-
-		if (d_cond > 0){
-
-			outFile << "M_XX: \n";
-			for(int j = 0; j < poly_order; ++j){
-				for (int m = 0; m < poly_order - 1; ++m){
-					outFile << M_xx[j][m] << ", ";
-				}
-				outFile << M_xx[j][poly_order - 1] << "\n";
-			}
-
-			outFile << "\n";
-
-				if (d_cond > 1){
-				outFile << "M_YY: \n";
+				outFile << "M_XX: \n";
 				for(int j = 0; j < poly_order; ++j){
 					for (int m = 0; m < poly_order - 1; ++m){
-						outFile << M_yy[j][m] << ", ";
+						outFile << M_xx[j][m] << ", ";
 					}
-					outFile << M_yy[j][poly_order - 1] << "\n";
+					outFile << M_xx[j][poly_order - 1] << "\n";
 				}
 
 				outFile << "\n";
 
-				outFile << "M_XY: \n";
-				for(int j = 0; j < poly_order; ++j){
-					for (int m = 0; m < poly_order - 1; ++m){
-						outFile << M_xy[j][m] << ", ";
+					if (d_cond > 1){
+					outFile << "M_YY: \n";
+					for(int j = 0; j < poly_order; ++j){
+						for (int m = 0; m < poly_order - 1; ++m){
+							outFile << M_yy[j][m] << ", ";
+						}
+						outFile << M_yy[j][poly_order - 1] << "\n";
 					}
-					outFile << M_xy[j][poly_order - 1] << "\n";
+
+					outFile << "\n";
+
+					outFile << "M_XY: \n";
+					for(int j = 0; j < poly_order; ++j){
+						for (int m = 0; m < poly_order - 1; ++m){
+							outFile << M_xy[j][m] << ", ";
+						}
+						outFile << M_xy[j][poly_order - 1] << "\n";
+					}
+
+					outFile << "\n";
+				}
+				// Use to write M_xx to a binary file, M_XX_J<jobID>.dat
+
+				/*
+
+				int jobID = jobArray[job].getInt("jobID");
+
+				std::string cwd = get_current_dir_name();
+
+				system("mkdir temp");
+
+
+				std::string M_xx_filename;
+				M_xx_filename.append(cwd);
+				M_xx_filename.append( "/temp/");
+
+				if (jobID > 99){
+					M_xx_filename.append("M_XX_J");
+				} else if (jobID > 9){
+					M_xx_filename.append("M_XX_J0");
+				} else {
+					M_xx_filename.append("M_XX_J00");
 				}
 
-				outFile << "\n";
+				std::ostringstream temp_ss;
+
+				temp_ss << jobID;
+				M_xx_filename.append(temp_ss.str());
+				M_xx_filename.append(".bin");
+
+				// Debugging output
+				//printf(M_xx_filename.c_str());
+				//printf("\n");
+
+				writeBufferToFile(&result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index], poly_order*poly_order, M_xx_filename);
+				*/
+
 			}
-			// Use to write M_xx to a binary file, M_XX_J<jobID>.dat
+		}
+	} else {
+		if (diagonalize == 0){
+			if (observable_type == 0){
 
-			/*
+				if (diagonalize == 0){
 
-			int jobID = jobArray[job].getInt("jobID");
-
-			std::string cwd = get_current_dir_name();
-
-			system("mkdir temp");
-
-
-			std::string M_xx_filename;
-			M_xx_filename.append(cwd);
-			M_xx_filename.append( "/temp/");
-
-			if (jobID > 99){
-				M_xx_filename.append("M_XX_J");
-			} else if (jobID > 9){
-				M_xx_filename.append("M_XX_J0");
-			} else {
-				M_xx_filename.append("M_XX_J00");
+					for(int t = 0; t < num_targets; ++t){
+						for(int j = 0; j < poly_order-1; ++j){
+							outFile << cheb_coeffs[t][j] << " ";
+						}
+						outFile << cheb_coeffs[t][poly_order-1] << "\n";
+					}
+				}
 			}
-
-			std::ostringstream temp_ss;
-
-			temp_ss << jobID;
-			M_xx_filename.append(temp_ss.str());
-			M_xx_filename.append(".bin");
-
-			// Debugging output
-			//printf(M_xx_filename.c_str());
-			//printf("\n");
-
-			writeBufferToFile(&result_array[job][1 + b*local_max_index + a*local_max_index*local_max_index], poly_order*poly_order, M_xx_filename);
-			*/
-
 		}
 	}
 }
@@ -703,7 +732,7 @@ void Mpi_job_results::printHeader(std::ofstream& outFile){
 
 	outFile << "CLUSTERID = " <<  mlmc_clusterID << " \n";
 
-		/*
+		// /*
 		outFile << "NUM_TAR = " << num_targets << "\n";
 		if (num_targets != 0){
 			outFile << "TAR_LIST: ";
@@ -714,8 +743,7 @@ void Mpi_job_results::printHeader(std::ofstream& outFile){
 		} else {
 			outFile << "NO_TAR \n";
 		}
-		*/
-
+		//*
 		outFile << "NUM_VAC = " << num_vacancies << "\n";
 		if (vacancy_list[0] != -1){
 			outFile << "VAC_LIST: ";
@@ -759,7 +787,6 @@ void Mpi_job_results::printHeader(std::ofstream& outFile){
 		outFile << "MAG_ON  = " << magOn  << ", B = " << B << " \n";
 		outFile << "ELEC_ON = " << elecOn << ", E = " << E << " \n";
 	}
-
 
 }
 
@@ -1217,6 +1244,7 @@ void Mpi_job_results::send(int target, int tag){
 			sendInt(observable_type,target,tag);
 			sendInt(solver_space,target,tag);
 			sendInt(diagonalize,target,tag);
+			sendInt(verbose_save,target,tag);
 			sendInt(d_weights,target,tag);
 			sendInt(d_vecs,target,tag);
 			sendInt(d_cond,target,tag);
@@ -1292,6 +1320,7 @@ void Mpi_job_results::recv(int from){
 			recvInt(from,"observable_type");
 			recvInt(from,"solver_space");
 			recvInt(from,"diagonalize");
+			recvInt(from,"verbose_save");
 			recvInt(from,"d_weights");
 			recvInt(from,"d_vecs");
 			recvInt(from,"d_cond");

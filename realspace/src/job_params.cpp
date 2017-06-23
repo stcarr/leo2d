@@ -29,6 +29,9 @@ Job_params::Job_params() {
 	setParam("strain_type",i_zero);
 	setParam("observable_type",i_zero);
 	setParam("solver_space",i_zero);
+	setParam("boundary_condition",i_zero);
+	setParam("matrix_pos_save", i_zero);
+	setParam("verbose_save",i_one);
 	setParam("diagonalize",i_zero);
 	setParam("d_weights",i_zero);
 	setParam("d_vecs",i_zero);
@@ -69,6 +72,7 @@ Job_params::Job_params() {
 }
 
 Job_params::Job_params(const Job_params& orig){
+
 	// loop over int
 	std::vector<string> temp_tags = orig.getParamTags("int");
 	for (int i = 0; i < temp_tags.size(); ++i){
@@ -134,7 +138,6 @@ Job_params::~Job_params(){
 void Job_params::setParam(std::string tag, int val){
 
 	// first check if this tag already exists
-
 	for (int i = 0; i < int_param_tags.size(); ++i){
 		if (int_param_tags[i].compare(tag) == 0) {
 			int_params[i] = val;

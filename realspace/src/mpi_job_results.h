@@ -19,6 +19,7 @@ class Mpi_job_results {
 
 		// job variables (same as mpi_job_params)
 
+
 		int jobID;
 		int max_jobs;
 
@@ -29,6 +30,7 @@ class Mpi_job_results {
 		int solver_type;
 		int observable_type;
 		int solver_space;
+    int verbose_save;
 		int diagonalize;
 		int d_weights;
 		int d_vecs;

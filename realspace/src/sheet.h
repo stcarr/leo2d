@@ -12,6 +12,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
+#include "job_params.h"
 #include "sdata.h"
 #include "intralayer_coupling.h"
 
@@ -59,8 +60,12 @@ class Sheet {
   		double getOrbPos(int, int);
       int getNumAtoms();
   		int getMat();
-  		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, int, int);
-  		void setReciprocal();
+
+  		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&,std::vector< std::vector<double> >&, Job_params, int);
+      void orderPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, std::vector< std::vector<double> >&);
+      int findNearest(double (&pos)[3], int);
+
+      void setReciprocal();
   		double crossProd(std::vector<double>, std::vector<double>, int);
   		double getReciprocal(int, int);
   		double getInverse(int, int);

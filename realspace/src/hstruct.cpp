@@ -225,16 +225,26 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 // Allocates interlayer candidate pairs into
 //     the given 2-dimensional pair_array
 // -----------------------------------------
-void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int searchsize){
+void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vector<std::vector<double> > &supercell_vecs, Job_params opts){
 
 	// We search over a searchsize x searchsize sized grid of unitcells
 	//int searchsize = 6;
+
+  int searchsize = opts.getInt("intra_searchsize");
+  int boundary_condition = opts.getInt("boundary_condition");
+  std::vector< std::vector<double> > supercell;
+  if (boundary_condition == 1){
+    supercell = opts.getDoubleMat("supercell");
+  }
 
 	// We do not save pairs that are farther apart than this (in Angstroms)
 	double inter_cutoff = 12.5;
 
 	// loop over all orbitals (kh = "k here")
 	for (int kh = 0; kh < max_index; ++kh){
+
+    std::vector<std::vector<int> > kh_pair_array;
+    std::vector<std::vector<double> > kh_supercell_vecs;
 
 		//printf("kh = %d \n",kh);
 
@@ -245,151 +255,231 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, int sear
 		int sh = index_array[kh][3];
 
 		// And the position information
-		double pos_here[3];
-		pos_here[0] = posAtomIndex(kh,0);
-		pos_here[1] = posAtomIndex(kh,1);
-		pos_here[2] = posAtomIndex(kh,2);
+		double kh_pos_here[3];
+		kh_pos_here[0] = posAtomIndex(kh,0);
+		kh_pos_here[1] = posAtomIndex(kh,1);
+		kh_pos_here[2] = posAtomIndex(kh,2);
 
 		// If in momentum space, take reciprocal, i.e. K couples to -K (NOT K couples to K)
 		if (solver_space == 1){
-			pos_here[0] = -pos_here[0];
-			pos_here[1] = -pos_here[1];
-			pos_here[2] = -pos_here[2];
+			kh_pos_here[0] = -kh_pos_here[0];
+			kh_pos_here[1] = -kh_pos_here[1];
+			kh_pos_here[2] = -kh_pos_here[2];
 		}
 
 
-		// if we are not on the "lowest" sheet, we look for pairs from the sheet above
-		if (sh > 0) {
+    int sc_x_stride = 0;
+    int sc_y_stride = 0;
 
-			// "0" determines the center of our search range on sheet s0
-			int i0 = findNearest(pos_here, sh - 1, 0);
-			int j0 = findNearest(pos_here, sh - 1, 1);
-			int s0 = sh - 1;
+    if (boundary_condition == 1){
+      sc_x_stride = 1;
+      sc_y_stride = 1;
+    }
 
+    // We check all nearby supercells
+    for (int dx = -sc_x_stride; dx < sc_x_stride+1; ++dx){
+      for (int dy = -sc_y_stride; dy < sc_y_stride+1; ++dy){
 
-			/*
-			// For debugging/checking findNearest()
-			int t_grid[4];
-			t_grid[0] = i0;
-			t_grid[1] = j0;
-			t_grid[2] = 0;
-			t_grid[3] = s0;
-			int c_k = gridToIndex(t_grid);
+        double pos_here[3];
 
-			printf("[%lf, %lf] -> [%lf, %lf] \n",pos_here[0],pos_here[1],posAtomIndex(c_k,0),posAtomIndex(c_k,1));
-			*/
+        // compute the supercell vector (for k sampling usually)
+        std::vector<double> sc_vec;
+        sc_vec.resize(2);
+        sc_vec[0] = 0;
+        sc_vec[1] = 0;
 
-			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
+        if (boundary_condition == 1){
+          sc_vec[0] = dx*supercell[0][0] + dy*supercell[1][0];
+          sc_vec[1] = dx*supercell[0][1] + dy*supercell[1][1];
+        }
 
+        pos_here[0] = kh_pos_here[0] + sc_vec[0];
+        pos_here[1] = kh_pos_here[1] + sc_vec[1];
+        pos_here[2] = kh_pos_here[2];
 
-			// find the base_index we need to add to the local sheet index on sheet s0
-			int base_index = 0;
-			for(int s = 0; s < s0; ++s)
-				base_index += sheets[s].getMaxIndex();
+    		// if we are not on the "lowest" sheet, we look for pairs from the sheet above
+    		if (sh > 0) {
 
-			// Now loop over a search-size sized grid on sheet s0
-			for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
-				for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
-					for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
-						// Current grid
-						int grid_2[3] = {i,j,l};
-
-						// Current index
-						int k2 = sheets[s0].gridToIndex(grid_2);
-						/*
-						if (i == i0 && j == j0){
-							printf("center k2 = %d \n", k2+base_index);
-						}
-						if (kh == 90)
-							printf("k2 = %d \n",k2+base_index);
-						*/
+    			// "0" determines the center of our search range on sheet s0
+    			int i0 = findNearest(pos_here, sh - 1, 0);
+    			int j0 = findNearest(pos_here, sh - 1, 1);
+    			int s0 = sh - 1;
 
 
-						// Check if an orbital exists here (i.e. k = -1 if no orbital exists at that grid position)
-						if (k2 != -1){
+    			/*
+    			// For debugging/checking findNearest()
+    			int t_grid[4];
+    			t_grid[0] = i0;
+    			t_grid[1] = j0;
+    			t_grid[2] = 0;
+    			t_grid[3] = s0;
+    			int c_k = gridToIndex(t_grid);
 
-							// Get current position
-							double x2 = posAtomIndex(k2+base_index,0);
-							double y2 = posAtomIndex(k2+base_index,1);
+    			printf("[%lf, %lf] -> [%lf, %lf] \n",pos_here[0],pos_here[1],posAtomIndex(c_k,0),posAtomIndex(c_k,1));
+    			*/
 
-							// If the positions are within the cutoff range we save their indices as a pair for our tight-binding model
-							if ((x2 - pos_here[0])*(x2 - pos_here[0]) + (y2 - pos_here[1])*(y2 - pos_here[1]) < inter_cutoff*inter_cutoff) {
-								std::vector<int> pair_here;
-								pair_here.push_back(kh);
-								pair_here.push_back(k2 + base_index);
-								pair_array.push_back(pair_here);
-								/*
-								if (kh == 1 || k2 + base_index == 1){
-									printf("[%d, %d] \n",kh, k2 + base_index);
-									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
-								}
-								*/
-							}
-						}
-					}
-				}
-			}
-		}
+    			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
 
-		// if we are not on the "highest" sheet, we look for pairs from the sheet below
-		if (sh < max_sheets - 1) {
 
-			// "0" determines the center of our search range on sheet s0
-			int i0 = findNearest(pos_here, sh + 1, 0);
-			int j0 = findNearest(pos_here, sh + 1, 1);
-			int s0 = sh + 1;
+    			// find the base_index we need to add to the local sheet index on sheet s0
+    			int base_index = 0;
+    			for(int s = 0; s < s0; ++s)
+    				base_index += sheets[s].getMaxIndex();
 
-			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
+    			// Now loop over a search-size sized grid on sheet s0
+    			for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
+    				for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
+    					for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
+    						// Current grid
+    						int grid_2[3] = {i,j,l};
 
-			// prints how index 0 is paired to the grid above it (used as a troubleshooting print)
-			//if (kh == 0)
-			//	printf("index %d: [%d,%d,%d] to [%d,%d,%d] \n",kh,ih,jh,sh,i0,j0,s0);
+    						// Current index
+    						int k2 = sheets[s0].gridToIndex(grid_2);
+    						/*
+    						if (i == i0 && j == j0){
+    							printf("center k2 = %d \n", k2+base_index);
+    						}
+    						if (kh == 90)
+    							printf("k2 = %d \n",k2+base_index);
+    						*/
 
-			// find the base_index we need to add to the local sheet index on sheet s0
-			int base_index = 0;
-			for(int s = 0; s < s0; ++s)
-				base_index += sheets[s].getMaxIndex();
 
-			// Now loop over a search-size sized grid on sheet s0
-			for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
-				for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
-					for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
-						// Current grid
-						int grid_2[3] = {i,j,l};
+    						// Check if an orbital exists here (i.e. k = -1 if no orbital exists at that grid position)
+    						if (k2 != -1){
 
-						// Current index
-						int k2 = sheets[s0].gridToIndex(grid_2);
-						/*
-						if (i == i0 && j == j0){
-							printf("center k2 = %d \n", k2+base_index);
-						}
-						*/
-						// Check if an orbital exists here (i.e. k = -1 if no orbital exists at that grid position)
-						if (k2 != -1){
+    							// Get current position
+    							double x2 = posAtomIndex(k2+base_index,0);
+    							double y2 = posAtomIndex(k2+base_index,1);
 
-							// Get current position
-							double x2 = posAtomIndex(k2+base_index,0);
-							double y2 = posAtomIndex(k2+base_index,1);
+    							// If the positions are within the cutoff range we save their indices as a pair for our tight-binding model
+    							if ((x2 - pos_here[0])*(x2 - pos_here[0]) + (y2 - pos_here[1])*(y2 - pos_here[1]) < inter_cutoff*inter_cutoff) {
+    								std::vector<int> pair_here;
+    								pair_here.push_back(kh);
+    								pair_here.push_back(k2 + base_index);
+    								kh_pair_array.push_back(pair_here);
+                    kh_supercell_vecs.push_back(sc_vec);
+    								/*
+    								if (kh == 1 || k2 + base_index == 1){
+    									printf("[%d, %d] \n",kh, k2 + base_index);
+    									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
+    								}
+    								*/
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
 
-							// If the positions are within the cutoff range we save their indices as a pair for our tight-binding model
-							if ((x2 - pos_here[0])*(x2 - pos_here[0]) + (y2 - pos_here[1])*(y2 - pos_here[1]) < inter_cutoff*inter_cutoff) {
-								std::vector<int> pair_here;
-								pair_here.push_back(kh);
-								pair_here.push_back(k2 + base_index);
-								pair_array.push_back(pair_here);
-								/*
-								if (kh == 60 || k2 + base_index == 60){
-									printf("[%d, %d] \n",kh, k2 + base_index);
-									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
-								}
-								*/
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    		// if we are not on the "highest" sheet, we look for pairs from the sheet below
+    		if (sh < max_sheets - 1) {
+
+    			// "0" determines the center of our search range on sheet s0
+    			int i0 = findNearest(pos_here, sh + 1, 0);
+    			int j0 = findNearest(pos_here, sh + 1, 1);
+    			int s0 = sh + 1;
+
+    			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
+
+    			// prints how index 0 is paired to the grid above it (used as a troubleshooting print)
+    			//if (kh == 0)
+    			//	printf("index %d: [%d,%d,%d] to [%d,%d,%d] \n",kh,ih,jh,sh,i0,j0,s0);
+
+    			// find the base_index we need to add to the local sheet index on sheet s0
+    			int base_index = 0;
+    			for(int s = 0; s < s0; ++s)
+    				base_index += sheets[s].getMaxIndex();
+
+    			// Now loop over a search-size sized grid on sheet s0
+    			for (int i = std::max(0, i0 - searchsize); i < std::min(sheets[s0].getShape(1,0)  - sheets[s0].getShape(0,0), i0 + searchsize); ++i) {
+    				for (int j = std::max(0,j0 - searchsize); j < std::min(sheets[s0].getShape(1,1) - sheets[s0].getShape(0,1), j0 + searchsize); ++j) {
+    					for (int l = 0; l < sheets[s0].getNumAtoms(); ++l) {
+    						// Current grid
+    						int grid_2[3] = {i,j,l};
+
+    						// Current index
+    						int k2 = sheets[s0].gridToIndex(grid_2);
+    						/*
+    						if (i == i0 && j == j0){
+    							printf("center k2 = %d \n", k2+base_index);
+    						}
+    						*/
+    						// Check if an orbital exists here (i.e. k = -1 if no orbital exists at that grid position)
+    						if (k2 != -1){
+
+    							// Get current position
+    							double x2 = posAtomIndex(k2+base_index,0);
+    							double y2 = posAtomIndex(k2+base_index,1);
+
+    							// If the positions are within the cutoff range we save their indices as a pair for our tight-binding model
+    							if ((x2 - pos_here[0])*(x2 - pos_here[0]) + (y2 - pos_here[1])*(y2 - pos_here[1]) < inter_cutoff*inter_cutoff) {
+    								std::vector<int> pair_here;
+    								pair_here.push_back(kh);
+    								pair_here.push_back(k2 + base_index);
+    								kh_pair_array.push_back(pair_here);
+                    kh_supercell_vecs.push_back(sc_vec);
+    								/*
+    								if (kh == 60 || k2 + base_index == 60){
+    									printf("[%d, %d] \n",kh, k2 + base_index);
+    									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
+    								}
+    								*/
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+
+
+      } // end of dy loop
+    } // end of dx loop
+
+    // Now we reorder kh_pair_array and kh_supercell_vecs
+    if (boundary_condition == 1){
+      orderPairs(kh_pair_array,kh_supercell_vecs);
+    }
+
+    for (int i = 0; i < kh_pair_array.size(); ++i){
+      pair_array.push_back(kh_pair_array[i]);
+      supercell_vecs.push_back(kh_supercell_vecs[i]);
+    }
+
+	} // end of kh loop
+
+}
+
+void Hstruct::orderPairs(std::vector< std::vector<int> >& pairs, std::vector< std::vector<double> >& sc_vecs) {
+
+  int num_pairs = (int) pairs.size();
+
+  // a bubblesort should be good enough for this (can test timing later)
+
+  for (int i = num_pairs-1; i >= 0; --i){
+    for (int j = 1; j < i+1; ++j){
+      // check if the (n-1)'th pair index is larger than the n'th index
+      if (pairs[j-1][1] > pairs[j][1]){
+
+        // if so, swap them
+
+        std::vector<int> temp_pair;
+        temp_pair.resize(2);
+        std::vector<double> temp_sc;
+        temp_sc.resize(2);
+
+        temp_pair = pairs[j-1];
+        temp_sc = sc_vecs[j-1];
+
+        pairs[j-1] = pairs[j];
+        sc_vecs[j-1] = sc_vecs[j];
+
+        pairs[j] = temp_pair;
+        sc_vecs[j] = temp_sc;
+
+      }
+
+    }
+  }
 
 }
 
@@ -426,11 +516,11 @@ int Hstruct::gridToIndex(int (&grid_index)[4]) {
 
 }
 
-void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, int searchsize) {
+void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<double> > &sc_vecs, Job_params opts) {
 
 	int current_index = 0;
 	for (int s = 0; s < max_sheets; ++s){
-		sheets[s].getIntraPairs(array_i,array_j,array_t,current_index,searchsize);
+		sheets[s].getIntraPairs(array_i,array_j,array_t,sc_vecs,opts,current_index);
 		current_index += sheets[s].getMaxIndex();
 	}
 
