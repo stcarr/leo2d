@@ -17,7 +17,7 @@ tar_orb = 0
 splot filename.'_pos.dat' u 2:3:4 with points, \
 	filename.'_inter_pos.dat' using 1:2:($7 ==tar_orb ? $3 : 1/0):($4-$1):($5-$2):($6-$3) with vectors nohead, \
 	filename.'_intra_pos.dat' using 1:2:($7 ==tar_orb ? $3 : 1/0):($4-$1):($5-$2):($6-$3) with vectors nohead, \
-	'supercell.dat' using 1:2:3:($4-$1):($5-$2):($6-$3) with vectors nohead
+	filename.'_supercell.dat' using 1:2:3:($4-$1):($5-$2):($6-$3) with vectors nohead
 
 set view 0,0
 replot

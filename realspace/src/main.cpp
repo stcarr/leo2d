@@ -636,6 +636,23 @@ int main(int argc, char** argv) {
 					// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
 					if (i == 0){
 						opts.setParam("supercell",sc_here);
+
+						int matrix_pos_save = opts.getInt("matrix_pos_save");
+						if (matrix_pos_save == 1){
+
+							string job_name = opts.getString("job_name");
+							const char* extension = "_supercell.dat";
+
+							ofstream outFile;
+							outFile.open ((job_name + extension).c_str());
+							outFile << 	"0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+													"0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+													sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+													sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+													sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+													sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+							outFile.close();
+						}
 					}
 
 				}
