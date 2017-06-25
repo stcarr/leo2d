@@ -135,6 +135,8 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					sc_a = atof(in_string.c_str());
+					int z = 0;
+					opts.setParam("supercell_type",z);
 				}
 
 				if (in_string == "SUPERCELL1"){
@@ -152,6 +154,18 @@ int main(int argc, char** argv) {
 						supercell[1][i] = sc_a*atof(in_string.c_str());
 					}
 					opts.setParam("supercell",supercell);
+				}
+
+				if (in_string == "SUPERCELL_M_N"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					int m = atoi(in_string.c_str());
+					getline(in_line,in_string,' ');
+					int n = atoi(in_string.c_str());
+					opts.setParam("m_supercell",m);
+					opts.setParam("n_supercell",n);
+					int o = 1;
+					opts.setParam("supercell_type",o);
 				}
 
 				if (in_string == "K_SAMPLING") {
@@ -365,6 +379,12 @@ int main(int argc, char** argv) {
 					}
 				}
 
+				if (in_string == "MATRIX_SAVE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("matrix_save",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "MATRIX_POS_SAVE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -524,7 +544,7 @@ int main(int argc, char** argv) {
 		in_file.close();
 
 		if (opts.getInt("poly_order")%4 != 0){
-			printf("!!WARNING!!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \n Quiting... \n",opts.getInt("poly_order"));
+			printf("!!WARNING!!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \nLEO2D Quiting... \n",opts.getInt("poly_order"));
 			return -1;
 		}
 
@@ -544,6 +564,84 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < num_sheets; ++i){
 			s_data[i].solver_space = opts.getInt("solver_space");
 			s_data[i].strain_type = opts.getInt("strain_type");
+		}
+
+		// update supercell if BC
+		if (boundary_condition == 1){
+
+			int type = opts.getInt("supercell_type");
+
+			// Standard fixed supercell definition
+			if (type == 0) {
+				std::vector< std::vector<double> > sc = opts.getDoubleMat("supercell");
+				for (int i = 0; i < s_data.size(); ++i){
+					double theta = angles[i];
+					std::vector< std::vector<double> > sc_here;
+					sc_here.resize(2);
+					sc_here[0].resize(2);
+					sc_here[1].resize(2);
+
+					sc_here[0][0] =  sc[0][0]*cos(theta) + sc[0][1]*sin(theta);
+					sc_here[0][1] = -sc[0][0]*sin(theta) + sc[0][1]*cos(theta);
+					sc_here[1][0] =  sc[1][0]*cos(theta) + sc[1][1]*sin(theta);
+					sc_here[1][1] = -sc[1][0]*sin(theta) + sc[1][1]*cos(theta);
+					s_data[i].supercell = sc_here;
+
+				}
+			} else if (type == 1) { // (M,N) Supercell type
+				if ((int)s_data.size() > 2){
+					printf("!!WARNING!!: (M,N) Supercell method not defined for more than 2 sheets \nLEO2D Quiting... \n");
+					return -1;
+				}
+				int M = opts.getInt("m_supercell");
+				int N = opts.getInt("n_supercell");
+
+				double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+				printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+				// we assume unitCell is same for both sheets...
+				for (int i = 0; i < s_data.size(); ++i){
+
+					int A1_num_a1;
+					int A1_num_a2;
+					int A2_num_a1;
+					int A2_num_a2;
+					if (i == 0){
+						angles[0] = 0;
+						A1_num_a1 = N;
+						A1_num_a2 = M;
+						A2_num_a1 = -M;
+						A2_num_a2 = (M+N);
+					} else if (i == 1){
+						angles[1] = theta;
+						A1_num_a1 = M;
+						A1_num_a2 = N;
+						A2_num_a1 = -N;
+						A2_num_a2 = (M+N);
+					}
+
+					std::vector< std::vector<double> > sc_here;
+					sc_here.resize(2);
+					sc_here[0].resize(2);
+					sc_here[1].resize(2);
+
+					sc_here[0][0] = A1_num_a1*unitCell[0][0] + A1_num_a2*unitCell[1][0];
+					sc_here[0][1] = A1_num_a1*unitCell[0][1] + A1_num_a2*unitCell[1][1];
+					sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
+					sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
+
+					printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+					printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+					s_data[i].supercell = sc_here;
+
+					// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
+					if (i == 0){
+						opts.setParam("supercell",sc_here);
+					}
+
+				}
+
+
+			}
 		}
 
 		// Create the locality object with the sheet input data

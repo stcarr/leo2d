@@ -30,6 +30,7 @@ Job_params::Job_params() {
 	setParam("observable_type",i_zero);
 	setParam("solver_space",i_zero);
 	setParam("boundary_condition",i_zero);
+	setParam("matrix_save",i_zero);
 	setParam("matrix_pos_save", i_zero);
 	setParam("verbose_save",i_one);
 	setParam("diagonalize",i_zero);

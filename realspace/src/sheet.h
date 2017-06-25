@@ -41,6 +41,8 @@ class Sheet {
   		int solver_space;
   		int strain_type;
   		std::string strain_file;
+      std::vector< std::vector<double> > supercell;
+      std::vector< std::vector<double> > supercell_inv;
 
 
     public:
@@ -60,12 +62,12 @@ class Sheet {
   		double getOrbPos(int, int);
       int getNumAtoms();
   		int getMat();
-
   		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&,std::vector< std::vector<double> >&, Job_params, int);
       void orderPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, std::vector< std::vector<double> >&);
       int findNearest(double (&pos)[3], int);
 
       void setReciprocal();
+      void setSupercell(std::vector< std::vector<double> >);
   		double crossProd(std::vector<double>, std::vector<double>, int);
   		double getReciprocal(int, int);
   		double getInverse(int, int);

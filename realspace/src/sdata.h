@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   sdata.h
  * Author: Stephen Carr
  *
@@ -13,16 +13,18 @@
 
 
 class Sdata {
-        
-    public:
-        Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int, int, int, int, std::string);
-        Sdata(const Sdata& orig);
+
+  public:
+
+    Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int, int, int, int, std::string);
+    Sdata(const Sdata& orig);
 		Sdata();
-        ~Sdata();
+    ~Sdata();
 		std::vector<std::vector<double> > a;
-        std::vector<int> max_shape, min_shape;
+    std::vector<int> max_shape, min_shape;
 		int boundary_condition;
-        std::vector<int> atom_types;
+    std::vector< std::vector<double> > supercell;
+    std::vector<int> atom_types;
 		std::vector<std::vector<double> > atom_pos; //atom_pos[i][x] = orbital i's displacement from the unit cell origin in the xth-dimension direction
 		int mat;
 		int solver_space;

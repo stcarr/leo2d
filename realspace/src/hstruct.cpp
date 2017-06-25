@@ -358,12 +358,6 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     								pair_here.push_back(k2 + base_index);
     								kh_pair_array.push_back(pair_here);
                     kh_supercell_vecs.push_back(sc_vec);
-    								/*
-    								if (kh == 1 || k2 + base_index == 1){
-    									printf("[%d, %d] \n",kh, k2 + base_index);
-    									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
-    								}
-    								*/
     							}
     						}
     					}
@@ -418,12 +412,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     								pair_here.push_back(k2 + base_index);
     								kh_pair_array.push_back(pair_here);
                     kh_supercell_vecs.push_back(sc_vec);
-    								/*
-    								if (kh == 60 || k2 + base_index == 60){
-    									printf("[%d, %d] \n",kh, k2 + base_index);
-    									printf("(%lf, %lf) -> (%lf, %lf) \n",pos_here[0] ,pos_here[1] ,x2,y2);
-    								}
-    								*/
+
     							}
     						}
     					}

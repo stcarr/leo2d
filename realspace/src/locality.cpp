@@ -212,6 +212,7 @@ void Locality::constructGeom(){
 
 	int solver_type = opts.getInt("solver_type");
 	int solver_space = opts.getInt("solver_space");
+	int boundary_condition = opts.getInt("boundary_condition");
 	int fft_from_file = opts.getInt("fft_from_file");
 	int intra_searchsize = opts.getInt("intra_searchsize");
 	int inter_searchsize = opts.getInt("inter_searchsize");
@@ -1885,107 +1886,96 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 		}
 	}
 
-	/*
-			// ------------------------------
-			// Following saves Matrix to file
-			//
-			// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+	// ------------------------------
+	// Following saves Matrix to file
+	//
+	// Should only used for for 1-job processes, otherwise they will overwrite each other!
 
-			//*
-			std::ofstream outFile;
-			const char* extension = "_matrix.dat";
-			outFile.open ((job_name + extension).c_str());
+	int matrix_save = opts.getInt("matrix_save");
+	if (matrix_save == 1){
 
-			for(int i = 0; i < local_max_index; ++i){
-				int start_index = row_pointer[i];
-				int stop_index = row_pointer[i+1];
-					for(int j = start_index; j < stop_index; ++j){
-						outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-					}
-			}
+		std::ofstream outFile;
+		const char* extension = "_matrix.dat";
+		outFile.open ((job_name + extension).c_str());
 
-			outFile.close();
-			//
-
-			// End Matrix Save
-			// ---------------
-
-
-			// ------------------------------
-			// Following saves Matrix to file
-			//
-			// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
-
-			///*
-			std::ofstream outFile2;
-			const char* extension2 = "_dxH_matrix.dat";
-			outFile2.open ((job_name + extension2).c_str());
-
-			for(int i = 0; i < local_max_index; ++i){
-				int start_index = row_pointer_dx[i];
-				int stop_index = row_pointer_dx[i+1];
-					for(int j = start_index; j < stop_index; ++j){
-						outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-					}
-			}
-
-			outFile2.close();
-			//
-
-			// End Matrix Save
-			// ---------------
-			*/
-
-
-			// ------------------------------
-			// Following saves positions and pairings to file
-
-			int matrix_pos_save = opts.getInt("matrix_pos_save");
-			if (matrix_pos_save == 1){
-
-				std::ofstream outFile3;
-				const char* extension3 = "_pos.dat";
-				outFile3.open ((job_name + extension3).c_str());
-
-				for(int i = 0; i < local_max_index; ++i){
-
-					double x = i2pos[i*3 + 0];
-					double y = i2pos[i*3 + 1];
-					double z = i2pos[i*3 + 2];
-					outFile3 << i << ", " << x << ", " << y << ", " << z << "\n";
+		for(int i = 0; i < local_max_index; ++i){
+			int start_index = row_pointer[i];
+			int stop_index = row_pointer[i+1];
+				for(int j = start_index; j < stop_index; ++j){
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
 				}
+		}
 
-				outFile3.close();
-				// ---------------
-				std::ofstream outFile4;
-				const char* extension4 = "_intra_pos.dat";
-				outFile4.open ((job_name + extension4).c_str());
+		outFile.close();
 
-				for(int i = 0; i < max_intra_pairs; ++i){
-					outFile4 <<
-							i2pos[intra_pairs[2*i + 0]*3 + 0] << ", " << i2pos[intra_pairs[2*i + 0]*3 + 1] << ", " << i2pos[intra_pairs[2*i + 0]*3 + 2] << ", " <<
-							i2pos[intra_pairs[2*i + 1]*3 + 0] << ", " << i2pos[intra_pairs[2*i + 1]*3 + 1] << ", " << i2pos[intra_pairs[2*i + 1]*3 + 2] << ", " <<
-							intra_pairs[2*i + 0] << ", " << intra_pairs[2*i + 1] <<"\n";
+		std::ofstream outFile2;
+		const char* extension2 = "_dxH_matrix.dat";
+		outFile2.open ((job_name + extension2).c_str());
+
+		for(int i = 0; i < local_max_index; ++i){
+			int start_index = row_pointer_dx[i];
+			int stop_index = row_pointer_dx[i+1];
+				for(int j = start_index; j < stop_index; ++j){
+					outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
 				}
+		}
 
-				outFile4.close();
-				// ---------------
-				std::ofstream outFile5;
-				const char* extension5 = "_inter_pos.dat";
-				outFile5.open ((job_name + extension5).c_str());
+		outFile2.close();
+		//
 
-				for(int i = 0; i < max_inter_pairs; ++i){
-					outFile5 <<
-						i2pos[inter_pairs[2*i + 0]*3 + 0] << ", " << i2pos[inter_pairs[2*i + 0]*3 + 1] << ", " << i2pos[inter_pairs[2*i + 0]*3 + 2] << ", " <<
-						i2pos[inter_pairs[2*i + 1]*3 + 0] << ", " << i2pos[inter_pairs[2*i + 1]*3 + 1] << ", " << i2pos[inter_pairs[2*i + 1]*3 + 2] << ", " <<
-						inter_pairs[2*i + 0] << ", " << inter_pairs[2*i + 1] << "\n";
-				}
+		// End Matrix Save
+		// ---------------
+	}
 
-				outFile5.close();
-			}
+	// ------------------------------
+	// Following saves positions and pairings to file
 
-			// End Matrix Save
-			// ---------------
+	int matrix_pos_save = opts.getInt("matrix_pos_save");
+	if (matrix_pos_save == 1){
+
+		std::ofstream outFile3;
+		const char* extension3 = "_pos.dat";
+		outFile3.open ((job_name + extension3).c_str());
+
+		for(int i = 0; i < local_max_index; ++i){
+
+			double x = i2pos[i*3 + 0];
+			double y = i2pos[i*3 + 1];
+			double z = i2pos[i*3 + 2];
+			outFile3 << i << ", " << x << ", " << y << ", " << z << "\n";
+		}
+
+		outFile3.close();
+		// ---------------
+		std::ofstream outFile4;
+		const char* extension4 = "_intra_pos.dat";
+		outFile4.open ((job_name + extension4).c_str());
+
+		for(int i = 0; i < max_intra_pairs; ++i){
+			outFile4 <<
+					i2pos[intra_pairs[2*i + 0]*3 + 0] << ", " << i2pos[intra_pairs[2*i + 0]*3 + 1] << ", " << i2pos[intra_pairs[2*i + 0]*3 + 2] << ", " <<
+					i2pos[intra_pairs[2*i + 1]*3 + 0] << ", " << i2pos[intra_pairs[2*i + 1]*3 + 1] << ", " << i2pos[intra_pairs[2*i + 1]*3 + 2] << ", " <<
+					intra_pairs[2*i + 0] << ", " << intra_pairs[2*i + 1] <<"\n";
+		}
+
+		outFile4.close();
+		// ---------------
+		std::ofstream outFile5;
+		const char* extension5 = "_inter_pos.dat";
+		outFile5.open ((job_name + extension5).c_str());
+
+		for(int i = 0; i < max_inter_pairs; ++i){
+			outFile5 <<
+				i2pos[inter_pairs[2*i + 0]*3 + 0] << ", " << i2pos[inter_pairs[2*i + 0]*3 + 1] << ", " << i2pos[inter_pairs[2*i + 0]*3 + 2] << ", " <<
+				i2pos[inter_pairs[2*i + 1]*3 + 0] << ", " << i2pos[inter_pairs[2*i + 1]*3 + 1] << ", " << i2pos[inter_pairs[2*i + 1]*3 + 2] << ", " <<
+				inter_pairs[2*i + 0] << ", " << inter_pairs[2*i + 1] << "\n";
+		}
+
+		outFile5.close();
+	}
+
+	// End Matrix Save
+	// ---------------
 
 
 }
@@ -2309,57 +2299,48 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 		}
 	}
 
-	/*
-			// ------------------------------
-			// Following saves Matrix to file
-			//
-			// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+	// ------------------------------
+	// Following saves Matrix to file
+	//
+	// Should only be used for 1-job processes, otherwise they will overwrite each other!
 
-			// /*
-			std::ofstream outFile;
-			const char* extension = "_matrix.dat";
-			outFile.open ((job_name + extension).c_str());
+	int matrix_save = opts.getInt("matrix_save");
+	if (matrix_save == 1){
 
-			for(int i = 0; i < local_max_index; ++i){
-				int start_index = row_pointer[i];
-				int stop_index = row_pointer[i+1];
-					for(int j = start_index; j < stop_index; ++j){
-						outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v_c[j].real() << ", " << v_c[j].imag() << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-					}
-			}
+		std::ofstream outFile;
+		const char* extension = "_matrix.dat";
+		outFile.open ((job_name + extension).c_str());
 
-			outFile.close();
-			//
+		for(int i = 0; i < local_max_index; ++i){
+			int start_index = row_pointer[i];
+			int stop_index = row_pointer[i+1];
+				for(int j = start_index; j < stop_index; ++j){
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v_c[j].real() << ", " << v_c[j].imag() << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+				}
+		}
 
-			// End Matrix Save
-			// ---------------
+		outFile.close();
+
+		std::ofstream outFile2;
+		const char* extension2 = "_dxH_matrix.dat";
+		outFile2.open ((job_name + extension2).c_str());
+
+		for(int i = 0; i < local_max_index; ++i){
+			int start_index = row_pointer_dx[i];
+			int stop_index = row_pointer_dx[i+1];
+				for(int j = start_index; j < stop_index; ++j){
+					outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_c_dx[j].real() << ", " << v_c_dx[j].imag() << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+				}
+		}
+
+		outFile2.close();
+		//
+
+		// End Matrix Save
+		// ---------------
+	}
 
 
-			// ------------------------------
-			// Following saves Matrix to file
-			//
-			// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
-
-			/*
-			std::ofstream outFile2;
-			const char* extension2 = "_dxH_matrix.dat";
-			outFile2.open ((job_name + extension2).c_str());
-
-			for(int i = 0; i < local_max_index; ++i){
-				int start_index = row_pointer_dx[i];
-				int stop_index = row_pointer_dx[i+1];
-					for(int j = start_index; j < stop_index; ++j){
-						outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-					}
-			}
-
-			outFile2.close();
-			//
-
-			// End Matrix Save
-			// ---------------
-
-	*/
 
 	// ------------------------------
 	// Following saves positions and pairings to file

@@ -61,6 +61,11 @@ Sheet::Sheet(Sdata input){
 		setReciprocal();
 	}
 
+  // If periodic BCs, get supercell information
+  if (boundary_condition == 1){
+    setSupercell(input.supercell);
+  }
+
 	// Set indexing
 
 	// no strain
@@ -429,14 +434,25 @@ double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
 bool Sheet::checkShape(double (&pos)[3]){
 
 	if (boundary_condition == 1){
-		return true;
+    double delta = 0.0;
+    double grid_delta = 0.000001;
+    double i = (pos[0]+delta)*supercell_inv[0][0] + (pos[1]+delta)*supercell_inv[0][1];
+    double j = (pos[0]+delta)*supercell_inv[1][0] + (pos[1]+delta)*supercell_inv[1][1];
+    if (i >= 0.0 && i < 1.0-grid_delta && j >= 0.0 && j < 1.0-grid_delta){
+	    return true;
+    } else {
+      return false;
+    }
 	}
 
-    if (pow(pos[0],2) + pow(pos[1],2) < pow(max_shape[0],2)){
-        return true;
+  if (pow(pos[0],2) + pow(pos[1],2) < pow(max_shape[0],2)){
+    return true;
 	} else {
-        return false;
+    return false;
 	}
+
+  return false;
+
 }
 
 // ------------------------------------------
@@ -746,8 +762,28 @@ void Sheet::setInverse(){
 	a_inverse[1][0] = -a12/det_a;
 	a_inverse[1][1] = a11/det_a;
 
+}
+
+void Sheet::setSupercell(std::vector< std::vector<double> > sc_in){
+
+  supercell = sc_in;
+  supercell_inv.resize(2);
+  supercell_inv[0].resize(2);
+  supercell_inv[1].resize(2);
+
+  double det = supercell[0][0]*supercell[1][1] - supercell[0][1]*supercell[1][0];
+
+  supercell_inv[0][0] = supercell[1][1]/det;
+  supercell_inv[0][1] = -supercell[1][0]/det;
+  supercell_inv[1][0] = -supercell[0][1]/det;
+  supercell_inv[1][1] = supercell[0][0]/det;
+
+  printf("sheet sc = [%lf %lf; %lf %lf]\n",supercell[0][0],supercell[0][1],supercell[1][0],supercell[1][1]);
+  printf("sheet sc_inv = [%lf %lf; %lf %lf]\n",supercell_inv[0][0],supercell_inv[0][1],supercell_inv[1][0],supercell_inv[1][1]);
+
 
 }
+
 
 void Sheet::setReciprocal(){
 
