@@ -523,6 +523,8 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
   int searchsize = opts.getInt("intra_searchsize");
   // boundary_condition = opts.getInt("boundary_condition");
   std::vector< std::vector<double> > supercell;
+
+  
   if (boundary_condition == 1){
     supercell = opts.getDoubleMat("supercell");
   }
@@ -609,7 +611,7 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     								kh_array_i.push_back(kh + start_index);
     								kh_array_j.push_back(k2 + start_index);
     								kh_array_t.push_back(t);
-                    kh_sc_vecs.push_back(sc_vec);
+									kh_sc_vecs.push_back(sc_vec);
     							}
 
     						}
@@ -637,7 +639,13 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     } // end of kh loop
 
 	} else if (solver_space == 1){
-
+	
+		// for when we don't want a supercell vector
+		std::vector<double> sc_null;
+		sc_null.resize(2);
+		sc_null[0] = 0.0;
+		sc_null[1] = 0.0;	
+	
 		// Momentum space intralayer pairing is always block diagonal
 		for (int i = 0; i < getShape(1,0)  - getShape(0,0); ++i) {
 			for (int j = 0; j < getShape(1,1) - getShape(0,1); ++j) {
@@ -664,6 +672,7 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 						array_i.push_back(orbs_here[o1] + start_index);
 						array_j.push_back(orbs_here[o2] + start_index);
 						array_t.push_back(0.0);
+						sc_vecs.push_back(sc_null);
 					}
 				}
 

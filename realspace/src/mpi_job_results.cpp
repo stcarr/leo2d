@@ -202,6 +202,7 @@ void Mpi_job_results::loadJobParams(Job_params orig){
 
 		num_sheets = orig.getInt("num_sheets");
 		std::vector< std::vector<double> > shifts_in = orig.getDoubleMat("shifts");
+		
 		shifts = new double[(int)(shifts_in.size()*3)];
 		for (int i = 0; i < shifts_in.size(); ++i){
 			for (int j = 0; j < 3; ++j){
@@ -680,7 +681,84 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 					}
 				}
 			}
-		}
+		} else if (diagonalize == 1){
+
+			int local_max_index = eigenvalues.size();
+			for(int j = 0; j < local_max_index - 1; ++j){
+				outFile << eigenvalues[j] << ", ";
+			}
+			outFile << eigenvalues[local_max_index - 1] << "\n";
+
+			// Control for output printing
+			// Depends on if eigenvectors (d_vecs) and conductivity (d_cond) are turned on or not
+			/*
+			if (d_weights == 1){
+
+				outFile << "WEIGHTS: \n";
+
+				for(int t = 0; t < num_targets; ++t){
+					outFile << target_list[t] << ": ";
+					for(int j = 0; j < local_max_index - 1; ++j){
+						outFile << eigenweights[t][j] << ", ";
+					}
+					outFile << eigenweights[t][local_max_index - 1] << "\n";
+				}
+
+				outFile << "\n";
+
+			}
+
+			if (d_vecs == 1){
+
+
+				outFile << "VECS: \n";
+				for(int j = 0; j < local_max_index; ++j){
+					for (int m = 0; m < local_max_index - 1; ++m){
+						outFile << eigenvectors[j][m] << ", ";
+					}
+					outFile << eigenvectors[j][local_max_index - 1] << "\n";
+				}
+
+				outFile << "\n";
+
+			}
+
+			if (d_cond > 0){
+
+				outFile << "M_XX: \n";
+				for(int j = 0; j < poly_order; ++j){
+					for (int m = 0; m < poly_order - 1; ++m){
+						outFile << M_xx[j][m] << ", ";
+					}
+					outFile << M_xx[j][poly_order - 1] << "\n";
+				}
+
+				outFile << "\n";
+
+					if (d_cond > 1){
+					outFile << "M_YY: \n";
+					for(int j = 0; j < poly_order; ++j){
+						for (int m = 0; m < poly_order - 1; ++m){
+							outFile << M_yy[j][m] << ", ";
+						}
+						outFile << M_yy[j][poly_order - 1] << "\n";
+					}
+
+					outFile << "\n";
+
+					outFile << "M_XY: \n";
+					for(int j = 0; j < poly_order; ++j){
+						for (int m = 0; m < poly_order - 1; ++m){
+							outFile << M_xy[j][m] << ", ";
+						}
+						outFile << M_xy[j][poly_order - 1] << "\n";
+					}
+
+					outFile << "\n";
+				}
+			}
+			*/
+		}			
 	}
 }
 

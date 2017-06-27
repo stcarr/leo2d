@@ -926,7 +926,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 					double y = (1.0/((double) nShifts))*j;
 
 					std::vector< std::vector<double> > shifts;
-					shifts.resize(3);
+					shifts.resize(num_sheets);
 					for(int s = 0; s < num_sheets; ++s){
 						shifts[s].resize(3);
 						shifts[s][0] = p1[0] + x*d_vec1[0] + y*d_vec2[0];
@@ -1138,7 +1138,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 
 		Job_params jobIn;
 		jobIn.recvParams(root);
-
 		int solver_type = jobIn.getInt("solver_type");
 
 		// If worker gets solver_type = -1 it ends this loop
@@ -1179,6 +1178,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double vacancy_chance = jobIn.getDouble("vacancy_chance");
 		int num_targets = jobIn.getInt("num_targets");
 		std::vector<int> target_list;
+		
 		if (num_targets > 0){
 			target_list = jobIn.getIntVec("target_list");
 		}
