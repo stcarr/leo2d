@@ -118,7 +118,7 @@ class Mpi_job_results {
 		void mlmc_cluster_variance(Mpi_job_results,Mpi_job_results);
 
     void densityTransform();
-		void conductivtyTransform();
+		void conductivityTransform();
 
 		void send(int, int);
 		void sendInt(int, int, int);

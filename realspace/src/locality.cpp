@@ -361,30 +361,36 @@ void Locality::constructGeom(){
 
 		inter_pairs_i = new int[max_inter_pairs];
 		inter_pairs_j = new int[max_inter_pairs];
-		inter_supercell_vecs_x = new double[max_inter_pairs];
-		inter_supercell_vecs_y = new double[max_inter_pairs];
+		if (boundary_condition == 1){
+			inter_supercell_vecs_x = new double[max_inter_pairs];
+			inter_supercell_vecs_y = new double[max_inter_pairs];
+		}
 
 		for(int x = 0; x < max_inter_pairs; ++x){
 			inter_pairs_i[x] = inter_pairs_vec[x][0];
 			inter_pairs_j[x] = inter_pairs_vec[x][1];
-			inter_supercell_vecs_x[x] = inter_supercell_vecs[x][0];
-			inter_supercell_vecs_y[x] = inter_supercell_vecs[x][1];
-
+			if (boundary_condition == 1){
+				inter_supercell_vecs_x[x] = inter_supercell_vecs[x][0];
+				inter_supercell_vecs_y[x] = inter_supercell_vecs[x][1];
+			}
 		}
 
 		intra_pairs_i = new int[max_intra_pairs];
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
-		intra_supercell_vecs_x = new double[max_intra_pairs];
-		intra_supercell_vecs_y = new double[max_intra_pairs];
-
+		if (boundary_condition == 1){
+			intra_supercell_vecs_x = new double[max_intra_pairs];
+			intra_supercell_vecs_y = new double[max_intra_pairs];
+		}
 		for(int x = 0; x < max_intra_pairs; ++x){
 
 			intra_pairs_i[x] = intra_pairs_vec_i[x];
 			intra_pairs_j[x] = intra_pairs_vec_j[x];
 			intra_pairs_t[x] = intra_pairs_vec_t[x];
-			intra_supercell_vecs_x[x] = intra_supercell_vecs[x][0];
-			intra_supercell_vecs_y[x] = intra_supercell_vecs[x][1];
+			if (boundary_condition == 1){
+				intra_supercell_vecs_x[x] = intra_supercell_vecs[x][0];
+				intra_supercell_vecs_y[x] = intra_supercell_vecs[x][1];
+			}
 		}
 
 		// Get and prepare the index_to_pos array for broadcasting
@@ -422,14 +428,18 @@ void Locality::constructGeom(){
 
 		inter_pairs_i = new int[max_inter_pairs];
 		inter_pairs_j = new int[max_inter_pairs];
-		inter_supercell_vecs_x = new double[max_inter_pairs];
-		inter_supercell_vecs_y = new double[max_inter_pairs];
+		if (boundary_condition == 1){
+			inter_supercell_vecs_x = new double[max_inter_pairs];
+			inter_supercell_vecs_y = new double[max_inter_pairs];
+		}
 
 		intra_pairs_i = new int[max_intra_pairs];
 		intra_pairs_j = new int[max_intra_pairs];
 		intra_pairs_t = new double[max_intra_pairs];
-		intra_supercell_vecs_x = new double[max_intra_pairs];
-		intra_supercell_vecs_y = new double[max_intra_pairs];
+		if (boundary_condition == 1){
+			intra_supercell_vecs_x = new double[max_intra_pairs];
+			intra_supercell_vecs_y = new double[max_intra_pairs];
+		}
 
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -444,14 +454,18 @@ void Locality::constructGeom(){
 
 	MPI::COMM_WORLD.Bcast(inter_pairs_i, max_inter_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(inter_pairs_j, max_inter_pairs, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(inter_supercell_vecs_x, max_inter_pairs, MPI_DOUBLE, root);
-	MPI::COMM_WORLD.Bcast(inter_supercell_vecs_y, max_inter_pairs, MPI_DOUBLE, root);
+	if (boundary_condition == 1){
+		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_x, max_inter_pairs, MPI_DOUBLE, root);
+		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_y, max_inter_pairs, MPI_DOUBLE, root);
+	}
 
 	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
-	MPI::COMM_WORLD.Bcast(intra_supercell_vecs_x, max_intra_pairs, MPI_DOUBLE, root);
-	MPI::COMM_WORLD.Bcast(intra_supercell_vecs_y, max_intra_pairs, MPI_DOUBLE, root);
+	if (boundary_condition == 1){
+		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_x, max_intra_pairs, MPI_DOUBLE, root);
+		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_y, max_intra_pairs, MPI_DOUBLE, root);
+	}
 
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
@@ -473,38 +487,50 @@ void Locality::constructGeom(){
 	int* inter_pairs = new int[2*max_inter_pairs];
 
 	std::vector< std::vector<double> > inter_sc_vecs;
-	inter_sc_vecs.resize(max_inter_pairs);
-
+	if (boundary_condition == 1){
+		inter_sc_vecs.resize(max_inter_pairs);
+	}
 	for (int x = 0; x < max_inter_pairs; ++x){
 		inter_pairs[x*2 + 0] = inter_pairs_i[x];
 		inter_pairs[x*2 + 1] = inter_pairs_j[x];
-		inter_sc_vecs[x].resize(2);
-		inter_sc_vecs[x][0] = inter_supercell_vecs_x[x];
-		inter_sc_vecs[x][1] = inter_supercell_vecs_y[x];
+		if (boundary_condition == 1){
+			inter_sc_vecs[x].resize(2);
+			inter_sc_vecs[x][0] = inter_supercell_vecs_x[x];
+			inter_sc_vecs[x][1] = inter_supercell_vecs_y[x];
+		}
 	}
 
 	delete inter_pairs_i;
 	delete inter_pairs_j;
-	delete inter_supercell_vecs_x;
-	delete inter_supercell_vecs_y;
-
+	if (boundary_condition == 1){
+		delete inter_supercell_vecs_x;
+		delete inter_supercell_vecs_y;
+	}
+	
 	int* intra_pairs = new int[2*max_intra_pairs];
 
+	
 	std::vector< std::vector<double> > intra_sc_vecs;
-	intra_sc_vecs.resize(max_intra_pairs);
+	if (boundary_condition == 1){
+		intra_sc_vecs.resize(max_intra_pairs);
+	}
 
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
 		intra_pairs[x*2 + 1] = intra_pairs_j[x];
-		intra_sc_vecs[x].resize(2);
-		intra_sc_vecs[x][0] = intra_supercell_vecs_x[x];
-		intra_sc_vecs[x][1] = intra_supercell_vecs_y[x];
+		if (boundary_condition == 1){
+			intra_sc_vecs[x].resize(2);
+			intra_sc_vecs[x][0] = intra_supercell_vecs_x[x];
+			intra_sc_vecs[x][1] = intra_supercell_vecs_y[x];
+		}
 	}
 
 	delete intra_pairs_i;
 	delete intra_pairs_j;
-	delete intra_supercell_vecs_x;
-	delete intra_supercell_vecs_y;
+	if (boundary_condition == 1){
+		delete intra_supercell_vecs_x;
+		delete intra_supercell_vecs_y;
+	}
 
 	double* index_to_pos = new double[3*max_index];
 
@@ -1293,8 +1319,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
 
 					results_out.cheb_coeffs = cheb_coeffs;
-					results_out.densityTransform();
-
+					if (opts.getInt("dos_transform") == 1){
+						results_out.densityTransform();
+					}
 
 			} else if (observable_type == 1){
 
@@ -1616,6 +1643,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 	int solver_type = jobIn.getInt("solver_type");
 	int observable_type = jobIn.getInt("observable_type");
+	int boundary_condition = jobIn.getInt("boundary_condition");
 	int diagonalize = jobIn.getInt("diagonalize");
 	int elecOn = jobIn.getInt("elecOn");
 	double E = jobIn.getDouble("E");
@@ -1713,8 +1741,6 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
 
-				int boundary_condition = opts.getInt("boundary_condition");
-
 				if (boundary_condition == 1){
 						new_pos_shift_x = new_pos_shift_x + intra_sc_vecs[intra_counter][0];
 						new_pos_shift_y = new_pos_shift_y + intra_sc_vecs[intra_counter][1];
@@ -1788,8 +1814,6 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
-
-				int boundary_condition = opts.getInt("boundary_condition");
 
 				if (boundary_condition == 1){
 						new_pos_shift_x = new_pos_shift_x + inter_sc_vecs[inter_counter][0];
@@ -1988,6 +2012,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 	int solver_type = jobIn.getInt("solver_type");
 	int observable_type = jobIn.getInt("observable_type");
+	int boundary_condition = jobIn.getInt("boundary_condition");
 	int diagonalize = jobIn.getInt("diagonalize");
 	int magOn = jobIn.getInt("magOn");
 	int elecOn = jobIn.getInt("elecOn");
@@ -2099,8 +2124,6 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
 
-				int boundary_condition = opts.getInt("boundary_condition");
-
 				if (boundary_condition == 1){
 						new_pos_shift_x = intra_sc_vecs[intra_counter][0];
 						new_pos_shift_y = intra_sc_vecs[intra_counter][1];
@@ -2189,8 +2212,6 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
-
-				int boundary_condition = opts.getInt("boundary_condition");
 
 				if (boundary_condition == 1){
 						new_pos_shift_x = inter_sc_vecs[inter_counter][0];

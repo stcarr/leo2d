@@ -1250,7 +1250,7 @@ void Mpi_job_results::densityTransform() {
 	}
 }
 
-void Mpi_job_results::conductivtyTransform(){
+void Mpi_job_results::conductivityTransform(){
 
 	double g[poly_order];
 	for (int i = 0; i < poly_order; ++i){
