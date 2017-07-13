@@ -1916,7 +1916,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	// Should only used for for 1-job processes, otherwise they will overwrite each other!
 
 	int matrix_save = opts.getInt("matrix_save");
-	if (matrix_save == 1){
+	if (matrix_save > 0){
 
 		std::ofstream outFile;
 		const char* extension = "_matrix.dat";
@@ -1926,25 +1926,28 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 			int start_index = row_pointer[i];
 			int stop_index = row_pointer[i+1];
 				for(int j = start_index; j < stop_index; ++j){
-					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
 				}
 		}
+		
+		if (matrix_save > 1){
 
-		outFile.close();
+			outFile.close();
 
-		std::ofstream outFile2;
-		const char* extension2 = "_dxH_matrix.dat";
-		outFile2.open ((job_name + extension2).c_str());
+			std::ofstream outFile2;
+			const char* extension2 = "_dxH_matrix.dat";
+			outFile2.open ((job_name + extension2).c_str());
 
-		for(int i = 0; i < local_max_index; ++i){
-			int start_index = row_pointer_dx[i];
-			int stop_index = row_pointer_dx[i+1];
-				for(int j = start_index; j < stop_index; ++j){
-					outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-				}
+			for(int i = 0; i < local_max_index; ++i){
+				int start_index = row_pointer_dx[i];
+				int stop_index = row_pointer_dx[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << "\n";
+					}
+			}
+
+			outFile2.close();
 		}
-
-		outFile2.close();
 		//
 
 		// End Matrix Save
@@ -2227,7 +2230,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double x2 = i2pos[new_k*3 + 0];
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
-
+				
 				// and the orbit tag in their respective unit-cell
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
@@ -2242,32 +2245,32 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 
 				double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+				
+				//if (t != 0 ){
 
-				if (t != 0 ){
+				// First get Magnetic field phase
+				double phase = peierlsPhase(x1, x2, y1, y2, B);
 
-					// First get Magnetic field phase
-					double phase = peierlsPhase(x1, x2, y1, y2, B);
+				// Then get k dot R phase from the supercell wrapping
+				phase = phase - k_vec[0]*new_pos_shift_x - k_vec[1]*new_pos_shift_y;
 
-					// Then get k dot R phase from the supercell wrapping
-					phase = phase - k_vec[0]*new_pos_shift_x - k_vec[1]*new_pos_shift_y;
+				t_cpx = t_cpx + std::polar(t, phase);
 
-					t_cpx = t_cpx + std::polar(t, phase);
+				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
+				if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){				
+				
+					col_index[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
 
-					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
-					if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){
+					v_c[input_counter] = t_cpx;
+					v_c_dx[input_counter] = (x1 - x2)*t_cpx; // (delta_x)*t
+					v_c_dy[input_counter] = (y1 - y2)*t_cpx; // (delta_y)*t
+					t_cpx = 0;
 
-						col_index[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
-
-						v_c[input_counter] = t_cpx;
-						v_c_dx[input_counter] = (x1 - x2)*t_cpx; // (delta_x)*t
-						v_c_dy[input_counter] = (y1 - y2)*t_cpx; // (delta_y)*t
-						t_cpx = 0;
-
-						++input_counter;
-					}
+					++input_counter;
 				}
+				//}
 
 			}
 
@@ -2326,7 +2329,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 	// Should only be used for 1-job processes, otherwise they will overwrite each other!
 
 	int matrix_save = opts.getInt("matrix_save");
-	if (matrix_save == 1){
+	if (matrix_save > 0){
 
 		std::ofstream outFile;
 		const char* extension = "_matrix.dat";
@@ -2336,29 +2339,32 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 			int start_index = row_pointer[i];
 			int stop_index = row_pointer[i+1];
 				for(int j = start_index; j < stop_index; ++j){
-					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v_c[j].real() << ", " << v_c[j].imag() << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v_c[j].real() << ", " << v_c[j].imag() << "\n";
 				}
 		}
 
 		outFile.close();
 
-		std::ofstream outFile2;
-		const char* extension2 = "_dxH_matrix.dat";
-		outFile2.open ((job_name + extension2).c_str());
+		if (matrix_save > 1){
+			
+			std::ofstream outFile2;
+			const char* extension2 = "_dxH_matrix.dat";
+			outFile2.open ((job_name + extension2).c_str());
 
-		for(int i = 0; i < local_max_index; ++i){
-			int start_index = row_pointer_dx[i];
-			int stop_index = row_pointer_dx[i+1];
-				for(int j = start_index; j < stop_index; ++j){
-					outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_c_dx[j].real() << ", " << v_c_dx[j].imag() << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-				}
+			for(int i = 0; i < local_max_index; ++i){
+				int start_index = row_pointer_dx[i];
+				int stop_index = row_pointer_dx[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_c_dx[j].real() << ", " << v_c_dx[j].imag() << "\n";
+					}
+			}
+
+			outFile2.close();
+			//
+
+			// End Matrix Save
+			// ---------------
 		}
-
-		outFile2.close();
-		//
-
-		// End Matrix Save
-		// ---------------
 	}
 
 
