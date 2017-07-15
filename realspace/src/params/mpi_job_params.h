@@ -8,7 +8,7 @@
 #ifndef MPI_JOB_PARAMS_H
 #define MPI_JOB_PARAMS_H
 
-#include "job_params.h"
+#include "params/job_params.h"
 #include <string>
 #include <vector>
 #include <fstream>

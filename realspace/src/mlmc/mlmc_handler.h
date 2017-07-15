@@ -8,8 +8,8 @@
 #ifndef MLMC_HANDLER_H
 #define MLMC_HANDLER_H
 
-#include "job_params.h"
-#include "mpi_job_results.h"
+#include "params/job_params.h"
+#include "params/mpi_job_results.h"
 
 #include <string>
 #include <vector>

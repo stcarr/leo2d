@@ -5,7 +5,7 @@
  * Created on August 24, 2016, 2:46 PM
  */
 
-#include "job_params.h"
+#include "params/job_params.h"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>

@@ -9,14 +9,13 @@
 #ifndef LOCALITY_H
 #define LOCALITY_H
 
-#include "hstruct.h"
-#include "interlayer_coupling.h"
-#include "spmatrix.h"
-#include "dmatrix.h"
-#include "job_params.h"
-//#include "mpi_job_params.h"
-#include "mpi_job_results.h"
-#include "mlmc_handler.h"
+#include "geom/hstruct.h"
+#include "materials/interlayer_coupling.h"
+#include "matrix/spmatrix.h"
+#include "matrix/dmatrix.h"
+#include "params/job_params.h"
+#include "params/mpi_job_results.h"
+#include "mlmc/mlmc_handler.h"
 
 #include "fftw3.h"
 

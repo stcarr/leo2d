@@ -506,10 +506,10 @@ void Locality::constructGeom(){
 		delete inter_supercell_vecs_x;
 		delete inter_supercell_vecs_y;
 	}
-	
+
 	int* intra_pairs = new int[2*max_intra_pairs];
 
-	
+
 	std::vector< std::vector<double> > intra_sc_vecs;
 	if (boundary_condition == 1){
 		intra_sc_vecs.resize(max_intra_pairs);
@@ -1204,7 +1204,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 		double vacancy_chance = jobIn.getDouble("vacancy_chance");
 		int num_targets = jobIn.getInt("num_targets");
 		std::vector<int> target_list;
-		
+
 		if (num_targets > 0){
 			target_list = jobIn.getIntVec("target_list");
 		}
@@ -1764,18 +1764,20 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					t += intra_pairs_t[intra_counter]/energy_rescale;
 				}
 
+				if (t != 0){
 				// check if next pair is identical (possible with periodic wrapping), and save
-				if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
+					if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
 
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
-					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+						col_index[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+						col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
 
-					v[input_counter] = t;
-					v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t; // (delta_x)*t
-					v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*t; // (delta_y)*t
-					t = 0;
-					++input_counter;
+						v[input_counter] = t;
+						v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t; // (delta_x)*t
+						v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*t; // (delta_y)*t
+						t = 0;
+						++input_counter;
+					}
 				}
 
 			}
@@ -1929,7 +1931,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
 				}
 		}
-		
+
 		if (matrix_save > 1){
 
 			outFile.close();
@@ -2165,20 +2167,24 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				t_cpx = t_cpx + std::polar(t, phase);
 
 				//printf("sc_vec = [%lf, %lf], phase = %lf\n",-new_pos_shift_x,-new_pos_shift_y,phase);
-				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
-				if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
+				if (t_cpx != std::complex<double>(0.0)){
 
-					//printf("saving [%d,%d] term to H\n",k_i,new_k);
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
-					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
+					if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
 
-					v_c[input_counter] = t_cpx;
-					v_c_dx[input_counter] = (x1 - x2)*t_cpx;
-					v_c_dy[input_counter] = (y1 - y2)*t_cpx;
-					t_cpx = 0;
+						//printf("saving [%d,%d] term to H\n",k_i,new_k);
+						col_index[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+						col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
 
-					++input_counter;
+						v_c[input_counter] = t_cpx;
+						v_c_dx[input_counter] = (x1 - x2)*t_cpx;
+						v_c_dy[input_counter] = (y1 - y2)*t_cpx;
+						t_cpx = 0;
+
+						++input_counter;
+					}
+
 				}
 			}
 
@@ -2230,7 +2236,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double x2 = i2pos[new_k*3 + 0];
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
-				
+
 				// and the orbit tag in their respective unit-cell
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
@@ -2245,7 +2251,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 
 				double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
-				
+
 				//if (t != 0 ){
 
 				// First get Magnetic field phase
@@ -2256,21 +2262,23 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 				t_cpx = t_cpx + std::polar(t, phase);
 
-				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
-				if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){				
-				
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
-					col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
+				if (t_cpx != std::complex<double>(0.0)){
 
-					v_c[input_counter] = t_cpx;
-					v_c_dx[input_counter] = (x1 - x2)*t_cpx; // (delta_x)*t
-					v_c_dy[input_counter] = (y1 - y2)*t_cpx; // (delta_y)*t
-					t_cpx = 0;
+					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
+					if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){
 
-					++input_counter;
+						col_index[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
+
+						v_c[input_counter] = t_cpx;
+						v_c_dx[input_counter] = (x1 - x2)*t_cpx; // (delta_x)*t
+						v_c_dy[input_counter] = (y1 - y2)*t_cpx; // (delta_y)*t
+						t_cpx = 0;
+
+						++input_counter;
+					}
 				}
-				//}
 
 			}
 
@@ -2346,7 +2354,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 		outFile.close();
 
 		if (matrix_save > 1){
-			
+
 			std::ofstream outFile2;
 			const char* extension2 = "_dxH_matrix.dat";
 			outFile2.open ((job_name + extension2).c_str());

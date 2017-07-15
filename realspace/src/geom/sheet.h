@@ -12,9 +12,9 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
-#include "job_params.h"
-#include "sdata.h"
-#include "intralayer_coupling.h"
+#include "params/job_params.h"
+#include "geom/sdata.h"
+#include "materials/intralayer_coupling.h"
 
 
 

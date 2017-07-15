@@ -5,7 +5,7 @@
  * Created on September 15, 2016, 2:52 PM
  */
 
-#include "mpi_job_params.h"
+#include "params/mpi_job_params.h"
 
 #include <mpi.h>
 #include <stdio.h>
@@ -129,7 +129,7 @@ void Mpi_job_params::loadLocParams(Job_params opts){
 	mlmc_cluster_size = opts.getInt("mlmc_cluster_size");
 
 	num_target_sheets = opts.getInt("num_target_sheets");
-	target_sheets = opts.getIntVec("target_sheets");
+	target_sheets = &opts.getIntVec("target_sheets")[0];
 
 	poly_order = opts.getInt("poly_order");
 

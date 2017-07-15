@@ -9,9 +9,9 @@
 #ifndef HSTRUCT_H
 #define HSTRUCT_H
 
-#include "sheet.h"
-#include "interlayer_coupling.h"
-#include "job_params.h"
+#include "geom/sheet.h"
+#include "materials/interlayer_coupling.h"
+#include "params/job_params.h"
 
 class Hstruct {
     private:
