@@ -20,19 +20,21 @@
 // Use this constructor!
 // ---------------------
 Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std::vector<double> heights_in, int solver_space_in) {
-    std::vector<double> blank_shift;
+
+  std::vector<double> blank_shift;
 	// Create a shift corresponding to 0 so we can initialize
-    for(int j = 0; j < 3; ++j)
-        blank_shift.push_back(0);
+  for(int j = 0; j < 3; ++j)
+    blank_shift.push_back(0);
 
 	// Save each sheet's information
-    for(int i = 0; i < sheets_in.size(); ++i){
-        sheets.push_back(sheets_in[i]);
-        heights.push_back(heights_in[i]);
-        angles.push_back(angles_in[i]);
-        shifts.push_back(blank_shift);
-    }
-    max_sheets = sheets.size();
+  for(int i = 0; i < sheets_in.size(); ++i){
+    sheets.push_back(sheets_in[i]);
+    heights.push_back(heights_in[i]);
+    angles.push_back(angles_in[i]);
+    shifts.push_back(blank_shift);
+  }
+  
+  max_sheets = sheets.size();
 	solver_space = solver_space_in;
 
 	// For Momentum space:
