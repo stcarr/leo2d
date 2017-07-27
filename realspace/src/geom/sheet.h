@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include "params/job_params.h"
 #include "geom/sdata.h"
-#include "materials/intralayer_coupling.h"
+#include "materials/materials.h"
 
 
 
@@ -24,8 +24,8 @@ class Sheet {
   		std::vector<std::vector<double> > b;
       std::vector<int> max_shape, min_shape;
       int max_index;
-  		int mat;
-      std::vector<int> atom_types;
+  		Materials::Mat mat;
+      int n_orbitals;
       std::vector<std::vector<double> > atom_pos;
       std::vector<std::vector<std::vector<int> > > grid_array;
       std::vector<std::vector<int> > index_array;
@@ -43,10 +43,10 @@ class Sheet {
   		std::string strain_file;
       std::vector< std::vector<double> > supercell;
       std::vector< std::vector<double> > supercell_inv;
+      std::vector< std::vector<int> > supercell_stride;
 
 
     public:
-      Sheet(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int);
       Sheet(Sdata);
       Sheet(const Sheet& orig);
       ~Sheet();
@@ -61,7 +61,7 @@ class Sheet {
   		int getShape(int, int);
   		double getOrbPos(int, int);
       int getNumAtoms();
-  		int getMat();
+  		Materials::Mat getMat();
   		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&,std::vector< std::vector<double> >&, Job_params, int);
       void orderPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, std::vector< std::vector<double> >&);
       int findNearest(double (&pos)[3], int);

@@ -10,7 +10,7 @@
 #define HSTRUCT_H
 
 #include "geom/sheet.h"
-#include "materials/interlayer_coupling.h"
+#include "momentum/momentum_coupling.h"
 #include "params/job_params.h"
 
 class Hstruct {
@@ -33,6 +33,7 @@ class Hstruct {
       ~Hstruct();
 
       void setShift(int, std::vector<double>);
+      int indexToSheet(int);
 
       double posAtomIndex(int, int);
 
@@ -47,6 +48,8 @@ class Hstruct {
       int getMaxIndex();
 
       void orderPairs(std::vector< std::vector<int> >&, std::vector< std::vector<double> >&);
+
+      void getShiftConfigs(std::vector<std::vector<double> >&, Job_params);
 
       void getInterPairs(std::vector<std::vector<int> >&,std::vector<std::vector<double> >&,Job_params);
   		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,std::vector<std::vector<double> >&,Job_params);

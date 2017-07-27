@@ -9,48 +9,38 @@
 #include <math.h>
 #include <stdio.h>
 
-// --------------------------------------
-// Old constructor, no use of class Sdata
-// --------------------------------------
-Sheet::Sheet(std::vector<std::vector<double> > _a, std::vector<int> _types, std::vector<std::vector<double> > _pos, std::vector<int> _min, std::vector<int> _max, int bc) {
-    a = _a;
-    min_shape = _min;
-    max_shape = _max;
-
-	boundary_condition = bc;
-
-	// "atoms" <--> "orbitals"
-	// (i.e. can have more than 1 "atom" at the same position in real-space, but they get a different "atom_type" flag)
-    atom_types = _types;
-    atom_pos = _pos;
-
-	// default to real-space, not momentum
-	solver_space = 0;
-
-	// Set indexing
-    setIndex();
-
-	// Determine inverse of the grid -> position matrix
-	// (i.e. get the position -> grid matrix)
-	setInverse();
-
-}
-
 // ---------------------
 // Use this constructor!
 // ---------------------
 Sheet::Sheet(Sdata input){
-	a = input.a;
+
+  mat = input.mat;
+
+  a.resize(2);
+  a[0].resize(2);
+  a[1].resize(2);
+
+  std::array<std::array<double, 2>, 2> lattice = Materials::lattice(mat);
+
+  for (int i = 0; i < 2; ++i){
+    for (int j = 0; j < 2; ++j){
+      a[i][j] = lattice[i][j];
+    }
+  }
+
 	min_shape = input.min_shape;
 	max_shape = input.max_shape;
 	boundary_condition = input.boundary_condition;
 
 	// "atoms" <--> "orbitals"
-	// (i.e. can have more than 1 "atom" at the same position in real-space, but they get a different "atom_type" flag)
-	atom_types = input.atom_types;
-	atom_pos = input.atom_pos;
-
-	mat = input.mat;
+  n_orbitals = Materials::n_orbitals(mat);
+  atom_pos.resize(n_orbitals);
+  for (int i = 0; i < n_orbitals; ++i){
+    atom_pos[i].resize(3);
+    for (int j = 0; j < n_orbitals; ++j){
+      atom_pos[i][j] = Materials::orbital_pos(mat, i, j);
+    }
+  }
 
 	solver_space = input.solver_space;
 	strain_type = input.strain_type;
@@ -64,6 +54,7 @@ Sheet::Sheet(Sdata input){
   // If periodic BCs, get supercell information
   if (boundary_condition == 1){
     setSupercell(input.supercell);
+    supercell_stride = input.supercell_stride;
   }
 
 	// Set indexing
@@ -83,7 +74,6 @@ Sheet::Sheet(Sdata input){
 		loadIndexConfiguration();
 	}
 
-
 	// Determine inverse of the grid -> position matrix
 	// (i.e. get the position -> grid matrix)
 	setInverse();
@@ -94,20 +84,20 @@ Sheet::Sheet(Sdata input){
 // Copy Constructor
 // ----------------
 Sheet::Sheet(const Sheet& orig) {
-    a = orig.a;
-    max_shape = orig.max_shape;
-    min_shape = orig.min_shape;
-	boundary_condition = orig.boundary_condition;
-    atom_types = orig.atom_types;
-    atom_pos = orig.atom_pos;
-	mat = orig.mat;
-	solver_space = orig.solver_space;
-	strain_type = orig.strain_type;
-	strain_file = orig.strain_file;
+  a = orig.a;
+  max_shape = orig.max_shape;
+  min_shape = orig.min_shape;
+  boundary_condition = orig.boundary_condition;
+  n_orbitals = orig.n_orbitals;
+  atom_pos = orig.atom_pos;
+  mat = orig.mat;
+  solver_space = orig.solver_space;
+  strain_type = orig.strain_type;
+  strain_file = orig.strain_file;
 
 	max_index = orig.max_index;
-    grid_array = orig.grid_array;
-    index_array = orig.index_array;
+  grid_array = orig.grid_array;
+  index_array = orig.index_array;
 	pos_array = orig.pos_array;
 
 	for (int i = 0; i < 2; ++i)
@@ -117,6 +107,13 @@ Sheet::Sheet(const Sheet& orig) {
 	if (solver_space == 1){
 		b = orig.b;
 	}
+
+  if (boundary_condition == 1){
+    supercell = orig.supercell;
+    supercell_inv = orig.supercell_inv;
+    supercell_stride = orig.supercell_stride;
+  }
+
 }
 
 Sheet::~Sheet() {
@@ -130,7 +127,7 @@ void Sheet::setIndex(){
 	// Determine the size of the grid which will be populated with orbitals
     int height = max_shape[0] - min_shape[0];
     int width = max_shape[1] - min_shape[1];
-    int depth = atom_types.size();
+    int depth = n_orbitals;
 
 	// k represents the index of the orbital
     int k = 0;
@@ -205,7 +202,7 @@ void Sheet::loadIndexRealspace(){
 	// Determine the size of the grid which will be populated with orbitals
     int height = max_shape[0] - min_shape[0];
     int width = max_shape[1] - min_shape[1];
-    int depth = atom_types.size();
+    int depth = n_orbitals;
 
 	// k represents the index of the orbital
     int k = 0;
@@ -359,7 +356,7 @@ void Sheet::loadIndexRealspace(){
 }
 
 void Sheet::loadIndexConfiguration(){
-
+  setIndex();
 }
 
 // ---------------------------------------
@@ -369,18 +366,22 @@ void Sheet::loadIndexConfiguration(){
 // ---------------------------------------
 double Sheet::posAtomIndex(int index, int dim){
 
-	if (strain_type == 0) {
-		int grid_here[3];
+	//if (strain_type == 0) {
 
-		for (int x = 0; x < 3; ++x){
-			grid_here[x] = index_array[index][x];
-		}
+	int grid_here[3];
 
-		return posAtomGrid(grid_here, dim);
-	} else {
+	for (int x = 0; x < 3; ++x){
+		grid_here[x] = index_array[index][x];
+	}
+
+	return posAtomGrid(grid_here, dim);
+
+    /*
+  } else {
 
 		return pos_array[index][dim];
 	}
+  */
 }
 
 // ------------------------------------
@@ -389,42 +390,44 @@ double Sheet::posAtomIndex(int index, int dim){
 // ------------------------------------
 double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
 
+  /*
 		if (strain_type != 0){
 			return pos_array[ grid_array[ grid_index[0] ][ grid_index[1] ][ grid_index[2] ] ][ dim ];
 
 		} else {
+  */
 
-			int i = grid_index[0] + min_shape[0];
-			int j = grid_index[1] + min_shape[1];
-			int l = grid_index[2];
+		int i = grid_index[0] + min_shape[0];
+		int j = grid_index[1] + min_shape[1];
+		int l = grid_index[2];
 
-			double x;
-			double y;
-			double z;
+		double x;
+		double y;
+		double z;
 
-			// Simply multiply the grid by the unit cell vectors
-			// and add the orbital's position in the unit cell
-			//printf("a[1] = [%lf, %lf], a[2] = [%lf, %lf] \n",a[0][0],a[0][1], a[1][0], a[1][1]);
-			if (solver_space == 0){
-				x = i*a[0][0] + j*a[1][0] + atom_pos[l][0];
-				y = i*a[0][1] + j*a[1][1] + atom_pos[l][1];
-				z = atom_pos[l][2]; // We here assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
+		// Simply multiply the grid by the unit cell vectors
+		// and add the orbital's position in the unit cell
+		//printf("a[1] = [%lf, %lf], a[2] = [%lf, %lf] \n",a[0][0],a[0][1], a[1][0], a[1][1]);
+		if (solver_space == 0){
+			x = i*a[0][0] + j*a[1][0] + atom_pos[l][0];
+			y = i*a[0][1] + j*a[1][1] + atom_pos[l][1];
+			z = atom_pos[l][2]; // We here assume that a1 and a2 have no z component (always do 2D materials on x-y plane...)
 
-			} else if (solver_space == 1){
-				x = i*b[0][0] + j*b[1][0];
-				y = i*b[0][1] + j*b[1][1];
-				z = 0;
-			}
-
-			//printf("x,y,z = [%lf, %lf, %lf] \n",x,y,z);
-
-			if (dim == 0)
-				return x;
-			if (dim == 1)
-				return y;
-			if (dim == 2)
-				return z;
+		} else if (solver_space == 1){
+			x = i*b[0][0] + j*b[1][0];
+			y = i*b[0][1] + j*b[1][1];
+			z = 0;
 		}
+
+		//printf("x,y,z = [%lf, %lf, %lf] \n",x,y,z);
+
+		if (dim == 0)
+			return x;
+		if (dim == 1)
+			return y;
+		if (dim == 2)
+			return z;
+		//}
 }
 
 // ---------------------------------------------------------
@@ -473,7 +476,7 @@ int Sheet::gridToIndex(int (&grid_index)[3]){
 
     if (i >= 0 && i < max_shape[0] - min_shape[0])
 		if (j >= 0 && j < max_shape[1] - min_shape[1])
-			if (l >= 0 && l < atom_types.size())
+			if (l >= 0 && l < n_orbitals)
 				return grid_array[i][j][l];
 
 	return -1;
@@ -507,27 +510,21 @@ double Sheet::getOrbPos(int orb, int dim){
 // Atoms actually refers to "orbitals"
 // ----------------------------------
 int Sheet::getNumAtoms(){
-	return atom_types.size();
+	return n_orbitals;
 }
 
 
 // ----------------------
 // Returns material index
 // ----------------------
-int Sheet::getMat(){
+Materials::Mat Sheet::getMat(){
 	return mat;
 }
 
 void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<double> > &sc_vecs, Job_params opts, int start_index){
 
-  int searchsize = opts.getInt("intra_searchsize");
+  int searchsize = Materials::intra_search_radius(mat);
   // boundary_condition = opts.getInt("boundary_condition");
-  std::vector< std::vector<double> > supercell;
-
-  
-  if (boundary_condition == 1){
-    supercell = opts.getDoubleMat("supercell");
-  }
 
 	if (solver_space == 0) {
 		for (int kh = 0; kh < max_index; ++kh){
@@ -564,7 +561,6 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
           sc_vec.resize(2);
           sc_vec[0] = 0;
           sc_vec[1] = 0;
-
           if (boundary_condition == 1){
             sc_vec[0] = dx*supercell[0][0] + dy*supercell[1][0];
             sc_vec[1] = dx*supercell[0][1] + dy*supercell[1][1];
@@ -573,7 +569,6 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
           pos_here[0] = kh_pos_here[0] + sc_vec[0];
           pos_here[1] = kh_pos_here[1] + sc_vec[1];
           pos_here[2] = kh_pos_here[2];
-
           int i0 = findNearest(pos_here, 0);
           int j0 = findNearest(pos_here, 1);
 
@@ -598,20 +593,27 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     						int k2 = gridToIndex(grid_2);
 
     						if (k2 != -1){
-    							double x2 = posAtomIndex(k2,0);
-    							double y2 = posAtomIndex(k2,1);
-    							double z2 = posAtomIndex(k2,2);
 
-    							double t = intralayer_term(pos_here[0], pos_here[1], pos_here[2], x2, y2, z2, l0, l, mat);
+                  std::array<int,2> grid_disp = {{
+                    i-indexToGrid(kh,0),
+                    j-indexToGrid(kh,1) }};
+
+                  // we correct the grid values by the supercell_stride when there are periodic BCs
+                  if (boundary_condition == 1){
+                    grid_disp[0] = grid_disp[0] - dx*supercell_stride[0][0] - dy*supercell_stride[1][0];
+                    grid_disp[1] = grid_disp[1] - dx*supercell_stride[0][1] - dy*supercell_stride[1][1];
+                  }
+
+    							double t = Materials::intralayer_term(l0, l, grid_disp, mat);
     							if (t != 0 || (kh == k2 && dx == 0 && dy == 0)){
 
-    								//if (kh == 0 || k2 == 0)
-    									//printf("adding term at search [i,j,l] = [%d, %d, %d]: [%d,%d] = %lf \n",i,j,l,kh,k2,t);
+    								 //if (kh == 0 || k2 == 0)
+    								   //printf("adding term at search [i,j,l] = [%d, %d, %d]: [%d,%d] = %lf \n",i,j,l,kh,k2,t);
 
-    								kh_array_i.push_back(kh + start_index);
-    								kh_array_j.push_back(k2 + start_index);
-    								kh_array_t.push_back(t);
-									kh_sc_vecs.push_back(sc_vec);
+    								 kh_array_i.push_back(kh + start_index);
+    								 kh_array_j.push_back(k2 + start_index);
+    								 kh_array_t.push_back(t);
+	                   kh_sc_vecs.push_back(sc_vec);
     							}
 
     						}
@@ -639,13 +641,13 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     } // end of kh loop
 
 	} else if (solver_space == 1){
-	
+
 		// for when we don't want a supercell vector
 		std::vector<double> sc_null;
 		sc_null.resize(2);
 		sc_null[0] = 0.0;
-		sc_null[1] = 0.0;	
-	
+		sc_null[1] = 0.0;
+
 		// Momentum space intralayer pairing is always block diagonal
 		for (int i = 0; i < getShape(1,0)  - getShape(0,0); ++i) {
 			for (int j = 0; j < getShape(1,1) - getShape(0,1); ++j) {

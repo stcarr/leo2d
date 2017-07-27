@@ -213,6 +213,7 @@ void Locality::constructGeom(){
 	int solver_type = opts.getInt("solver_type");
 	int solver_space = opts.getInt("solver_space");
 	int boundary_condition = opts.getInt("boundary_condition");
+	int strain_type = opts.getInt("strain_type");
 	int fft_from_file = opts.getInt("fft_from_file");
 	int intra_searchsize = opts.getInt("intra_searchsize");
 	int inter_searchsize = opts.getInt("inter_searchsize");
@@ -239,6 +240,10 @@ void Locality::constructGeom(){
 	double* index_to_pos_x;
 	double* index_to_pos_y;
 	double* index_to_pos_z;
+
+	std::vector< std::vector<double> > shift_configs;
+	double* shift_configs_x;
+	double* shift_configs_y;
 
 	// vacancy and target indices
 
@@ -303,6 +308,21 @@ void Locality::constructGeom(){
 
 		}
 
+		// Construct shift configs if using configuration strain (strain_type == 2)
+		if (strain_type == 2){
+
+			printf("Building shift_configs. \n");
+			h.getShiftConfigs(shift_configs, opts);
+			shift_configs_x = new double[max_index];
+			shift_configs_y = new double[max_index];
+
+			for (int k = 0; k < max_index; ++k){
+				shift_configs_x[k] = shift_configs[k][0];
+				shift_configs_y[k] = shift_configs[k][1];
+			}
+
+		}
+
 
 		// Construct and prepare the pairs arrays for broadcasting
 
@@ -311,7 +331,7 @@ void Locality::constructGeom(){
 		std::vector<std::vector<double> > inter_supercell_vecs;
 
 		h.getInterPairs(inter_pairs_vec,inter_supercell_vecs,opts);
-
+		//printf("inter pairs done \n");
 		std::vector<int> intra_pairs_vec_i;
 		std::vector<int> intra_pairs_vec_j;
 		std::vector<double> intra_pairs_vec_t;
@@ -319,7 +339,7 @@ void Locality::constructGeom(){
 
 		h.getIntraPairs(intra_pairs_vec_i, intra_pairs_vec_j, intra_pairs_vec_t, intra_supercell_vecs, opts);
 
-		printf("Inter and intra pair construction complete. \n");
+		//printf("Inter and intra pair construction complete. \n");
 		max_inter_pairs = static_cast<int>(inter_pairs_vec.size());
 		max_intra_pairs = static_cast<int>(intra_pairs_vec_i.size());
 
@@ -445,6 +465,11 @@ void Locality::constructGeom(){
 		index_to_pos_y = new double[max_index];
 		index_to_pos_z = new double[max_index];
 
+		if (strain_type == 2){
+			shift_configs_x = new double[max_index];
+			shift_configs_y = new double[max_index];
+		}
+
 	}
 
 	MPI::COMM_WORLD.Bcast(index_to_grid_i, max_index, MPI_INT, root);
@@ -454,6 +479,7 @@ void Locality::constructGeom(){
 
 	MPI::COMM_WORLD.Bcast(inter_pairs_i, max_inter_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(inter_pairs_j, max_inter_pairs, MPI_INT, root);
+
 	if (boundary_condition == 1){
 		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_x, max_inter_pairs, MPI_DOUBLE, root);
 		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_y, max_inter_pairs, MPI_DOUBLE, root);
@@ -471,6 +497,11 @@ void Locality::constructGeom(){
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_z, max_index, MPI_DOUBLE, root);
 	int* index_to_grid = new int[max_index*4];
+
+	if (strain_type == 2){
+		MPI::COMM_WORLD.Bcast(shift_configs_x, max_index, MPI_DOUBLE, root);
+		MPI::COMM_WORLD.Bcast(shift_configs_y, max_index, MPI_DOUBLE, root);
+	}
 
 	for (int k = 0; k < max_index; ++k){
 		index_to_grid[k*4 + 0] = index_to_grid_i[k];
@@ -545,10 +576,22 @@ void Locality::constructGeom(){
 	delete index_to_pos_y;
 	delete index_to_pos_z;
 
+
+	if (strain_type == 2){
+		shift_configs.resize(max_index);
+		for (int k = 0; k < max_index; ++k){
+			shift_configs[k].resize(2);
+			shift_configs[k][0] = shift_configs_x[k];
+			shift_configs[k][1] = shift_configs_y[k];
+		}
+		delete shift_configs_x;
+		delete shift_configs_y;
+	}
+
 	time(&constructEnd);
 
 	// Call the next method, which will send out jobs depending on the solver type to each worker and have them construct a matrix specific to that job.
-	constructMatrix(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs,v_work,target_indices);
+	constructMatrix(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs,shift_configs,v_work,target_indices);
 
 	delete index_to_grid;
 	delete index_to_pos;
@@ -558,7 +601,9 @@ void Locality::constructGeom(){
 
 }
 
-void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, std::vector< std::vector<double> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<double> > intra_sc_vecs, std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices){
+void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* inter_pairs, std::vector< std::vector<double> > inter_sc_vecs, int* intra_pairs,
+															 double* intra_pairs_t, std::vector< std::vector<double> > intra_sc_vecs, std::vector< std::vector<double> > shift_configs,
+															 std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices){
 	time(&solveStart);
 
 	int solver_type = opts.getInt("solver_type");
@@ -571,7 +616,7 @@ void Locality::constructMatrix(int* index_to_grid, double* index_to_pos, int* in
 		if (rank == root) {
 			rootChebSolve(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs,v_work,target_indices);
 		} else {
-			workerChebSolve(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs);
+			workerChebSolve(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs,shift_configs);
 		}
 	}
 
@@ -969,8 +1014,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 
 
-					Job_params tempJob;
-					tempJob = Job_params(opts);
+					Job_params tempJob(opts);
 					tempJob.setParam("shifts",shifts);
 					tempJob.setParam("jobID",i*nShifts + j + 1);
 					tempJob.setParam("max_jobs",maxJobs);
@@ -1035,8 +1079,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 					targets[t] = target_indices[0][t];
 				}
 
-				Job_params tempJob;
-				tempJob = Job_params(opts);
+				Job_params tempJob(opts);
 				tempJob.setParam("shifts",shifts);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
@@ -1154,7 +1197,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, int* inte
 
 }
 
-void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, std::vector< std::vector<double> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<double> > intra_sc_vecs) {
+void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* inter_pairs, std::vector< std::vector<double> > inter_sc_vecs, int* intra_pairs,
+															 double* intra_pairs_t, std::vector< std::vector<double> > intra_sc_vecs, std::vector< std::vector<double> > shift_configs) {
 
 	MPI::Status status;
 	// ---------------------
@@ -1220,8 +1264,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 
 		// i2pos = "index to position"
 		double i2pos[max_index*3];
+		std::vector< std::vector<double> > s_configs;
 
-		setConfigPositions(i2pos, index_to_pos, index_to_grid, jobIn);
+		setConfigPositions(i2pos, index_to_pos, index_to_grid, s_configs, shift_configs, jobIn);
+
 		clock_t timePos;
 		timePos = clock();
 		results_out.saveTiming( ( ((double)timePos) - ((double)timeStart) )/CLOCKS_PER_SEC, "POS_UPDATE");
@@ -1273,7 +1319,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 			}
 			*/
 		}
-
 
 
 		// -----------------------
@@ -1586,26 +1631,53 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, int* in
 
 }
 
-void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* index_to_grid, Job_params jobIn){
+void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* index_to_grid, std::vector< std::vector<double> >& new_shift_configs, std::vector< std::vector<double> >& shift_configs, Job_params jobIn){
 
 	int solver_type = jobIn.getInt("solver_type");
 	int solver_space = jobIn.getInt("solver_space");
+	int strain_type = jobIn.getInt("strain_type");
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
-	double s1_a[2][2];
-	for (int i = 0; i < 2; ++i){
-		for (int j = 0; j < 2; ++j){
-			s1_a[i][j] = sdata[0].a[i][j];
-		}
+	if (strain_type == 2){
+		new_shift_configs.resize(max_index);
 	}
 
 	if (solver_space == 0){
 		for (int i = 0; i < max_index; ++i) {
+
 			int s = index_to_grid[i*4 + 3];
+
+			double s1_a[2][2];
+
+			for (int i = 0; i < 2; ++i){
+				for (int j = 0; j < 2; ++j){
+					s1_a[i][j] = sdata[s].a[i][j];
+				}
+			}
 
 			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s][0]*s1_a[0][0] + shifts[s][1]*s1_a[1][0];
 			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s][0]*s1_a[0][1] + shifts[s][1]*s1_a[1][1];
 			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+
+			if (strain_type == 1){
+				// sample strain from a realspace grid
+
+
+			} else if (strain_type == 2){
+				// sample strain from the space of configurations
+
+				double theta = angles[s];
+
+				new_shift_configs[i].resize(2);
+				new_shift_configs[i][0] = shift_configs[i][0] + cos(theta)*shifts[s][0] - sin(theta)*shifts[s][1];
+				new_shift_configs[i][1] = shift_configs[i][1] + sin(theta)*shifts[s][0] + cos(theta)*shifts[s][1];
+
+				std::vector<double> disp_here = getConfigDisp(new_shift_configs[i], s);
+
+				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
+				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
+				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
+			}
 
 		}
 	} else if (solver_space == 1){
@@ -1633,6 +1705,16 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 	}
 
+}
+
+std::vector<double> Locality::getConfigDisp(std::vector<double> config_in, int s){
+
+	std::vector<double> disp;
+	disp.resize(2);
+	disp[0] = 0;
+	disp[1] = 0;
+
+	return disp;
 }
 
 void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
@@ -1834,8 +1916,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
 
-				int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
-				int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+				Materials::Mat mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
+				Materials::Mat mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
 
 				// and the angle of the sheet each orbital is on
 				double theta1 = angles[index_to_grid[k_i*4 + 3]];
@@ -1844,7 +1926,13 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				// use all this information to determine coupling energy
 				// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
 
-				t += interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+				std::array<double, 3> disp = {{
+					x2 - x1,
+					y2 - y1,
+					z2 - z1}};
+
+				t += Materials::interlayer_term(orbit1, orbit2,disp, theta1, theta2,mat1, mat2)/energy_rescale;
+				//t += interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (t != 0 ){
 
 					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
@@ -2242,15 +2330,19 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				int orbit2 = index_to_grid[new_k*4 + 2];
 
 				// and material information
-				int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
-				int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+				Materials::Mat mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
+				Materials::Mat mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
 
 				// and the angle of the sheet each orbital is on
 				double theta1 = angles[index_to_grid[k_i*4 + 3]];
 				double theta2 = angles[index_to_grid[new_k*4 + 3]];
 
+				std::array<double, 3> disp = {{
+					x2 - x1,
+					y2 - y1,
+					z2 - z1}};
 
-				double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
+				double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2,mat1, mat2)/energy_rescale;
 
 				//if (t != 0 ){
 
@@ -2476,10 +2568,18 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 		std::vector<std::vector<double> > a = sdata[s].a;
 		double theta = angles[s];
-		int num_orbs = (int) sdata[s].atom_types.size();
-		int mat = sdata[s].mat;
+		int num_orbs = Materials::n_orbitals(sdata[s].mat);
+		Materials::Mat mat = sdata[s].mat;
 
-		std::vector<std::vector<double> > orb_pos = sdata[s].atom_pos;
+		std::vector<std::vector<double> > orb_pos;
+		orb_pos.resize(num_orbs);
+
+		for (int o = 0; o < num_orbs; ++o){
+			orb_pos[o].resize(3);
+			for (int d = 0; d < 3; ++d){
+				orb_pos[o][d] = Materials::orbital_pos(mat, o, d);
+			}
+		}
 
 		for (int i = -L; i < L+1; ++i){
 			for (int j = -L; j < L+1; ++j){
@@ -2496,6 +2596,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double y = temp_x*sin(theta) + temp_y*cos(theta);
 				double z = temp_z;
 
+				std::array<int,2> grid_disp = {{ i, j }};
 
 				std::vector< std::vector<double> > temp_o1_bloch_t_array;
 				for (int o1 = 0; o1 < num_orbs; ++o1){
@@ -2506,17 +2607,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 						// find monolayer t_ij(R(i,j),o1,o2)
 						// if t_ij != 0, add R and t_ij to respective vectors, and ++N_R;
 
-						// !! Include orbital displacement in x,y,z*E
-
-						double o1_x = orb_pos[o1][0];
-						double o1_y = orb_pos[o1][1];
-						double o1_z = orb_pos[o1][2];
-
-						double o2_x = temp_x + orb_pos[o2][0];
-						double o2_y = temp_y + orb_pos[o2][1];
-						double o2_z = temp_z + orb_pos[o2][2];
-
-						double t = intralayer_term(o1_x, o1_y, o1_z, o2_x, o2_y, o2_z, o1, o2, mat);
+						double t = Materials::intralayer_term(o1, o2, grid_disp, mat);
 						temp_o2_bloch_t_array.push_back(t);
 					}
 					temp_o1_bloch_t_array.push_back(temp_o2_bloch_t_array);
@@ -2557,7 +2648,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	// Count the current element, i.e. "i = input_counter"
 	int input_counter = 0;
 
-	// Load FFTW data into Interlayer_coupling object
+	// Load FFTW data into Momentum_coupling object
 
 	// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 	// They define the settings used to generate the interlayer_fft.dat file
@@ -2570,7 +2661,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 		std::string fft_file = "interlayer_fft.dat";
 	//
 
-	Interlayer_coupling fftw_inter;
+	Momentum_coupling fftw_inter;
 	fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
 
 	//printf("Momentum Space coupling term [0][0] at k = (0,0) = %lf + i*%lf \n",7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,0),7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,1));
@@ -2704,8 +2795,8 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
 
-				int mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
-				int mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
+				Materials::Mat mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
+				Materials::Mat mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
 
 				// and the angle of the sheet each orbital is on
 				double theta1 = angles[index_to_grid[k_i*4 + 3]];
@@ -3467,7 +3558,7 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 
 
 	for (int i = 0; i < 3; ++i){
-		a[i][0] = orig_a[i][0]*cos(theta) + -1.0*orig_a[i][1]*sin(theta);
+		a[i][0] = orig_a[i][0]*cos(theta) - orig_a[i][1]*sin(theta);
 		a[i][1] = orig_a[i][0]*sin(theta) + orig_a[i][1]*cos(theta);
 		a[i][2] = orig_a[i][2];
 	}

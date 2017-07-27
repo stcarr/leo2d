@@ -10,23 +10,23 @@
 #define SDATA_H
 #include <vector>
 #include <string>
+#include "materials/materials.h"
 
 
 class Sdata {
 
   public:
 
-    Sdata(std::vector<std::vector<double> >, std::vector<int>, std::vector<std::vector<double> >, std::vector<int>, std::vector<int>, int, int, int, int, std::string);
+    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, int, int, int, std::string);
     Sdata(const Sdata& orig);
 		Sdata();
     ~Sdata();
-		std::vector<std::vector<double> > a;
+    Materials::Mat mat;
+    std::vector<std::vector<double> > a;
     std::vector<int> max_shape, min_shape;
 		int boundary_condition;
     std::vector< std::vector<double> > supercell;
-    std::vector<int> atom_types;
-		std::vector<std::vector<double> > atom_pos; //atom_pos[i][x] = orbital i's displacement from the unit cell origin in the xth-dimension direction
-		int mat;
+    std::vector< std::vector<int> > supercell_stride;
 		int solver_space;
 		int strain_type;
 		std::string strain_file;

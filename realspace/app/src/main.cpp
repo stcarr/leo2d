@@ -6,6 +6,7 @@
  */
 
 #include "locality.h"
+#include "materials/materials.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -49,27 +50,13 @@ int main(int argc, char** argv) {
 	supercell[0].resize(2);
 	supercell[1].resize(2);
 
-	int mat = 0;
-
 	// ---------------------------------------------------------
 	// Next three Categories define a single sheet's information
 	// ---------------------------------------------------------
 
-	// Unit cell information, gets put into an sdata object
-	double a = 0;
-	std::vector<std::vector<double> > unitCell;
-	unitCell.resize(3);
-	for (int i = 0; i < 3; ++i)
-		unitCell[i].resize(3);
-
-	// number of orbitals per unit cell
-	int num_orbitals = 0;
-	std::vector<int> types;
-	std::vector<std::vector<double> > pos;
-
 	// Height (in angstroms) and twist angle (CCW, in radians)
-	double height = 0;
-	double angle = 0;
+	double height = 0.;
+	double angle = 0.;
 
 	// File name for the strained position or configuration data
 	std::string strain_file;
@@ -201,73 +188,17 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					if (current_sheet == atoi(in_string.c_str()) - 1) {
 						// last two entries are 0, for solver_type and strain_type. They may be set later in the input file
-						s_data[current_sheet] = Sdata(unitCell,types,pos,min,max,mat,boundary_condition,0,0,strain_file);
 						heights[current_sheet] = height;
 						angles[current_sheet] = angle;
+						current_sheet = -1;
 					}
 				}
 
 				if (in_string == "MATERIAL") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					mat = atoi(in_string.c_str());
-				}
-
-				if (in_string == "ALPHA") {
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					a = atof(in_string.c_str());
-				}
-
-				if (in_string == "UNITCELL1"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < 3; ++i) {
-						getline(in_line,in_string,' ');
-						unitCell[0][i] = a*atof(in_string.c_str());
-					}
-				}
-
-				if (in_string == "UNITCELL2"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < 3; ++i) {
-						getline(in_line,in_string,' ');
-						unitCell[1][i] = a*atof(in_string.c_str());
-					}
-				}
-
-				if (in_string == "UNITCELL3"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < 3; ++i) {
-						getline(in_line,in_string,' ');
-						unitCell[2][i] = a*atof(in_string.c_str());
-					}
-				}
-
-				if (in_string == "NUM_ORBITALS"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					num_orbitals = atoi(in_string.c_str());
-					types.resize(num_orbitals);
-					pos.resize(num_orbitals);
-				}
-
-				if (in_string == "TYPES"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < num_orbitals; ++i) {
-						getline(in_line,in_string,' ');
-						types[i] = atoi(in_string.c_str());
-					}
-				}
-
-				if (in_string == "POS"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < num_orbitals; ++i) {
-						pos[i].resize(3);
-						for (int j = 0; j < 3; ++j) {
-							getline(in_line,in_string,' ');
-							pos[i][j] = a*atof(in_string.c_str());
-						}
-					}
+					Materials::Mat mat = Materials::string_to_mat(in_string);
+					s_data[current_sheet] = Sdata(mat,min,max,boundary_condition,0,0,strain_file);
 				}
 
 				if (in_string == "HEIGHT"){
@@ -292,19 +223,6 @@ int main(int argc, char** argv) {
 					strain_file = in_string;
 					opts.setParam("strain_file",strain_file);
 				}
-
-				if (in_string == "INTRA_SEARCHSIZE"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					opts.setParam("intra_searchsize",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "INTER_SEARCHSIZE"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					opts.setParam("inter_searchsize",atoi(in_string.c_str()));
-				}
-
 
 				if (in_string == "NSHIFTS"){
 					getline(in_line,in_string,' ');
@@ -361,7 +279,7 @@ int main(int argc, char** argv) {
 				if (in_string == "DOS_TRANSFORM"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-				        opts.setParam("dos_transform",atoi(in_string.c_str()));		
+				        opts.setParam("dos_transform",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "SOLVER_SPACE"){
@@ -609,6 +527,15 @@ int main(int argc, char** argv) {
 				// we assume unitCell is same for both sheets...
 				for (int i = 0; i < s_data.size(); ++i){
 
+					std::vector< std::vector<double> > unitCell;
+					unitCell.resize(2);
+					for(int i = 0; i < 2; ++i){
+						unitCell[i].resize(2);
+						for(int j = 0; j < 2; ++j){
+							unitCell[i][j] = Materials::lattice(s_data[0].mat)[i][j];
+						}
+					}
+
 					int A1_num_a1;
 					int A1_num_a2;
 					int A2_num_a1;
@@ -637,9 +564,22 @@ int main(int argc, char** argv) {
 					sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
 					sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
 
+					std::vector< std::vector<int> > sc_stride_here;
+					sc_stride_here.resize(2);
+					sc_stride_here[0].resize(2);
+					sc_stride_here[1].resize(2);
+
+					sc_stride_here[0][0] = A1_num_a1;
+					sc_stride_here[0][1] = A1_num_a2;
+					sc_stride_here[1][0] = A2_num_a1;
+					sc_stride_here[1][1] = A2_num_a2;
+
 					printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
 					printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+					printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
+
 					s_data[i].supercell = sc_here;
+					s_data[i].supercell_stride = sc_stride_here;
 
 					// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
 					if (i == 0){
@@ -691,6 +631,7 @@ int main(int argc, char** argv) {
 
 		// End MPI processes and finish
 		loc.finMPI();
+
 
 	} else {
 		printf("Input file '%s' not found, stopping, \n",argv[1]);

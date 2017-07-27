@@ -112,6 +112,29 @@ void Hstruct::setShift(int sheet, std::vector<double> b){
     shifts[sheet] = b;
 }
 
+int Hstruct::indexToSheet(int k){
+
+  if (k < 0 || k > max_index){
+    return -1;
+  }
+
+  bool findSheet = true;
+  int current_sheet = 0;
+  int current_index = 0;
+  int s;
+
+  while(findSheet){
+    if (k < (current_index + sheets[current_sheet].getMaxIndex())){
+      s = current_sheet;
+      findSheet = false;
+    }else {
+      current_index += sheets[current_sheet].getMaxIndex();
+      current_sheet += 1;
+    }
+  }
+
+}
+
 // --------------------------------
 // Find the dim position of index k
 //  (for dim: x = 0, y = 1, z = 2)
@@ -120,28 +143,28 @@ double Hstruct::posAtomIndex(int k, int dim){
     if (k < 0 || k > max_index){
         return 0;
 	}
-
     bool findSheet = true;
     int current_sheet = 0;
     int current_index = 0;
     int s;
 
     while(findSheet){
-        if (k < (current_index + sheets[current_sheet].getMaxIndex())){
-            s = current_sheet;
-            findSheet = false;
-        }else {
-            current_index += sheets[current_sheet].getMaxIndex();
-            current_sheet += 1;
-        }
+      if (k < (current_index + sheets[current_sheet].getMaxIndex())){
+        s = current_sheet;
+        findSheet = false;
+      }else {
+        current_index += sheets[current_sheet].getMaxIndex();
+        current_sheet += 1;
+      }
     }
+
     double local_x = sheets[s].posAtomIndex(k - current_index,0);
     double local_y = sheets[s].posAtomIndex(k - current_index,1);
     double local_z = sheets[s].posAtomIndex(k - current_index,2);
 
     double theta;
 
-	// If we are in Momentum-space, we need to have sheet 0 have the geometry of sheet 1, so we swap the angles
+	// If we are in Momentum-space, we need sheet 0 to have the geometry of sheet 1, so we swap the angles
 	if (solver_space == 0) {
 		theta = angles[s];
 	} else if (solver_space == 1) {
@@ -153,15 +176,15 @@ double Hstruct::posAtomIndex(int k, int dim){
 	}
 
     if (dim == 0){
-        double x = local_x*cos(theta) - local_y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0) + shifts[s][2]*sheets[s].getUnit(2,0);
+        double x = local_x*cos(theta) - local_y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0);
         return x;
     }
     if (dim == 1){
-        double y = local_y*cos(theta) + local_x*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1) + shifts[s][2]*sheets[s].getUnit(2,1);
+        double y = local_x*sin(theta) + local_y*cos(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1);
         return y;
     }
     if (dim == 2){
-        double z = local_z + heights[s] + shifts[s][0]*sheets[s].getUnit(0,2) + shifts[s][1]*sheets[s].getUnit(1,2) + shifts[s][2]*sheets[s].getUnit(2,2);
+        double z = local_z + heights[s];
 		return z;
     }
 }
@@ -175,12 +198,12 @@ int Hstruct::findNearest(double (&pos)[3],int s, int dim){
 	double theta = 0;
 
 	if (solver_space == 0) {
-		theta = angles[s];
+		theta = -angles[s];
 	} else if (solver_space == 1) {
 		if (s == 0) {
-			theta = angles[1];
+			theta = -angles[1];
 		} else if (s == 1) {
-			theta = angles[0];
+			theta = -angles[0];
 		}
 	}
 
@@ -200,16 +223,16 @@ int Hstruct::findNearest(double (&pos)[3],int s, int dim){
 	// should rotate AFTER shifts, not before
 
 	if (dim == 0){
-		double x_new = x*cos(theta) + y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0) + shifts[s][2]*sheets[s].getUnit(2,0);
-		double y_new = y*cos(theta) - x*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1) + shifts[s][2]*sheets[s].getUnit(2,1);
+		double x_new = x*cos(theta) - y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0);
+		double y_new = y*cos(theta) + x*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1);
 		double i_new = a_inv[0][0]*x_new + a_inv[0][1]*y_new;
 		int i = std::min(std::max(int(floor(i_new)),sheets[s].getShape(0,0)),sheets[s].getShape(1,0)) - sheets[s].getShape(0,0);
 		return i;
 	}
 
 	if (dim == 1){
-		double x_new = x*cos(theta) + y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0) + shifts[s][2]*sheets[s].getUnit(2,0);
-		double y_new = y*cos(theta) - x*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1) + shifts[s][2]*sheets[s].getUnit(2,1);
+		double x_new = x*cos(theta) - y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0);
+		double y_new = y*cos(theta) + x*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1);
 		double j_new = a_inv[1][0]*x_new + a_inv[1][1]*y_new;
 		int j = std::min(std::max(int(floor(j_new)),sheets[s].getShape(0,1)),sheets[s].getShape(1,1)) - sheets[s].getShape(0,1);
 		return j;
@@ -227,18 +250,17 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 // -----------------------------------------
 void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vector<std::vector<double> > &supercell_vecs, Job_params opts){
 
-	// We search over a searchsize x searchsize sized grid of unitcells
-	//int searchsize = 6;
+  // We search over a searchsize x searchsize sized grid of unitcells
+  int searchsize = Materials::inter_search_radius(sheets[0].getMat());
+  // We do not save pairs that are farther apart than this (in Angstroms)
+  double inter_cutoff = 12.5;
 
-  int searchsize = opts.getInt("intra_searchsize");
   int boundary_condition = opts.getInt("boundary_condition");
   std::vector< std::vector<double> > supercell;
   if (boundary_condition == 1){
     supercell = opts.getDoubleMat("supercell");
   }
 
-	// We do not save pairs that are farther apart than this (in Angstroms)
-	double inter_cutoff = 12.5;
 
 	// loop over all orbitals (kh = "k here")
 	for (int kh = 0; kh < max_index; ++kh){
@@ -259,7 +281,6 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 		kh_pos_here[0] = posAtomIndex(kh,0);
 		kh_pos_here[1] = posAtomIndex(kh,1);
 		kh_pos_here[2] = posAtomIndex(kh,2);
-
 		// If in momentum space, take reciprocal, i.e. K couples to -K (NOT K couples to K)
 		if (solver_space == 1){
 			kh_pos_here[0] = -kh_pos_here[0];
@@ -367,7 +388,6 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 
     		// if we are not on the "highest" sheet, we look for pairs from the sheet below
     		if (sh < max_sheets - 1) {
-
     			// "0" determines the center of our search range on sheet s0
     			int i0 = findNearest(pos_here, sh + 1, 0);
     			int j0 = findNearest(pos_here, sh + 1, 1);
@@ -468,6 +488,109 @@ void Hstruct::orderPairs(std::vector< std::vector<int> >& pairs, std::vector< st
       }
 
     }
+  }
+
+}
+
+// -----------------------------------------
+//     Allocates the Shift configuration
+//        for all atoms in a bilayer
+// -----------------------------------------
+void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, Job_params opts){
+
+  if (max_sheets == 2){
+
+    std::vector< std::vector< std::vector<double> > > unit_cells;
+    std::vector< std::vector< std::vector<double> > > inv_unit_cells;
+
+    unit_cells.resize(2);
+    inv_unit_cells.resize(2);
+    for (int s = 0; s < 2; ++s){
+
+      double theta = angles[s];
+
+      unit_cells[s].resize(2);
+      inv_unit_cells[s].resize(2);
+      for (int x = 0; x < 2; ++x){
+        unit_cells[s][x].resize(2);
+        inv_unit_cells[s][x].resize(2);
+      }
+
+      unit_cells[s][0][0] = cos(theta)*sheets[s].getUnit(0,0) - sin(theta)*sheets[s].getUnit(0,1);
+      unit_cells[s][0][1] = sin(theta)*sheets[s].getUnit(0,0) + cos(theta)*sheets[s].getUnit(0,1);
+      unit_cells[s][1][0] = cos(theta)*sheets[s].getUnit(1,0) - sin(theta)*sheets[s].getUnit(1,1);
+      unit_cells[s][1][1] = sin(theta)*sheets[s].getUnit(1,0) + cos(theta)*sheets[s].getUnit(1,1);
+
+      double det = unit_cells[s][0][0]*unit_cells[s][1][1] - unit_cells[s][0][1]*unit_cells[s][1][0];
+
+    	inv_unit_cells[s][0][0] = unit_cells[s][1][1]/det;
+    	inv_unit_cells[s][0][1] = -unit_cells[s][1][0]/det;
+    	inv_unit_cells[s][1][0] = -unit_cells[s][0][1]/det;
+    	inv_unit_cells[s][1][1] = unit_cells[s][0][0]/det;
+
+    }
+
+    config_array.resize(max_index);
+    for (int k = 0; k < max_index; ++k){
+      config_array[k].resize(2);
+      double pos_here[3];
+      for (int d = 0; d < 3; ++d){
+        pos_here[0] = posAtomIndex(k,d);
+      }
+      int s_here = indexToSheet(k);
+      int s = -1;
+      if (s_here == 0){
+        s = 1;
+      } else if (s_here == 1){
+        s = 0;
+      }
+
+      int new_i = findNearest(pos_here,s,0);
+      int new_j = findNearest(pos_here,s,1);
+
+      int found = 0;
+      // now we try to find where atom k is in relation to the other sheet
+      for (int i = new_i-2; i < new_i + 3; ++i){
+        for (int j = new_j-2; j < new_j + 3; ++j){
+
+          if (found == 0){
+
+            int new_grid[3];
+            new_grid[0] = i;
+            new_grid[1] = j;
+            new_grid[2] = 0;
+
+            double new_pos[2];
+            new_pos[0] = sheets[s].posAtomGrid(new_grid,0);
+            new_pos[1] = sheets[s].posAtomGrid(new_grid,1);
+
+            double config_real[2];
+            config_real[0] = pos_here[0] - new_pos[0];
+            config_real[1] = pos_here[1] - new_pos[1];
+
+            double config[2];
+            config[0] = config_real[0]*inv_unit_cells[s][0][0] + config_real[1]*inv_unit_cells[s][0][1];
+            config[1] = config_real[0]*inv_unit_cells[s][1][0] + config_real[1]*inv_unit_cells[s][1][1];
+
+            if (config[0] >= 0 && config[0] < 1 && config[1] >= 0 && config[1] < 1){
+              config_array[k][0] = config[0];
+              config_array[k][1] = config[1];
+
+              found = 1;
+            }
+
+          }
+
+        }
+      }
+
+      if(found == 0){
+        throw std::runtime_error("Hstruct::getShiftConfigs failed to find an atoms shift configuration!!");
+      }
+    }
+
+  } else {
+    throw std::runtime_error("Hstruct::getShiftConfigs only implemented for bilayer!!\n");
   }
 
 }
@@ -729,7 +852,11 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 	int num_orb_1 = sheets[0].getNumAtoms();
 	int num_orb_2 = sheets[1].getNumAtoms();
 
-	double theta = angles[1] - angles[0];
+  Materials::Mat mat1 = sheets[0].getMat();
+  Materials::Mat mat2 = sheets[1].getMat();
+
+	double angle1 = angles[0];
+  double angle2 = angles[1];
 
 
 	std::ofstream fout(fft_file.c_str());
@@ -739,9 +866,6 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 
 	for (int o1 = 0; o1 < num_orb_1; ++o1){
 		for (int o2 = 0; o2 < num_orb_2; ++o2){
-
-			int mat1 = sheets[0].getMat();
-			int mat2 = sheets[1].getMat();
 
 			double z1 = heights[0];
 			double z2 = heights[1];
@@ -781,7 +905,8 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 						y_pos = -dy*j + dy*(y_size-1);
 
 					//printf("[%lf, %lf, %lf, %lf, %lf, %lf, %d, %d, 0, %lf, %d, %d] \n", o1_shift_x, o1_shift_y, z1, x_pos+o2_shift_x, y_pos+o2_shift_y, z2, o1, o2, theta, mat1, mat2);
-					in[j + i*y_size] = interlayer_term(0 + o1_shift_x, 0 + o1_shift_y, z1 + o1_shift_z, x_pos + o2_shift_x, y_pos + o2_shift_y, z2 + o2_shift_z, o1, o2, 0, theta, mat1, mat2)/(sqrt(A1*A2));
+          std::array<double, 3> disp = {{ x_pos, y_pos, z2-z1 }};
+					in[j + i*y_size] = Materials::interlayer_term(o1, o2, disp, angle1, angle2, mat1, mat2)/(sqrt(A1*A2));
 
 				}
 			}
