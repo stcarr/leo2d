@@ -22,7 +22,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
 #MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
 
 find_package(FFTW REQUIRED)
-find_package(MPI REQUIRED)
+find_package(MPI)
 find_package(Eigen3 REQUIRED)
 
 # include required directories
