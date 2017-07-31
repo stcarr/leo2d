@@ -11,6 +11,7 @@
 #include <array>
 #include <string>
 #include <map>
+#include <stdexcept>
 
 #include "materials/graphene.h"
 #include "materials/strained_graphene.h"

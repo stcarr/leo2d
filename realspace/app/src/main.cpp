@@ -529,10 +529,10 @@ int main(int argc, char** argv) {
 
 					std::vector< std::vector<double> > unitCell;
 					unitCell.resize(2);
-					for(int i = 0; i < 2; ++i){
-						unitCell[i].resize(2);
-						for(int j = 0; j < 2; ++j){
-							unitCell[i][j] = Materials::lattice(s_data[0].mat)[i][j];
+					for(int n = 0; n < 2; ++n){
+						unitCell[n].resize(2);
+						for(int m = 0; m < 2; ++m){
+							unitCell[n][m] = Materials::lattice(s_data[0].mat)[n][m];
 						}
 					}
 

@@ -1,6 +1,6 @@
 # Specify the minimum version for CMake
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 2.4.0)
 
 # Project's name
 PROJECT(LEO2D)
@@ -16,15 +16,17 @@ SET(CMAKE_CXX_COMPILER mpicxx)
 
 # setup packages
 
-SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++1z -Wno-unused-variable -Wno-unused-parameter")
+SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -Wno-unused-variable -Wno-unused-parameter")
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
 
-find_package(FFTW)
-find_package(MPI)
-find_package(Eigen3 3.3 NO_MODULE)
+#MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
+
+find_package(FFTW REQUIRED)
+find_package(MPI REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # include required directories
-include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH} ${EIGEN3_INCLUDES})
+include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH} ${EIGEN3_INCLUDE_DIR})
 include(CMakeBackwardCompatibilityCXX)
 include(CheckLibraryExists)
 

@@ -1649,9 +1649,9 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 			double s1_a[2][2];
 
-			for (int i = 0; i < 2; ++i){
-				for (int j = 0; j < 2; ++j){
-					s1_a[i][j] = sdata[s].a[i][j];
+			for (int m = 0; m < 2; ++m){
+				for (int n = 0; n < 2; ++n){
+					s1_a[m][n] = sdata[s].a[m][n];
 				}
 			}
 
