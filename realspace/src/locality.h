@@ -10,6 +10,7 @@
 #define LOCALITY_H
 
 #include "geom/hstruct.h"
+#include "geom/strain.h"
 #include "momentum/momentum_coupling.h"
 #include "matrix/spmatrix.h"
 #include "matrix/dmatrix.h"
@@ -47,6 +48,8 @@ class Locality {
   		*/
 
   		Job_params opts;
+
+      StrainCalc strainInfo;
 
   		/*
   		int magOn;

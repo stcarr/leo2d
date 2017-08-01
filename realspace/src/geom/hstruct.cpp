@@ -33,7 +33,7 @@ Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std:
     angles.push_back(angles_in[i]);
     shifts.push_back(blank_shift);
   }
-  
+
   max_sheets = sheets.size();
 	solver_space = solver_space_in;
 
@@ -142,9 +142,11 @@ int Hstruct::indexToSheet(int k){
 //  (for dim: x = 0, y = 1, z = 2)
 // --------------------------------
 double Hstruct::posAtomIndex(int k, int dim){
+
     if (k < 0 || k > max_index){
-        return 0;
-	}
+      return 0;
+    }
+
     bool findSheet = true;
     int current_sheet = 0;
     int current_index = 0;
@@ -534,18 +536,34 @@ void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, J
 
     config_array.resize(max_index);
     for (int k = 0; k < max_index; ++k){
-      config_array[k].resize(2);
-      double pos_here[3];
-      for (int d = 0; d < 3; ++d){
-        pos_here[0] = posAtomIndex(k,d);
-      }
-      int s_here = indexToSheet(k);
+
+      std::vector<int> grid_here_vector = indexToGrid(k);
+      // always set orbital to 0
+
+      int grid_here[3];
+      grid_here[0] = grid_here_vector[0];
+      grid_here[1] = grid_here_vector[1];
+      grid_here[2] = 0;
+      //printf("k = %d, [%d,%d,%d,%d]\n",k,grid_here[0],grid_here[1],grid_here_vector[2],grid_here_vector[3]);
+
+      int s_here = grid_here_vector[3];
       int s = -1;
       if (s_here == 0){
         s = 1;
       } else if (s_here == 1){
         s = 0;
       }
+
+      config_array[k].resize(2);
+
+      double orig_pos[2];
+      orig_pos[0] = sheets[grid_here_vector[3]].posAtomGrid(grid_here,0);
+      orig_pos[1] = sheets[grid_here_vector[3]].posAtomGrid(grid_here,1);
+
+      double pos_here[3];
+      pos_here[0] = cos(angles[s_here])*orig_pos[0] - sin(angles[s_here])*orig_pos[1];
+      pos_here[1] = sin(angles[s_here])*orig_pos[0] + cos(angles[s_here])*orig_pos[1];
+      pos_here[2] = 0;
 
       int new_i = findNearest(pos_here,s,0);
       int new_j = findNearest(pos_here,s,1);
@@ -562,9 +580,13 @@ void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, J
             new_grid[1] = j;
             new_grid[2] = 0;
 
+            double sheet_pos[2];
+            sheet_pos[0] = sheets[s].posAtomGrid(new_grid,0);
+            sheet_pos[1] = sheets[s].posAtomGrid(new_grid,1);
+
             double new_pos[2];
-            new_pos[0] = sheets[s].posAtomGrid(new_grid,0);
-            new_pos[1] = sheets[s].posAtomGrid(new_grid,1);
+            new_pos[0] = cos(angles[s])*sheet_pos[0] - sin(angles[s])*sheet_pos[1];
+            new_pos[1] = sin(angles[s])*sheet_pos[0] + cos(angles[s])*sheet_pos[1];
 
             double config_real[2];
             config_real[0] = pos_here[0] - new_pos[0];
@@ -577,6 +599,7 @@ void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, J
             if (config[0] >= 0 && config[0] < 1 && config[1] >= 0 && config[1] < 1){
               config_array[k][0] = config[0];
               config_array[k][1] = config[1];
+              //printf("config k=%d (%d -> %d), [%lf,%lf]... [%lf,%lf] -> [%lf,%lf]\n",k,s_here,s,config[0],config[1],pos_here[0],pos_here[1],new_pos[0],new_pos[1]);
 
               found = 1;
             }
@@ -629,6 +652,42 @@ int Hstruct::gridToIndex(int (&grid_index)[4]) {
 	return temp_index;
 
 }
+
+std::vector<int> Hstruct::indexToGrid(int k){
+
+  if (k < 0 || k > max_index){
+    // throw exception probably
+  }
+
+  bool findSheet = true;
+  int current_sheet = 0;
+  int current_index = 0;
+  int s;
+
+  while(findSheet){
+    if (k < (current_index + sheets[current_sheet].getMaxIndex())){
+      s = current_sheet;
+      findSheet = false;
+    }else {
+      current_index += sheets[current_sheet].getMaxIndex();
+      current_sheet += 1;
+    }
+  }
+
+  int i = sheets[s].indexToGrid(k - current_index,0);
+  int j = sheets[s].indexToGrid(k - current_index,1);
+  int o = sheets[s].indexToGrid(k - current_index,2);
+
+  std::vector<int> grid_here;
+  grid_here.push_back(i);
+  grid_here.push_back(j);
+  grid_here.push_back(o);
+  grid_here.push_back(s);
+
+  return grid_here;
+
+}
+
 
 void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<double> > &sc_vecs, Job_params opts) {
 

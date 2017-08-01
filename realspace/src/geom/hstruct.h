@@ -55,6 +55,7 @@ class Hstruct {
   		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,std::vector<std::vector<double> >&,Job_params);
   		std::vector<std::vector<int> > getIndexArray();
   		int gridToIndex(int (&grid_index)[4]);
+      std::vector<int> indexToGrid(int k);
   		void getIndexToPos(double*,int);
       std::vector<std::vector<double> > getSupercellVecs();
   		double getUnitArea(int);

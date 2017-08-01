@@ -1640,11 +1640,13 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 	if (strain_type == 2){
 		new_shift_configs.resize(max_index);
+		strainInfo.loadConfigFile(jobIn.getString("strain_file"));
 	}
 
 	if (solver_space == 0){
 		for (int i = 0; i < max_index; ++i) {
 
+			int orbit = index_to_grid[i*4 + 2];
 			int s = index_to_grid[i*4 + 3];
 
 			double s1_a[2][2];
@@ -1672,7 +1674,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				new_shift_configs[i][0] = shift_configs[i][0] + cos(theta)*shifts[s][0] - sin(theta)*shifts[s][1];
 				new_shift_configs[i][1] = shift_configs[i][1] + sin(theta)*shifts[s][0] + cos(theta)*shifts[s][1];
 
-				std::vector<double> disp_here = getConfigDisp(new_shift_configs[i], s);
+				//printf("on k=%d, sheet=%d, orbit=%d\n",i,s,orbit);
+				std::vector<double> disp_here = strainInfo.interpStrainDisp(new_shift_configs[i], s, orbit);
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
