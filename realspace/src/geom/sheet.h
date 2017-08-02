@@ -21,26 +21,26 @@
 class Sheet {
     private:
       std::vector<std::vector<double> > a;
-  		std::vector<std::vector<double> > b;
+  	  std::vector<std::vector<double> > b;
       std::vector<int> max_shape, min_shape;
       int max_index;
-  		Materials::Mat mat;
+  	  Materials::Mat mat;
       int n_orbitals;
       std::vector<std::vector<double> > atom_pos;
       std::vector<std::vector<std::vector<int> > > grid_array;
       std::vector<std::vector<int> > index_array;
-  		std::vector<std::vector<double> > pos_array;
+  	  std::vector<std::vector<double> > pos_array;
       std::vector<std::vector<double> > supercell_pair_array;
-  		bool ranSetup;
+  	  bool ranSetup;
       void setIndex();
-  		void loadIndexRealspace();
-  		void loadIndexConfiguration();
-  		void setInverse();
-  		double a_inverse[2][2];
-  		int boundary_condition;
-  		int solver_space;
-  		int strain_type;
-  		std::string strain_file;
+  	  void loadIndexRealspace();
+  	  void loadIndexConfiguration();
+  	  void setInverse();
+  	  std::vector< std::vector<double> > a_inverse;
+  	  int boundary_condition;
+  	  int solver_space;
+  	  int strain_type;
+  	  std::string strain_file;
       std::vector< std::vector<double> > supercell;
       std::vector< std::vector<double> > supercell_inv;
       std::vector< std::vector<int> > supercell_stride;

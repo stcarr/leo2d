@@ -6,12 +6,15 @@
  */
 
 #include "strain.h"
+#include "tools/numbers.h"
 
 #include <string>
 #include <cmath>
 #include <stdio.h>
 #include <fstream>
 #include <stdexcept>
+
+using namespace numbers;
 
 // ---------------------
 // Use this constructor!
@@ -25,7 +28,6 @@ StrainCalc::StrainCalc(const StrainCalc& orig) {
 
 StrainCalc::~StrainCalc() {
 }
-
 
 void StrainCalc::loadConfigFile(std::string config_filename){
 
@@ -141,6 +143,10 @@ void StrainCalc::loadConfigFile(std::string config_filename){
 
 }
 
+void StrainCalc::setOpts(Job_params opts_in){
+	opts = opts_in;
+}
+
 std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, int sheet, int orb){
 
   // First we check inputs
@@ -254,4 +260,72 @@ double StrainCalc::interp_4point(double x, double y, double v1, double v2, doubl
 
   double value = v1*(1-x)*(1-y) + v2*x*(1-y)+ v3*(1-x)*y + v4*x*y;
   return value;
+}
+
+std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sheet, int orb){
+
+	std::vector<double> disp;
+	disp.resize(3);
+	
+	double amp = 1.0;
+	double freq = 1.0;
+	
+	// u_x:
+	disp[0] = amp*sin(2.0*PI*freq*pos_in[0]);
+	// u_y:
+	disp[1] = amp*cos(2.0*PI*freq*pos_in[1]);
+	// u_z:
+	disp[2] = 0.0;
+	
+	return disp;
+
+}
+
+std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<double> pos_in, int sheet, int orb){
+
+	std::vector< std::vector<double> > strain_here;
+	// u_xx, u_xy, u_yx, u_yy;
+	strain_here.resize(2);
+	strain_here[0].resize(2);
+	strain_here[1].resize(2);
+	
+	double amp = 1.0;
+	double freq = 1.0;
+	
+	// u_xx:
+	strain_here[0][0] = -2.0*PI*freq*amp*cos(2.0*PI*freq*pos_in[0]);
+	// u_xy:
+	strain_here[0][1] =  0.0;
+	// u_yx:
+	strain_here[1][0] =  0.0;
+	// u_yy:
+	strain_here[1][1] =  2.0*PI*freq*amp*sin(2.0*PI*freq*pos_in[1]);
+	
+	// Now we rescale for the supercell:
+	
+	std::vector< std::vector<double> > sc = opts.getDoubleMat("supercell");
+	
+	std::vector< std::vector<double> > sc_inv;
+	sc_inv.resize(2);
+	sc_inv[0].resize(2);
+	sc_inv[1].resize(2);
+	
+	double det = sc[0][0]*sc[1][1] - sc[0][1]*sc[1][0];
+	sc_inv[0][0] =  sc[1][1]/det;
+	sc_inv[0][1] = -sc[1][0]/det;
+	sc_inv[1][0] = -sc[0][1]/det;
+	sc_inv[1][1] =  sc[0][0]/det;
+	
+	std::vector< std::vector<double> > strain_out;
+	strain_out.resize(2);
+	strain_out[0].resize(2);
+	strain_out[1].resize(2);
+	
+	for (int i = 0; i < 2; ++i){
+		for (int j = 0; j < 2; ++j){
+		strain_out[i][j] = sc_inv[j][0]*strain_here[i][0] + sc_inv[j][1]*strain_here[i][1];
+		}
+	}
+	
+	return strain_out;
 }

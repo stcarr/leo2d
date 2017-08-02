@@ -207,7 +207,6 @@ void Locality::constructGeom(){
 
 	// The root node (rank == 0) uses the hstruct and sheet objects to figure out the geometery and tight-binding model sparse matrix structure
 	// This information is then pased to all worker nodes
-
 	time(&constructStart);
 
 	int solver_type = opts.getInt("solver_type");
@@ -215,8 +214,6 @@ void Locality::constructGeom(){
 	int boundary_condition = opts.getInt("boundary_condition");
 	int strain_type = opts.getInt("strain_type");
 	int fft_from_file = opts.getInt("fft_from_file");
-	int intra_searchsize = opts.getInt("intra_searchsize");
-	int inter_searchsize = opts.getInt("inter_searchsize");
 	int nShifts = opts.getInt("nShifts");
 
 	int max_pairs;
@@ -1638,9 +1635,14 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	int strain_type = jobIn.getInt("strain_type");
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
+	if (strain_type == 1){
+		strainInfo.setOpts(jobIn);
+	}
+	
 	if (strain_type == 2){
 		new_shift_configs.resize(max_index);
 		strainInfo.loadConfigFile(jobIn.getString("strain_file"));
+		strainInfo.setOpts(jobIn);
 	}
 
 	if (solver_space == 0){
@@ -1662,8 +1664,35 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 
 			if (strain_type == 1){
-				// sample strain from a realspace grid
 
+				// sample strain from a supercell grid
+				std::vector< std::vector<double> > sc = jobIn.getDoubleMat("supercell");
+				
+				std::vector< std::vector<double> > sc_inv;
+				sc_inv.resize(2);
+				sc_inv[0].resize(2);
+				sc_inv[1].resize(2);
+				
+				double det = sc[0][0]*sc[1][1] - sc[0][1]*sc[1][0];
+				sc_inv[0][0] =  sc[1][1]/det;
+				sc_inv[0][1] = -sc[1][0]/det;
+				sc_inv[1][0] = -sc[0][1]/det;
+				sc_inv[1][1] =  sc[0][0]/det;
+				
+				double x = index_to_pos[i*3 + 0] + shifts[s][0]*s1_a[0][0] + shifts[s][1]*s1_a[1][0];
+				double y = index_to_pos[i*3 + 1] + shifts[s][0]*s1_a[0][1] + shifts[s][1]*s1_a[1][1];;
+				double z = index_to_pos[i*3 + 2];
+
+				std::vector<double> sc_pos;
+				sc_pos.resize(2);
+				sc_pos[0] = sc_inv[0][0]*x + sc_inv[0][1]*y;
+				sc_pos[1] = sc_inv[1][0]*x + sc_inv[1][1]*y;
+				
+				std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
+
+				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
+				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
+				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];				
 
 			} else if (strain_type == 2){
 				// sample strain from the space of configurations
@@ -3554,46 +3583,18 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 	double theta = angles[s];
 
 	std::vector< std::vector<double> > a;
-	a.resize(3);
-	a[0].resize(3);
-	a[1].resize(3);
-	a[2].resize(3);
+	a.resize(2);
+	a[0].resize(2);
+	a[1].resize(2);
 
 
-	for (int i = 0; i < 3; ++i){
+	for (int i = 0; i < 2; ++i){
 		a[i][0] = orig_a[i][0]*cos(theta) - orig_a[i][1]*sin(theta);
 		a[i][1] = orig_a[i][0]*sin(theta) + orig_a[i][1]*cos(theta);
-		a[i][2] = orig_a[i][2];
 	}
 
 	std::vector< std::vector<double> > b;
-	b.resize(3);
-	for (int i = 0; i < 3; ++i){
-		b[i].resize(3);
-	}
-
-	double denom1 = 0.0;
-	double denom2 = 0.0;
-	double denom3 = 0.0;
-
-	for (int j = 0; j < 3; ++j) {
-		denom1 += a[0][j]*crossProd(a[1],a[2],j);
-		denom2 += a[1][j]*crossProd(a[2],a[0],j);
-		denom3 += a[2][j]*crossProd(a[0],a[1],j);
-	}
-
-	for (int k = 0; k < 3; ++k){
-		b[0][k] = 2*M_PI*crossProd(a[1],a[2],k)/denom1;
-		b[1][k] = 2*M_PI*crossProd(a[2],a[0],k)/denom2;
-		b[2][k] = 2*M_PI*crossProd(a[0],a[1],k)/denom3;
-	}
-
-	/*
-	for (int l = 0; l < 3; ++l){
-		printf("b[%d] = [%lf, %lf, %lf] \n", l, b[l][0], b[l][1], b[l][2]);
-	}
-	*/
-
+	b = getReciprocal(a);
 	return b;
 }
 

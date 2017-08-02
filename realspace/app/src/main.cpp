@@ -298,7 +298,7 @@ int main(int argc, char** argv) {
 
 					if (in_string[0] == 'N'){ // STRAIN_TYPE = NONE
 						opts.setParam("strain_type",0);
-					} else if (in_string[0] == 'R'){ // STRAIN_TYPE = REALSPACE
+					} else if (in_string[0] == 'S'){ // STRAIN_TYPE = SUPERCELL
 						opts.setParam("strain_type",1);
 					} else if (in_string[0] == 'C'){ // STRAIN_TYPE = CONFIGURATION
 						opts.setParam("strain_type",2);

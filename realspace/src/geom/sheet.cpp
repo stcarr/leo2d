@@ -59,20 +59,22 @@ Sheet::Sheet(Sdata input){
 
 	// Set indexing
 
-	// no strain
-	if (strain_type == 0) {
+	// no strain or basic supercell strain
+	if (strain_type == 0 || strain_type == 1) {
 		setIndex();
 	}
 
-	// strain from a realspace basis of form x,y,z,i,j,o
-	if (strain_type == 1) {
-		loadIndexRealspace();
-	}
-
+	
+	
 	// strain from a configuration space basis of form b_x,b_y,o
 	if (strain_type == 2) {
 		loadIndexConfiguration();
 	}
+	
+	// strain from a realspace basis of form x,y,z,i,j,o
+	if (strain_type == 3) {
+		loadIndexRealspace();
+	}	
 
 	// Determine inverse of the grid -> position matrix
 	// (i.e. get the position -> grid matrix)
@@ -84,6 +86,7 @@ Sheet::Sheet(Sdata input){
 // Copy Constructor
 // ----------------
 Sheet::Sheet(const Sheet& orig) {
+
   a = orig.a;
   max_shape = orig.max_shape;
   min_shape = orig.min_shape;
@@ -95,14 +98,12 @@ Sheet::Sheet(const Sheet& orig) {
   strain_type = orig.strain_type;
   strain_file = orig.strain_file;
 
-	max_index = orig.max_index;
+  max_index = orig.max_index;
   grid_array = orig.grid_array;
   index_array = orig.index_array;
-	pos_array = orig.pos_array;
+  pos_array = orig.pos_array;
 
-	for (int i = 0; i < 2; ++i)
-		for (int j = 0; j < 2; ++j)
-			a_inverse[i][j] = orig.a_inverse[i][j];
+  a_inverse = orig.a_inverse;
 
 	if (solver_space == 1){
 		b = orig.b;
@@ -117,6 +118,7 @@ Sheet::Sheet(const Sheet& orig) {
 }
 
 Sheet::~Sheet() {
+
 }
 
 // -----------------------------------------------------------------
@@ -762,6 +764,10 @@ int Sheet::findNearest(double (&pos)[3],int dim){
 // ------------------------------------------------------------
 void Sheet::setInverse(){
 
+	a_inverse.resize(2);
+	a_inverse[0].resize(2);
+	a_inverse[1].resize(2);
+
 	double a11 = a[0][0];
 	double a12 = a[0][1];
 	double a21 = a[1][0];
@@ -798,24 +804,36 @@ void Sheet::setSupercell(std::vector< std::vector<double> > sc_in){
 
 void Sheet::setReciprocal(){
 
-	b.resize(3);
-	for (int i = 0; i < 3; ++i)
-		b[i].resize(3);
+	b.resize(2);
+	for (int i = 0; i < 2; ++i)
+		b[i].resize(2);
 
 	double denom1 = 0.0;
 	double denom2 = 0.0;
-	double denom3 = 0.0;
+	
+	std::vector< std::vector<double> > a_3d;
+	a_3d.resize(3);
+	a_3d[0].resize(3);
+	a_3d[0][0] = a[0][0];
+	a_3d[0][1] = a[0][1];
+	a_3d[0][2] = 0.0;
+	a_3d[1].resize(3);
+	a_3d[1][0] = a[1][0];
+	a_3d[1][1] = a[1][1];
+	a_3d[1][2] = 0.0;
+	a_3d[2].resize(3);
+	a_3d[2][0] = 0.0;
+	a_3d[2][1] = 0.0;
+	a_3d[2][2] = 1.0;
 
 	for (int j = 0; j < 3; ++j) {
-		denom1 += a[0][j]*crossProd(a[1],a[2],j);
-		denom2 += a[1][j]*crossProd(a[2],a[0],j);
-		denom3 += a[2][j]*crossProd(a[0],a[1],j);
+		denom1 += a_3d[0][j]*crossProd(a_3d[1],a_3d[2],j);
+		denom2 += a_3d[1][j]*crossProd(a_3d[2],a_3d[0],j);
 	}
 
-	for (int k = 0; k < 3; ++k){
-		b[0][k] = 2*M_PI*crossProd(a[1],a[2],k)/denom1;
-		b[1][k] = 2*M_PI*crossProd(a[2],a[0],k)/denom2;
-		b[2][k] = 2*M_PI*crossProd(a[0],a[1],k)/denom3;
+	for (int k = 0; k < 2; ++k){
+		b[0][k] = 2*M_PI*crossProd(a_3d[1],a_3d[2],k)/denom1;
+		b[1][k] = 2*M_PI*crossProd(a_3d[2],a_3d[0],k)/denom2;
 	}
 
 	/*

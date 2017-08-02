@@ -23,9 +23,9 @@ Sdata::Sdata(Materials::Mat _mat, std::vector<int> _min, std::vector<int> _max, 
 
   min_shape = _min;
   max_shape = _max;
-	boundary_condition = _boundary_condition;
-	solver_space = _solver_space;
-	strain_type = _strain_type;
+  boundary_condition = _boundary_condition;
+  solver_space = _solver_space;
+  strain_type = _strain_type;
   strain_file = _strain_file;
 }
 
@@ -38,10 +38,10 @@ Sdata::Sdata(const Sdata& orig) {
   a = orig.a;
   max_shape = orig.max_shape;
   min_shape = orig.min_shape;
-	boundary_condition = orig.boundary_condition;
-	solver_space = orig.solver_space;
-	strain_type = orig.strain_type;
-	strain_file = orig.strain_file;
+  boundary_condition = orig.boundary_condition;
+  solver_space = orig.solver_space;
+  strain_type = orig.strain_type;
+  strain_file = orig.strain_file;
 
   supercell = orig.supercell;
   supercell_stride = orig.supercell_stride;
