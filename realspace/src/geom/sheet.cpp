@@ -615,7 +615,7 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     								 kh_array_i.push_back(kh + start_index);
     								 kh_array_j.push_back(k2 + start_index);
     								 kh_array_t.push_back(t);
-	                   kh_sc_vecs.push_back(sc_vec);
+									 kh_sc_vecs.push_back(sc_vec);
     							}
 
     						}

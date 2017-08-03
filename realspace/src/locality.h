@@ -120,7 +120,7 @@ class Locality {
   		void constructMatrix(int*,double*,int*,std::vector< std::vector<double> >,int*,double*,std::vector< std::vector<double> >,std::vector< std::vector<double> >,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
 
   		// Updates the index_to_pos array for a specific job's orbital positions (i.e. with shift and strain)
-  		void setConfigPositions(double*, double*, int*, std::vector< std::vector<double> >&, std::vector< std::vector<double> >&, Job_params);
+  		void setConfigPositions(double*, double*, int*, std::vector< std::vector<double> >&, std::vector< std::vector<double> >&,  std::vector< std::vector< std::vector<double> > >& Job_params);
 
       // Returns the real-space dispalcement given a certain shift configuration of an atom in sheet s
       std::vector<double> getConfigDisp(std::vector<double> config_in, int s);
@@ -128,12 +128,12 @@ class Locality {
   		// Creates and returns real SpMatrix objects and an array of target vectors for Electron-Electron Correlation
   		void generateRealH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*,
       			int*, std::vector< std::vector<double> >, int*, double*, std::vector< std::vector<double> >,
-      			std::vector<int>, int);
+				std::vector< std::vector< std::vector<double> > >, std::vector<int>, int);
 
   		// Creates and returns complex SpMatrix objects and an array of target vectors for Electron-Electron Correlation
   		void generateCpxH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*,
       			int*, std::vector< std::vector<double> >, int*, double*, std::vector< std::vector<double> >,
-      			std::vector<int>, int);
+				std::vector< std::vector< std::vector<double> > >, std::vector<int>, int);
 
   		// Creates and returns SpMatrix object representing H for a specific Momentum-space job
   		void generateMomH(SpMatrix&, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);

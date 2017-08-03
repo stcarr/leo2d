@@ -208,6 +208,46 @@ Materials::intralayer_term(const int orbital_row, const int orbital_col,
     return 0.;
 }
 
+/* Methods for returning intralayer and interlayer terms when there is strain */
+double
+Materials::intralayer_term(const int orbital_row, const int orbital_col,
+                    const std::array<int, 2>& vector, const std::vector< std::vector<double> >& strain,
+                    const Mat mat)
+{
+    switch (mat)
+    {
+        case Mat::Graphene: // graphene
+            return Coupling::Intralayer::graphene(
+                        Graphene::orbital(orbital_row), Graphene::orbital(orbital_col),
+                            vector);
+        case Mat::StrainedGraphene: // strained graphene
+            return Coupling::Intralayer::strained_graphene(
+                        Graphene::orbital(orbital_row), Graphene::orbital(orbital_col),
+                            vector, strain);
+
+        case Mat::MoS2:
+            return Coupling::Intralayer::MoS2(
+                        TMDC::orbital(orbital_row), TMDC::orbital(orbital_col),
+                            vector);
+        case Mat::WSe2:
+            return Coupling::Intralayer::WSe2(
+                        TMDC::orbital(orbital_row), TMDC::orbital(orbital_col),
+                            vector);
+        case Mat::MoSe2:
+            return Coupling::Intralayer::MoSe2(
+                        TMDC::orbital(orbital_row), TMDC::orbital(orbital_col),
+                            vector);
+        case Mat::WS2:
+            return Coupling::Intralayer::WS2(
+                        TMDC::orbital(orbital_row), TMDC::orbital(orbital_col),
+                            vector);
+
+        default:
+            throw std::runtime_error("Failed to find material. \n");
+    }
+    return 0.;
+}
+
 bool
 Materials::is_intralayer_term_nonzero(const int orbital_row, const int orbital_col,
                     const std::array<int, 2>& vector,
