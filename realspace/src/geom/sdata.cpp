@@ -43,8 +43,10 @@ Sdata::Sdata(const Sdata& orig) {
   strain_type = orig.strain_type;
   strain_file = orig.strain_file;
 
-  supercell = orig.supercell;
-  supercell_stride = orig.supercell_stride;
+  if (boundary_condition == 1){
+    supercell = orig.supercell;
+    supercell_stride = orig.supercell_stride;
+  }
 }
 
 Sdata::~Sdata() {

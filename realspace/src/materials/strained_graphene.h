@@ -16,7 +16,7 @@ namespace Coupling {
 
     namespace Intralayer {
         double strained_graphene(const Graphene::Orbital orbit_row, const Graphene::Orbital orbit_col, 
-                            const std::array<int, 2>& vector);
+                            const std::array<int, 2>& vector, const std::vector< std::vector<double> >& strain);
 
     }   /* End namespace Intralayer */
 

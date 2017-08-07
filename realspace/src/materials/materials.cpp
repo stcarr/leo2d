@@ -181,7 +181,7 @@ Materials::intralayer_term(const int orbital_row, const int orbital_col,
                         Graphene::orbital(orbital_row), Graphene::orbital(orbital_col),
                             vector);
         case Mat::StrainedGraphene: // strained graphene
-            return Coupling::Intralayer::strained_graphene(
+            return Coupling::Intralayer::graphene(
                         Graphene::orbital(orbital_row), Graphene::orbital(orbital_col),
                             vector);
 

@@ -47,12 +47,12 @@ class Hstruct {
       double hUpdate();
       int getMaxIndex();
 
-      void orderPairs(std::vector< std::vector<int> >&, std::vector< std::vector<double> >&);
+      void orderPairs(std::vector< std::vector<int> >&, std::vector< std::vector<int> >&);
 
       void getShiftConfigs(std::vector<std::vector<double> >&, Job_params);
 
-      void getInterPairs(std::vector<std::vector<int> >&,std::vector<std::vector<double> >&,Job_params);
-  		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,std::vector<std::vector<double> >&,Job_params);
+      void getInterPairs(std::vector<std::vector<int> >&,std::vector<std::vector<int> >&,Job_params);
+		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,std::vector<std::vector<int> >&,Job_params);
   		std::vector<std::vector<int> > getIndexArray();
   		int gridToIndex(int (&grid_index)[4]);
       std::vector<int> indexToGrid(int k);

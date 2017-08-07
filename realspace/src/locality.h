@@ -86,8 +86,17 @@ class Locality {
 
   		void recursiveShiftCalc(std::vector<Job_params>&, std::vector< std::vector<double> >, int, int, int, int, int, std::vector<int>, std::vector< std::vector<int> >);
 
-  		void rootChebSolve(int*,double*,int*,std::vector< std::vector<double> >,int*,double*,std::vector< std::vector<double> >,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
-  		void workerChebSolve(int*,double*,int*,std::vector< std::vector<double> >,int*,double*,std::vector< std::vector<double> >, std::vector< std::vector<double> >);
+  		void rootChebSolve(int* index_to_grid, double* index_to_pos, 
+						int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
+						int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
+						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices);
+
+		
+		void workerChebSolve(int* index_to_grid, double* index_to_pos, 
+							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, 
+							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs, 
+							std::vector< std::vector<double> > shift_configs);
+							
   		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Job_params);
 
 	    std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
@@ -117,23 +126,26 @@ class Locality {
   		void constructGeom();
 
   		// Construct and solve the tight binding problem. Also saves output files
-  		void constructMatrix(int*,double*,int*,std::vector< std::vector<double> >,int*,double*,std::vector< std::vector<double> >,std::vector< std::vector<double> >,std::vector< std::vector<int> >,std::vector< std::vector<int> >);
+  		void constructMatrix(int* index_to_grid,double* index_to_pos, int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
+					int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs, 
+					std::vector< std::vector<double> > shift_configs, std::vector< std::vector<int> > v_work, 
+					std::vector< std::vector<int> > target_indices);
 
   		// Updates the index_to_pos array for a specific job's orbital positions (i.e. with shift and strain)
-  		void setConfigPositions(double*, double*, int*, std::vector< std::vector<double> >&, std::vector< std::vector<double> >&,  std::vector< std::vector< std::vector<double> > >& Job_params);
+  		void setConfigPositions(double*, double*, int*, std::vector< std::vector<double> >&, std::vector< std::vector<double> >&,  std::vector< std::vector< std::vector<double> > >&, Job_params);
 
       // Returns the real-space dispalcement given a certain shift configuration of an atom in sheet s
       std::vector<double> getConfigDisp(std::vector<double> config_in, int s);
 
   		// Creates and returns real SpMatrix objects and an array of target vectors for Electron-Electron Correlation
-  		void generateRealH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*,
-      			int*, std::vector< std::vector<double> >, int*, double*, std::vector< std::vector<double> >,
-				std::vector< std::vector< std::vector<double> > >, std::vector<int>, int);
+  		void generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
+			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
+			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
 
   		// Creates and returns complex SpMatrix objects and an array of target vectors for Electron-Electron Correlation
-  		void generateCpxH(SpMatrix&, SpMatrix&, SpMatrix&, double*, double*, Job_params, int*, double*,
-      			int*, std::vector< std::vector<double> >, int*, double*, std::vector< std::vector<double> >,
-				std::vector< std::vector< std::vector<double> > >, std::vector<int>, int);
+  		void generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
+			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
+			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
 
   		// Creates and returns SpMatrix object representing H for a specific Momentum-space job
   		void generateMomH(SpMatrix&, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);

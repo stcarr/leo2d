@@ -252,7 +252,7 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 // Allocates interlayer candidate pairs into
 //     the given 2-dimensional pair_array
 // -----------------------------------------
-void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vector<std::vector<double> > &supercell_vecs, Job_params opts){
+void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vector<std::vector<int> > &supercell_vecs, Job_params opts){
 
   // We search over a searchsize x searchsize sized grid of unitcells
   int searchsize = Materials::inter_search_radius(sheets[0].getMat());
@@ -270,7 +270,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 	for (int kh = 0; kh < max_index; ++kh){
 
     std::vector<std::vector<int> > kh_pair_array;
-    std::vector<std::vector<double> > kh_supercell_vecs;
+    std::vector<std::vector<int> > kh_supercell_vecs;
 
 		//printf("kh = %d \n",kh);
 
@@ -308,18 +308,26 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
         double pos_here[3];
 
         // compute the supercell vector (for k sampling usually)
-        std::vector<double> sc_vec;
-        sc_vec.resize(2);
-        sc_vec[0] = 0;
-        sc_vec[1] = 0;
+		std::vector<int> sc_vec;
+		sc_vec.resize(2);
+		sc_vec[0] = 0;
+		sc_vec[1] = 0;
+
+		
+        std::vector<double> sc_disp;
+        sc_disp.resize(2);
+        sc_disp[0] = 0.0;
+        sc_disp[1] = 0.0;
 
         if (boundary_condition == 1){
-          sc_vec[0] = dx*supercell[0][0] + dy*supercell[1][0];
-          sc_vec[1] = dx*supercell[0][1] + dy*supercell[1][1];
+		  sc_vec[0] = dx;
+		  sc_vec[1] = dy;
+          sc_disp[0] = dx*supercell[0][0] + dy*supercell[1][0];
+          sc_disp[1] = dx*supercell[0][1] + dy*supercell[1][1];
         }
 
-        pos_here[0] = kh_pos_here[0] + sc_vec[0];
-        pos_here[1] = kh_pos_here[1] + sc_vec[1];
+        pos_here[0] = kh_pos_here[0] + sc_disp[0];
+        pos_here[1] = kh_pos_here[1] + sc_disp[1];
         pos_here[2] = kh_pos_here[2];
 
     		// if we are not on the "lowest" sheet, we look for pairs from the sheet above
@@ -382,7 +390,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     								pair_here.push_back(kh);
     								pair_here.push_back(k2 + base_index);
     								kh_pair_array.push_back(pair_here);
-                    kh_supercell_vecs.push_back(sc_vec);
+									kh_supercell_vecs.push_back(sc_vec);
     							}
     						}
     					}
@@ -435,7 +443,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     								pair_here.push_back(kh);
     								pair_here.push_back(k2 + base_index);
     								kh_pair_array.push_back(pair_here);
-                    kh_supercell_vecs.push_back(sc_vec);
+									kh_supercell_vecs.push_back(sc_vec);
 
     							}
     						}
@@ -462,7 +470,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 
 }
 
-void Hstruct::orderPairs(std::vector< std::vector<int> >& pairs, std::vector< std::vector<double> >& sc_vecs) {
+void Hstruct::orderPairs(std::vector< std::vector<int> >& pairs, std::vector< std::vector<int> >& sc_vecs) {
 
   int num_pairs = (int) pairs.size();
 
@@ -477,7 +485,7 @@ void Hstruct::orderPairs(std::vector< std::vector<int> >& pairs, std::vector< st
 
         std::vector<int> temp_pair;
         temp_pair.resize(2);
-        std::vector<double> temp_sc;
+        std::vector<int> temp_sc;
         temp_sc.resize(2);
 
         temp_pair = pairs[j-1];
@@ -689,7 +697,7 @@ std::vector<int> Hstruct::indexToGrid(int k){
 }
 
 
-void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<double> > &sc_vecs, Job_params opts) {
+void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<int> > &sc_vecs, Job_params opts) {
 
 	int current_index = 0;
 	for (int s = 0; s < max_sheets; ++s){

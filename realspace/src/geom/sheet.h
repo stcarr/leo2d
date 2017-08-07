@@ -62,8 +62,8 @@ class Sheet {
   		double getOrbPos(int, int);
       int getNumAtoms();
   		Materials::Mat getMat();
-  		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&,std::vector< std::vector<double> >&, Job_params, int);
-      void orderPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, std::vector< std::vector<double> >&);
+  		void getIntraPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, std::vector< std::vector<int> >&, Job_params, int);
+      void orderPairs(std::vector<int>&, std::vector<int>&, std::vector<double>&, std::vector< std::vector<int> >&);
       int findNearest(double (&pos)[3], int);
 
       void setReciprocal();

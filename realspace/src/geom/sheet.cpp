@@ -15,7 +15,6 @@
 Sheet::Sheet(Sdata input){
 
   mat = input.mat;
-
   a.resize(2);
   a[0].resize(2);
   a[1].resize(2);
@@ -37,11 +36,11 @@ Sheet::Sheet(Sdata input){
   atom_pos.resize(n_orbitals);
   for (int i = 0; i < n_orbitals; ++i){
     atom_pos[i].resize(3);
-    for (int j = 0; j < n_orbitals; ++j){
+    for (int j = 0; j < 3; ++j){
       atom_pos[i][j] = Materials::orbital_pos(mat, i, j);
     }
   }
-
+  
 	solver_space = input.solver_space;
 	strain_type = input.strain_type;
 	strain_file = input.strain_file;
@@ -62,6 +61,7 @@ Sheet::Sheet(Sdata input){
 	// no strain or basic supercell strain
 	if (strain_type == 0 || strain_type == 1) {
 		setIndex();
+
 	}
 
 	
@@ -523,7 +523,7 @@ Materials::Mat Sheet::getMat(){
 	return mat;
 }
 
-void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<double> > &sc_vecs, Job_params opts, int start_index){
+void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<int> > &sc_vecs, Job_params opts, int start_index){
 
   int searchsize = Materials::intra_search_radius(mat);
   // boundary_condition = opts.getInt("boundary_condition");
@@ -535,7 +535,7 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
       std::vector<int> kh_array_j;
       std::vector<double> kh_array_t;
 
-      std::vector<std::vector<double> > kh_sc_vecs;
+      std::vector<std::vector<int> > kh_sc_vecs;
 
       int l0 = indexToGrid(kh,2);
 
@@ -559,17 +559,25 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
           double pos_here[3];
 
           // compute the supercell vector (for k sampling usually)
-          std::vector<double> sc_vec;
+          std::vector<int> sc_vec;
           sc_vec.resize(2);
           sc_vec[0] = 0;
           sc_vec[1] = 0;
+		  
+          std::vector<double> sc_disp;
+          sc_disp.resize(2);
+          sc_disp[0] = 0.0;
+          sc_disp[1] = 0.0;
+		  
           if (boundary_condition == 1){
-            sc_vec[0] = dx*supercell[0][0] + dy*supercell[1][0];
-            sc_vec[1] = dx*supercell[0][1] + dy*supercell[1][1];
+            sc_vec[0] = dx;
+            sc_vec[1] = dy;          
+		    sc_disp[0] = dx*supercell[0][0] + dy*supercell[1][0];
+            sc_disp[1] = dx*supercell[0][1] + dy*supercell[1][1];
           }
 
-          pos_here[0] = kh_pos_here[0] + sc_vec[0];
-          pos_here[1] = kh_pos_here[1] + sc_vec[1];
+          pos_here[0] = kh_pos_here[0] + sc_disp[0];
+          pos_here[1] = kh_pos_here[1] + sc_disp[1];
           pos_here[2] = kh_pos_here[2];
           int i0 = findNearest(pos_here, 0);
           int j0 = findNearest(pos_here, 1);
@@ -645,10 +653,10 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 	} else if (solver_space == 1){
 
 		// for when we don't want a supercell vector
-		std::vector<double> sc_null;
+		std::vector<int> sc_null;
 		sc_null.resize(2);
-		sc_null[0] = 0.0;
-		sc_null[1] = 0.0;
+		sc_null[0] = 0;
+		sc_null[1] = 0;
 
 		// Momentum space intralayer pairing is always block diagonal
 		for (int i = 0; i < getShape(1,0)  - getShape(0,0); ++i) {
@@ -685,7 +693,7 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 	}
 }
 
-void Sheet::orderPairs(std::vector<int>& pairs_i, std::vector<int>& pairs_j, std::vector<double>& pairs_t, std::vector< std::vector<double> >& sc_vecs) {
+void Sheet::orderPairs(std::vector<int>& pairs_i, std::vector<int>& pairs_j, std::vector<double>& pairs_t, std::vector< std::vector<int> >& sc_vecs) {
 
   int num_pairs = (int) pairs_i.size();
 
@@ -701,7 +709,7 @@ void Sheet::orderPairs(std::vector<int>& pairs_i, std::vector<int>& pairs_j, std
         int temp_i;
         int temp_j;
         double temp_t;
-        std::vector<double> temp_sc;
+        std::vector<int> temp_sc;
         temp_sc.resize(2);
 
         temp_i = pairs_i[j-1];
