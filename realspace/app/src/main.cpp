@@ -117,6 +117,8 @@ int main(int argc, char** argv) {
 					boundary_condition = atoi(in_string.c_str());
 					opts.setParam("boundary_condition",boundary_condition);
 				}
+				
+				/*
 
 				if (in_string == "SUPERCELL_ALPHA") {
 					getline(in_line,in_string,' ');
@@ -142,6 +144,7 @@ int main(int argc, char** argv) {
 					}
 					opts.setParam("supercell",supercell);
 				}
+				*/
 
 				if (in_string == "SUPERCELL_M_N"){
 					getline(in_line,in_string,' ');
@@ -155,6 +158,18 @@ int main(int argc, char** argv) {
 					opts.setParam("supercell_type",o);
 				}
 
+				if (in_string == "SUPERCELL_GRID"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					int m = atoi(in_string.c_str());
+					getline(in_line,in_string,' ');
+					int n = atoi(in_string.c_str());
+					opts.setParam("x_supercell",m);
+					opts.setParam("y_supercell",n);
+					int two = 2;
+					opts.setParam("supercell_type",two);
+				}				
+				
 				if (in_string == "K_SAMPLING") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -606,6 +621,69 @@ int main(int argc, char** argv) {
 				}
 
 
+			} else if (type == 2) { // (X,Y) Grid type
+
+				int X = opts.getInt("x_supercell");
+				int Y = opts.getInt("y_supercell");
+
+				std::vector< std::vector<double> > unitCell;
+				unitCell.resize(2);
+				for(int n = 0; n < 2; ++n){
+					unitCell[n].resize(2);
+					for(int m = 0; m < 2; ++m){
+						unitCell[n][m] = Materials::lattice(s_data[0].mat)[n][m];
+					}
+				}
+
+				std::vector< std::vector<double> > sc_here;
+				sc_here.resize(2);
+				sc_here[0].resize(2);
+				sc_here[1].resize(2);
+
+				sc_here[0][0] = X*unitCell[0][0];
+				sc_here[0][1] = X*unitCell[0][1];
+				sc_here[1][0] = Y*unitCell[1][0];
+				sc_here[1][1] = Y*unitCell[1][1];
+
+				std::vector< std::vector<int> > sc_stride_here;
+				sc_stride_here.resize(2);
+				sc_stride_here[0].resize(2);
+				sc_stride_here[1].resize(2);
+
+				sc_stride_here[0][0] = X;
+				sc_stride_here[0][1] = 0;
+				sc_stride_here[1][0] = 0;
+				sc_stride_here[1][1] = Y;
+
+				printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+				printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+				printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
+
+				for (int i = 0; i < (int)s_data.size(); ++i){
+					s_data[i].supercell = sc_here;
+					s_data[i].supercell_stride = sc_stride_here;
+				}
+				
+				// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
+				opts.setParam("supercell",sc_here);
+
+				int matrix_pos_save = opts.getInt("matrix_pos_save");
+				if (matrix_pos_save == 1){
+
+					string job_name = opts.getString("job_name");
+					const char* extension = "_supercell.dat";
+
+					ofstream outFile;
+					outFile.open ((job_name + extension).c_str());
+					outFile << 	"0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+											"0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+											sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+											sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+											sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+											sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+					outFile.close();
+				}
+			
 			}
 		}
 

@@ -443,7 +443,7 @@ bool Sheet::checkShape(double (&pos)[3]){
     double grid_delta = 0.000001;
     double i = (pos[0]+delta)*supercell_inv[0][0] + (pos[1]+delta)*supercell_inv[0][1];
     double j = (pos[0]+delta)*supercell_inv[1][0] + (pos[1]+delta)*supercell_inv[1][1];
-    if (i >= 0.0 && i < 1.0-grid_delta && j >= 0.0 && j < 1.0-grid_delta){
+    if (i >= 0.0-grid_delta && i < 1.0-grid_delta && j >= 0.0-grid_delta && j < 1.0-grid_delta){
 	    return true;
     } else {
       return false;
@@ -595,24 +595,24 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     			//if (kh == 0)
     				//printf("index %d [%d,%d,%d]: pos_here = [%lf,%lf,%lf] \n",kh,i0,j0,l0,pos_here[0],pos_here[1],pos_here[2]);
 
-    			for (int i = i0 - searchsize; i < i0 + searchsize; ++i) {
-    				for (int j = j0 - searchsize; j < j0 + searchsize; ++j) {
-    					for (int l = 0; l < getNumAtoms(); ++l) {
+			for (int i = i0 - searchsize; i < i0 + searchsize; ++i) {
+				for (int j = j0 - searchsize; j < j0 + searchsize; ++j) {
+					for (int l = 0; l < getNumAtoms(); ++l) {
 
-    						int grid_2[3] = {i,j,l};
-    						int k2 = gridToIndex(grid_2);
+						int grid_2[3] = {i,j,l};
+						int k2 = gridToIndex(grid_2);
 
-    						if (k2 != -1){
+						if (k2 != -1){
 
-                  std::array<int,2> grid_disp = {{
-                    indexToGrid(kh,0)-i,
-                    indexToGrid(kh,1)-j }};
+							  std::array<int,2> grid_disp = {{
+								i-indexToGrid(kh,0),
+								j-indexToGrid(kh,1)}};
 
-                  // we correct the grid values by the supercell_stride when there are periodic BCs
-                  if (boundary_condition == 1){
-                    grid_disp[0] = grid_disp[0] + dx*supercell_stride[0][0] + dy*supercell_stride[1][0];
-                    grid_disp[1] = grid_disp[1] + dx*supercell_stride[0][1] + dy*supercell_stride[1][1];
-                  }
+							  // we correct the grid values by the supercell_stride when there are periodic BCs
+							  if (boundary_condition == 1){
+								grid_disp[0] = grid_disp[0] - dx*supercell_stride[0][0] - dy*supercell_stride[1][0];
+								grid_disp[1] = grid_disp[1] - dx*supercell_stride[0][1] - dy*supercell_stride[1][1];
+							  }
 
     							double t = Materials::intralayer_term(l0, l, grid_disp, mat);
     							if (t != 0 || (kh == k2 && dx == 0 && dy == 0)){
