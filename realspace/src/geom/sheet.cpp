@@ -40,7 +40,7 @@ Sheet::Sheet(Sdata input){
       atom_pos[i][j] = Materials::orbital_pos(mat, i, j);
     }
   }
-  
+
 	solver_space = input.solver_space;
 	strain_type = input.strain_type;
 	strain_file = input.strain_file;
@@ -64,17 +64,17 @@ Sheet::Sheet(Sdata input){
 
 	}
 
-	
-	
+
+
 	// strain from a configuration space basis of form b_x,b_y,o
 	if (strain_type == 2) {
 		loadIndexConfiguration();
 	}
-	
+
 	// strain from a realspace basis of form x,y,z,i,j,o
 	if (strain_type == 3) {
 		loadIndexRealspace();
-	}	
+	}
 
 	// Determine inverse of the grid -> position matrix
 	// (i.e. get the position -> grid matrix)
@@ -563,16 +563,16 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
           sc_vec.resize(2);
           sc_vec[0] = 0;
           sc_vec[1] = 0;
-		  
+
           std::vector<double> sc_disp;
           sc_disp.resize(2);
           sc_disp[0] = 0.0;
           sc_disp[1] = 0.0;
-		  
+
           if (boundary_condition == 1){
             sc_vec[0] = dx;
-            sc_vec[1] = dy;          
-		    sc_disp[0] = dx*supercell[0][0] + dy*supercell[1][0];
+            sc_vec[1] = dy;
+            sc_disp[0] = dx*supercell[0][0] + dy*supercell[1][0];
             sc_disp[1] = dx*supercell[0][1] + dy*supercell[1][1];
           }
 
@@ -605,13 +605,13 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
     						if (k2 != -1){
 
                   std::array<int,2> grid_disp = {{
-                    i-indexToGrid(kh,0),
-                    j-indexToGrid(kh,1) }};
+                    indexToGrid(kh,0)-i,
+                    indexToGrid(kh,1)-j }};
 
                   // we correct the grid values by the supercell_stride when there are periodic BCs
                   if (boundary_condition == 1){
-                    grid_disp[0] = grid_disp[0] - dx*supercell_stride[0][0] - dy*supercell_stride[1][0];
-                    grid_disp[1] = grid_disp[1] - dx*supercell_stride[0][1] - dy*supercell_stride[1][1];
+                    grid_disp[0] = grid_disp[0] + dx*supercell_stride[0][0] + dy*supercell_stride[1][0];
+                    grid_disp[1] = grid_disp[1] + dx*supercell_stride[0][1] + dy*supercell_stride[1][1];
                   }
 
     							double t = Materials::intralayer_term(l0, l, grid_disp, mat);
@@ -818,7 +818,7 @@ void Sheet::setReciprocal(){
 
 	double denom1 = 0.0;
 	double denom2 = 0.0;
-	
+
 	std::vector< std::vector<double> > a_3d;
 	a_3d.resize(3);
 	a_3d[0].resize(3);

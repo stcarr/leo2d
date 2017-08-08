@@ -202,7 +202,7 @@ void Mpi_job_results::loadJobParams(Job_params orig){
 
 		num_sheets = orig.getInt("num_sheets");
 		std::vector< std::vector<double> > shifts_in = orig.getDoubleMat("shifts");
-		
+
 		shifts = new double[(int)(shifts_in.size()*3)];
 		for (int i = 0; i < shifts_in.size(); ++i){
 			for (int j = 0; j < 3; ++j){
@@ -518,6 +518,21 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 
 				if (diagonalize == 0){
 
+					if (jobID == 1){
+						//print E vals:
+						double g[poly_order];
+						double E[poly_order];
+						outFile << "E: ";
+
+						for (int i = 0; i < poly_order; ++i){
+							// Jackson coefficients
+							g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
+							E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+							outFile << E[i] << " ";
+						}
+						outFile << "\n";
+					}
+
 					outFile << "T: \n";
 
 					for(int t = 0; t < num_targets; ++t){
@@ -673,6 +688,20 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 
 				if (diagonalize == 0){
 
+					if (jobID == 1){
+						//print E vals:
+						double g[poly_order];
+						double E[poly_order];
+
+						for (int i = 0; i < poly_order; ++i){
+							// Jackson coefficients
+							g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
+							E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+							outFile << E[i] << " ";
+						}
+						outFile << "\n";
+					}
+
 					for(int t = 0; t < num_targets; ++t){
 						for(int j = 0; j < poly_order-1; ++j){
 							outFile << cheb_coeffs[t][j] << " ";
@@ -758,7 +787,7 @@ void Mpi_job_results::save(std::ofstream& outFile) {
 				}
 			}
 			*/
-		}			
+		}
 	}
 }
 

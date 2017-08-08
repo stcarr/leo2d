@@ -601,8 +601,8 @@ void Locality::constructGeom(){
 }
 
 void Locality::constructMatrix(int* index_to_grid,double* index_to_pos, int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
-					int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs, 
-					std::vector< std::vector<double> > shift_configs, std::vector< std::vector<int> > v_work, 
+					int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
+					std::vector< std::vector<double> > shift_configs, std::vector< std::vector<int> > v_work,
 					std::vector< std::vector<int> > target_indices){
 
 	time(&solveStart);
@@ -682,7 +682,7 @@ void Locality::recursiveShiftCalc(std::vector<Job_params>& jobArray, std::vector
 
 }
 
-void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos, 
+void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 						int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 						int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices) {
@@ -1204,9 +1204,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 }
 
-void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos, 
-							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, 
-							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs, 
+void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
+							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
+							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 							std::vector< std::vector<double> > shift_configs) {
 
 	MPI::Status status;
@@ -1275,8 +1275,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		double i2pos[max_index*3];
 		std::vector< std::vector<double> > s_configs;
 		std::vector< std::vector< std::vector<double> > > strain;
-		
-		
+
+
 		setConfigPositions(i2pos, index_to_pos, index_to_grid, s_configs, shift_configs, strain, jobIn);
 
 		clock_t timePos;
@@ -1344,11 +1344,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		if (solver_space == 0){
 			if (complex_matrix == 0){
 				generateRealH(H, dxH, dyH, alpha_0_x_arr, alpha_0_y_arr, jobIn, index_to_grid, i2pos,
-						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t, 
+						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t,
 						intra_sc_vecs, strain, current_index_reduction, local_max_index);
 			} else if (complex_matrix == 1) {
 				generateCpxH(H, dxH, dyH, alpha_0_x_arr, alpha_0_y_arr, jobIn, index_to_grid, i2pos,
-						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t, 
+						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t,
 						intra_sc_vecs, strain, current_index_reduction, local_max_index);
 			}
 		} else if (solver_space == 1){
@@ -1655,7 +1655,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		strainInfo.setOpts(jobIn);
 		strain.resize(max_index);
 	}
-	
+
 	if (strain_type == 2){
 		new_shift_configs.resize(max_index);
 		strainInfo.loadConfigFile(jobIn.getString("strain_file"));
@@ -1685,18 +1685,18 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 				// sample strain from a supercell grid
 				std::vector< std::vector<double> > sc = jobIn.getDoubleMat("supercell");
-				
+
 				std::vector< std::vector<double> > sc_inv;
 				sc_inv.resize(2);
 				sc_inv[0].resize(2);
 				sc_inv[1].resize(2);
-				
+
 				double det = sc[0][0]*sc[1][1] - sc[0][1]*sc[1][0];
 				sc_inv[0][0] =  sc[1][1]/det;
 				sc_inv[0][1] = -sc[1][0]/det;
 				sc_inv[1][0] = -sc[0][1]/det;
 				sc_inv[1][1] =  sc[0][0]/det;
-				
+
 				double x = index_to_pos[i*3 + 0] + shifts[s][0]*s1_a[0][0] + shifts[s][1]*s1_a[1][0];
 				double y = index_to_pos[i*3 + 1] + shifts[s][0]*s1_a[0][1] + shifts[s][1]*s1_a[1][1];;
 				double z = index_to_pos[i*3 + 2];
@@ -1705,13 +1705,13 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				sc_pos.resize(2);
 				sc_pos[0] = sc_inv[0][0]*x + sc_inv[0][1]*y;
 				sc_pos[1] = sc_inv[1][0]*x + sc_inv[1][1]*y;
-				
+
 				std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
 				strain[i] = strainInfo.supercellStrain(sc_pos, s, orbit);
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
-				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];				
+				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
 
 			} else if (strain_type == 2){
 				// sample strain from the space of configurations
@@ -1773,7 +1773,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index){
 
 	int intra_searchsize = opts.getInt("intra_searchsize");
-	
+
 
 	int solver_type = jobIn.getInt("solver_type");
 	int observable_type = jobIn.getInt("observable_type");
@@ -1897,46 +1897,46 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				 int jh = index_to_grid[new_k*4 + 1];
 				 int lh = index_to_grid[new_k*4 + 2];
 				 int sh = index_to_grid[new_k*4 + 3];
-				 
+
 				 double xh = i2pos[new_k*3 + 0];
-				 double yh = i2pos[new_k*3 + 1]; 
+				 double yh = i2pos[new_k*3 + 1];
 				 double zh = i2pos[new_k*3 + 2];
-				 
+
                  std::array<int,2> grid_disp = {{
-				 i0-ih,
-				 j0-jh }};
+				 ih-i0,
+				 jh-j0 }};
 
 				  // we correct the grid values by the supercell_stride when there are periodic BCs
 				  if (boundary_condition == 1){
-					grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
-					grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
-				  }				
-				
+					grid_disp[0] = grid_disp[0] + intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] + intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
+					grid_disp[1] = grid_disp[1] + intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] + intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
+				  }
+
 					// take strain as avg of both orbital's strains
 					std::vector< std::vector<double> > strain_here;
 					strain_here.resize(2);
-					
+
 					for (int i = 0; i < 2; ++i){
 						strain_here[i].resize(2);
 						for (int j = 0; j < 2; ++j){
 							strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
 						}
 					}
-					
+
 					// we need to find the bonding angle relative the u_ij definitions:
 					std::array<double, 2> strain_dir;
-					
+
 					strain_dir[0] = xh - x1;
 					strain_dir[1] = yh - y1;
-					
+
 					double strain_dir_norm = sqrt(strain_dir[0]*strain_dir[0] + strain_dir[1]*strain_dir[1]);
-					
+
 					strain_dir[0] = strain_dir[0]/strain_dir_norm;
 					strain_dir[1] = strain_dir[1]/strain_dir_norm;
-					
+
 					// angle (counter-clockwise) from a bonding direction of +x
 					double strain_theta = 0;
-					
+
 					// make sure its not zero
 					if (strain_dir[0] != 0){
 						if (strain_dir[0] == 0.0){
@@ -1953,25 +1953,25 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 							}
 						}
 					}
-					
+
 					// now rotate;
 					std::vector< std::vector<double> > strain_rot;
 					strain_rot[0].resize(2);
 					strain_rot[1].resize(2);
-					
-					strain_rot[0][0] =  strain_here[0][0]*cos(strain_theta)*cos(strain_theta) + 
+
+					strain_rot[0][0] =  strain_here[0][0]*cos(strain_theta)*cos(strain_theta) +
 									    strain_here[1][1]*sin(strain_theta)*sin(strain_theta) +
 									    strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
-					strain_rot[1][1] =  strain_here[0][0]*sin(strain_theta)*sin(strain_theta) + 
+					strain_rot[1][1] =  strain_here[0][0]*sin(strain_theta)*sin(strain_theta) +
 									    strain_here[1][1]*cos(strain_theta)*cos(strain_theta) +
-									 -2*strain_here[0][1]*sin(strain_theta)*cos(strain_theta); 
+									 -2*strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
 					strain_rot[0][1] =  (strain_here[1][1] - strain_here[0][0])*sin(strain_theta)*cos(strain_theta) +
-									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta)); 
+									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
 					strain_rot[1][0] = strain_rot[0][1];
-					
+
 					Materials::Mat mat = sdata[s0].mat;
 					t += Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
-					
+
 				} else {
 					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 					// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
@@ -2358,6 +2358,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
 
+				// ToDo: Need to compute intra_sc for each sheet here
 				if (boundary_condition == 1){
 						new_pos_shift_x = intra_sc_vecs[intra_counter][0];
 						new_pos_shift_y = intra_sc_vecs[intra_counter][1];
@@ -2365,11 +2366,11 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 				//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
 
-				double x1 = i2pos[k_i*3 + 0] + new_pos_shift_x;
-				double y1 = i2pos[k_i*3 + 1] + new_pos_shift_y;
+				double x1 = i2pos[k_i*3 + 0];
+				double y1 = i2pos[k_i*3 + 1];
 				double z1 = i2pos[k_i*3 + 2];
-				double x2 = i2pos[new_k*3 + 0];
-				double y2 = i2pos[new_k*3 + 1];
+				double x2 = i2pos[new_k*3 + 0] + new_pos_shift_x;
+				double y2 = i2pos[new_k*3 + 1] + new_pos_shift_y;
 				double z2 = i2pos[new_k*3 + 2];
 
 				double t;
@@ -2391,7 +2392,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double phase = peierlsPhase(x1, x2, y1, y2, B);
 
 				// Then get k dot R phase from the supercell wrapping
-				phase = phase - k_vec[0]*new_pos_shift_x - k_vec[1]*new_pos_shift_y;
+				phase = phase + k_vec[0]*new_pos_shift_x + k_vec[1]*new_pos_shift_y;
 
 				t_cpx = t_cpx + std::polar(t, phase);
 
