@@ -2484,7 +2484,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 					y2 - y1,
 					z2 - z1}};
 
-				double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2,mat1, mat2)/energy_rescale;
+				double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
 
 				//if (t != 0 ){
 

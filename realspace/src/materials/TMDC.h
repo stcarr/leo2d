@@ -24,7 +24,7 @@ namespace TMDC {
                     X_B_px = 8, X_B_py = 9, X_B_pz = 10};
 
     const int       n_orbitals          = 11;
-    const double    inter_cutoff_radius = 4.;
+    const double    inter_cutoff_radius = 7.;
     const double    intra_cutoff_radius = 3.;
 }   /* End namespace TMDC */
 
@@ -88,7 +88,7 @@ namespace TMDC {
     }
 
     namespace MSe2 {
-        const double  a = 3.18;
+        const double  a = 3.32;
         const std::array<std::array<double, 2>, 2>
         lattice = {{ {{1. * a, 0.}}, {{-.5 * a, numbers::SQRT3_2 * a}} }};
 

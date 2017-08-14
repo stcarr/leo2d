@@ -1108,6 +1108,7 @@ double Coupling::Interlayer::S_to_S(const Orbital orbit_row,    const Orbital or
 
     /*                          Shift the arrow vector by the orbital coordinates                               */
     /* Simplification: we assume that Atom M is at the origin, and X_A / X_B have the same in-plane coordinates */
+    /*
     switch (atom(orbit_col))
     {
         case Atom::M:
@@ -1176,14 +1177,15 @@ double Coupling::Interlayer::S_to_S(const Orbital orbit_row,    const Orbital or
             break;
         }
     }
+    */
 
-    if ( (vector[0]*vector[0] + vector[1]*vector[1] < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
-                        && (std::abs(std::abs(vector[3]) - XX_sep) < 0.05))
+    double r_sq = vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2];
+    if ( (r_sq < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
+                        && (std::abs(std::abs(vector[2]) - XX_sep) < 0.05) )
     {
         assert( (atom(orbit_row) == Atom::X_A && atom(orbit_col) == Atom::X_B)
                 || (atom(orbit_row) == Atom::X_B && atom(orbit_col) == Atom::X_A) );
 
-        double r_sq = vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2];
         double r = std::sqrt(r_sq);
         /* Determine character of p orbit */
         int p_row = (index(orbit_row) - 5) % 3;
@@ -1211,6 +1213,7 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
 
     /*                          Shift the arrow vector by the orbital coordinates                               */
     /* Simplification: we assume that Atom M is at the origin, and X_A / X_B have the same in-plane coordinates */
+    /*
     switch (atom(orbit_col))
     {
         case Atom::M:
@@ -1279,14 +1282,17 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
             break;
         }
     }
+    */
 
-    if ( (vector[0]*vector[0] + vector[1]*vector[1] < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
-                        && (std::abs(std::abs(vector[3]) - XX_sep) < 0.05))
+    double r_sq = vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2];
+
+    if ( (r_sq < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
+                        && (std::abs(std::abs(vector[2]) - XX_sep) < 0.05))
     {
         assert( (atom(orbit_row) == Atom::X_A && atom(orbit_col) == Atom::X_B)
                 || (atom(orbit_row) == Atom::X_B && atom(orbit_col) == Atom::X_A) );
 
-        double r_sq = vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2];
+
         double r = std::sqrt(r_sq);
         /* Determine character of p orbit */
         int p_row = (index(orbit_row) - 5) % 3;
