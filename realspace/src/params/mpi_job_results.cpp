@@ -1109,9 +1109,8 @@ void Mpi_job_results::mlmc_cluster_average(Mpi_job_results samp_orig,Mpi_job_res
 
 	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
-
+	
 	if (d_cond > 0){
-
 		if (M_xx.empty() || mlmc_current_num_samples == 1){
 			int size1 = (int) samp_orig.M_xx.size();
 			int size2 = (int) samp_orig.M_xx[0].size();

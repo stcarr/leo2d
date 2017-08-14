@@ -30,7 +30,7 @@ class Mpi_job_results {
 		int solver_type;
 		int observable_type;
 		int solver_space;
-    int verbose_save;
+		int verbose_save;
 		int diagonalize;
 		int d_weights;
 		int d_vecs;

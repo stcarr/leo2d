@@ -794,8 +794,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			std::vector< std::vector<int> > mlmc_ids;
 
 			getVacanciesFromFile(mlmc_vacs, mlmc_ids, opts);
-
-			maxJobs = (int)mlmc_vacs.size();
+			
+			int maxJobs = (int)mlmc_vacs.size();
 
 			//printf("maxJobs = %d \n",maxJobs);
 
@@ -827,7 +827,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				for (int t = 0; t < n_targets; ++t){
 					targets[t] = mlmc_ids[i][t];
 				}
-
 
 				Job_params tempJob(opts);
 				tempJob.setParam("shifts",shifts);
@@ -933,7 +932,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					for (int k2 = 0; k2 < num_k2; ++k2){
 
 						Job_params tempJob(jobArray[i]);
-						tempJob.setParam("jobID",k_jobID);
+						//tempJob.setParam("jobID",k_jobID);
 
 						std::vector<double> k_vec;
 						k_vec.resize(2);
@@ -2313,6 +2312,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 	// Loop through every orbital (i.e. rows of H)
 	for (int k_i = 0; k_i < max_index; ++k_i){
+	
+	
 
 		std::complex<double> t_cpx;
 		t_cpx = 0;
@@ -2355,13 +2356,32 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 			// we save this pair into our sparse matrix format
 			if (skip_here1 == 0 && skip_here2 == 0){
 
+				int sc_i = 0;
+				int sc_j = 0;
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
 
 				// ToDo: Need to compute intra_sc for each sheet here
 				if (boundary_condition == 1){
-						new_pos_shift_x = intra_sc_vecs[intra_counter][0];
-						new_pos_shift_y = intra_sc_vecs[intra_counter][1];
+					
+						int sheet_here = index_to_grid[k_i*4 + 3];
+						std::vector< std::vector<double> > supercell_orig = sdata[sheet_here].supercell;
+						double theta = angles[sheet_here];
+						std::vector< std::vector<double> > supercell;
+						supercell.resize(2);
+						
+						for (int dim = 0; dim < 2; ++dim){
+							supercell[dim].resize(2);
+							
+							supercell[dim][0] = cos(theta)*supercell_orig[dim][0] - sin(theta)*supercell_orig[dim][1];
+							supercell[dim][1] = sin(theta)*supercell_orig[dim][0] + cos(theta)*supercell_orig[dim][1];
+						}
+						
+				
+						sc_i = intra_sc_vecs[intra_counter][0];
+						sc_j = intra_sc_vecs[intra_counter][1];
+						new_pos_shift_x = sc_i*supercell[0][0] + sc_j*supercell[1][0];
+						new_pos_shift_y = sc_i*supercell[0][1] + sc_j*supercell[1][1];
 				}
 
 				//printf("rank %d added intra_pair for index %d: [%d,%d] = %f \n", rank, k, intra_pairs[intra_counter*2 + 0], intra_pairs[intra_counter*2 + 1],v[input_counter]);
@@ -2449,12 +2469,20 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 			// we save this pair into our sparse matrix format
 			if (skip_here1 == 0 && skip_here2 == 0){
 
+				int sc_i = 0;
+				int sc_j = 0;
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
 
 				if (boundary_condition == 1){
-						new_pos_shift_x = inter_sc_vecs[inter_counter][0];
-						new_pos_shift_y = inter_sc_vecs[inter_counter][1];
+				
+						std::vector< std::vector<double> > supercell = opts.getDoubleMat("supercell");
+						
+						sc_i = inter_sc_vecs[inter_counter][0];
+						sc_j = inter_sc_vecs[inter_counter][1];
+						
+						new_pos_shift_x = sc_i*supercell[0][0] + sc_j*supercell[1][0];
+						new_pos_shift_y = sc_i*supercell[0][1] + sc_j*supercell[1][1];
 				}
 
 				//printf("rank %d added inter_pair for index %d: [%d,%d] = %f \n", rank, k, inter_pairs[inter_counter*2 + 0], inter_pairs[inter_counter*2 + 1],v[input_counter]);

@@ -36,7 +36,12 @@ void Mlmc_handler::setup(Job_params opts_in){
 	energy_rescale = opts.getDouble("energy_rescale");
 	energy_shift = opts.getDouble("energy_shift");
 	d_cond = opts.getInt("d_cond");
-
+	
+	k_sampling = opts.getInt("k_sampling");
+	if (k_sampling == 1){
+		num_k = opts.getInt("num_k1")*opts.getInt("num_k2");
+	}
+	
 	out_root = opts.getString("mlmc_out_root");
 	temp_root = opts.getString("mlmc_temp_root");
 	prefix = opts.getString("job_name");
@@ -88,46 +93,195 @@ void Mlmc_handler::process(Mpi_job_results results){
 	int mlmc_clusterID = results.getInt("mlmc_clusterID") ;
 	//printf("mlmc_clusterID = %d \n",mlmc_clusterID);
 
-	// First check if this is part of a cluster
-	if (mlmc_clusterID == -1){
+	if (k_sampling == 0){
+		// First check if this is part of a cluster
+		if (mlmc_clusterID == -1){
 
-		// Not part of a cluster from previous level, so save as stats for this level
-		average.mlmc_average(results);
-		variance.mlmc_variance(results);
+			// Not part of a cluster from previous level, so save as stats for this level
+			average.mlmc_average(results);
+			variance.mlmc_variance(results);
 
-		//printf("mlmc_handler.process() completed E/V process \n");
+			//printf("mlmc_handler.process() completed E/V process \n");
 
-		// Also save exact matrix for later cluster processing
-		if (mlmc_level > 1){
+			// Also save exact matrix for later cluster processing
+			if (mlmc_level > 1){
 
-			std::string tar_file; // temp_root,prefix,mlmc_level,jobID
-			tar_file = temp_root;
-			tar_file.append("/");
-			tar_file.append(prefix);
-			tar_file.append("_L");
-			std::ostringstream o1;
-			o1 << mlmc_level;
-			tar_file.append(o1.str());
-			tar_file.append("_J");
-			std::ostringstream o2;
-			o2 << jobID;
-			tar_file.append(o2.str());
-			tar_file.append("_");
+				std::string tar_file; // temp_root,prefix,mlmc_level,jobID
+				tar_file = temp_root;
+				tar_file.append("/");
+				tar_file.append(prefix);
+				tar_file.append("_L");
+				std::ostringstream o1;
+				o1 << mlmc_level;
+				tar_file.append(o1.str());
+				tar_file.append("_J");
+				std::ostringstream o2;
+				o2 << jobID;
+				tar_file.append(o2.str());
+				tar_file.append("_");
 
-			results.mlmc_save(tar_file);
+				results.mlmc_save(tar_file);
+			}
+
+		} else {
+
+			//printf("results.M_xx[0][0] = %lf \n",results.M_xx[0][0]);
+			//printf("cluster_original[mlmc_clusterID].M_xx[0][0] = %lf \n",cluster_original[mlmc_clusterID-1].M_xx[0][0]);
+
+			// Else save the cluster average
+
+			cluster_average.mlmc_cluster_average(cluster_original[mlmc_clusterID-1],results);
+			//printf("mlmc_handler.process() completed dE process \n");
+			cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],results);
+			//printf("mlmc_handler.process() completed dV process \n");
 		}
+		
+	} else if (k_sampling == 1){
+	
+		// figure out how many jobIDs we have staged for k_sampling
+		int k_stage_size = (int)k_staging_results.size();
+		// keep track of where we are in the staging arrays
+		int result_index = -1;		
+		
+		// if we have none, we add this result immediately
+		if (k_stage_size == 0){
+			std::vector<Mpi_job_results> first_k_results;
+			first_k_results.push_back(results);
+			k_staging_results.push_back(first_k_results);
+			k_staging_jobID.push_back(jobID);
+			k_staging_k_count.push_back(1);
+			result_index = 0;
+		} else {
+		
+			// if not, we look if we have a matching jobID already staged
+			for (int i = 0; i < k_stage_size; ++i){
+				if (jobID == k_staging_jobID[i]){
+					result_index = i;
+				}
+			}
+			
+			// if not, we make a new one
+			if (result_index == -1){
+				std::vector<Mpi_job_results> first_k_results;
+				first_k_results.push_back(results);
+				k_staging_results.push_back(first_k_results);
+				k_staging_jobID.push_back(jobID);
+				k_staging_k_count.push_back(1);
+				result_index = k_stage_size;
+			} else {
+				// otherwise, we just add it it in and increment the count
+				k_staging_results[result_index].push_back(results);
+				k_staging_k_count[result_index] = k_staging_k_count[result_index] + 1;
+			}
+		
+		}
+		
+		// check if we have all k samples for this jobID
+		// if so, we create a new result which is the average of the saved ones and process it
+		
+		if(k_staging_k_count[result_index] == num_k){
+		
+			// kind of hacky, need to find a better way to do this!
+			Mpi_job_results k_results(results);
+			std::vector< std::vector<double> > M_xx = k_staging_results[result_index][0].M_xx;
+			std::vector< std::vector<double> > M_xy = k_staging_results[result_index][0].M_xy;
+			std::vector< std::vector<double> > M_yy = k_staging_results[result_index][0].M_yy;
+			
+			for (int i = 1; i < num_k; ++i){
+			
+				for (int x = 0; x < (int)M_xx.size(); ++x){
+					for (int y = 0; y < (int)M_xx[x].size(); ++y){
+						M_xx[x][y] = M_xx[x][y] + (k_staging_results[result_index][i].M_xx[x][y]);
+					}
+				}
+				
+				for (int x = 0; x < (int)M_xy.size(); ++x){
+					for (int y = 0; y < (int)M_xy[x].size(); ++y){
+						M_xy[x][y] = M_xy[x][y] + (k_staging_results[result_index][i].M_xy[x][y]);
+					}
+				}
+				
+				for (int x = 0; x < (int)M_yy.size(); ++x){
+					for (int y = 0; y < (int)M_yy[x].size(); ++y){
+						M_yy[x][y] = M_yy[x][y] + (k_staging_results[result_index][i].M_yy[x][y]);
+					}
+				}
+				
+			}
+		
+			// normalize
+			
+			for (int x = 0; x < (int)M_xx.size(); ++x){
+				for (int y = 0; y < (int)M_xx[x].size(); ++y){
+					M_xx[x][y] = M_xx[x][y]/(double)num_k;
+				}
+			}
 
-	} else {
+			for (int x = 0; x < (int)M_xy.size(); ++x){
+				for (int y = 0; y < (int)M_xy[x].size(); ++y){
+					M_xy[x][y] = M_xy[x][y]/(double)num_k;
+				}
+			}
+			
+			for (int x = 0; x < (int)M_yy.size(); ++x){
+				for (int y = 0; y < (int)M_yy[x].size(); ++y){
+					M_yy[x][y] = M_yy[x][y]/(double)num_k;
+				}
+			}
 
-		//printf("results.M_xx[0][0] = %lf \n",results.M_xx[0][0]);
-		//printf("cluster_original[mlmc_clusterID].M_xx[0][0] = %lf \n",cluster_original[mlmc_clusterID-1].M_xx[0][0]);
+			k_results.M_xx = M_xx;
+			k_results.M_xy = M_xy;
+			k_results.M_yy = M_yy;
 
-		// Else save the cluster average
+			// First check if this is part of a cluster
+			if (mlmc_clusterID == -1){
 
-		cluster_average.mlmc_cluster_average(cluster_original[mlmc_clusterID-1],results);
-		//printf("mlmc_handler.process() completed dE process \n");
-		cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],results);
-		//printf("mlmc_handler.process() completed dV process \n");
+				// Not part of a cluster from previous level, so save as stats for this level
+				average.mlmc_average(k_results);
+				variance.mlmc_variance(k_results);
+
+				//printf("mlmc_handler.process() completed E/V process \n");
+
+				// Also save exact matrix for later cluster processing
+				if (mlmc_level > 1){
+
+					std::string tar_file; // temp_root,prefix,mlmc_level,jobID
+					tar_file = temp_root;
+					tar_file.append("/");
+					tar_file.append(prefix);
+					tar_file.append("_L");
+					std::ostringstream o1;
+					o1 << mlmc_level;
+					tar_file.append(o1.str());
+					tar_file.append("_J");
+					std::ostringstream o2;
+					o2 << jobID;
+					tar_file.append(o2.str());
+					tar_file.append("_");
+
+					k_results.mlmc_save(tar_file);
+				}
+
+			} else {
+
+				//printf("results.M_xx[0][0] = %lf \n",results.M_xx[0][0]);
+				//printf("cluster_original[mlmc_clusterID].M_xx[0][0] = %lf \n",cluster_original[mlmc_clusterID-1].M_xx[0][0]);
+
+				// Else save the cluster average
+
+				cluster_average.mlmc_cluster_average(cluster_original[mlmc_clusterID-1],k_results);
+				//printf("mlmc_handler.process() completed dE process \n");
+				cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],k_results);
+				//printf("mlmc_handler.process() completed dV process \n");
+			}
+			
+			// and we remove those results from the k_staging list
+			k_staging_results.erase(k_staging_results.begin()+result_index);
+			k_staging_jobID.erase(k_staging_jobID.begin()+result_index);
+			k_staging_k_count.erase(k_staging_k_count.begin()+result_index);
+			
+		}
+	
 	}
 
 }

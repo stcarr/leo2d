@@ -40,6 +40,12 @@ class Mlmc_handler {
 		Mpi_job_results cluster_average;
 		Mpi_job_results cluster_variance;
 		std::vector<Mpi_job_results> cluster_original;
+		
+		int k_sampling;
+		int num_k;
+		std::vector<std::vector<Mpi_job_results> > k_staging_results;
+		std::vector<int> k_staging_jobID;
+		std::vector<int> k_staging_k_count;
 
 	public:
 
