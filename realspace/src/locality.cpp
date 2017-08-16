@@ -794,7 +794,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			std::vector< std::vector<int> > mlmc_ids;
 
 			getVacanciesFromFile(mlmc_vacs, mlmc_ids, opts);
-			
+
 			int maxJobs = (int)mlmc_vacs.size();
 
 			//printf("maxJobs = %d \n",maxJobs);
@@ -2312,8 +2312,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 	// Loop through every orbital (i.e. rows of H)
 	for (int k_i = 0; k_i < max_index; ++k_i){
-	
-	
+
+
 
 		std::complex<double> t_cpx;
 		t_cpx = 0;
@@ -2363,21 +2363,21 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 
 				// ToDo: Need to compute intra_sc for each sheet here
 				if (boundary_condition == 1){
-					
+
 						int sheet_here = index_to_grid[k_i*4 + 3];
 						std::vector< std::vector<double> > supercell_orig = sdata[sheet_here].supercell;
 						double theta = angles[sheet_here];
 						std::vector< std::vector<double> > supercell;
 						supercell.resize(2);
-						
+
 						for (int dim = 0; dim < 2; ++dim){
 							supercell[dim].resize(2);
-							
+
 							supercell[dim][0] = cos(theta)*supercell_orig[dim][0] - sin(theta)*supercell_orig[dim][1];
 							supercell[dim][1] = sin(theta)*supercell_orig[dim][0] + cos(theta)*supercell_orig[dim][1];
 						}
-						
-				
+
+
 						sc_i = intra_sc_vecs[intra_counter][0];
 						sc_j = intra_sc_vecs[intra_counter][1];
 						new_pos_shift_x = sc_i*supercell[0][0] + sc_j*supercell[1][0];
@@ -2475,12 +2475,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double new_pos_shift_y = 0.0;
 
 				if (boundary_condition == 1){
-				
+
 						std::vector< std::vector<double> > supercell = opts.getDoubleMat("supercell");
-						
+
 						sc_i = inter_sc_vecs[inter_counter][0];
 						sc_j = inter_sc_vecs[inter_counter][1];
-						
+
 						new_pos_shift_x = sc_i*supercell[0][0] + sc_j*supercell[1][0];
 						new_pos_shift_y = sc_i*supercell[0][1] + sc_j*supercell[1][1];
 				}
@@ -3611,7 +3611,6 @@ void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, 
 		H.denseConvert(H_dense);
 		//printf("Running EigenSolver... \n");
 		Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(H_dense);
-		//Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(H_dense,Eigen::EigenvaluesOnly);
 
 		//printf("EigenSolver complete! \n");
 

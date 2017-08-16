@@ -36,12 +36,12 @@ void Mlmc_handler::setup(Job_params opts_in){
 	energy_rescale = opts.getDouble("energy_rescale");
 	energy_shift = opts.getDouble("energy_shift");
 	d_cond = opts.getInt("d_cond");
-	
+
 	k_sampling = opts.getInt("k_sampling");
 	if (k_sampling == 1){
 		num_k = opts.getInt("num_k1")*opts.getInt("num_k2");
 	}
-	
+
 	out_root = opts.getString("mlmc_out_root");
 	temp_root = opts.getString("mlmc_temp_root");
 	prefix = opts.getString("job_name");
@@ -135,14 +135,14 @@ void Mlmc_handler::process(Mpi_job_results results){
 			cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],results);
 			//printf("mlmc_handler.process() completed dV process \n");
 		}
-		
+
 	} else if (k_sampling == 1){
-	
+
 		// figure out how many jobIDs we have staged for k_sampling
 		int k_stage_size = (int)k_staging_results.size();
 		// keep track of where we are in the staging arrays
-		int result_index = -1;		
-		
+		int result_index = -1;
+
 		// if we have none, we add this result immediately
 		if (k_stage_size == 0){
 			std::vector<Mpi_job_results> first_k_results;
@@ -152,14 +152,14 @@ void Mlmc_handler::process(Mpi_job_results results){
 			k_staging_k_count.push_back(1);
 			result_index = 0;
 		} else {
-		
+
 			// if not, we look if we have a matching jobID already staged
 			for (int i = 0; i < k_stage_size; ++i){
 				if (jobID == k_staging_jobID[i]){
 					result_index = i;
 				}
 			}
-			
+
 			// if not, we make a new one
 			if (result_index == -1){
 				std::vector<Mpi_job_results> first_k_results;
@@ -173,44 +173,44 @@ void Mlmc_handler::process(Mpi_job_results results){
 				k_staging_results[result_index].push_back(results);
 				k_staging_k_count[result_index] = k_staging_k_count[result_index] + 1;
 			}
-		
+
 		}
-		
+
 		// check if we have all k samples for this jobID
 		// if so, we create a new result which is the average of the saved ones and process it
-		
+
 		if(k_staging_k_count[result_index] == num_k){
-		
+
 			// kind of hacky, need to find a better way to do this!
 			Mpi_job_results k_results(results);
 			std::vector< std::vector<double> > M_xx = k_staging_results[result_index][0].M_xx;
 			std::vector< std::vector<double> > M_xy = k_staging_results[result_index][0].M_xy;
 			std::vector< std::vector<double> > M_yy = k_staging_results[result_index][0].M_yy;
-			
+
 			for (int i = 1; i < num_k; ++i){
-			
+
 				for (int x = 0; x < (int)M_xx.size(); ++x){
 					for (int y = 0; y < (int)M_xx[x].size(); ++y){
 						M_xx[x][y] = M_xx[x][y] + (k_staging_results[result_index][i].M_xx[x][y]);
 					}
 				}
-				
+
 				for (int x = 0; x < (int)M_xy.size(); ++x){
 					for (int y = 0; y < (int)M_xy[x].size(); ++y){
 						M_xy[x][y] = M_xy[x][y] + (k_staging_results[result_index][i].M_xy[x][y]);
 					}
 				}
-				
+
 				for (int x = 0; x < (int)M_yy.size(); ++x){
 					for (int y = 0; y < (int)M_yy[x].size(); ++y){
 						M_yy[x][y] = M_yy[x][y] + (k_staging_results[result_index][i].M_yy[x][y]);
 					}
 				}
-				
+
 			}
-		
+
 			// normalize
-			
+			/*
 			for (int x = 0; x < (int)M_xx.size(); ++x){
 				for (int y = 0; y < (int)M_xx[x].size(); ++y){
 					M_xx[x][y] = M_xx[x][y]/(double)num_k;
@@ -222,13 +222,13 @@ void Mlmc_handler::process(Mpi_job_results results){
 					M_xy[x][y] = M_xy[x][y]/(double)num_k;
 				}
 			}
-			
+
 			for (int x = 0; x < (int)M_yy.size(); ++x){
 				for (int y = 0; y < (int)M_yy[x].size(); ++y){
 					M_yy[x][y] = M_yy[x][y]/(double)num_k;
 				}
 			}
-
+			*/
 			k_results.M_xx = M_xx;
 			k_results.M_xy = M_xy;
 			k_results.M_yy = M_yy;
@@ -274,14 +274,14 @@ void Mlmc_handler::process(Mpi_job_results results){
 				cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],k_results);
 				//printf("mlmc_handler.process() completed dV process \n");
 			}
-			
+
 			// and we remove those results from the k_staging list
 			k_staging_results.erase(k_staging_results.begin()+result_index);
 			k_staging_jobID.erase(k_staging_jobID.begin()+result_index);
 			k_staging_k_count.erase(k_staging_k_count.begin()+result_index);
-			
+
 		}
-	
+
 	}
 
 }
