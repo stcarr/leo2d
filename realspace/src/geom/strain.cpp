@@ -267,7 +267,7 @@ std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sh
 	std::vector<double> disp;
 	disp.resize(3);
 	
-	double amp = 1.0;
+	double amp = 20.0;
 	double freq = 1.0;
 	
 	// u_x:
@@ -289,7 +289,7 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
 	strain_here[0].resize(2);
 	strain_here[1].resize(2);
 	
-	double amp = 1.0;
+	double amp = 20.0;
 	double freq = 1.0;
 	
 	// u_xx:

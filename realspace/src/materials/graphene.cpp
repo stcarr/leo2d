@@ -60,8 +60,8 @@ double Coupling::Intralayer::graphene(
      */
     int r = hom_vec[0] * (hom_vec[0] + hom_vec[1]) + hom_vec[1]*hom_vec[1];
 
-    //const double onsite = 0.3504;
-    const double onsite = 0.0;
+    const double onsite = 0.3504;
+	//const double t_arr[9] = {0, -3, 0, 0, 0, 0, 0, 0, 0}; // only nearest neighbors (debug/testing)!
     const double t_arr[9] = {onsite, -2.8922, 0.2425, -0.2656, 0.0235, 0.0524, -0.0209, -0.0148, -0.0211};
     switch (r)
     {

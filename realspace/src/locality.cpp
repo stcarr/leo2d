@@ -1907,8 +1907,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				  // we correct the grid values by the supercell_stride when there are periodic BCs
 				  if (boundary_condition == 1){
-					grid_disp[0] = grid_disp[0] + intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] + intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
-					grid_disp[1] = grid_disp[1] + intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] + intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
+					grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
+					grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
 				  }
 
 					// take strain as avg of both orbital's strains
@@ -1930,14 +1930,13 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 					double strain_dir_norm = sqrt(strain_dir[0]*strain_dir[0] + strain_dir[1]*strain_dir[1]);
 
-					strain_dir[0] = strain_dir[0]/strain_dir_norm;
-					strain_dir[1] = strain_dir[1]/strain_dir_norm;
-
 					// angle (counter-clockwise) from a bonding direction of +x
-					double strain_theta = 0;
+					double strain_theta = 0;					
+					
+					if (strain_dir_norm != 0){
+						strain_dir[0] = strain_dir[0]/strain_dir_norm;
+						strain_dir[1] = strain_dir[1]/strain_dir_norm;
 
-					// make sure its not zero
-					if (strain_dir[0] != 0){
 						if (strain_dir[0] == 0.0){
 							if (strain_dir[1] > 0){
 								strain_theta = PI_2;
@@ -1955,6 +1954,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 					// now rotate;
 					std::vector< std::vector<double> > strain_rot;
+					strain_rot.resize(2);
 					strain_rot[0].resize(2);
 					strain_rot[1].resize(2);
 
@@ -1967,9 +1967,9 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					strain_rot[0][1] =  (strain_here[1][1] - strain_here[0][0])*sin(strain_theta)*cos(strain_theta) +
 									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
 					strain_rot[1][0] = strain_rot[0][1];
-
+					
 					Materials::Mat mat = sdata[s0].mat;
-					t += Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
+					t += Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
 
 				} else {
 					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
@@ -1994,10 +1994,12 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 						col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
 						col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
 
+						//printf("intra_t [%d,%d] = %lf \n",k_i,new_k,t);
 						v[input_counter] = t;
 						v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t; // (delta_x)*t
 						v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*t; // (delta_y)*t
 						t = 0;
+						
 						++input_counter;
 					}
 				}

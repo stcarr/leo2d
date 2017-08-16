@@ -7,14 +7,17 @@
  */
 
 #include "materials/strained_graphene.h"
+#include "tools/numbers.h"
 
 using Graphene::Atom;
 using Graphene::Orbital;
+using namespace numbers;
 
 double Coupling::Intralayer::strained_graphene(
         const Orbital orbit_row, const Orbital orbit_col, 
         const std::array<int, 2>& vector, const std::vector< std::vector<double> >& strain)
 {
+
     /* Compute hexagonal homogeneous coordinates from grid coordinates.
      * We use the following system:
      *
@@ -56,28 +59,77 @@ double Coupling::Intralayer::strained_graphene(
      */
     int r = hom_vec[0] * (hom_vec[0] + hom_vec[1]) + hom_vec[1]*hom_vec[1];
 
-
-    const double t_arr[9] = {0.3504, -2.8922, 0.2425, -0.2656, 0.0235, 0.0524, -0.0209, -0.0148, -0.0211};
+	
+	// The t_0, or unperturbed, hopping parameters
+    const double t_arr[4] = {-3.6134, -2.8219,  0.2543, -0.1803};
+	// the alpha, or scalar-like strain (u_xx + u_yy), scaling parameters
+	const double a_arr[4] = {-4.8782,  4.0066, -0.4633,  0.6236};
+	// the beta, or vector-like strain ( <u_xx - u_yy, -2u_xy> ), scaling parameters
+	const double b_arr[4] = { 0.0000, -3.0868,  0.8017,  0.4793};  
     switch (r)
     {
-        case 0:
-            return t_arr[0];
-        case 1:
-            return t_arr[1];
-        case 3:
-            return t_arr[2];
-        case 4:
-            return t_arr[3];
-        case 7:
-            return t_arr[4];
-        case 9:
-            return t_arr[5];
-        case 12:
-            return t_arr[6];
-        case 13:
-            return t_arr[7];
-        case 16:
-            return t_arr[8];
+        case 0: {
+			// onsite, only need scalar strain
+			double scalar_strain = strain[0][0] + strain[1][1];
+            return (t_arr[0] + a_arr[0]*scalar_strain);
+			}
+        case 1: {
+			// nearest neighbour, need to rotate by -pi/2
+			
+			std::vector< std::vector<double> > strain_rot;
+			strain_rot.resize(2);
+			strain_rot[0].resize(2);
+			strain_rot[1].resize(2);
+			
+			double strain_theta = -PI_2;
+
+			strain_rot[0][0] =  strain[0][0]*cos(strain_theta)*cos(strain_theta) +
+								strain[1][1]*sin(strain_theta)*sin(strain_theta) +
+								strain[0][1]*sin(strain_theta)*cos(strain_theta);
+			strain_rot[1][1] =  strain[0][0]*sin(strain_theta)*sin(strain_theta) +
+								strain[1][1]*cos(strain_theta)*cos(strain_theta) +
+							 -2*strain[0][1]*sin(strain_theta)*cos(strain_theta);
+			strain_rot[0][1] =  (strain[1][1] - strain[0][0])*sin(strain_theta)*cos(strain_theta) +
+								 strain[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
+			strain_rot[1][0] = strain_rot[0][1];			
+			
+			double scalar_strain = strain_rot[0][0] + strain_rot[1][1];
+			double vector_strain_y = strain_rot[0][0] - strain_rot[1][1]; 
+            return (t_arr[1] + a_arr[1]*scalar_strain + b_arr[1]*vector_strain_y);
+			
+			}
+        case 3: {
+			// 2nd nearest neighbor, no rotation necessary!
+			double scalar_strain = strain[0][0] + strain[1][1];
+			double vector_strain_y = strain[0][0] - strain[1][1]; 
+            return (t_arr[2] + a_arr[2]*scalar_strain + b_arr[2]*vector_strain_y);
+			
+			}
+        case 4: {
+			// 3rd nearest neighbor, need to rotate by +pi/2
+			
+			std::vector< std::vector<double> > strain_rot;
+			strain_rot.resize(2);
+			strain_rot[0].resize(2);
+			strain_rot[1].resize(2);
+			
+			double strain_theta = PI_2;
+
+			strain_rot[0][0] =  strain[0][0]*cos(strain_theta)*cos(strain_theta) +
+								strain[1][1]*sin(strain_theta)*sin(strain_theta) +
+								strain[0][1]*sin(strain_theta)*cos(strain_theta);
+			strain_rot[1][1] =  strain[0][0]*sin(strain_theta)*sin(strain_theta) +
+								strain[1][1]*cos(strain_theta)*cos(strain_theta) +
+							 -2*strain[0][1]*sin(strain_theta)*cos(strain_theta);
+			strain_rot[0][1] =  (strain[1][1] - strain[0][0])*sin(strain_theta)*cos(strain_theta) +
+								 strain[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
+			strain_rot[1][0] = strain_rot[0][1];			
+			
+			double scalar_strain = strain_rot[0][0] + strain_rot[1][1];
+			double vector_strain_y = strain_rot[0][0] - strain_rot[1][1]; 
+            return (t_arr[3] + a_arr[3]*scalar_strain - b_arr[3]*vector_strain_y);
+			
+			}
         default:
             return 0.;
     }
