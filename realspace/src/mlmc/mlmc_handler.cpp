@@ -210,7 +210,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 			}
 
 			// normalize
-			/*
+			///*
 			for (int x = 0; x < (int)M_xx.size(); ++x){
 				for (int y = 0; y < (int)M_xx[x].size(); ++y){
 					M_xx[x][y] = M_xx[x][y]/(double)num_k;
@@ -228,7 +228,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 					M_yy[x][y] = M_yy[x][y]/(double)num_k;
 				}
 			}
-			*/
+			//*/
 			k_results.M_xx = M_xx;
 			k_results.M_xy = M_xy;
 			k_results.M_yy = M_yy;
