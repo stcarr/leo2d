@@ -897,8 +897,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				for (int i = 0; i < maxJobs; ++i){
 
-					double max_shift = 100;
-					double x = max_shift*((i/(double)maxJobs) - 0.5);
+					double max_shift = 20;
+					double x = 2*max_shift*((i/(double)maxJobs) - 0.5);
 
 					std::vector< std::vector<double> > shifts;
 					shifts.resize(num_sheets);

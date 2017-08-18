@@ -335,7 +335,7 @@ std::vector<double> StrainCalc::realspaceDisp(std::vector<double> pos_in, int sh
 	double lambda = opts.getDouble("strain_lambda");
 	double shift = opts.getDouble("strain_shift");
 	double a = 2.4768;	
-	
+		
 	std::vector<double> disp;
 	disp.resize(3);
 	
@@ -347,13 +347,20 @@ std::vector<double> StrainCalc::realspaceDisp(std::vector<double> pos_in, int sh
 	disp_vec[0] = 0.5*a;
 	disp_vec[1] = SQRT3_6*a;
 	
-	// u_x:
-	disp[0] = disp_vec[0]*atan(x/lambda)/(PI_2);; // = a/PI * atan(x/lambda)
-	// u_y:
-	disp[1] = disp_vec[1]*atan(x/lambda)/(PI_2);; // = a*SQRT3/(3*PI) * atan(x/lambda)
-	// u_z:
-	disp[2] = 0.0;
+	if (sheet == 0){
+		// u_x:
+		disp[0] = disp_vec[0]*atan(x/lambda)/(PI_2);; // = a/PI * atan(x/lambda)
+		// u_y:
+		disp[1] = disp_vec[1]*atan(x/lambda)/(PI_2);; // = a*SQRT3/(3*PI) * atan(x/lambda)
+		// u_z:
+		disp[2] = 0.0;
+	} else {
+		disp[0] = 0.0;
+		disp[1] = 0.0;
+		disp[2] = 0.0;
+	}
 	
+	//printf("disp = [%lf, %lf] \n",disp[0],disp[1]);
 	return disp;
 
 }
@@ -372,14 +379,25 @@ std::vector< std::vector<double> > StrainCalc::realspaceStrain(std::vector<doubl
 	
 	double x = pos_in[0] - shift;
 	
-	// u_xx:
-	strain_here[0][0] = (a/(PI*lambda)) / (1+(x/lambda)*(x/lambda));
-	// u_xy:
-	strain_here[0][1] = (a*SQRT3_6/(PI*lambda)) / (1+(x/lambda)*(x/lambda));
-	// u_yx:
-	strain_here[1][0] =  strain_here[0][1] ;
-	// u_yy:
-	strain_here[1][1] =  0.0;
+	if (sheet == 0){
+		// u_xx:
+		strain_here[0][0] = (a/(PI*lambda)) / (1+(x/lambda)*(x/lambda));
+		// u_xy:
+		strain_here[0][1] = (a*SQRT3_6/(PI*lambda)) / (1+(x/lambda)*(x/lambda));
+		// u_yx:
+		strain_here[1][0] =  strain_here[0][1] ;
+		// u_yy:
+		strain_here[1][1] =  0.0;
+	} else {
+		// u_xx:
+		strain_here[0][0] =  0.0;
+		// u_xy:
+		strain_here[0][1] =  0.0;
+		// u_yx:
+		strain_here[1][0] =  0.0;
+		// u_yy:
+		strain_here[1][1] =  0.0;	
+	}
 	
 	return strain_here;
 }
