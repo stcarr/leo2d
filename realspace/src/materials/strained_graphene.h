@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include "materials/graphene.h"
+#include <vector>
 
 namespace Coupling {
 

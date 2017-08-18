@@ -2,3 +2,4 @@ module load intel/15.0.0-fasrc01
 module load intel-mkl/11.0.0.079-fasrc02 
 module load mvapich2/2.2b-fasrc02 
 module load fftw
+module load cmake/3.5.2-fasrc01
