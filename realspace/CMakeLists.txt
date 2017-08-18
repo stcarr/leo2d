@@ -17,7 +17,7 @@ SET(CMAKE_CXX_COMPILER mpicxx)
 # setup packages
 
 # (WITH MKL)
-#SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -DUSE_MKL -Wno-unused-variable -Wno-unused-parameter")
+# SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -mkl -DUSE_MKL -Wno-unused-variable -Wno-unused-parameter")
 
 # (WITHOUT MKL)
 SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -Wno-unused-variable -Wno-unused-parameter")
