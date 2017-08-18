@@ -158,7 +158,7 @@ class Locality {
 
   		// Direct solver using Eigen package
   		void computeEigen(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
-  		void computeEigenComplex(std::vector<std::complex<double> >&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
+  		void computeEigenComplex(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
 
   		// Calculates Peierls phase between two hopping sites;
   		double peierlsPhase(double, double, double, double, double);

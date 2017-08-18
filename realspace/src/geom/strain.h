@@ -41,6 +41,9 @@ class StrainCalc {
 
 	  std::vector<double> supercellDisp(std::vector<double> pos_in, int sheet, int orb);
 	  std::vector< std::vector<double> > supercellStrain(std::vector<double> pos_in, int sheet, int orb);
+	  
+	  std::vector<double> realspaceDisp(std::vector<double> pos_in, int sheet, int orb);
+	  std::vector< std::vector<double> > realspaceStrain(std::vector<double> pos_in, int sheet, int orb);
 
 };
 

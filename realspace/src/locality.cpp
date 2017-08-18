@@ -887,34 +887,78 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		// Strain solver(s)
 
 		if (solver_type == 5){
+		
+			int strain_type = opts.getInt("strain_type");
+			
+			if (strain_type == 3) { // realspace strain type
+				
+				nShifts = opts.getInt("nShifts");		
+				maxJobs = nShifts;
 
-			maxJobs = (int)target_indices.size();
+				for (int i = 0; i < maxJobs; ++i){
 
-			for (int i = 0; i < maxJobs; ++i){
+					double max_shift = 100;
+					double x = max_shift*((i/(double)maxJobs) - 0.5);
 
-				std::vector< std::vector<double> > shifts;
-				shifts.resize(num_sheets);
-				for(int s = 0; s < num_sheets ; ++s){
-					shifts[s].resize(3);
-					shifts[s*3][0] = 0;
-					shifts[s*3][1] = 0;
-					shifts[s*3][2] = 0;
+					std::vector< std::vector<double> > shifts;
+					shifts.resize(num_sheets);
+
+					for(int s = 0; s < num_sheets; ++s){
+						shifts[s].resize(3);
+						shifts[s][0] = 0;
+						shifts[s][1] = 0;
+						shifts[s][2] = 0;
+					}
+
+					int n_targets = (int)target_indices[0].size();
+					std::vector<int> targets;
+					targets.resize(n_targets);
+
+					for (int t = 0; t < n_targets; ++t){
+						targets[t] = target_indices[0][t];
+					}
+
+
+
+					Job_params tempJob(opts);
+					tempJob.setParam("strain_shift",x);
+					tempJob.setParam("shifts",shifts);
+					tempJob.setParam("jobID",i+1);
+					tempJob.setParam("max_jobs",maxJobs);
+					tempJob.setParam("num_targets",n_targets);
+					tempJob.setParam("target_list",targets);
+					jobArray.push_back(tempJob);
 				}
+				
+			} else {
+		
+				maxJobs = (int)target_indices.size();
 
-				int n_targets = (int)target_indices[i].size();
-				std::vector<int> targets;
-				targets.resize(n_targets);
-				for (int t = 0; t < n_targets; ++ t){
-					targets[t] = target_indices[i][t];
+				for (int i = 0; i < maxJobs; ++i){
+
+					std::vector< std::vector<double> > shifts;
+					shifts.resize(num_sheets);
+					for(int s = 0; s < num_sheets ; ++s){
+						shifts[s].resize(3);
+						shifts[s*3][0] = 0;
+						shifts[s*3][1] = 0;
+						shifts[s*3][2] = 0;
+					}
+
+					int n_targets = (int)target_indices[i].size();
+					std::vector<int> targets;
+					targets.resize(n_targets);
+					for (int t = 0; t < n_targets; ++ t){
+						targets[t] = target_indices[i][t];
+					}
+
+					Job_params tempJob(opts);
+					tempJob.setParam("shifts",shifts);
+					tempJob.setParam("target_list",targets);
+					tempJob.setParam("jobID",i+1);
+					tempJob.setParam("max_jobs",maxJobs);
+					jobArray.push_back(tempJob);
 				}
-
-				Job_params tempJob(opts);
-				tempJob.setParam("shifts",shifts);
-				tempJob.setParam("target_list",targets);
-				tempJob.setParam("jobID",i+1);
-				tempJob.setParam("max_jobs",maxJobs);
-				jobArray.push_back(tempJob);
-
 			}
 		}
 
@@ -1506,7 +1550,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 			} else if (complex_matrix == 1){
 
-				std::vector<std::complex<double> > eigenvalue_array;
+				std::vector<double> eigenvalue_array;
 				eigenvalue_array.resize(local_max_index);
 
 				DMatrix eigvecs;
@@ -1527,7 +1571,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 				eigenvalue_real_array.resize(local_max_index);
 
 				for (int i = 0; i < local_max_index; ++i){
-					eigenvalue_real_array[i] = eigenvalue_array[i].real();
+					eigenvalue_real_array[i] = eigenvalue_array[i];
 				}
 
 				results_out.eigenvalues = eigenvalue_real_array;
@@ -1661,6 +1705,11 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		strainInfo.setOpts(jobIn);
 		strain.resize(max_index);
 	}
+	
+	if (strain_type == 3){
+		strainInfo.setOpts(jobIn);
+		strain.resize(max_index);	
+	}
 
 	if (solver_space == 0){
 		for (int i = 0; i < max_index; ++i) {
@@ -1727,6 +1776,22 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
 				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
+				
+			} else if (strain_type == 3){
+			
+				std::vector<double> pos_in;
+				pos_in.resize(3);
+				pos_in[0] = i2pos[i*3 + 0];
+				pos_in[1] = i2pos[i*3 + 1];
+				pos_in[2] = i2pos[i*3 + 2];
+			
+				std::vector<double> disp_here = strainInfo.realspaceDisp(pos_in, s, orbit);
+				strain[i] = strainInfo.realspaceStrain(pos_in, s, orbit);
+				
+				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
+				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
+				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];			
+			
 			}
 
 		}
@@ -3589,7 +3654,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 }
 
-void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int d_weights = jobIn.getInt("d_weights");
 	int d_vecs = jobIn.getInt("d_vecs");
@@ -3605,7 +3670,7 @@ void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, 
 
 		//printf("EigenSolver complete! \n");
 
-		Eigen::VectorXcd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
+		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 
 	} else {
 
@@ -3622,7 +3687,7 @@ void Locality::computeEigenComplex(std::vector<std::complex<double> > &eigvals, 
 		eigvecs_ptr = eigvecs.allocCpxVal();
 
 
-		Eigen::VectorXcd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
+		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 		Eigen::MatrixXcd::Map(&eigvecs_ptr[0], local_max_index, local_max_index) = es.eigenvectors();
 
 		// now we compute <n|j|m>, the current correlation matrix

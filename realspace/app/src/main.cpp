@@ -274,7 +274,7 @@ int main(int argc, char** argv) {
 						opts.setParam("solver_type",3);
 					} else if (in_string == "VD_FILE"){
 						opts.setParam("solver_type",4);
-					} else if (in_string == "STRAIN_CENTER"){
+					} else if (in_string == "STRAIN"){
 						opts.setParam("solver_type",5);
 					}
 				}
@@ -317,7 +317,17 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",1);
 					} else if (in_string[0] == 'C'){ // STRAIN_TYPE = CONFIGURATION
 						opts.setParam("strain_type",2);
+					} else if (in_string[0] == 'R'){ // STRAIN_TYPE = REALSPACE
+						opts.setParam("strain_type",3);
+					} else if (in_string[0] == 'F'){ // STRAIN_TYPE = FILE
+						opts.setParam("strain_type",4);
 					}
+				}
+				
+				if (in_string == "STRAIN_LAMBDA"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("strain_lambda",atof(in_string.c_str()));				
 				}
 
 				if (in_string == "MATRIX_SAVE"){
