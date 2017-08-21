@@ -15,7 +15,6 @@
 #include "matrix/spmatrix.h"
 #include "matrix/dmatrix.h"
 #include "params/job_params.h"
-#include "params/mpi_job_results.h"
 #include "mlmc/mlmc_handler.h"
 
 #include "fftw3.h"
@@ -170,7 +169,7 @@ class Locality {
   		void save();
 
   		// Prints out job-averaged timing information
-  		void printTiming(std::vector< Mpi_job_results >);
+  		void printTiming(std::vector<Job_params>);
 
   		// Ends MPI and finishes job
   		void finMPI();

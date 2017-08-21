@@ -7,6 +7,7 @@
 
 #include "locality.h"
 #include "tools/numbers.h"
+#include "params/param_tools.h"
 
 #include <math.h>
 #include <mpi.h>
@@ -1153,7 +1154,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 	//result_array.resize(maxJobs);
 
 	maxJobs = (int) jobArray.size();
-	std::vector<Mpi_job_results> result_array;
+	std::vector<Job_params> result_array;
 	result_array.resize(maxJobs);
 
 	// try to give each worker its first job
@@ -1177,9 +1178,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 	while (currentJob < maxJobs) {
 
 		int source;
-		Mpi_job_results temp_result;
+		Job_params temp_result;
 
-		source = temp_result.recv_spool();
+		source = temp_result.recvSpool();
 
 		int jobTag = temp_result.getInt("jobID");
 
@@ -1202,14 +1203,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 	while (r_done < size-1){
 
 		int source;
-		Mpi_job_results temp_result;
+		Job_params temp_result;
 
-		source = temp_result.recv_spool();
+		source = temp_result.recvSpool();
 
 		int jobTag = temp_result.getInt("jobID");
 
 		if (mlmc == 0){
-			result_array[jobTag-1] = (temp_result);
+			result_array[jobTag-1] = temp_result;
 		} else if (mlmc == 1){
 			mlmc_h.process(temp_result);
 		}
@@ -1234,16 +1235,16 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		outFile.open ((job_name + extension).c_str());
 
 		for (int job = 0; job < maxJobs; ++job){
-			result_array[job].save(outFile);
+			Param_tools::save(result_array[job], outFile);
 		}
 
 		outFile.close();
-
+		printTiming(result_array);
+		
 	} else if (mlmc == 1){
 		mlmc_h.save();
 	}
 
-	printTiming(result_array);
 
 }
 
@@ -1268,8 +1269,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			return;
 		}
 
-		Mpi_job_results results_out;
-		results_out.loadJobParams(jobIn);
+		Job_params results_out(jobIn);
 
 		int jobID = jobIn.getInt("jobID");
 		int max_jobs = jobIn.getInt("max_jobs");
@@ -1324,7 +1324,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		clock_t timePos;
 		timePos = clock();
-		results_out.saveTiming( ( ((double)timePos) - ((double)timeStart) )/CLOCKS_PER_SEC, "POS_UPDATE");
+		Param_tools::saveTiming(results_out, ( ((double)timePos) - ((double)timeStart) )/CLOCKS_PER_SEC, "POS_UPDATE");
 
 		// Keep track of variables for vacancy simulation
 
@@ -1400,12 +1400,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		clock_t timeMat;
 		timeMat = clock();
-		results_out.saveTiming( ( ((double)timeMat) - ((double)timePos) )/CLOCKS_PER_SEC, "MATRIX_GEN");
+		Param_tools::saveTiming(results_out, ( ((double)timeMat) - ((double)timePos) )/CLOCKS_PER_SEC, "MATRIX_GEN");
 
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
-
+		
 		if (diagonalize == 0){
 			if (observable_type == 0){
 
@@ -1419,10 +1419,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
 
-					results_out.cheb_coeffs = cheb_coeffs;
+					results_out.setParam("cheb_coeffs",cheb_coeffs);
 					if (opts.getInt("dos_transform") == 1){
-						results_out.densityTransform();
-					}
+						Param_tools::densityTransform(results_out);					}
 
 			} else if (observable_type == 1){
 
@@ -1434,8 +1433,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 				computeCondKPM(&cheb_coeffs[0][0], H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_x_arr);
-
-				//results_out.cheb_coeffs = cheb_coeffs;
 
 			}
 
@@ -1460,7 +1457,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > cond_yy;
 				std::vector< std::vector<double> > cond_xy;
 
-				results_out.eigenvalues = eigenvalue_array;
+				results_out.setParam("eigenvalues",eigenvalue_array);
 
 				double* eigenvector_array;
 				eigenvector_array = eigvecs.getValPtr();
@@ -1480,7 +1477,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						eigenweights.push_back(temp_vec);
 					}
 
-					results_out.eigenweights = eigenweights;
+					results_out.setParam("eigenweights",eigenweights);
 
 				}
 
@@ -1498,7 +1495,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						eigenvectors.push_back(temp_vec);
 					}
 
-					results_out.eigenvectors = eigenvectors;
+					results_out.setParam("eigenvectors",eigenvectors);
 
 				}
 
@@ -1516,10 +1513,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						}
 
 						cond_xx.push_back(temp_xx);
-
-						results_out.M_xx = cond_xx;
-
 					}
+					
+					results_out.setParam("M_xx",cond_xx);					
 
 					if (d_cond > 1){
 
@@ -1541,8 +1537,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 							cond_yy.push_back(temp_yy);
 							cond_xy.push_back(temp_xy);
 
-							results_out.M_yy = cond_yy;
-							results_out.M_xy = cond_xy;
+							results_out.setParam("M_yy", cond_yy);
+							results_out.setParam("M_xy", cond_xy);
 
 						}
 					}
@@ -1574,7 +1570,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					eigenvalue_real_array[i] = eigenvalue_array[i];
 				}
 
-				results_out.eigenvalues = eigenvalue_real_array;
+				results_out.setParam("eigenvalues",eigenvalue_real_array);
 
 				std::complex<double>* eigenvector_array;
 				eigenvector_array = eigvecs.getCpxValPtr();
@@ -1595,7 +1591,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						eigenweights.push_back(temp_vec);
 					}
 
-					results_out.eigenweights = eigenweights;
+					results_out.setParam("eigenweights",eigenweights);
 
 				}
 
@@ -1613,7 +1609,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						eigenvectors.push_back(temp_vec);
 					}
 
-					results_out.eigenvectors = eigenvectors;
+					results_out.setParam("eigenvectors",eigenvectors);
 
 				}
 
@@ -1631,10 +1627,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 						cond_xx.push_back(temp_xx);
 
-						results_out.M_xx = cond_xx;
-
 					}
 
+					results_out.setParam("M_xx", cond_xx);
+					
 					if (d_cond > 1){
 
 						std::complex<double>* val_M_yy;
@@ -1655,8 +1651,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 							cond_yy.push_back(temp_yy);
 							cond_xy.push_back(temp_xy);
 
-							results_out.M_yy = cond_yy;
-							results_out.M_xy = cond_xy;
+							results_out.setParam("M_yy", cond_yy);
+							results_out.setParam("M_xy", cond_xy);
 						}
 					}
 				}
@@ -1671,9 +1667,18 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		clock_t timeSolve;
 		timeSolve = clock();
-		results_out.saveTiming( ( ((double)timeSolve) - ((double)timeMat) )/((double)CLOCKS_PER_SEC), "SOLVER");
+		Param_tools::saveTiming(results_out, ( ((double)timeSolve) - ((double)timeMat) )/((double)CLOCKS_PER_SEC), "SOLVER");
 
-		results_out.send(root, jobID);
+		// send back work to root, with a trash value sent first to get picked up by the recvSpool
+		int trash = 1;
+		MPI::COMM_WORLD.Send(
+			&trash, 			// input buffer
+			1,					// size of buffer
+			MPI::INT,			// type of buffer
+			root,				// rank to receive
+			0);					// MPI label
+			
+		results_out.sendParams(root);
 
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
@@ -3914,25 +3919,19 @@ void Locality::save(){
 	}
 }
 
-void Locality::printTiming(std::vector< Mpi_job_results > results){
+void Locality::printTiming(std::vector< Job_params > results){
 
 	std::vector<std::vector<double> > times;
-	std::vector<std::string> tags;
+	std::vector<std::string> tags = results[0].getStringVec("cpu_time_type");
 
 	int num_r = results.size();
-	int num_t = results[0].cpu_time.size();
-	for (int t = 0; t < num_t; ++t){
-		tags.push_back(results[0].cpu_time_type[t]);
-	}
+	int num_t = tags.size();
 
 	// should eventually add some catch/throws to make sure every result has same # of times and types
 
 	for (int r = 0; r < num_r; ++r){
 		std::vector<double> temp_times;
-		for (int t = 0; t < num_t; ++t){
-			temp_times.push_back(results[r].cpu_time[t]);
-		}
-		times.push_back(temp_times);
+		times.push_back(results[r].getDoubleVec("cpu_time"));
 	}
 
 	std::vector<double> avg_times;
@@ -3958,7 +3957,6 @@ void Locality::printTiming(std::vector< Mpi_job_results > results){
 	printf("================================\n");
 
 }
-
 
 void Locality::finMPI(){
 	//printf("rank %d finalizing MPI. \n", rank);

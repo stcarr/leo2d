@@ -6,6 +6,7 @@
  */
 
 #include "mlmc_handler.h"
+#include "params/param_tools.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -27,10 +28,32 @@ Mlmc_handler::~Mlmc_handler(){
 void Mlmc_handler::setup(Job_params opts_in){
 
 	opts = opts_in;
-	average.loadLocParams(opts);
-	variance.loadLocParams(opts);
-	cluster_average.loadLocParams(opts);
-	cluster_variance.loadLocParams(opts);
+	
+	std::vector< std::vector<double> > blank_double_mat;
+	
+	average = Job_params(opts);
+	average.setParam("mlmc_current_num_samples",1);
+	average.setParam("M_xx",blank_double_mat);
+	average.setParam("M_yy",blank_double_mat);
+	average.setParam("M_xy",blank_double_mat);
+	
+	variance = Job_params(opts);
+	variance.setParam("mlmc_current_num_samples",1);
+	variance.setParam("M_xx",blank_double_mat);
+	variance.setParam("M_yy",blank_double_mat);
+	variance.setParam("M_xy",blank_double_mat);	
+	
+	cluster_average = Job_params(opts);
+	cluster_average.setParam("mlmc_current_num_samples",1);
+	cluster_average.setParam("M_xx",blank_double_mat);
+	cluster_average.setParam("M_yy",blank_double_mat);
+	cluster_average.setParam("M_xy",blank_double_mat);	
+	
+	cluster_variance = Job_params(opts);
+	cluster_variance.setParam("mlmc_current_num_samples",1);
+	cluster_variance.setParam("M_xx",blank_double_mat);
+	cluster_variance.setParam("M_yy",blank_double_mat);
+	cluster_variance.setParam("M_xy",blank_double_mat);		
 
 	poly_order = opts.getInt("poly_order");
 	energy_rescale = opts.getDouble("energy_rescale");
@@ -58,7 +81,7 @@ void Mlmc_handler::setup(Job_params opts_in){
 
 		for (int i = 0; i < mlmc_num_clusters; ++i){
 
-			cluster_original[i].loadLocParams(opts);
+			cluster_original[i] = Job_params(opts);
 
 			std::string tar_file; // temp_root,prefix,mlmc_level+1,(i+1)
 			tar_file = temp_root;
@@ -74,18 +97,18 @@ void Mlmc_handler::setup(Job_params opts_in){
 			tar_file.append(o2.str());
 			tar_file.append("_");
 
-			cluster_original[i].mlmc_load(tar_file);
+			Param_tools::mlmc_load(cluster_original[i],tar_file);
 		}
 	}
 
 }
 
-void Mlmc_handler::process(Mpi_job_results results){
+void Mlmc_handler::process(Job_params results){
 
 	//printf("Entering mlmc_handler.process() \n");
 
 	if (d_cond > 0){
-		results.conductivityTransform();
+		Param_tools::conductivityTransform(results);
 	}
 
 	int jobID = results.getInt("jobID");
@@ -98,8 +121,8 @@ void Mlmc_handler::process(Mpi_job_results results){
 		if (mlmc_clusterID == -1){
 
 			// Not part of a cluster from previous level, so save as stats for this level
-			average.mlmc_average(results);
-			variance.mlmc_variance(results);
+			Param_tools::mlmc_average(average, results);
+			Param_tools::mlmc_variance(variance, results);
 
 			//printf("mlmc_handler.process() completed E/V process \n");
 
@@ -120,7 +143,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 				tar_file.append(o2.str());
 				tar_file.append("_");
 
-				results.mlmc_save(tar_file);
+				Param_tools::mlmc_save(results, tar_file);
 			}
 
 		} else {
@@ -130,9 +153,9 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 			// Else save the cluster average
 
-			cluster_average.mlmc_cluster_average(cluster_original[mlmc_clusterID-1],results);
+			Param_tools::mlmc_cluster_average(cluster_average, cluster_original[mlmc_clusterID-1], results);
 			//printf("mlmc_handler.process() completed dE process \n");
-			cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],results);
+			Param_tools::mlmc_cluster_variance(cluster_variance, cluster_original[mlmc_clusterID-1],results);
 			//printf("mlmc_handler.process() completed dV process \n");
 		}
 
@@ -145,7 +168,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 		// if we have none, we add this result immediately
 		if (k_stage_size == 0){
-			std::vector<Mpi_job_results> first_k_results;
+			std::vector<Job_params> first_k_results;
 			first_k_results.push_back(results);
 			k_staging_results.push_back(first_k_results);
 			k_staging_jobID.push_back(jobID);
@@ -162,7 +185,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 			// if not, we make a new one
 			if (result_index == -1){
-				std::vector<Mpi_job_results> first_k_results;
+				std::vector<Job_params> first_k_results;
 				first_k_results.push_back(results);
 				k_staging_results.push_back(first_k_results);
 				k_staging_jobID.push_back(jobID);
@@ -181,29 +204,37 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 		if(k_staging_k_count[result_index] == num_k){
 
+			std::vector< std::vector<double> > M_xx;
+			std::vector< std::vector<double> > M_xy;
+			std::vector< std::vector<double> > M_yy;
+			
 			// kind of hacky, need to find a better way to do this!
-			Mpi_job_results k_results(results);
-			std::vector< std::vector<double> > M_xx = k_staging_results[result_index][0].M_xx;
-			std::vector< std::vector<double> > M_xy = k_staging_results[result_index][0].M_xy;
-			std::vector< std::vector<double> > M_yy = k_staging_results[result_index][0].M_yy;
+			Job_params k_results(results);
+			if (d_cond > 0){
+				M_xx = k_staging_results[result_index][0].getDoubleMat("M_xx");
+				if (d_cond > 1){
+					M_xy = k_staging_results[result_index][0].getDoubleMat("M_xy");
+					M_yy = k_staging_results[result_index][0].getDoubleMat("M_yy");
+				}
+			}
 
 			for (int i = 1; i < num_k; ++i){
 
 				for (int x = 0; x < (int)M_xx.size(); ++x){
 					for (int y = 0; y < (int)M_xx[x].size(); ++y){
-						M_xx[x][y] = M_xx[x][y] + (k_staging_results[result_index][i].M_xx[x][y]);
+						M_xx[x][y] = M_xx[x][y] + (k_staging_results[result_index][i].getDoubleMat("M_xx")[x][y]);
 					}
 				}
 
 				for (int x = 0; x < (int)M_xy.size(); ++x){
 					for (int y = 0; y < (int)M_xy[x].size(); ++y){
-						M_xy[x][y] = M_xy[x][y] + (k_staging_results[result_index][i].M_xy[x][y]);
+						M_xy[x][y] = M_xy[x][y] + (k_staging_results[result_index][i].getDoubleMat("M_xx")[x][y]);
 					}
 				}
 
 				for (int x = 0; x < (int)M_yy.size(); ++x){
 					for (int y = 0; y < (int)M_yy[x].size(); ++y){
-						M_yy[x][y] = M_yy[x][y] + (k_staging_results[result_index][i].M_yy[x][y]);
+						M_yy[x][y] = M_yy[x][y] + (k_staging_results[result_index][i].getDoubleMat("M_xx")[x][y]);
 					}
 				}
 
@@ -229,16 +260,19 @@ void Mlmc_handler::process(Mpi_job_results results){
 				}
 			}
 			//*/
-			k_results.M_xx = M_xx;
-			k_results.M_xy = M_xy;
-			k_results.M_yy = M_yy;
-
+			if (d_cond > 0){
+				k_results.setParam("M_xx", M_xx);
+				if (d_cond > 1){
+					k_results.setParam("M_xy", M_xy);
+					k_results.setParam("M_yy", M_yy);
+					}
+			}
 			// First check if this is part of a cluster
 			if (mlmc_clusterID == -1){
 
 				// Not part of a cluster from previous level, so save as stats for this level
-				average.mlmc_average(k_results);
-				variance.mlmc_variance(k_results);
+				Param_tools::mlmc_average(average, k_results);
+				Param_tools::mlmc_variance(variance, k_results);
 
 				//printf("mlmc_handler.process() completed E/V process \n");
 
@@ -259,7 +293,7 @@ void Mlmc_handler::process(Mpi_job_results results){
 					tar_file.append(o2.str());
 					tar_file.append("_");
 
-					k_results.mlmc_save(tar_file);
+					Param_tools::mlmc_save(k_results, tar_file);
 				}
 
 			} else {
@@ -269,9 +303,9 @@ void Mlmc_handler::process(Mpi_job_results results){
 
 				// Else save the cluster average
 
-				cluster_average.mlmc_cluster_average(cluster_original[mlmc_clusterID-1],k_results);
+				Param_tools::mlmc_cluster_average(cluster_average, cluster_original[mlmc_clusterID-1], k_results);
 				//printf("mlmc_handler.process() completed dE process \n");
-				cluster_variance.mlmc_cluster_variance(cluster_original[mlmc_clusterID-1],k_results);
+				Param_tools::mlmc_cluster_variance(cluster_variance, cluster_original[mlmc_clusterID-1], k_results);
 				//printf("mlmc_handler.process() completed dV process \n");
 			}
 
@@ -318,8 +352,8 @@ void Mlmc_handler::save(){
 
 	//printf("Saving %s and %s \n",tar_average_file.c_str(), tar_variance_file.c_str());
 
-	average.mlmc_save(tar_average_file);
-	variance.mlmc_save(tar_variance_file);
+	Param_tools::mlmc_save(average, tar_average_file);
+	Param_tools::mlmc_save(variance, tar_variance_file);
 
 	std::string tar_E_file;
 	tar_E_file = out_root;
@@ -361,8 +395,8 @@ void Mlmc_handler::save(){
 
 		//printf("Saving %s and %s \n",tar_d_average_file.c_str(),tar_d_variance_file.c_str());
 
-		cluster_average.mlmc_save(tar_d_average_file);
-		cluster_variance.mlmc_save(tar_d_variance_file);
+		Param_tools::mlmc_save(cluster_average, tar_d_average_file);
+		Param_tools::mlmc_save(cluster_variance, tar_d_variance_file);
 
 	}
 
