@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 					boundary_condition = atoi(in_string.c_str());
 					opts.setParam("boundary_condition",boundary_condition);
 				}
-				
+
 				/*
 
 				if (in_string == "SUPERCELL_ALPHA") {
@@ -168,12 +168,18 @@ int main(int argc, char** argv) {
 					opts.setParam("y_supercell",n);
 					int two = 2;
 					opts.setParam("supercell_type",two);
-				}				
-				
+				}
+
 				if (in_string == "K_SAMPLING") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("k_sampling",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "K_TYPE") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("k_type",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "K_GRID") {
@@ -663,7 +669,7 @@ int main(int argc, char** argv) {
 					s_data[i].supercell = sc_here;
 					s_data[i].supercell_stride = sc_stride_here;
 				}
-				
+
 				// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
 				opts.setParam("supercell",sc_here);
 
@@ -683,7 +689,7 @@ int main(int argc, char** argv) {
 											sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
 					outFile.close();
 				}
-			
+
 			}
 		}
 

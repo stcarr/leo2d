@@ -920,33 +920,93 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 		if (k_sampling == 1){
 
-			int num_k1 = opts.getInt("num_k1");
-			int num_k2 = opts.getInt("num_k2");
-			std::vector< std::vector<double> > a = opts.getDoubleMat("supercell");
-			std::vector< std::vector<double> > b = getReciprocal(a);
+			int k_type = opts.getInt("k_type");
 
-			int k_jobID = 1;
-			std::vector<Job_params> k_jobArray;
-			for (int i = 0; i < (int)jobArray.size(); ++i){
-				for (int k1 = 0; k1 < num_k1; ++k1){
-					for (int k2 = 0; k2 < num_k2; ++k2){
+			if (k_type == 0){
+				int num_k1 = opts.getInt("num_k1");
+				int num_k2 = opts.getInt("num_k2");
+				std::vector< std::vector<double> > a = opts.getDoubleMat("supercell");
+				std::vector< std::vector<double> > b = getReciprocal(a);
 
-						Job_params tempJob(jobArray[i]);
-						//tempJob.setParam("jobID",k_jobID);
+				int k_jobID = 1;
+				std::vector<Job_params> k_jobArray;
+				for (int i = 0; i < (int)jobArray.size(); ++i){
+					for (int k1 = 0; k1 < num_k1; ++k1){
+						for (int k2 = 0; k2 < num_k2; ++k2){
 
-						std::vector<double> k_vec;
-						k_vec.resize(2);
-						k_vec[0] = (k1/(double)num_k1)*b[0][0] + (k2/(double)num_k2)*b[1][0];
-						k_vec[1] = (k1/(double)num_k1)*b[0][1] + (k2/(double)num_k2)*b[1][1];
-						tempJob.setParam("k_vec",k_vec);
+							Job_params tempJob(jobArray[i]);
+							//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+							tempJob.setParam("jobID",k_jobID);
 
-						k_jobArray.push_back(tempJob);
-						++k_jobID;
+							std::vector<double> k_vec;
+							k_vec.resize(2);
+							k_vec[0] = (k1/(double)num_k1)*b[0][0] + (k2/(double)num_k2)*b[1][0];
+							k_vec[1] = (k1/(double)num_k1)*b[0][1] + (k2/(double)num_k2)*b[1][1];
+							tempJob.setParam("k_vec",k_vec);
+
+							k_jobArray.push_back(tempJob);
+							++k_jobID;
+						}
 					}
 				}
-			}
+				jobArray = k_jobArray;
 
-			jobArray = k_jobArray;
+			} else if (k_type == 1){
+
+				std::vector<Job_params> k_jobArray;
+
+				nShifts = opts.getInt("nShifts");
+				maxJobs = nShifts*nShifts;
+
+				std::vector< std::vector<double> > b1 = getReciprocal(0);
+				std::vector< std::vector<double> > b2 = getReciprocal(1);
+
+				// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
+				//b1[1][0] = -b1[1][0];
+				//b2[1][0] = -b2[1][0];
+
+				printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+				printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+
+				//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+
+				double p1[2];
+				double p2[2];
+
+				p1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+				p1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+
+				p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+				p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+
+				printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+
+				int k_jobID = 1;
+				for (int i = 0; i < maxJobs; ++i){
+
+					//double x = (1.0/((double) maxJobs))*i;
+					double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+					//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+
+					Job_params tempJob(jobArray[i]);
+					//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+					tempJob.setParam("jobID",k_jobID);
+
+					std::vector<double> k_vec;
+					k_vec.resize(2);
+					k_vec[0] = (1.0-x)*p1[0] + (x)*p2[0];
+					k_vec[1] = (1.0-x)*p1[1] + (x)*p2[1];
+					printf("x = %lf, k = [%lf, %lf]\n",x,k_vec[0],k_vec[1]);
+					tempJob.setParam("k_vec",k_vec);
+
+					k_jobArray.push_back(tempJob);
+					++k_jobID;
+
+					}
+					jobArray = k_jobArray;
+
+
+			}
 
 		}
 
@@ -1062,7 +1122,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
 
 			for (int i = 0; i < maxJobs; ++i){
-
 				//double x = (1.0/((double) maxJobs))*i;
 				double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
 				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
@@ -1070,7 +1129,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
 				for(int s = 0; s < num_sheets; ++s){
-					shifts.resize(3);
+					shifts[s].resize(3);
 					shifts[s][0] = (1.0-x)*p1[0] + (x)*p2[0];
 					shifts[s][1] = (1.0-x)*p1[1] + (x)*p2[1];
 					//shifts[s][0] = x*b1[0][0] + (1-x)*b1[1][0];
@@ -1931,8 +1990,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					double strain_dir_norm = sqrt(strain_dir[0]*strain_dir[0] + strain_dir[1]*strain_dir[1]);
 
 					// angle (counter-clockwise) from a bonding direction of +x
-					double strain_theta = 0;					
-					
+					double strain_theta = 0;
+
 					if (strain_dir_norm != 0){
 						strain_dir[0] = strain_dir[0]/strain_dir_norm;
 						strain_dir[1] = strain_dir[1]/strain_dir_norm;
@@ -1967,7 +2026,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					strain_rot[0][1] =  (strain_here[1][1] - strain_here[0][0])*sin(strain_theta)*cos(strain_theta) +
 									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
 					strain_rot[1][0] = strain_rot[0][1];
-					
+
 					Materials::Mat mat = sdata[s0].mat;
 					t += Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
 
@@ -1999,7 +2058,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 						v_dx[input_counter] = (i2pos[k_i*3 + 0] - i2pos[new_k*3 + 0])*t; // (delta_x)*t
 						v_dy[input_counter] = (i2pos[k_i*3 + 1] - i2pos[new_k*3 + 1])*t; // (delta_y)*t
 						t = 0;
-						
+
 						++input_counter;
 					}
 				}
@@ -2522,7 +2581,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* a
 				double phase = peierlsPhase(x1, x2, y1, y2, B);
 
 				// Then get k dot R phase from the supercell wrapping
-				phase = phase - k_vec[0]*new_pos_shift_x - k_vec[1]*new_pos_shift_y;
+				phase = phase + k_vec[0]*new_pos_shift_x + k_vec[1]*new_pos_shift_y;
 
 				t_cpx = t_cpx + std::polar(t, phase);
 
@@ -2920,7 +2979,6 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 					t = t + std::polar(t_here,phase);
 				}
 
-				//printf("[%d,%d] = %lf \n",k_i,new_k,t.real());
 				v_c[input_counter] = t/energy_rescale;
 				++input_counter;
 			}

@@ -39,6 +39,7 @@ Job_params::Job_params() {
 	setParam("d_vecs",i_zero);
 	setParam("d_cond",i_zero);
 	setParam("k_sampling",i_zero);
+	setParam("k_type",i_zero);
 	setParam("fft_from_file",i_zero);
 	setParam("intra_searchsize",5*i_one);
 	setParam("inter_searchsize",5*i_one);
