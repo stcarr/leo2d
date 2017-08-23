@@ -58,13 +58,11 @@ Sheet::Sheet(Sdata input){
 
 	// Set indexing
 
-	// no strain or basic supercell strain
-	if (strain_type == 0 || strain_type == 1) {
+	// no strain, position strain, or basic supercell strain
+	if (strain_type == 0 || strain_type == 1 || strain_type == 3) {
 		setIndex();
 
 	}
-
-
 
 	// strain from a configuration space basis of form b_x,b_y,o
 	if (strain_type == 2) {
@@ -72,7 +70,7 @@ Sheet::Sheet(Sdata input){
 	}
 
 	// strain from a realspace basis of form x,y,z,i,j,o
-	if (strain_type == 3) {
+	if (strain_type == 4) {
 		loadIndexRealspace();
 	}
 

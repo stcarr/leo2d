@@ -15,7 +15,6 @@
 #include "matrix/spmatrix.h"
 #include "matrix/dmatrix.h"
 #include "params/job_params.h"
-#include "params/mpi_job_results.h"
 #include "mlmc/mlmc_handler.h"
 
 #include "fftw3.h"
@@ -158,7 +157,7 @@ class Locality {
 
   		// Direct solver using Eigen package
   		void computeEigen(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
-  		void computeEigenComplex(std::vector<std::complex<double> >&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
+  		void computeEigenComplex(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
 
   		// Calculates Peierls phase between two hopping sites;
   		double peierlsPhase(double, double, double, double, double);
@@ -170,7 +169,7 @@ class Locality {
   		void save();
 
   		// Prints out job-averaged timing information
-  		void printTiming(std::vector< Mpi_job_results >);
+  		void printTiming(std::vector<Job_params>);
 
   		// Ends MPI and finishes job
   		void finMPI();

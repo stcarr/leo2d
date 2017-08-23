@@ -801,7 +801,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Job_params opts){
 	int solver_type = opts.getInt("solver_type");
 	int strain_type = opts.getInt("strain_type");
 
-	if (solver_type == 1 || solver_type == 2) {
+	if (solver_type == 1 || solver_type == 2 || (solver_type == 5 && strain_type == 3) ) {
 
 		std::vector<int> temp_list;
 
@@ -858,6 +858,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Job_params opts){
 		}
 	}
 	// for strain jobs we do a grid of targets around the center orbital, controlled by two free parameters given below.
+
 	else if (solver_type == 5) {
 
 		// target sampling grid size, makes(2n+1)^2 samples

@@ -9,7 +9,6 @@
 #define MLMC_HANDLER_H
 
 #include "params/job_params.h"
-#include "params/mpi_job_results.h"
 
 #include <string>
 #include <vector>
@@ -34,16 +33,16 @@ class Mlmc_handler {
 		int mlmc_num_clusters;
 		int mlmc_cluster_size;
 
-		Mpi_job_results average;
-		Mpi_job_results variance;
+		Job_params average;
+		Job_params variance;
 
-		Mpi_job_results cluster_average;
-		Mpi_job_results cluster_variance;
-		std::vector<Mpi_job_results> cluster_original;
+		Job_params cluster_average;
+		Job_params cluster_variance;
+		std::vector<Job_params> cluster_original;
 		
 		int k_sampling;
 		int num_k;
-		std::vector<std::vector<Mpi_job_results> > k_staging_results;
+		std::vector<std::vector<Job_params> > k_staging_results;
 		std::vector<int> k_staging_jobID;
 		std::vector<int> k_staging_k_count;
 
@@ -54,7 +53,7 @@ class Mlmc_handler {
 		~Mlmc_handler();
 
 		void setup(Job_params);
-		void process(Mpi_job_results);
+		void process(Job_params);
 		void save();
 
 };
