@@ -28,32 +28,32 @@ Mlmc_handler::~Mlmc_handler(){
 void Mlmc_handler::setup(Job_params opts_in){
 
 	opts = opts_in;
-	
+
 	std::vector< std::vector<double> > blank_double_mat;
-	
+
 	average = Job_params(opts);
 	average.setParam("mlmc_current_num_samples",1);
 	average.setParam("M_xx",blank_double_mat);
 	average.setParam("M_yy",blank_double_mat);
 	average.setParam("M_xy",blank_double_mat);
-	
+
 	variance = Job_params(opts);
 	variance.setParam("mlmc_current_num_samples",1);
 	variance.setParam("M_xx",blank_double_mat);
 	variance.setParam("M_yy",blank_double_mat);
-	variance.setParam("M_xy",blank_double_mat);	
-	
+	variance.setParam("M_xy",blank_double_mat);
+
 	cluster_average = Job_params(opts);
 	cluster_average.setParam("mlmc_current_num_samples",1);
 	cluster_average.setParam("M_xx",blank_double_mat);
 	cluster_average.setParam("M_yy",blank_double_mat);
-	cluster_average.setParam("M_xy",blank_double_mat);	
-	
+	cluster_average.setParam("M_xy",blank_double_mat);
+
 	cluster_variance = Job_params(opts);
 	cluster_variance.setParam("mlmc_current_num_samples",1);
 	cluster_variance.setParam("M_xx",blank_double_mat);
 	cluster_variance.setParam("M_yy",blank_double_mat);
-	cluster_variance.setParam("M_xy",blank_double_mat);		
+	cluster_variance.setParam("M_xy",blank_double_mat);
 
 	poly_order = opts.getInt("poly_order");
 	energy_rescale = opts.getDouble("energy_rescale");
@@ -111,7 +111,7 @@ void Mlmc_handler::process(Job_params results){
 		Param_tools::conductivityTransform(results);
 	}
 
-	int jobID = results.getInt("jobID");
+	int jobID = results.getInt("mlmcID");
 	//printf("jobID = %d \n",jobID);
 	int mlmc_clusterID = results.getInt("mlmc_clusterID") ;
 	//printf("mlmc_clusterID = %d \n",mlmc_clusterID);
@@ -207,7 +207,7 @@ void Mlmc_handler::process(Job_params results){
 			std::vector< std::vector<double> > M_xx;
 			std::vector< std::vector<double> > M_xy;
 			std::vector< std::vector<double> > M_yy;
-			
+
 			// kind of hacky, need to find a better way to do this!
 			Job_params k_results(results);
 			if (d_cond > 0){

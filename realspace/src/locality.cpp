@@ -835,6 +835,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				tempJob.setParam("vacancy_list",vacancies);
 				tempJob.setParam("target_list",targets);
 				tempJob.setParam("jobID",mlmc_ids[i][0]);
+				tempJob.setParam("mlmcID",mlmc_ids[i][0]);
 				tempJob.setParam("mlmc_clusterID",mlmc_ids[i][1]);
 				tempJob.setParam("max_jobs",maxJobs);
 				jobArray.push_back(tempJob);
@@ -888,12 +889,12 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		// Strain solver(s)
 
 		if (solver_type == 5){
-		
+
 			int strain_type = opts.getInt("strain_type");
-			
+
 			if (strain_type == 3) { // realspace strain type
-				
-				nShifts = opts.getInt("nShifts");		
+
+				nShifts = opts.getInt("nShifts");
 				maxJobs = nShifts;
 
 				for (int i = 0; i < maxJobs; ++i){
@@ -930,9 +931,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					tempJob.setParam("target_list",targets);
 					jobArray.push_back(tempJob);
 				}
-				
+
 			} else {
-		
+
 				maxJobs = (int)target_indices.size();
 
 				for (int i = 0; i < maxJobs; ++i){
@@ -1299,7 +1300,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 		outFile.close();
 		printTiming(result_array);
-		
+
 	} else if (mlmc == 1){
 		mlmc_h.save();
 	}
@@ -1464,7 +1465,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
-		
+
 		if (diagonalize == 0){
 			if (observable_type == 0){
 
@@ -1573,8 +1574,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 						cond_xx.push_back(temp_xx);
 					}
-					
-					results_out.setParam("M_xx",cond_xx);					
+
+					results_out.setParam("M_xx",cond_xx);
 
 					if (d_cond > 1){
 
@@ -1689,7 +1690,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 					results_out.setParam("M_xx", cond_xx);
-					
+
 					if (d_cond > 1){
 
 						std::complex<double>* val_M_yy;
@@ -1736,7 +1737,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			MPI::INT,			// type of buffer
 			root,				// rank to receive
 			0);					// MPI label
-			
+
 		results_out.sendParams(root);
 
 		//if (rank == print_rank)
@@ -1769,10 +1770,10 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		strainInfo.setOpts(jobIn);
 		strain.resize(max_index);
 	}
-	
+
 	if (strain_type == 3){
 		strainInfo.setOpts(jobIn);
-		strain.resize(max_index);	
+		strain.resize(max_index);
 	}
 
 	if (solver_space == 0){
@@ -1840,22 +1841,22 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
 				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
-				
+
 			} else if (strain_type == 3){
-			
+
 				std::vector<double> pos_in;
 				pos_in.resize(3);
 				pos_in[0] = i2pos[i*3 + 0];
 				pos_in[1] = i2pos[i*3 + 1];
 				pos_in[2] = i2pos[i*3 + 2];
-			
+
 				std::vector<double> disp_here = strainInfo.realspaceDisp(pos_in, s, orbit);
 				strain[i] = strainInfo.realspaceStrain(pos_in, s, orbit);
-				
+
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
-				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];			
-			
+				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
+
 			}
 
 		}
@@ -3791,7 +3792,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 			for (int m = 2; m < p; ++m){
 				// start cheb iteration p
 				for (int i = 0; i < N; ++i){
-					v_cheb[m*N + i] = ((std::complex<double>)2.0)*std::conj(eigvals[i])*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
+					v_cheb[m*N + i] = ((std::complex<double>)2.0)*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
 				}
 			}
 			// Finish calculating the the M_ij tensors

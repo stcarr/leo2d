@@ -183,7 +183,7 @@ for k=1:max_lev
   k_sampling_here = k_sampling;
   
   if k_grid_here == 1
-     k_sampling_here = 0; 
+     %k_sampling_here = 0; 
   end
   
   hstruct_str = make_hstruct_in(sizes(k), poly_order, k_sampling_here, k_grid_here, max_lev, k,...

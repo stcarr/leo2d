@@ -23,18 +23,18 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 	int d_vecs = job.getInt("d_vecs");
 	int d_cond = job.getInt("d_cond");
 	int observable_type = job.getInt("observable_type");
-	
+
 	int poly_order = job.getInt("poly_order");
 	double energy_rescale = job.getDouble("energy_rescale");
 	double energy_shift = job.getDouble("energy_shift");
-	
+
 	std::vector<int> target_list = job.getIntVec("target_list");
 	int num_targets = (int)target_list.size();
-	
+
 	if (verbose_save != 0){
 		saveHeader(job, outFile);
 	}
-	
+
 	if (verbose_save != 0){
 
 		if (diagonalize == 0){
@@ -94,8 +94,8 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 			}
 		} else if (diagonalize == 1){
 
-			std::vector<double> eigenvalues = job.getDoubleVec("eigenvalues");	
-		
+			std::vector<double> eigenvalues = job.getDoubleVec("eigenvalues");
+
 			int local_max_index = eigenvalues.size();
 			outFile << "EIGS: ";
 			for(int j = 0; j < local_max_index - 1; ++j){
@@ -111,7 +111,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 			if (d_weights == 1){
 
 				std::vector< std::vector<double> > eigenweights = job.getDoubleMat("eigenweights");
-			
+
 				outFile << "WEIGHTS: \n";
 
 				for(int t = 0; t < num_targets; ++t){
@@ -128,7 +128,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 
 			if (d_vecs == 1){
 
-				std::vector< std::vector<double> > eigenvectors = job.getDoubleMat("eigenvectors");	
+				std::vector< std::vector<double> > eigenvectors = job.getDoubleMat("eigenvectors");
 
 				outFile << "VECS: \n";
 				for(int j = 0; j < local_max_index; ++j){
@@ -143,8 +143,8 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 			}
 
 			if (d_cond > 0){
-			
-				std::vector< std::vector<double> > M_xx = job.getDoubleMat("M_xx");	
+
+				std::vector< std::vector<double> > M_xx = job.getDoubleMat("M_xx");
 
 				outFile << "M_XX: \n";
 				for(int j = 0; j < poly_order; ++j){
@@ -157,9 +157,9 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 				outFile << "\n";
 
 				if (d_cond > 1){
-				
-					std::vector< std::vector<double> > M_yy = job.getDoubleMat("M_yy");	
-					
+
+					std::vector< std::vector<double> > M_yy = job.getDoubleMat("M_yy");
+
 					outFile << "M_YY: \n";
 					for(int j = 0; j < poly_order; ++j){
 						for (int m = 0; m < poly_order - 1; ++m){
@@ -169,8 +169,8 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					}
 
 					outFile << "\n";
-					
-					std::vector< std::vector<double> > M_xy = job.getDoubleMat("M_xy");	
+
+					std::vector< std::vector<double> > M_xy = job.getDoubleMat("M_xy");
 
 					outFile << "M_XY: \n";
 					for(int j = 0; j < poly_order; ++j){
@@ -252,8 +252,8 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 			}
 		} else if (diagonalize == 1){
 
-			std::vector<double> eigenvalues = job.getDoubleVec("eigenvalues");	
-		
+			std::vector<double> eigenvalues = job.getDoubleVec("eigenvalues");
+
 			int local_max_index = eigenvalues.size();
 			for(int j = 0; j < local_max_index - 1; ++j){
 				outFile << eigenvalues[j] << ", ";
@@ -329,7 +329,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 				}
 			}
 			*/
-			
+
 		}
 	}
 
@@ -339,22 +339,22 @@ void Param_tools::saveHeader(Job_params job, std::ofstream& outFile){
 
 	int jobID = job.getInt("jobID");
 	int solver_type = job.getInt("solver_type");
-	
+
 	std::vector<int> target_list = job.getIntVec("target_list");
 	int num_targets = (int)target_list.size();
-	
+
 	int elecOn = job.getInt("elecOn");
 	int magOn = job.getInt("magOn");
 	double E = job.getDouble("E");
 	double B = job.getDouble("B");
-	
+
 	outFile << "JOBID = " << jobID << " \n";
 
 	if (solver_type == 1|| solver_type == 2) {
-	
+
 		int num_sheets = job.getInt("num_sheets");
-		std::vector< std::vector<double> > shifts = job.getDoubleMat("shifts");	
-		
+		std::vector< std::vector<double> > shifts = job.getDoubleMat("shifts");
+
 		outFile << "SHEET: SHIFT_X, SHIFT_Y, SHIFT_Z \n";
 		for (int s = 0; s < num_sheets; ++s){
 			outFile << s+1 << "    : ";
@@ -377,7 +377,7 @@ void Param_tools::saveHeader(Job_params job, std::ofstream& outFile){
 	}
 
 	if (solver_type == 3) {
-	
+
 	int mlmc_clusterID = job.getInt("mlmc_clusterID");
 
 	outFile << "CLUSTERID = " <<  mlmc_clusterID << " \n";
@@ -396,8 +396,8 @@ void Param_tools::saveHeader(Job_params job, std::ofstream& outFile){
 		//*
 
 		std::vector<int> vacancy_list = job.getIntVec("vacancy_list");
-		int num_vacancies = (int)vacancy_list.size();		
-		
+		int num_vacancies = (int)vacancy_list.size();
+
 		outFile << "NUM_VAC = " << num_vacancies << "\n";
 		if (vacancy_list[0] != -1){
 			outFile << "VAC_LIST: ";
@@ -423,10 +423,10 @@ void Param_tools::saveHeader(Job_params job, std::ofstream& outFile){
 		} else {
 			outFile << "NO_TAR \n";
 		}
-		
+
 		std::vector<int> vacancy_list = job.getIntVec("vacancy_list");
-		int num_vacancies = (int)vacancy_list.size();	
-		
+		int num_vacancies = (int)vacancy_list.size();
+
 		outFile << "NUM_VAC = " << num_vacancies << "\n";
 		if (vacancy_list[0] != -1){
 			outFile << "VAC_LIST: ";
@@ -444,7 +444,7 @@ void Param_tools::saveHeader(Job_params job, std::ofstream& outFile){
 		outFile << "MAG_ON  = " << magOn  << ", B = " << B << " \n";
 		outFile << "ELEC_ON = " << elecOn << ", E = " << E << " \n";
 	}
-	
+
 }
 
 void Param_tools::saveTiming(Job_params& job, double t, std::string tag){
@@ -453,7 +453,7 @@ void Param_tools::saveTiming(Job_params& job, double t, std::string tag){
 	std::vector<string> temp_cpu_time_type;
 
 	std::vector<string> double_vec_param_tags = job.getParamTags("doubleVec");
-	
+
 	// loop over doubleVec to see if we have a cpu_time variable already
 	for (int i = 0; i < double_vec_param_tags.size(); ++i){
 		if (double_vec_param_tags[i] == "cpu_time"){
@@ -462,20 +462,20 @@ void Param_tools::saveTiming(Job_params& job, double t, std::string tag){
 	}
 
 	std::vector<string> string_vec_param_tags = job.getParamTags("stringVec");
-	
+
 	// loop over stringVec to see if we have a cpu_time_type variable already
 	for (int i = 0; i < string_vec_param_tags.size(); ++i){
 		if (string_vec_param_tags[i] == "cpu_time_type"){
 			temp_cpu_time_type = job.getStringVec("cpu_time_type");
 		}
 	}
-	
+
 	temp_cpu_time.push_back(t);
 	temp_cpu_time_type.push_back(tag);
-	
+
 	job.setParam("cpu_time",temp_cpu_time);
 	job.setParam("cpu_time_type",temp_cpu_time_type);
-	
+
 }
 
 void Param_tools::densityTransform(Job_params& job) {
@@ -484,7 +484,7 @@ void Param_tools::densityTransform(Job_params& job) {
 
 	double energy_shift = job.getDouble("energy_shift");
 	double energy_rescale = job.getDouble("energy_rescale");
-	
+
 	double g[poly_order];
 	double E[poly_order];
 	for (int i = 0; i < poly_order; ++i){
@@ -494,7 +494,7 @@ void Param_tools::densityTransform(Job_params& job) {
 	}
 
 	//g[0] = 2*g[0];
-	
+
 	std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
 
 	for (int t = 0; t < cheb_coeffs.size(); ++t) {
@@ -519,9 +519,9 @@ void Param_tools::densityTransform(Job_params& job) {
 		}
 
 	}
-	
+
 	job.setParam("cheb_coeffs",cheb_coeffs);
-	
+
 }
 
 void Param_tools::conductivityTransform(Job_params& job){
@@ -539,7 +539,7 @@ void Param_tools::conductivityTransform(Job_params& job){
 	std::vector< std::vector<double> > M_xx;
 	std::vector< std::vector<double> > M_yy;
 	std::vector< std::vector<double> > M_xy;
-	
+
 	int dim_max = 0;
 	if (d_cond > 0){
 		dim_max = 1;
@@ -550,7 +550,7 @@ void Param_tools::conductivityTransform(Job_params& job){
 			M_xy = job.getDoubleMat("M_xy");
 		}
 	}
-	
+
 	for (int dim = 0; dim < dim_max; ++dim){
 
 		double* in = new double[poly_order*poly_order];
@@ -592,14 +592,14 @@ void Param_tools::conductivityTransform(Job_params& job){
 		delete in;
 		delete out;
 	}
-	
+
 	if (d_cond > 0){
 		job.setParam("M_xx",M_xx);
 		if (d_cond > 1){
 			job.setParam("M_yy",M_yy);
 			job.setParam("M_xy",M_xy);
 		}
-	}	
+	}
 
 }
 
@@ -613,7 +613,7 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 		std::string file_name_xx = file_name;
 
 		file_name_xx.append("M_xx.bin");
-		
+
 		std::vector< std::vector<double> > M_xx;
 
 
@@ -632,7 +632,7 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 			M_xx[i] = temp_vec;
 		}
 		file_xx.close();
-		
+
 		job.setParam("M_xx",M_xx);
 
 		if (d_cond > 1){
@@ -642,10 +642,10 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 
 			file_name_yy.append("M_yy.bin");
 			file_name_xy.append("M_xy.bin");
-			
+
 			std::vector< std::vector<double> > M_yy;
 			std::vector< std::vector<double> > M_xy;
-			
+
 
 			std::ifstream file_yy(file_name_yy.c_str(), std::ifstream::binary);
 			file_yy.seekg(0, file_yy.end);
@@ -678,10 +678,10 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 				M_xy[i] = temp_vec;
 			}
 			file_xy.close();
-			
-			job.setParam("M_yy",M_yy);			
+
+			job.setParam("M_yy",M_yy);
 			job.setParam("M_xy",M_xy);
-			
+
 		}
 	}
 }
@@ -695,8 +695,8 @@ void Param_tools::mlmc_save(Job_params job, std::string file_name){
 		std::string file_name_xx = file_name;
 
 		file_name_xx.append("M_xx.bin");
-		
-		std::vector< std::vector<double> > M_xx = job.getDoubleMat("M_xx");		
+
+		std::vector< std::vector<double> > M_xx = job.getDoubleMat("M_xx");
 
 		std::ofstream file_xx(file_name_xx.c_str(), std::ofstream::binary);
 		for(size_t i = 0; i < M_xx.size(); i++ ){
@@ -714,10 +714,10 @@ void Param_tools::mlmc_save(Job_params job, std::string file_name){
 
 			file_name_yy.append("M_yy.bin");
 			file_name_xy.append("M_xy.bin");
-			
-			std::vector< std::vector<double> > M_yy = job.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > M_xy = job.getDoubleMat("M_xy");		
-			
+
+			std::vector< std::vector<double> > M_yy = job.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > M_xy = job.getDoubleMat("M_xy");
+
 
 			std::ofstream file_yy(file_name_yy.c_str(), std::ofstream::binary);
 			for(size_t i = 0; i < M_yy.size(); i++ ){
@@ -749,12 +749,12 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
 	int d_cond = total.getInt("d_cond");
-	
+
 	if (d_cond > 0){
-	
-		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");		
+
+		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");
 		std::vector< std::vector<double> > samp_M_xx = samp.getDoubleMat("M_xx");
-		
+
 		if (M_xx.empty() || mlmc_current_num_samples == 1){
 			M_xx = samp_M_xx;
 		} else {
@@ -764,13 +764,13 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 				}
 			}
 		}
-		
+
 		total.setParam("M_xx",M_xx);
 
 		if (d_cond > 1){
 
-			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > samp_M_yy = samp.getDoubleMat("M_yy");				
+			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > samp_M_yy = samp.getDoubleMat("M_yy");
 
 			if (M_yy.empty() || mlmc_current_num_samples == 1){
 				M_yy = samp_M_yy;
@@ -781,9 +781,9 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 					}
 				}
 			}
-			
-			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");		
-			std::vector< std::vector<double> > samp_M_xy = samp.getDoubleMat("M_xy");				
+
+			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");
+			std::vector< std::vector<double> > samp_M_xy = samp.getDoubleMat("M_xy");
 
 			if (M_xy.empty() || mlmc_current_num_samples == 1){
 				M_xy = samp_M_xy;
@@ -794,7 +794,7 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 					}
 				}
 			}
-			
+
 			total.setParam("M_yy",M_yy);
 			total.setParam("M_xy",M_xy);
 
@@ -812,16 +812,16 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
 	int d_cond = total.getInt("d_cond");
-	
+
 	if (d_cond > 0){
 
-		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");		
-		std::vector< std::vector<double> > samp_M_xx = samp.getDoubleMat("M_xx");	
-	
+		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");
+		std::vector< std::vector<double> > samp_M_xx = samp.getDoubleMat("M_xx");
+
 		if (M_xx.empty() || mlmc_current_num_samples == 1){
 			M_xx.resize((int)samp_M_xx.size());
 			for (int i = 0; i < (int) M_xx.size(); ++i){
-				M_xx[i].resize((int)samp_M_xx[i].size());			
+				M_xx[i].resize((int)samp_M_xx[i].size());
 				for (int j = 0; j < (int) M_xx[i].size(); ++j){
 					M_xx[i][j] = pow(samp_M_xx[i][j],2);
 				}
@@ -833,14 +833,14 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 				}
 			}
 		}
-		
-		total.setParam("M_xx",M_xx);		
+
+		total.setParam("M_xx",M_xx);
 
 		if (d_cond > 1){
 
-			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > samp_M_yy = samp.getDoubleMat("M_yy");			
-		
+			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > samp_M_yy = samp.getDoubleMat("M_yy");
+
 			if (M_yy.empty() || mlmc_current_num_samples == 1){
 				M_yy.resize((int)samp_M_yy.size());
 				for (int i = 0; i < (int) M_yy.size(); ++i){
@@ -857,9 +857,9 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 				}
 			}
 
-			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");		
-			std::vector< std::vector<double> > samp_M_xy = samp.getDoubleMat("M_xy");				
-			
+			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");
+			std::vector< std::vector<double> > samp_M_xy = samp.getDoubleMat("M_xy");
+
 			if (M_xy.empty() || mlmc_current_num_samples == 1){
 				M_xy.resize((int)samp_M_xy.size());
 				for (int i = 0; i < (int) M_xy.size(); ++i){
@@ -875,9 +875,9 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 					}
 				}
 			}
-			
+
 			total.setParam("M_yy",M_yy);
-			total.setParam("M_xy",M_xy);			
+			total.setParam("M_xy",M_xy);
 
 		}
 	}
@@ -893,13 +893,13 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
 	int d_cond = total.getInt("d_cond");
-	
+
 	if (d_cond > 0){
-	
-		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");		
-		std::vector< std::vector<double> > samp_orig_M_xx = samp_orig.getDoubleMat("M_xx");		
-		std::vector< std::vector<double> > samp_cluster_M_xx =samp_cluster.getDoubleMat("M_xx");		
-	
+
+		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");
+		std::vector< std::vector<double> > samp_orig_M_xx = samp_orig.getDoubleMat("M_xx");
+		std::vector< std::vector<double> > samp_cluster_M_xx =samp_cluster.getDoubleMat("M_xx");
+
 		if (M_xx.empty() || mlmc_current_num_samples == 1){
 			int size1 = (int) samp_orig_M_xx.size();
 			int size2 = (int) samp_orig_M_xx[0].size();
@@ -918,13 +918,13 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 			}
 		}
 
-		total.setParam("M_xx",M_xx);			
-		
+		total.setParam("M_xx",M_xx);
+
 		if (d_cond > 1) {
-		
-			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > samp_orig_M_yy = samp_orig.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > samp_cluster_M_yy =samp_cluster.getDoubleMat("M_yy");			
+
+			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > samp_orig_M_yy = samp_orig.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > samp_cluster_M_yy =samp_cluster.getDoubleMat("M_yy");
 
 			if (M_yy.empty() || mlmc_current_num_samples == 1){
 				int size1 = (int) samp_orig_M_yy.size();
@@ -944,11 +944,11 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 				}
 			}
 
-			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");		
-			std::vector< std::vector<double> > samp_orig_M_xy = samp_orig.getDoubleMat("M_xy");		
-			std::vector< std::vector<double> > samp_cluster_M_xy =samp_cluster.getDoubleMat("M_xy");			
-			
-			
+			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");
+			std::vector< std::vector<double> > samp_orig_M_xy = samp_orig.getDoubleMat("M_xy");
+			std::vector< std::vector<double> > samp_cluster_M_xy =samp_cluster.getDoubleMat("M_xy");
+
+
 			if (M_xy.empty() || mlmc_current_num_samples == 1){
 				int size1 = (int) samp_orig_M_xy.size();
 				int size2 = (int) samp_orig_M_xy[0].size();
@@ -966,9 +966,9 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 					}
 				}
 			}
-			
+
 			total.setParam("M_yy",M_yy);
-			total.setParam("M_xy",M_xy);			
+			total.setParam("M_xy",M_xy);
 
 		}
 	}
@@ -987,10 +987,10 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 
 	if (d_cond > 0){
 
-		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");		
-		std::vector< std::vector<double> > samp_orig_M_xx = samp_orig.getDoubleMat("M_xx");		
-		std::vector< std::vector<double> > samp_cluster_M_xx =samp_cluster.getDoubleMat("M_xx");	
-	
+		std::vector< std::vector<double> > M_xx = total.getDoubleMat("M_xx");
+		std::vector< std::vector<double> > samp_orig_M_xx = samp_orig.getDoubleMat("M_xx");
+		std::vector< std::vector<double> > samp_cluster_M_xx =samp_cluster.getDoubleMat("M_xx");
+
 		if (M_xx.empty() || mlmc_current_num_samples == 1){
 			int size1 = (int) samp_orig_M_xx.size();
 			int size2 = (int) samp_orig_M_xx[0].size();
@@ -1009,14 +1009,14 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 			}
 		}
 
-		total.setParam("M_xx",M_xx);			
-		
+		total.setParam("M_xx",M_xx);
+
 		if (d_cond > 1){
 
-			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > samp_orig_M_yy = samp_orig.getDoubleMat("M_yy");		
-			std::vector< std::vector<double> > samp_cluster_M_yy =samp_cluster.getDoubleMat("M_yy");		
-		
+			std::vector< std::vector<double> > M_yy = total.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > samp_orig_M_yy = samp_orig.getDoubleMat("M_yy");
+			std::vector< std::vector<double> > samp_cluster_M_yy =samp_cluster.getDoubleMat("M_yy");
+
 			if (M_yy.empty() || mlmc_current_num_samples == 1){
 				int size1 = (int) samp_orig_M_yy.size();
 				int size2 = (int) samp_orig_M_yy[0].size();
@@ -1034,10 +1034,10 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 					}
 				}
 			}
-			
-			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");		
-			std::vector< std::vector<double> > samp_orig_M_xy = samp_orig.getDoubleMat("M_xy");		
-			std::vector< std::vector<double> > samp_cluster_M_xy =samp_cluster.getDoubleMat("M_xy");				
+
+			std::vector< std::vector<double> > M_xy = total.getDoubleMat("M_xy");
+			std::vector< std::vector<double> > samp_orig_M_xy = samp_orig.getDoubleMat("M_xy");
+			std::vector< std::vector<double> > samp_cluster_M_xy =samp_cluster.getDoubleMat("M_xy");
 
 			if (M_xy.empty() || mlmc_current_num_samples == 1){
 				int size1 = (int) samp_orig_M_xy.size();
@@ -1058,8 +1058,8 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 			}
 
 			total.setParam("M_yy",M_yy);
-			total.setParam("M_xy",M_xy);			
-			
+			total.setParam("M_xy",M_xy);
+
 		}
 	}
 
