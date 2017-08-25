@@ -687,7 +687,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 						int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 						int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices) {
-
+	
 	int solver_type = opts.getInt("solver_type");
 	int observable_type = opts.getInt("observable_type");
 	int solver_space = opts.getInt("solver_space");
@@ -937,14 +937,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				maxJobs = (int)target_indices.size();
 
 				for (int i = 0; i < maxJobs; ++i){
-
+				
 					std::vector< std::vector<double> > shifts;
 					shifts.resize(num_sheets);
 					for(int s = 0; s < num_sheets ; ++s){
 						shifts[s].resize(3);
-						shifts[s*3][0] = 0;
-						shifts[s*3][1] = 0;
-						shifts[s*3][2] = 0;
+						shifts[s][0] = 0;
+						shifts[s][1] = 0;
+						shifts[s][2] = 0;
 					}
 
 					int n_targets = (int)target_indices[i].size();
@@ -959,6 +959,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					tempJob.setParam("target_list",targets);
 					tempJob.setParam("jobID",i+1);
 					tempJob.setParam("max_jobs",maxJobs);
+					tempJob.setParam("num_targets",n_targets);
+					tempJob.setParam("target_list",targets);					
 					jobArray.push_back(tempJob);
 				}
 			}
@@ -1478,7 +1480,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
-
+					
 					results_out.setParam("cheb_coeffs",cheb_coeffs);
 					if (opts.getInt("dos_transform") == 1){
 						Param_tools::densityTransform(results_out);					}
