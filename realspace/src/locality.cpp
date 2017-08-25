@@ -1829,12 +1829,34 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 			} else if (strain_type == 2){
 				// sample strain from the space of configurations
 
-				double theta = angles[s];
-
 				new_shift_configs[i].resize(2);
-				new_shift_configs[i][0] = shift_configs[i][0] + cos(theta)*shifts[s][0] - sin(theta)*shifts[s][1];
-				new_shift_configs[i][1] = shift_configs[i][1] + sin(theta)*shifts[s][0] + cos(theta)*shifts[s][1];
 
+				if (s == 0){
+					new_shift_configs[i][0] = shift_configs[i][0]
+							  + (cos(angles[0])*shifts[0][0] - sin(angles[0])*shifts[0][1])
+								- (cos(angles[1])*shifts[1][0] - sin(angles[1])*shifts[1][1]);
+					new_shift_configs[i][1] = shift_configs[i][1]
+								+ (sin(angles[0])*shifts[0][0] + cos(angles[0])*shifts[0][1])
+								- (sin(angles[1])*shifts[1][0] + cos(angles[1])*shifts[1][1]);
+				} else if (s == 1){
+					new_shift_configs[i][0] = shift_configs[i][0]
+							  - (cos(angles[0])*shifts[0][0] - sin(angles[0])*shifts[0][1])
+								+ (cos(angles[1])*shifts[1][0] - sin(angles[1])*shifts[1][1]);
+					new_shift_configs[i][1] = shift_configs[i][1]
+								- (sin(angles[0])*shifts[0][0] + cos(angles[0])*shifts[0][1])
+								+ (sin(angles[1])*shifts[1][0] + cos(angles[1])*shifts[1][1]);
+				}
+
+				new_shift_configs[i][0] = fmod(new_shift_configs[i][0],1.0);
+				new_shift_configs[i][1] = fmod(new_shift_configs[i][1],1.0);
+
+				while (new_shift_configs[i][0] < 0.0){
+					new_shift_configs[i][0] = new_shift_configs[i][0] + 1.0;
+				}
+
+				while (new_shift_configs[i][1] < 0.0){
+					new_shift_configs[i][1] = new_shift_configs[i][1] + 1.0;
+				}
 				//printf("on k=%d, sheet=%d, orbit=%d\n",i,s,orbit);
 				std::vector<double> disp_here = strainInfo.interpStrainDisp(new_shift_configs[i], s, orbit);
 
