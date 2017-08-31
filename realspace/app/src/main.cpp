@@ -285,6 +285,28 @@ int main(int argc, char** argv) {
 					}
 				}
 
+				if (in_string == "NUM_LC_POINTS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("num_lc_points",atoi(in_string.c_str()));
+				}
+				if (in_string == "LC_POINTS"){
+				
+					std::vector< std::vector<int> > lc_points;
+					int num_lc_points = opts.getInt("num_lc_points");
+					lc_points.resize(num_lc_points);
+					getline(in_line,in_string,' ');
+					for (int lc_count = 0; lc_count < num_lc_points; ++lc_count){
+						lc_points[lc_count].resize(2);
+						getline(in_line,in_string,' ');
+						lc_points[lc_count][0] = atoi(in_string.c_str());	
+						getline(in_line,in_string,' ');
+						lc_points[lc_count][1] = atoi(in_string.c_str());	
+					}
+					
+					opts.setParam("lc_points",lc_points);
+
+				}
 				if (in_string == "OBSERVABLE_TYPE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

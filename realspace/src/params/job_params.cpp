@@ -22,11 +22,23 @@ Job_params::Job_params() {
 	int i_one = 1;
 	int i_zero = 0;
 
+
+	std::vector< std::vector<int> > lc_points;
+	lc_points.resize(2);
+	lc_points[0].resize(2);
+	lc_points[1].resize(2);
+	lc_points[0][0] = 0;
+	lc_points[0][1] = 0;
+	lc_points[1][0] = 1;
+	lc_points[1][1] = 1;	
+	
 	setParam("nShifts",i_one);
 	setParam("num_sheets",i_one);
 	setParam("num_shift_sheets",i_one);
 	setParam("solver_type",i_zero);
 	setParam("strain_type",i_zero);
+	setParam("num_lc_points",i_one*2);
+	setParam("lc_points",lc_points);
 	setParam("observable_type",i_zero);
 	setParam("solver_space",i_zero);
 	setParam("boundary_condition",i_zero);

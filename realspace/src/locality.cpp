@@ -740,16 +740,24 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 		}
 
-		// Cut through the unit cell
+		// Linecuts through the unit cell
 		if (solver_type == 2){
 
 			nShifts = opts.getInt("nShifts");
-			maxJobs = nShifts*nShifts;
+			maxJobs = nShifts;
+			
+			int num_lc_points = opts.getInt("num_lc_points");
+			std::vector< std::vector<int> > lc_points = opts.getIntMat("lc_points");
 
 			for (int i = 0; i < maxJobs; ++i){
 
 				double x = (1.0/((double) maxJobs))*i;
 
+				double total_x = x*(num_lc_points-1);
+				
+				int lc_index = (int)floor(total_x);
+				double eff_x = fmod(total_x,1);
+				
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
 
@@ -760,10 +768,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					shifts[s][2] = 0;
 				}
 
-				shifts[num_sheets-1][0] = x;
-				shifts[num_sheets-1][1] = x;
+				shifts[num_sheets-1][0] = lc_points[lc_index][0] + eff_x*(lc_points[lc_index+1][0] - lc_points[lc_index][0]);
+				shifts[num_sheets-1][1] = lc_points[lc_index][1] + eff_x*(lc_points[lc_index+1][1] - lc_points[lc_index][1]);
 				shifts[num_sheets-1][2] = 0;
-
+				
+				// for debugging: check the linecutting algorithm
+				//printf("job %d has shift = [%lf, %lf] (lc_index = %d, eff_x = %lf) \n",i,shifts[num_sheets-1][0],shifts[num_sheets-1][1],lc_index,eff_x);
+				
 				int n_targets = (int)target_indices[0].size();
 				std::vector<int> targets;
 				targets.resize(n_targets);
@@ -771,8 +782,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				for (int t = 0; t < n_targets; ++t){
 					targets[t] = target_indices[0][t];
 				}
-
-
 
 				Job_params tempJob(opts);
 				tempJob.setParam("shifts",shifts);
