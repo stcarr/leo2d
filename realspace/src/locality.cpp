@@ -3113,8 +3113,8 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 			// we save this pair into our sparse matrix format
 			if (skip_here1 == 0 && skip_here2 == 0){
+			
 				// get the index of the other orbital in this term
-
 				col_index[input_counter] = new_k - current_index_reduction[new_k];
 
 				// get the position of both orbitals
@@ -3129,19 +3129,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
 
-				Materials::Mat mat1 = sdata[index_to_grid[k_i*4 + 3]].mat;
-				Materials::Mat mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
-
-				// and the angle of the sheet each orbital is on
-				double theta1 = angles[index_to_grid[k_i*4 + 3]];
-				double theta2 = angles[index_to_grid[new_k*4 + 3]];
-
-				// use all this information to determine coupling energy
-				// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
-
-
 				// Momentum-space Interlayer coupling is evaluated at k = k2 + k1 - q
-
 				double dx = x2 + x1 - shift_x;
 				double dy = y2 + y1 - shift_y;
 
@@ -3174,7 +3162,6 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				*/
 
 
-				// double t = interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (std::abs(t) != 0){
 				//if (0){ // swapping this with above line turns off interlayer coupling
 
