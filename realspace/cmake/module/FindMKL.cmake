@@ -14,6 +14,8 @@
 #   MKL_INCLUDE_DIRS     : set when MKL_INCLUDE_DIR found
 #   MKL_LIBRARIES        : the library to link against.
 
+option(MKL_STATAIC "Static Linking" OFF)
+option(MKL_SDL "Dynamic Linking" ON)
 
 include(FindPackageHandleStandardArgs)
 

@@ -16,13 +16,28 @@ SET(CMAKE_CXX_COMPILER mpicxx)
 
 # setup packages
 
-# (WITH MKL)
-# SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -mkl -DUSE_MKL -Wno-unused-variable -Wno-unused-parameter")
+option(MKL_INTEL "Using MKL Library with Intel compilers" OFF)
+option(MKL_GNU "Using MKL Library with GNU compilers" ON)
+option(MKL_OFF "No MKL usage (use Eigen instead)" OFF)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
+
+# (WITH MKL, INTEL)
+if(MKL_INTEL)
+	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -mkl -DUSE_MKL -Wno-unused-variable -Wno-unused-parameter")
+endif()
+
+# (WITH MKL, GNU)
+if(MKL_GNU)
+	SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -DUSE_MKL")
+	SET(MKL_USE_SINGLE_DYNAMIC_LIBRARY 1)
+	find_package(MKL REQUIRED)
+endif()
 
 # (WITHOUT MKL)
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-unused-variable -Wno-unused-parameter")
-
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
+if(MKL_OFF)
+	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-unused-variable -Wno-unused-parameter")
+endif()
 
 #MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
 
