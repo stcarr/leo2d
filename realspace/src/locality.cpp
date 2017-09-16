@@ -1141,6 +1141,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					tempJob.setParam("shifts",shifts);
 					tempJob.setParam("jobID",i*nShifts + j + 1);
 					tempJob.setParam("max_jobs",maxJobs);
+					tempJob.setParam("num_targets",n_targets);					
 					tempJob.setParam("target_list",targets);
 					jobArray.push_back(tempJob);
 				}
@@ -1205,6 +1206,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				tempJob.setParam("shifts",shifts);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
+				tempJob.setParam("num_targets",n_targets);				
 				tempJob.setParam("target_list",targets);
 				jobArray.push_back(tempJob);
 
@@ -3184,50 +3186,84 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	// Save the end point + 1 of the last row
 	row_pointer[local_max_index] = input_counter;
 
-	// Construct the Sparse Tight-binding Hamiltonian matrix
-	//!!	SparseMatrix H(max_index, max_index, v, row_index, col_pointer, max_nnz);
-
 	// ------------------------------
 	// Following saves Matrix to file
 	//
-	// Should only be uncommented for 1-job processes, otherwise they will overwrite each other!
+	// Should only be used for 1-job processes, otherwise they will overwrite each other!
 
-	/*
-	std::ofstream outFile;
-	const char* extension = "_matrix_real.dat";
+	int matrix_save = opts.getInt("matrix_save");
+	if (matrix_save > 0){
 
-	std::stringstream ss;
-    ss << jobID;
+		std::ofstream outFile;
+		const char* extension = "_matrix.dat";
+		outFile.open ((job_name + extension).c_str());
 
-    std::string jobID_str;
-    ss >> jobID_str;
+		for(int i = 0; i < local_max_index; ++i){
+			int start_index = row_pointer[i];
+			int stop_index = row_pointer[i+1];
+				for(int j = start_index; j < stop_index; ++j){
+					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v_c[j].real() << ", " << v_c[j].imag() << "\n";
+				}
+		}
 
-	outFile.open ((job_name + "_" + jobID_str  + extension).c_str());
+		outFile.close();
 
-	for(int i = 0; i < local_max_index; ++i){
-		int start_index = row_pointer[i];
-		int stop_index = row_pointer[i+1];
-			for(int j = start_index; j < stop_index; ++j){
-				outFile << col_index[j] + 1 << ", " << i + 1 << ", " << std::real(v_c[j]) << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-			}
+		if (matrix_save > 1){
+
+			//
+			// End Matrix Save
+			// ---------------
+		}
 	}
 
-	outFile.close();
 
-	std::ofstream outFile2;
-	const char* extension2 = "_matrix_cpx.dat";
-	outFile2.open ((job_name + extension2).c_str());
 
-	for(int i = 0; i < local_max_index; ++i){
-		int start_index = row_pointer[i];
-		int stop_index = row_pointer[i+1];
-			for(int j = start_index; j < stop_index; ++j){
-				outFile2 << col_index[j] + 1 << ", " << i + 1 << ", " << std::imag(v_c[j]) << ", " << i2pos[i*3 + 0] << ", " << i2pos[i*3 + 1] << ", " << i2pos[i*3 + 2] << "\n";
-			}
+	// ------------------------------
+	// Following saves positions and pairings to file
+
+	int matrix_pos_save = opts.getInt("matrix_pos_save");
+	if (matrix_pos_save == 1){
+
+		std::ofstream outFile3;
+		const char* extension3 = "_pos.dat";
+		outFile3.open ((job_name + extension3).c_str());
+
+		for(int i = 0; i < local_max_index; ++i){
+
+			double x = i2pos[i*3 + 0];
+			double y = i2pos[i*3 + 1];
+			double z = i2pos[i*3 + 2];
+			outFile3 << i << ", " << x << ", " << y << ", " << z << "\n";
+		}
+
+		outFile3.close();
+		// ---------------
+		std::ofstream outFile4;
+		const char* extension4 = "_intra_pos.dat";
+		outFile4.open ((job_name + extension4).c_str());
+
+		for(int i = 0; i < max_intra_pairs; ++i){
+			outFile4 <<
+					i2pos[intra_pairs[2*i + 0]*3 + 0] << ", " << i2pos[intra_pairs[2*i + 0]*3 + 1] << ", " << i2pos[intra_pairs[2*i + 0]*3 + 2] << ", " <<
+					i2pos[intra_pairs[2*i + 1]*3 + 0] << ", " << i2pos[intra_pairs[2*i + 1]*3 + 1] << ", " << i2pos[intra_pairs[2*i + 1]*3 + 2] << ", " <<
+					intra_pairs[2*i + 0] << ", " << intra_pairs[2*i + 1] <<"\n";
+		}
+
+		outFile4.close();
+		// ---------------
+		std::ofstream outFile5;
+		const char* extension5 = "_inter_pos.dat";
+		outFile5.open ((job_name + extension5).c_str());
+
+		for(int i = 0; i < max_inter_pairs; ++i){
+			outFile5 <<
+				i2pos[inter_pairs[2*i + 0]*3 + 0] << ", " << i2pos[inter_pairs[2*i + 0]*3 + 1] << ", " << i2pos[inter_pairs[2*i + 0]*3 + 2] << ", " <<
+				i2pos[inter_pairs[2*i + 1]*3 + 0] << ", " << i2pos[inter_pairs[2*i + 1]*3 + 1] << ", " << i2pos[inter_pairs[2*i + 1]*3 + 2] << ", " <<
+				inter_pairs[2*i + 0] << ", " << inter_pairs[2*i + 1] << "\n";
+		}
+
+		outFile5.close();
 	}
-
-	outFile.close();
-	*/
 
 	// End Matrix Save
 	// ---------------
@@ -3337,7 +3373,6 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 
 	}	// end real matrix block
 	else if (complex_matrix == 1) {
-
 		// Starting vector for Chebyshev method is a unit-vector at the target rbital
 		for (int t_count = 0; t_count < num_targets; ++t_count){
 

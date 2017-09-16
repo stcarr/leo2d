@@ -220,34 +220,31 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 
 			}
 		}
-	} else { // verbose save
+	} else { // non-verbose save
 		if (diagonalize == 0){
 			if (observable_type == 0){
 
-				if (diagonalize == 0){
+				std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
 
-					std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
+				if (jobID == 1){
+					//print E vals:
+					double g[poly_order];
+					double E[poly_order];
 
-					if (jobID == 1){
-						//print E vals:
-						double g[poly_order];
-						double E[poly_order];
-
-						for (int i = 0; i < poly_order; ++i){
-							// Jackson coefficients
-							g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
-							E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
-							outFile << E[i] << " ";
-						}
-						outFile << "\n";
+					for (int i = 0; i < poly_order; ++i){
+						// Jackson coefficients
+						g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
+						E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+						outFile << E[i] << " ";
 					}
+					outFile << "\n";
+				}
 
-					for(int t = 0; t < num_targets; ++t){
-						for(int j = 0; j < poly_order-1; ++j){
-							outFile << cheb_coeffs[t][j] << " ";
-						}
-						outFile << cheb_coeffs[t][poly_order-1] << "\n";
+				for(int t = 0; t < num_targets; ++t){
+					for(int j = 0; j < poly_order-1; ++j){
+						outFile << cheb_coeffs[t][j] << " ";
 					}
+					outFile << cheb_coeffs[t][poly_order-1] << "\n";
 				}
 			}
 		} else if (diagonalize == 1){
