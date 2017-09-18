@@ -687,7 +687,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 						int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 						int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices) {
-	
+
 	int solver_type = opts.getInt("solver_type");
 	int observable_type = opts.getInt("observable_type");
 	int solver_space = opts.getInt("solver_space");
@@ -745,7 +745,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts;
-			
+
 			int num_lc_points = opts.getInt("num_lc_points");
 			std::vector< std::vector<int> > lc_points = opts.getIntMat("lc_points");
 
@@ -754,10 +754,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				double x = (1.0/((double) maxJobs))*i;
 
 				double total_x = x*(num_lc_points-1);
-				
+
 				int lc_index = (int)floor(total_x);
 				double eff_x = fmod(total_x,1);
-				
+
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
 
@@ -771,10 +771,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				shifts[num_sheets-1][0] = lc_points[lc_index][0] + eff_x*(lc_points[lc_index+1][0] - lc_points[lc_index][0]);
 				shifts[num_sheets-1][1] = lc_points[lc_index][1] + eff_x*(lc_points[lc_index+1][1] - lc_points[lc_index][1]);
 				shifts[num_sheets-1][2] = 0;
-				
+
 				// for debugging: check the linecutting algorithm
 				//printf("job %d has shift = [%lf, %lf] (lc_index = %d, eff_x = %lf) \n",i,shifts[num_sheets-1][0],shifts[num_sheets-1][1],lc_index,eff_x);
-				
+
 				int n_targets = (int)target_indices[0].size();
 				std::vector<int> targets;
 				targets.resize(n_targets);
@@ -946,7 +946,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				maxJobs = (int)target_indices.size();
 
 				for (int i = 0; i < maxJobs; ++i){
-				
+
 					std::vector< std::vector<double> > shifts;
 					shifts.resize(num_sheets);
 					for(int s = 0; s < num_sheets ; ++s){
@@ -969,7 +969,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					tempJob.setParam("jobID",i+1);
 					tempJob.setParam("max_jobs",maxJobs);
 					tempJob.setParam("num_targets",n_targets);
-					tempJob.setParam("target_list",targets);					
+					tempJob.setParam("target_list",targets);
 					jobArray.push_back(tempJob);
 				}
 			}
@@ -1141,7 +1141,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					tempJob.setParam("shifts",shifts);
 					tempJob.setParam("jobID",i*nShifts + j + 1);
 					tempJob.setParam("max_jobs",maxJobs);
-					tempJob.setParam("num_targets",n_targets);					
+					tempJob.setParam("num_targets",n_targets);
 					tempJob.setParam("target_list",targets);
 					jobArray.push_back(tempJob);
 				}
@@ -1206,7 +1206,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				tempJob.setParam("shifts",shifts);
 				tempJob.setParam("jobID",i+1);
 				tempJob.setParam("max_jobs",maxJobs);
-				tempJob.setParam("num_targets",n_targets);				
+				tempJob.setParam("num_targets",n_targets);
 				tempJob.setParam("target_list",targets);
 				jobArray.push_back(tempJob);
 
@@ -1491,7 +1491,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
-					
+
 					results_out.setParam("cheb_coeffs",cheb_coeffs);
 					if (opts.getInt("dos_transform") == 1){
 						Param_tools::densityTransform(results_out);					}
@@ -3115,7 +3115,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 			// we save this pair into our sparse matrix format
 			if (skip_here1 == 0 && skip_here2 == 0){
-			
+
 				// get the index of the other orbital in this term
 				col_index[input_counter] = new_k - current_index_reduction[new_k];
 
@@ -3675,7 +3675,9 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 
 	} else {
+		H.eigenSolve(eigvals, eigvecs);
 
+		/*
 		Eigen::MatrixXd H_dense = Eigen::MatrixXd::Zero(local_max_index,local_max_index);
 		H.denseConvert(H_dense);
 		//printf("Running EigenSolver... \n");
@@ -3690,6 +3692,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 		Eigen::MatrixXd::Map(&eigvecs_ptr[0], local_max_index, local_max_index) = es.eigenvectors();
+		*/
 
 		// now we compute <n|j|m>, the current correlation matrix
 		// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
@@ -3793,6 +3796,9 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 	} else {
 
+		H.eigenSolve(eigvals, eigvecs);
+
+		/*
 		Eigen::MatrixXcd H_dense = Eigen::MatrixXcd::Zero(local_max_index,local_max_index);
 		H.denseConvert(H_dense);
 		//printf("Running EigenSolver... \n");
@@ -3808,6 +3814,8 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 		Eigen::MatrixXcd::Map(&eigvecs_ptr[0], local_max_index, local_max_index) = es.eigenvectors();
+		*/
+
 
 		// now we compute <n|j|m>, the current correlation matrix
 		// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)

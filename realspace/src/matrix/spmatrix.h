@@ -94,12 +94,16 @@ class SpMatrix {
 		void denseMatrixMultiply(DMatrix&, DMatrix&, std::complex<double>, std::complex<double>);
 
 		// Dense conversion
+		void denseConvert(DMatrix &Mat_in);
 		void denseConvert(Eigen::MatrixXd&);
 		void denseConvert(Eigen::MatrixXcd&);
 
+		// Eigensolvers
+		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs);
+
 		// Real or Complex check
 		int getType();
-		
+
 		// Diagnostic functions
 		int getNumRows();
 		int getNumCols();

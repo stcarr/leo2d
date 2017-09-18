@@ -754,6 +754,130 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 
 }
 
+void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
+
+	if (nrows != ncols){
+		printf("!! LEO2D Error !!: Trying to diagonalize non-square matrix in DMatrix.eigenSolve() \n");
+		exit(1);
+	}
+
+	if (type == 0){
+
+		eigvecs.setup(nrows, nrows);
+		double* eigvecs_ptr;
+		eigvecs_ptr = eigvecs.allocRealVal();
+
+		#ifdef USE_MKL
+
+			MKL_INT info;
+			MKL_INT isuppz[2*nrows];
+			int num_eigen;
+			double abstol = -1;
+			double vl = 0.0;
+			double vu = 1.0;
+			int il = 0;
+			int iu = nrows;
+			info = LAPACKE_dsyevr(		LAPACK_COL_MAJOR,
+																'V',    			// jobz, 'N' For just vals, 'V' for vecs too
+																'A',					// range, 'A' for all vals, 'V' val between  vl and vu, 'I' val indices il to iu
+																'U',					// uplo, 'U' for upper triangular, 'L' for lower triangular
+																nrows,				// n, order of the matrix a
+																val,					// a, ptr to the matrix. Overwritten on output
+																nrows,				// lda, leading dimension of the matrix, as stored in memory
+																vl,						// vl, lower value for 'V' in range (second parameter)
+																vu,						// vu, upper value for 'V' in range (second parameter)
+																il,						// il, lower index for 'I' in range (second parameter)
+																iu,						// iu, upper index for 'I' in range (second parameter)
+																abstol,				// abstol, tolerance for eigensolve
+																&num_eigen,		// m, output total number of eigenvalues found
+																&eigvals[0],	// w, output eigenvalues
+																eigvecs_ptr,	// z, output orthonormal eigenvectors
+																nrows,				// ldz, leading dimension of output z (eigenvectors)
+																isuppz);			// isuppz, the index of support for output z (eigenvectors)
+
+			/* Check for convergence */
+      if( info > 0 ) {
+              printf( "LAPACK_dsyevr() failed to converge (eigenSolve in dmatrix.cpp). \n" );
+              exit( 1 );
+      }
+
+		#else
+
+			Eigen::MatrixXd Mat_for_eigen = Eigen::MatrixXd::Zero(nrows,nrows);
+
+			for (int c = 0; c < ncols; ++c){
+				for (int r = 0; r < nrows; ++r){
+					 Mat_for_eigen(r,c) = val[c*nrows + r];
+				}
+			}
+
+			Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Mat_for_eigen);
+
+			Eigen::VectorXd::Map(&eigvals[0], nrows) = es.eigenvalues();
+			Eigen::MatrixXd::Map(&eigvecs_ptr[0], nrows, nrows) = es.eigenvectors();
+
+		#endif
+
+	} else if (type == 1){
+
+		eigvecs.setup(nrows, nrows, 1);
+		std::complex<double>* eigvecs_ptr;
+		eigvecs_ptr = eigvecs.allocCpxVal();
+
+		#ifdef USE_MKL
+
+			MKL_INT info;
+			MKL_INT isuppz[2*nrows];
+			int num_eigen;
+			double abstol = -1;
+			double vl = 0.0;
+			double vu = 1.0;
+			int il = 0;
+			int iu = nrows;
+			info = LAPACKE_zheevr(		LAPACK_COL_MAJOR,
+																'V',    			// jobz, 'N' For just vals, 'V' for vecs too
+																'A',					// range, 'A' for all vals, 'V' val between  vl and vu, 'I' val indices il to iu
+																'U',					// uplo, 'U' for upper triangular, 'L' for lower triangular
+																nrows,				// n, order of the matrix a
+																val_c,				// a, ptr to the matrix. Overwritten on output
+																nrows,				// lda, leading dimension of the matrix, as stored in memory
+																vl,						// vl, lower value for 'V' in range (second parameter)
+																vu,						// vu, upper value for 'V' in range (second parameter)
+																il,						// il, lower index for 'I' in range (second parameter)
+																iu,						// iu, upper index for 'I' in range (second parameter)
+																abstol,				// abstol, tolerance for eigensolve
+																&num_eigen,		// m, output total number of eigenvalues found
+																&eigvals[0],	// w, output eigenvalues
+																eigvecs_ptr,	// z, output orthonormal eigenvectors
+																nrows,				// ldz, leading dimension of output z (eigenvectors)
+																isuppz);			// isuppz, the index of support for output z (eigenvectors)
+
+			/* Check for convergence */
+			if( info > 0 ) {
+							printf( "LAPACK_dsyevr() failed to converge (eigenSolve in dmatrix.cpp). \n" );
+							exit( 1 );
+			}
+
+		#else
+
+			Eigen::MatrixXcd Mat_for_eigen = Eigen::MatrixXcd::Zero(nrows,nrows);
+
+			for (int c = 0; c < ncols; ++c){
+				for (int r = 0; r < nrows; ++r){
+					 Mat_for_eigen(r,c) = val_c[c*nrows + r];
+				}
+			}
+
+			Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(Mat_for_eigen);
+
+			Eigen::VectorXd::Map(&eigvals[0], nrows) = es.eigenvalues();
+			Eigen::MatrixXcd::Map(&eigvecs_ptr[0], nrows, nrows) = es.eigenvectors();
+
+		#endif
+	}
+
+}
+
 int DMatrix::getNumRows() const{
 	return nrows;
 }
