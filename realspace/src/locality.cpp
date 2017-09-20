@@ -1159,25 +1159,33 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			std::vector< std::vector<double> > b2 = getReciprocal(1);
 
 
-			// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
-			//b1[1][0] = -b1[1][0];
-			//b2[1][0] = -b2[1][0];
+			// cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 
 			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
 			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
 
 			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
-			double p1[2];
-			double p2[2];
+			double k_1[2];
+			double k_2[2];
 
-			p1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
-			p1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+			
+			// k_1 = K of layer 1, k_2 = K of layer 2
+			/*
+			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+			k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
 
-			p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
-			p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+			*/
+	
+			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+			k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
 
-			printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
+			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
+	
+			printf("k_1 = [%lf, %lf], k_2 = [%lf, %lf] \n",k_1[0],k_1[1],k_2[0],k_2[1]);
 
 			for (int i = 0; i < maxJobs; ++i){
 				//double x = (1.0/((double) maxJobs))*i;
@@ -1188,8 +1196,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				shifts.resize(num_sheets);
 				for(int s = 0; s < num_sheets; ++s){
 					shifts[s].resize(3);
-					shifts[s][0] = (1.0-x)*p1[0] + (x)*p2[0];
-					shifts[s][1] = (1.0-x)*p1[1] + (x)*p2[1];
+					shifts[s][0] = (1.0-x)*k_1[0] + (x)*k_2[0];
+					shifts[s][1] = (1.0-x)*k_1[1] + (x)*k_2[1];
 					//shifts[s][0] = x*b1[0][0] + (1-x)*b1[1][0];
 					//shifts[s][1] = x*b1[0][1] + (1-x)*b1[1][1];
 					shifts[s][2] = 0;
