@@ -576,6 +576,43 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> 
 
 }
 
+void SpMatrix::denseConvert(DMatrix &Mat_in){
+
+	// dense matrix is in Column Major order
+
+	Mat_in.setup(nrows, ncols, type);
+	if (type == 0){
+
+		double* mat_val = Mat_in.allocRealVal();
+
+		for (int r = 0; r < nrows; ++r){
+
+			int begin = rowPointer[r];
+			int end = rowPointer[r+1];
+
+			for (int i = begin; i < end; ++i){
+				mat_val[colIndex[i]*nrows + r] = val[i];
+			}
+		}
+
+	} else if (type == 1){
+
+		std::complex<double>* mat_val_c = Mat_in.allocCpxVal();
+
+		for (int r = 0; r < nrows; ++r){
+
+			int begin = rowPointer[r];
+			int end = rowPointer[r+1];
+
+			for (int i = begin; i < end; ++i){
+				mat_val_c[colIndex[i]*nrows + r] = val_c[i];
+			}
+		}
+
+	}
+
+}
+
 void SpMatrix::denseConvert(Eigen::MatrixXd &H_in){
 	// Column Major order
 	for (int r = 0; r < nrows; ++r){
@@ -601,6 +638,14 @@ void SpMatrix::denseConvert(Eigen::MatrixXcd &H_in){
 				H_in(r,colIndex[i]) = val_c[i];
 			}
 		}
+
+}
+
+void SpMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
+
+	DMatrix dense_mat;
+	denseConvert(dense_mat);
+	dense_mat.eigenSolve(eigvals, eigvecs);
 
 }
 
