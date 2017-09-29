@@ -79,6 +79,9 @@ class DMatrix {
 
 		void getValCopy(double*) const;
 		void getValCopy(std::complex<double>*) const;
+		void getCPPValCopy(std::vector< std::vector<              double  > >& val_copy) const;
+		void getCPPValCopy(std::vector< std::vector< std::complex<double> > >& val_copy) const;
+		
 
 		void setVal(double*);
 		void setVal(std::complex<double>* ptr);

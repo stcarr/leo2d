@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <complex>
 
 using namespace std;
 
@@ -40,6 +41,9 @@ class Job_params {
 		vector< vector< vector<double> > > double_mat_params;
 		vector<string> double_mat_param_tags;
 
+		vector< vector< vector< complex<double> > > > cpx_double_mat_params;
+		vector<string> cpx_double_mat_param_tags;
+		
 	public:
         Job_params();
         Job_params(const Job_params& orig);
@@ -55,6 +59,7 @@ class Job_params {
 
 		void setParam(string, vector< vector<int> >);
 		void setParam(string, vector< vector<double> >);
+		void setParam(string, vector< vector< complex<double> > >);
 
 		int getInt(string) const;
 		double getDouble(string) const;
@@ -66,7 +71,9 @@ class Job_params {
 
 		vector< vector<int> > getIntMat(string) const;
 		vector< vector<double> > getDoubleMat(string) const;
-
+		vector< vector< complex<double> > > getCpxDoubleMat(string) const;
+		
+		
 		vector<string> getParamTags(string) const;
 
 		void printParams();
@@ -97,7 +104,8 @@ class Job_params {
 		void recvIntMat(int);
 		void sendDoubleMat(string,vector< vector<double> >,int);
 		void recvDoubleMat(int);
-
+		void sendCpxDoubleMat(string,vector< vector< complex<double> > >,int);
+		void recvCpxDoubleMat(int);
 };
 
 #endif /* JOB_PARAMS_H */

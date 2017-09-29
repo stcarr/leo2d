@@ -34,6 +34,9 @@ namespace Param_tools{
 	// Transform from chebyshev basis to energy basis
 	void conductivityTransform(Job_params& job);
 
+	// Transform any matrix from chebyshev basis to energy basis
+	void matrixResponseTransform(Job_params& job, std::string tag);
+	
 	// load MLMC data from file_name into job
 	void mlmc_load(Job_params& job, std::string file_name);
 

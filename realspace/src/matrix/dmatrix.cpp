@@ -180,6 +180,63 @@ void DMatrix::getValCopy(std::complex<double>* val_copy) const{
 
 }
 
+void DMatrix::getCPPValCopy(std::vector< std::vector<double> >& val_copy) const{
+
+	if (type == 0){
+
+		for (int i = 0; i < nrows; ++i){
+			std::vector<double> temp;
+
+			for (int j = 0; j < ncols; ++j) {
+				temp.push_back(val[i + j*nrows]);
+			}
+
+			val_copy.push_back(temp);
+
+		}
+	} else if (type == 1){
+		for (int i = 0; i < nrows; ++i){
+			std::vector<double> temp;
+
+			for (int j = 0; j < ncols; ++j) {
+				temp.push_back(val_c[i + j*nrows].real());
+			}
+
+			val_copy.push_back(temp);
+
+		}	
+	}
+
+}
+void DMatrix::getCPPValCopy(std::vector< std::vector< std::complex<double> > >& val_copy) const{
+
+	if (type == 0){
+
+		for (int i = 0; i < nrows; ++i){
+			std::vector< std::complex<double> > temp;
+
+			for (int j = 0; j < ncols; ++j) {
+				temp.push_back(val[i + j*nrows]);
+			}
+
+			val_copy.push_back(temp);
+
+		}
+	} else if (type == 1){
+		for (int i = 0; i < nrows; ++i){
+			std::vector< std::complex<double> > temp;
+
+			for (int j = 0; j < ncols; ++j) {
+				temp.push_back(val_c[i + j*nrows]);
+			}
+
+			val_copy.push_back(temp);
+
+		}	
+	}	
+	
+}
+
 void DMatrix::setVal(double* ptr){
 	for (int i = 0; i < nval; ++i){
 		val[i] = ptr[i];

@@ -23,14 +23,14 @@ Job_params::Job_params() {
 	int i_zero = 0;
 
 
-	std::vector< std::vector<int> > lc_points;
+	std::vector< std::vector<double> > lc_points;
 	lc_points.resize(2);
 	lc_points[0].resize(2);
 	lc_points[1].resize(2);
 	lc_points[0][0] = 0;
 	lc_points[0][1] = 0;
-	lc_points[1][0] = 1;
-	lc_points[1][1] = 1;	
+	lc_points[1][0] = 1.0;
+	lc_points[1][1] = 1.0;	
 	
 	setParam("nShifts",i_one);
 	setParam("num_sheets",i_one);
@@ -47,6 +47,7 @@ Job_params::Job_params() {
 	setParam("matrix_pos_save", i_zero);
 	setParam("verbose_save",i_one);
 	setParam("diagonalize",i_zero);
+	setParam("chiral_on",i_zero);
 	setParam("d_weights",i_zero);
 	setParam("d_vecs",i_zero);
 	setParam("d_cond",i_zero);
@@ -143,7 +144,13 @@ Job_params::Job_params(const Job_params& orig){
 		string tag = temp_tags[i];
 		setParam(tag, orig.getDoubleMat(tag));
 	}
-
+	
+	// loop over cpxDoubleMat
+	temp_tags = orig.getParamTags("cpxDoubleMat");
+	for (int i = 0; i < temp_tags.size(); ++i){
+		string tag = temp_tags[i];
+		setParam(tag, orig.getCpxDoubleMat(tag));
+	}
 }
 
 Job_params::~Job_params(){
@@ -293,6 +300,25 @@ void Job_params::setParam(std::string tag, vector< vector<double> > val){
 
 }
 
+
+void Job_params::setParam(std::string tag, vector< vector< complex<double> > > val){
+
+	// first check if this tag already exists
+
+	for (int i = 0; i < cpx_double_mat_param_tags.size(); ++i){
+		if (cpx_double_mat_param_tags[i].compare(tag) == 0) {
+			cpx_double_mat_params[i] = val;
+			return;
+		}
+	}
+
+	// if not, add it to the list of params
+
+	cpx_double_mat_params.push_back(val);
+	cpx_double_mat_param_tags.push_back(tag);
+
+}
+
 int Job_params::getInt(std::string tag) const{
 
 	// check if param exists, then return
@@ -419,6 +445,21 @@ vector< vector<double> > Job_params::getDoubleMat(std::string tag) const{
 	throw invalid_argument(error_str);
 }
 
+vector< vector< complex<double> > > Job_params::getCpxDoubleMat(std::string tag) const{
+
+	// check if param exists, then return
+	for (int i = 0; i < cpx_double_mat_param_tags.size(); ++i){
+		if (cpx_double_mat_param_tags[i].compare(tag) == 0) {
+			return cpx_double_mat_params[i];
+		}
+	}
+
+	// if not, throw error
+	string error_str = "!!LEO2D Critical Error!!: getCpxDoubleMat tag '";
+	error_str = error_str + tag + "' not found in job_params object\n";
+	throw invalid_argument(error_str);
+}
+
 vector<string> Job_params::getParamTags(std::string name) const{
 
 	if (name.compare("int") == 0)
@@ -437,7 +478,9 @@ vector<string> Job_params::getParamTags(std::string name) const{
 		return int_mat_param_tags;
 	else if (name.compare("doubleMat") == 0)
 		return double_mat_param_tags;
-
+	else if (name.compare("cpxDoubleMat") == 0)
+		return cpx_double_mat_param_tags;
+		
 	string error_str = "!!LEO2D Critical Error!!: getParamTags target '";
 	error_str = error_str + name + "' not recognized by job_params object\n";
 	throw invalid_argument(error_str);
@@ -585,6 +628,20 @@ void Job_params::sendParams(int target){
 		sendDoubleMat(double_mat_param_tags[i],double_mat_params[i], target);
 	}
 
+	// loop over cpxDoubleMat
+	int cpx_double_mat_size = cpx_double_mat_params.size();
+
+	MPI::COMM_WORLD.Send(
+				&cpx_double_mat_size, 			// input buffer
+				1,					// size of buffer
+				MPI::INT,			// type of buffer
+				target,				// rank to receive
+				0);					// MPI label
+
+	for (int i = 0; i < cpx_double_mat_size; ++i){
+		sendCpxDoubleMat(cpx_double_mat_param_tags[i],cpx_double_mat_params[i], target);
+	}	
+	
 }
 
 void Job_params::recvParams(int from){
@@ -711,6 +768,21 @@ void Job_params::recvParams(int from){
 		recvDoubleMat(from);
 	}
 
+	// loop over cpxDoubleMat
+	int cpx_double_mat_size;
+
+	MPI::COMM_WORLD.Recv(
+				&cpx_double_mat_size, 	// input buffer
+				1,					// size of buffer
+				MPI::INT,			// type of buffer
+				from,				// must come from root
+				MPI::ANY_TAG,		// either WORKTAG or STOPTAG
+				status);			// keep MPI status information
+
+	for (int i = 0; i < cpx_double_mat_size; ++i){
+		recvCpxDoubleMat(from);
+	}
+	
 }
 
 void Job_params::sendTag(string tag, int target){
@@ -1314,6 +1386,127 @@ void Job_params::recvDoubleMat(int from){
 			for (int j = 0; j < dim2_array[i]; ++j){
 				val[i][j] = temp_val[counter];
 				++counter;
+			}
+		}
+
+		setParam(tag,val);
+
+	}
+
+}
+
+void Job_params::sendCpxDoubleMat(string tag, vector< vector< complex<double> > > val, int target){
+
+	sendTag(tag, target);
+
+	int dim1;
+	int dim2;
+
+	dim1 = val.size();
+
+	MPI::Status status;
+
+	MPI::COMM_WORLD.Send(
+				&dim1, 				// input buffer
+				1,					// size of buffer
+				MPI::INT,			// type of buffer
+				target,				// rank to receive
+				0);					// MPI label
+
+	if (dim1 != 0){
+
+		int dim2_array[dim1];
+		int total_dim = 0;
+
+		for (int i = 0; i < dim1; ++i){
+			dim2_array[i] = (int) val[i].size();
+			total_dim += dim2_array[i];
+		}
+
+		MPI::COMM_WORLD.Send(
+					&dim2_array, 		// input buffer
+					dim1,				// size of buffer
+					MPI::INT,			// type of buffer
+					target,				// rank to receive
+					0);					// MPI label
+
+		double temp_val[2*total_dim];
+
+		int counter = 0;
+		for (int i = 0; i < dim1; ++i){
+			for (int j = 0; j < dim2_array[i]; ++j){
+				temp_val[counter] = val[i][j].real();
+				++counter;
+				temp_val[counter] = val[i][j].imag();
+				++counter;
+			}
+		}
+
+		MPI::COMM_WORLD.Send(
+					&temp_val,		 	// input buffer
+					2*total_dim,		// size of buffer
+					MPI::DOUBLE,		// type of buffer
+					target,				// rank to receive
+					0);					// MPI label
+	}
+
+}
+
+void Job_params::recvCpxDoubleMat(int from){
+
+	string tag = recvTag(from);
+
+	int dim1;
+
+	std::vector< std::vector< complex<double> > > val;
+	MPI::Status status;
+
+	MPI::COMM_WORLD.Recv(
+			&dim1, 				// input buffer
+			1,					// size of buffer
+			MPI::INT,			// type of buffer
+			from,				// must come from "from"
+			MPI::ANY_TAG,		// any tag
+			status);			// keep MPI status information
+
+	if (dim1 != 0){
+
+		val.resize(dim1);
+
+		int dim2_array[dim1];
+
+		MPI::COMM_WORLD.Recv(
+					&dim2_array, 		// input buffer
+					dim1,				// size of buffer
+					MPI::INT,			// type of buffer
+					from,				// must come from "from"
+					MPI::ANY_TAG,		// any tag
+					status);			// keep MPI status information
+
+		int total_dim = 0;
+
+		for (int i = 0; i < dim1; ++i){
+			val[i].resize(dim2_array[i]);
+			total_dim += dim2_array[i];
+		}
+
+		double temp_val[2*total_dim];
+
+		MPI::COMM_WORLD.Recv(
+				temp_val,		 	// input buffer
+				2*total_dim,		// size of buffer
+				MPI::DOUBLE,		// type of buffer
+				from,				// must come from "from"
+				status.Get_tag(),	// should be the same tag?
+				status);			// keep MPI status information
+
+		int counter = 0;
+		for (int i = 0; i < dim1; ++i){
+			for (int j = 0; j < dim2_array[i]; ++j){
+				val[i][j].real(temp_val[counter]);
+				++counter;
+				val[i][j].imag(temp_val[counter]);
+				++counter;				
 			}
 		}
 
