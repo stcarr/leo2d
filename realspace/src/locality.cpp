@@ -1169,7 +1169,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			double k_1[2];
 			double k_2[2];
 
-			
+
 			// k_1 = K of layer 1, k_2 = K of layer 2
 			/*
 			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
@@ -1178,26 +1178,67 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
 			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
 			*/
-	
+
 			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
 			k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
 
 			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
 			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
-	
-			printf("k_1 = [%lf, %lf], k_2 = [%lf, %lf] \n",k_1[0],k_1[1],k_2[0],k_2[1]);
+
+			double k[2];
+			double gamma[2];
+			double m[2];
+
+			k[0] = k_1[0];
+			k[1] = k_1[1];
+
+			double d = (1.0/2.0)*sqrt((k_2[0] - k_1[0])*(k_2[0] - k_1[0]) + (k_2[1] - k_1[1])*(k_2[1] - k_1[1]));
+			double x_dir[2];
+			double y_dir[2];
+
+			y_dir[0] = (k_2[0] - k_1[0])/(2.0*d);
+			y_dir[1] = (k_2[1] - k_1[1])/(2.0*d);
+			x_dir[0] = cos(-M_PI/2)*y_dir[0] - sin(-M_PI/2)*y_dir[1];
+			x_dir[1] = sin(-M_PI/2)*y_dir[0] + cos(-M_PI/2)*y_dir[0];
+
+			gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
+			gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
+
+			m[0] = k[0] + d*y_dir[0];
+			m[1] = k[1] + d*y_dir[1];
+
+			printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
 
 			for (int i = 0; i < maxJobs; ++i){
 				//double x = (1.0/((double) maxJobs))*i;
-				double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+				//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
 				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+				double c = (3.0/((double) maxJobs))*i;
+
+				double shift_x = 0;
+				double shift_y = 0;
+
+				if (c <= 1) {
+					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+				} else if (c <= 2) {
+					shift_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+					shift_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+				} else {
+					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+				}
+
 
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
+
+
+
 				for(int s = 0; s < num_sheets; ++s){
 					shifts[s].resize(3);
-					shifts[s][0] = (1.0-x)*k_1[0] + (x)*k_2[0];
-					shifts[s][1] = (1.0-x)*k_1[1] + (x)*k_2[1];
+					shifts[s][0] = shift_x;
+					shifts[s][1] = shift_y;
 					//shifts[s][0] = x*b1[0][0] + (1-x)*b1[1][0];
 					//shifts[s][1] = x*b1[0][1] + (1-x)*b1[1][1];
 					shifts[s][2] = 0;
