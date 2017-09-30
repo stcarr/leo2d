@@ -101,15 +101,18 @@ while choice~=0
             Nbase = input('Size of the smallest supercell: ');
         case 3
             Nr_ext = input('Number of extensions: ');
+            while (length(M_v) < Nr_ext+1)
+               M_v(end+1) = 1; 
+            end
         case 4
             for i = 1:Nr_ext+1
                 Ns0=Nbase*2^(i-1);
                 fprintf(1,'level: %d  size: %d x %d   # samples: %5d \n', ...
-                    i,Ns0,Ns0,M_v(i));
+                    i,Ns0,Ns0,M_v(i));                
                 nsamples=input('Number of samples for this level (0=no change): ');
                 if nsamples>0
                     M_v(i) = nsamples;
-                end
+                end                
             end
         case 5
           poly_order = input('Polynomial order: ');

@@ -25,7 +25,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 	int d_cond = job.getInt("d_cond");
 	int observable_type = job.getInt("observable_type");
 	int chiral_on = job.getInt("chiral_on");
-	
+
 	int poly_order = job.getInt("poly_order");
 	double energy_rescale = job.getDouble("energy_rescale");
 	double energy_shift = job.getDouble("energy_shift");
@@ -260,7 +260,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 				}
 				outFile << eigenvalues[local_max_index - 1] << "\n";
 			} else if (chiral_on == 1){
-			
+
 				if (jobID == 1){
 					//print E vals:
 					double g[poly_order];
@@ -273,15 +273,15 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 						outFile << E[i] << " ";
 					}
 					outFile << "\n";
-				}				
-			
+				}
+
 				std::vector< std::vector< std::complex<double> > > chiral_dichrosim_minus = job.getCpxDoubleMat("chiral_dichrosim_minus");
 				std::vector< std::vector< std::complex<double> > > chiral_dichrosim_plus = job.getCpxDoubleMat("chiral_dichrosim_plus");
 				std::vector< std::vector< std::complex<double> > > chiral_dH0_minus = job.getCpxDoubleMat("chiral_dH0_minus");
 				std::vector< std::vector< std::complex<double> > > chiral_dH0_plus = job.getCpxDoubleMat("chiral_dH0_plus");
-				
+
 				int local_max_index = chiral_dichrosim_minus.size();
-				
+
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
 						outFile << chiral_dichrosim_minus[i][j].real() << ", ";
@@ -297,7 +297,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					outFile << chiral_dichrosim_minus[i][local_max_index - 1].imag() << "\n";
 				}
 				outFile << "\n";
-				
+
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
 						outFile << chiral_dichrosim_plus[i][j].real() << ", ";
@@ -305,14 +305,14 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					outFile << chiral_dichrosim_plus[i][local_max_index - 1].real() << "\n";
 				}
 				outFile << "\n";
-				
+
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
 						outFile << chiral_dichrosim_plus[i][j].imag() << ", ";
 					}
 					outFile << chiral_dichrosim_plus[i][local_max_index - 1].imag() << "\n";
 				}
-				outFile << "\n";				
+				outFile << "\n";
 
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
@@ -321,14 +321,14 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					outFile << chiral_dH0_minus[i][local_max_index - 1].real() << "\n";
 				}
 				outFile << "\n";
-				
+
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
 						outFile << chiral_dH0_minus[i][j].imag() << ", ";
 					}
 					outFile << chiral_dH0_minus[i][local_max_index - 1].imag() << "\n";
 				}
-				outFile << "\n";				
+				outFile << "\n";
 
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
@@ -336,7 +336,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					}
 					outFile << chiral_dH0_plus[i][local_max_index - 1].real() << "\n";
 				}
-				outFile << "\n";				
+				outFile << "\n";
 
 				for(int i = 0; i < local_max_index; ++i){
 					for(int j = 0; j < local_max_index - 1; ++j){
@@ -344,8 +344,8 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					}
 					outFile << chiral_dH0_plus[i][local_max_index - 1].imag() << "\n";
 				}
-				outFile << "\n";	
-				
+				outFile << "\n";
+
 			}
 
 		}
@@ -544,91 +544,26 @@ void Param_tools::densityTransform(Job_params& job) {
 
 void Param_tools::conductivityTransform(Job_params& job){
 
-	int poly_order = job.getInt("poly_order");
 	int chiral_on = job.getInt("chiral_on");
-	
-	double g[poly_order];
-	for (int i = 0; i < poly_order; ++i){
-		// Jackson coefficients
-		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(sqrt(2.0)*poly_order);
-	}
-
 	int d_cond = job.getInt("d_cond");
 
-	std::vector< std::vector<double> > M_xx;
-	std::vector< std::vector<double> > M_yy;
-	std::vector< std::vector<double> > M_xy;
-
-	int dim_max = 0;
 	if (d_cond > 0){
-		dim_max = 1;
-		M_xx = job.getDoubleMat("M_xx");
+		Param_tools::matrixResponseTransform(job,"M_xx");
 		if (d_cond > 1){
-			dim_max = 3;
-			M_yy = job.getDoubleMat("M_yy");
-			M_xy = job.getDoubleMat("M_xy");
-		}
-	}
-
-	for (int dim = 0; dim < dim_max; ++dim){
-
-		double* in = new double[poly_order*poly_order];
-
-		for (int i = 0; i < poly_order; ++i){
-			for (int j = 0; j < poly_order; ++j){
-				if (dim == 0) {
-					in[i*poly_order + j] = 2*g[i]*g[j]*M_xx[i][j];
-				} else if (dim == 1) {
-					in[i*poly_order + j] = 2*g[i]*g[j]*M_yy[i][j];
-				} else if (dim == 2) {
-					in[i*poly_order + j] = 2*g[i]*g[j]*M_xy[i][j];
-				}
-			}
-		}
-
-		double* out = new double[poly_order*poly_order];
-
-		fftw_plan p;
-		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
-
-		fftw_execute(p);
-
-		for (int i = 0; i < poly_order; ++i){
-			for (int j = 0; j < poly_order; ++j){
-				if (dim == 0) {
-					M_xx[i][j] = out[i*poly_order + j];
-				} else if (dim == 1) {
-					M_yy[i][j] = out[i*poly_order + j];
-				} else if (dim == 2) {
-					M_xy[i][j] = out[i*poly_order + j];
-				}
-			}
-			// We put the Energies in the last column of the measure
-		}
-
-		fftw_destroy_plan(p);
-
-		delete in;
-		delete out;
-	}
-
-	if (d_cond > 0){
-		job.setParam("M_xx",M_xx);
-		if (d_cond > 1){
-			job.setParam("M_yy",M_yy);
-			job.setParam("M_xy",M_xy);
+			Param_tools::matrixResponseTransform(job,"M_yy");
+			Param_tools::matrixResponseTransform(job,"M_xy");
 		}
 	}
 
 	if (chiral_on == 1){
-	
+
 		Param_tools::matrixResponseTransform(job,"chiral_dichrosim_minus");
 		Param_tools::matrixResponseTransform(job,"chiral_dichrosim_plus");
 		Param_tools::matrixResponseTransform(job,"chiral_dH0_minus");
 		Param_tools::matrixResponseTransform(job,"chiral_dH0_plus");
-		
+
 	}
-	
+
 }
 
 void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
@@ -637,19 +572,19 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 
 	std::vector< std::vector<double> > matrixIn;
 	std::vector< std::vector<double> > matrixOut;
-	
+
 	std::vector< std::vector< std::complex<double> > > matrixIn_cpx;
-	std::vector< std::vector< std::complex<double> > > matrixOut_cpx;	
-	
+	std::vector< std::vector< std::complex<double> > > matrixOut_cpx;
+
 	int type = 0;
-	
+
 	try{
 		matrixIn = job.getDoubleMat(tag);
 	} catch(const std::invalid_argument& ia){
 		matrixIn_cpx = job.getCpxDoubleMat(tag);
 		type = 1;
 	}
-	
+
 	double g[poly_order];
 	for (int i = 0; i < poly_order; ++i){
 		// Jackson coefficients
@@ -657,18 +592,17 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 	}
 
 	if (type == 0){
-		double* in = new double[poly_order*poly_order];
+		double in[poly_order*poly_order];
+		double out[poly_order*poly_order];
+		fftw_plan p;
+		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
 
 		for (int i = 0; i < poly_order; ++i){
 			for (int j = 0; j < poly_order; ++j){
 				in[i*poly_order + j] = 2*g[i]*g[j]*matrixIn[i][j];
+				out[i*poly_order + j] = 1.2345;
 			}
 		}
-
-		double* out = new double[poly_order*poly_order];
-
-		fftw_plan p;
-		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 
 		fftw_execute(p);
 
@@ -681,13 +615,11 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 		}
 
 		job.setParam(tag,matrixOut);
-		
+
 		fftw_destroy_plan(p);
 
-		delete in;
-		delete out;
 	} else if (type == 1){
-	
+
 		// real component transformation
 		double* in_real = new double[poly_order*poly_order];
 
@@ -711,12 +643,12 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 				matrixOut_cpx[i][j].real(out_real[i*poly_order + j]);
 			}
 		}
-		
+
 		fftw_destroy_plan(p_real);
 
 		delete in_real;
 		delete out_real;
-		
+
 		// imaginary component transformation
 		double* in_imag = new double[poly_order*poly_order];
 
@@ -738,16 +670,16 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 				matrixOut_cpx[i][j].imag(out_imag[i*poly_order + j]);
 			}
 		}
-		
+
 		fftw_destroy_plan(p_imag);
 
 		delete in_imag;
-		delete out_imag;		
-		
+		delete out_imag;
+
 		job.setParam(tag,matrixOut_cpx);
-		
+
 	}
-			
+
 }
 
 
