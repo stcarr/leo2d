@@ -772,6 +772,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				shifts[num_sheets-1][1] = lc_points[lc_index][1] + eff_x*(lc_points[lc_index+1][1] - lc_points[lc_index][1]);
 				shifts[num_sheets-1][2] = 0;
 
+				printf("shifts[%d] = [%lf %lf] \n",num_sheets-1,shifts[num_sheets-1][0],shifts[num_sheets-1][1]);
+
 				// for debugging: check the linecutting algorithm
 				//printf("job %d has shift = [%lf, %lf] (lc_index = %d, eff_x = %lf) \n",i,shifts[num_sheets-1][0],shifts[num_sheets-1][1],lc_index,eff_x);
 
@@ -1504,12 +1506,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		SpMatrix H;
 		SpMatrix dxH;
 		SpMatrix dyH;
-		
+
 		SpMatrix cd_minus;
 		SpMatrix cd_plus;
 		SpMatrix dH_0_minus;
 		SpMatrix dH_0_plus;
-		
+
 		double* alpha_0_x_arr = new double[num_targets*local_max_index];
 		double* alpha_0_y_arr = new double[num_targets*local_max_index];
 
@@ -1786,38 +1788,38 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						}
 					}
 				}
-								
+
 				if (chiral_on == 1){
-				
+
 					DMatrix cdm_cheb;
 					DMatrix cdp_cheb;
 					DMatrix dH0m_cheb;
 					DMatrix dH0p_cheb;
-					
+
 					// Project results onto chebyshev basis
 					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, cd_minus, cdm_cheb);
 					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, cd_plus, cdp_cheb);
 					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, dH_0_minus, dH0m_cheb);
 					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, dH_0_plus, dH0p_cheb);
-					
+
 					std::vector< std::vector< std::complex<double> > > chiral_dichrosim_minus;
 					std::vector< std::vector< std::complex<double> > > chiral_dichrosim_plus;
 					std::vector< std::vector< std::complex<double> > > chiral_dH0_minus;
 					std::vector< std::vector< std::complex<double> > > chiral_dH0_plus;
-					
+
 					// get chebyshev results as CPP nested vector matrices
 					cdm_cheb.getCPPValCopy(chiral_dichrosim_minus);
 					cdp_cheb.getCPPValCopy(chiral_dichrosim_plus);
 					dH0m_cheb.getCPPValCopy(chiral_dH0_minus);
 					dH0p_cheb.getCPPValCopy(chiral_dH0_plus);
-					
+
 					// save results
 					results_out.setParam("chiral_dichrosim_minus", chiral_dichrosim_minus);
 					results_out.setParam("chiral_dichrosim_plus", chiral_dichrosim_plus);
 					results_out.setParam("chiral_dH0_minus", chiral_dH0_minus);
 					results_out.setParam("chiral_dH0_plus", chiral_dH0_plus);
-					
-					Param_tools::conductivityTransform(results_out);			
+
+					Param_tools::conductivityTransform(results_out);
 				}
 			}
 		}
@@ -2547,7 +2549,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	H.setup(max_nnz, local_max_index, local_max_index);
 	dxH.setup(max_nnz, local_max_index, local_max_index);
 	dyH.setup(max_nnz, local_max_index, local_max_index);
-	
+
 	if (chiral_on == 1){
 		cd_minus.setup(max_nnz, local_max_index, local_max_index);
 		cd_plus.setup(max_nnz, local_max_index, local_max_index);
@@ -2563,16 +2565,16 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 	int* col_index_dy = dyH.allocColIndx();
 	int* row_pointer_dy = dyH.allocRowPtr();
-	
+
 	int* col_index_cd_minus;
 	int* col_index_cd_plus;
 	int* col_index_dH_0_minus;
 	int* col_index_dH_0_plus;
-	
+
 	int* row_pointer_cd_minus;
 	int* row_pointer_cd_plus;
 	int* row_pointer_dH_0_minus;
-	int* row_pointer_dH_0_plus;	
+	int* row_pointer_dH_0_plus;
 
 	std::complex<double>* v_c;
 	std::complex<double>* v_c_dx;
@@ -2581,32 +2583,32 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	std::complex<double>* v_c_cd_plus;
 	std::complex<double>* v_c_dH_0_minus;
 	std::complex<double>* v_c_dH_0_plus;
-	
-	
+
+
 	v_c = H.allocCpxVal();
 	v_c_dx = dxH.allocCpxVal();
 	v_c_dy = dyH.allocCpxVal();
 
 	if (chiral_on == 1){
-	
+
 		col_index_cd_minus = cd_minus.allocColIndx();
-		row_pointer_cd_minus = cd_minus.allocRowPtr();	
-	
+		row_pointer_cd_minus = cd_minus.allocRowPtr();
+
 		col_index_cd_plus = cd_plus.allocColIndx();
-		row_pointer_cd_plus = cd_plus.allocRowPtr();	
+		row_pointer_cd_plus = cd_plus.allocRowPtr();
 
 		col_index_dH_0_minus = dH_0_minus.allocColIndx();
-		row_pointer_dH_0_minus = dH_0_minus.allocRowPtr();	
+		row_pointer_dH_0_minus = dH_0_minus.allocRowPtr();
 
 		col_index_dH_0_plus = dH_0_plus.allocColIndx();
-		row_pointer_dH_0_plus = dH_0_plus.allocRowPtr();			
-	
+		row_pointer_dH_0_plus = dH_0_plus.allocRowPtr();
+
 		v_c_cd_minus = cd_minus.allocCpxVal();
 		v_c_cd_plus = cd_plus.allocCpxVal();
 		v_c_dH_0_minus = dH_0_minus.allocCpxVal();
 		v_c_dH_0_plus = dH_0_plus.allocCpxVal();
 	}
-	
+
 	// Count the current element, i.e. "i = input_counter"
 	int input_counter = 0;
 
@@ -2631,14 +2633,14 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 		row_pointer[k] = input_counter;
 		row_pointer_dx[k] = input_counter;
 		row_pointer_dy[k] = input_counter;
-		
+
 		if (chiral_on == 1){
 			row_pointer_cd_minus[k] = input_counter;
 			row_pointer_cd_plus[k] = input_counter;
 			row_pointer_dH_0_minus[k] = input_counter;
 			row_pointer_dH_0_plus[k] = input_counter;
 		}
-		
+
 		// While we are still at the correct index in our intra_pairs list:
 		bool same_index1 = true;
 		while(same_index1) {
@@ -2737,25 +2739,25 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 						v_c[input_counter] = t_cpx;
 						v_c_dx[input_counter] = (x1 - x2)*t_cpx;
 						v_c_dy[input_counter] = (y1 - y2)*t_cpx;
-						
+
 						if (chiral_on == 1){
-						
+
 							col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
 							col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
 							col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
 							col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
-							
+
 							if (index_to_grid[k_i*4 + 3] == 0){
 								v_c_cd_minus[input_counter]   = std::complex<double>( (y1 - y2), (x1 - x2))*t_cpx;
 								v_c_cd_plus[input_counter]    = std::complex<double>(-(y1 - y2), (x1 - x2))*t_cpx;
 							} else if (index_to_grid[k_i*4 + 3] == 1) {
 								v_c_cd_minus[input_counter]   = std::complex<double>( (y1 - y2), (x1 - x2))*-t_cpx;
-								v_c_cd_plus[input_counter]    = std::complex<double>(-(y1 - y2), (x1 - x2))*-t_cpx;							
+								v_c_cd_plus[input_counter]    = std::complex<double>(-(y1 - y2), (x1 - x2))*-t_cpx;
 							}
 							v_c_dH_0_minus[input_counter] = std::complex<double>( (x1 - x2),-(y1 - y2))*t_cpx;
 							v_c_dH_0_plus[input_counter]  = std::complex<double>( (x1 - x2), (y1 - y2))*t_cpx;
 						}
-						
+
 						t_cpx = 0;
 
 						++input_counter;
@@ -2862,20 +2864,20 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 						v_c[input_counter] = t_cpx;
 						v_c_dx[input_counter] = (x1 - x2)*t_cpx; // (delta_x)*t
 						v_c_dy[input_counter] = (y1 - y2)*t_cpx; // (delta_y)*t
-						
+
 						if (chiral_on == 1){
-						
+
 							col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
 							col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
 							col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
 							col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
-						
+
 							v_c_cd_minus[input_counter]   = std::complex<double>(0.0);
-							v_c_cd_plus[input_counter]    = std::complex<double>(0.0);							
+							v_c_cd_plus[input_counter]    = std::complex<double>(0.0);
 							v_c_dH_0_minus[input_counter] = std::complex<double>( (x1 - x2),-(y1 - y2))*t_cpx;
 							v_c_dH_0_plus[input_counter]  = std::complex<double>( (x1 - x2), (y1 - y2))*t_cpx;
 						}
-						
+
 						t_cpx = 0;
 
 						++input_counter;
@@ -2901,7 +2903,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 		row_pointer_dH_0_minus[local_max_index] = input_counter;
 		row_pointer_dH_0_plus[local_max_index] = input_counter;
 	}
-	
+
 	int num_targets = jobIn.getInt("num_targets");
 	std::vector<int> target_list = jobIn.getIntVec("target_list");
 
@@ -4010,9 +4012,9 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 			//int p = jobIn.getInt("poly_order");
 			// Compute J_x, J_y
-			
+
 			// J_x = eigvecs*dxH*eigvecs
-			
+
 			DMatrix J_x;
 			DMatrix temp_matrix_x;
 			std::complex<double> a_cpx(1,0);
@@ -4052,7 +4054,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 			DMatrix J_xx;
 			J_xx.setup(p,p,1);
 			J_x.eleMatrixMultiply(J_xx, J_x, 1, 0);
-			
+
 			// temp_mat_xx = cheb_eigvals*J_xx*cheb_eigvals
 			DMatrix temp_mat_xx;
 			J_xx.matrixMultiply(temp_mat_xx, cheb_eigvals, a_cpx, b_cpx);
@@ -4090,7 +4092,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 void Locality::computeMatrixResponse(Job_params jobIn, std::vector<double> eigvals, DMatrix& eigvecs, SpMatrix& matIn, DMatrix& matOut){
 
 	// mat_1 = eigvecs*matIn*eigvecs
-	
+
 	DMatrix mat_1;
 	DMatrix temp_mat_1;
 	std::complex<double> a_cpx(1,0);
@@ -4098,10 +4100,10 @@ void Locality::computeMatrixResponse(Job_params jobIn, std::vector<double> eigva
 	matIn.denseMatrixMultiply(temp_mat_1, eigvecs, a_cpx, b_cpx);
 	eigvecs.matrixMultiply(mat_1, temp_mat_1, a_cpx, b_cpx,'T','N');
 
-	
+
 	int N = matIn.getNumRows();
 	int p = jobIn.getInt("poly_order");
-	
+
 	DMatrix cheb_eigvals;
 	cheb_eigvals.setup(N,p,1);
 	std::complex<double>* v_cheb;
@@ -4124,13 +4126,13 @@ void Locality::computeMatrixResponse(Job_params jobIn, std::vector<double> eigva
 			v_cheb[m*N + i] = ((std::complex<double>)2.0)*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
 		}
 	}
-	
+
 	// matOut = cheb_eigvals*( eigvecs*matIn*eigvecs )*cheb_eigvals
 	//		  = cheb_eigvals*(         mat_1         )*cheb_eigvals
 	DMatrix temp_mat_2;
 	mat_1.matrixMultiply(temp_mat_2, cheb_eigvals, a_cpx, b_cpx);
 	cheb_eigvals.matrixMultiply(matOut,temp_mat_2, a_cpx/(std::complex<double>)N, b_cpx, 'T', 'N');
-	
+
 }
 
 double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){

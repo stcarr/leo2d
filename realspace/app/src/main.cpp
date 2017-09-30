@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
 					opts.setParam("num_lc_points",atoi(in_string.c_str()));
 				}
 				if (in_string == "LC_POINTS"){
-				
+
 					std::vector< std::vector<double> > lc_points;
 					int num_lc_points = opts.getInt("num_lc_points");
 					lc_points.resize(num_lc_points);
@@ -299,11 +299,11 @@ int main(int argc, char** argv) {
 					for (int lc_count = 0; lc_count < num_lc_points; ++lc_count){
 						lc_points[lc_count].resize(2);
 						getline(in_line,in_string,' ');
-						lc_points[lc_count][0] = atof(in_string.c_str());	
+						lc_points[lc_count][0] = atof(in_string.c_str());
 						getline(in_line,in_string,' ');
-						lc_points[lc_count][1] = atof(in_string.c_str());	
+						lc_points[lc_count][1] = atof(in_string.c_str());
 					}
-					
+
 					opts.setParam("lc_points",lc_points);
 
 				}
@@ -351,11 +351,11 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",4);
 					}
 				}
-				
+
 				if (in_string == "STRAIN_LAMBDA"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					opts.setParam("strain_lambda",atof(in_string.c_str()));				
+					opts.setParam("strain_lambda",atof(in_string.c_str()));
 				}
 
 				if (in_string == "MATRIX_SAVE"){
