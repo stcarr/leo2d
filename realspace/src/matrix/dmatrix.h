@@ -6,6 +6,7 @@
  */
 #include <complex>
 #include <Eigen/Dense>
+#include <vector>
 
 
 #define MKL_Complex16 std::complex<double>
