@@ -843,6 +843,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				Job_params tempJob(opts);
 				tempJob.setParam("shifts",shifts);
 				//tempJob.setParam("target_list",targets,n_targets);
+				tempJob.setParam("num_vacancies",n_vac);
 				tempJob.setParam("vacancy_list",vacancies);
 				tempJob.setParam("target_list",targets);
 				tempJob.setParam("jobID",mlmc_ids[i][0]);
@@ -1970,6 +1971,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
 
 			} else if (strain_type == 3){
+				//sample strain by actual realspace position
 
 				std::vector<double> pos_in;
 				pos_in.resize(3);

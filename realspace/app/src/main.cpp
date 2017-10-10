@@ -347,7 +347,7 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",2);
 					} else if (in_string[0] == 'R'){ // STRAIN_TYPE = REALSPACE
 						opts.setParam("strain_type",3);
-					} else if (in_string[0] == 'F'){ // STRAIN_TYPE = FILE
+					} else if (in_string[0] == 'F'){ // STRAIN_TYPE = POSITIONS FROM FILE
 						opts.setParam("strain_type",4);
 					}
 				}
