@@ -16,6 +16,8 @@
 	#include "mkl.h"
 #elif USE_ESSL
 	#include <essl.h>
+#else
+	#include <Eigen/Dense>
 #endif
 
 // constructors

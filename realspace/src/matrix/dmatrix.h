@@ -5,7 +5,6 @@
  * Created on April 12, 2017, 3:38 PM
  */
 #include <complex>
-#include <Eigen/Dense>
 #include <vector>
 
 

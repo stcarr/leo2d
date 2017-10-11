@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6) # Pour éviter un warning au lancement de CMake, on doit préciser la version minimale
+cmake_minimum_required(VERSION 2.6) 
 ######################################################################################
 ### 1) Include the sources
 ######################################################################################

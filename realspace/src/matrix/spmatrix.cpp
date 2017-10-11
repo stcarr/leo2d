@@ -613,6 +613,7 @@ void SpMatrix::denseConvert(DMatrix &Mat_in){
 
 }
 
+/*
 void SpMatrix::denseConvert(Eigen::MatrixXd &H_in){
 	// Column Major order
 	for (int r = 0; r < nrows; ++r){
@@ -640,6 +641,7 @@ void SpMatrix::denseConvert(Eigen::MatrixXcd &H_in){
 		}
 
 }
+*/
 
 void SpMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 

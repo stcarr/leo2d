@@ -3848,7 +3848,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 	// H.eigenSolve should always be used now
 	if (false){
-
+		/*
 		Eigen::MatrixXd H_dense = Eigen::MatrixXd::Zero(local_max_index,local_max_index);
 		H.denseConvert(H_dense);
 		//printf("Running EigenSolver... \n");
@@ -3859,7 +3859,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
-
+		*/
 	} else {
 		H.eigenSolve(eigvals, eigvecs);
 
@@ -3972,7 +3972,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 	// H.eigenSolve should always be used now...
 	if (false){
-
+		/*
 		Eigen::MatrixXcd H_dense = Eigen::MatrixXcd::Zero(local_max_index,local_max_index);
 		H.denseConvert(H_dense);
 		//printf("Running EigenSolver... \n");
@@ -3981,7 +3981,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 		//printf("EigenSolver complete! \n");
 
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
-
+		*/
 	} else {
 
 		H.eigenSolve(eigvals, eigvecs);

@@ -37,16 +37,22 @@ endif()
 # (WITHOUT MKL)
 if(MKL_OFF)
 	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-unused-variable -Wno-unused-parameter")
+	find_package(Eigen3 REQUIRED)
 endif()
 
 #MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
 
 find_package(FFTW REQUIRED)
 find_package(MPI)
-find_package(Eigen3 REQUIRED)
 
 # include required directories
-include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH} ${EIGEN3_INCLUDE_DIR})
+if(MKL_OFF)
+	include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH} ${EIGEN3_INCLUDE_DIR})
+else()
+	include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH})
+endif()
+
+
 include(CMakeBackwardCompatibilityCXX)
 include(CheckLibraryExists)
 
