@@ -5,7 +5,6 @@
  * Created on January 27, 2016, 2:39 PM
  */
 #include <complex>
-#include <Eigen/Dense>
 #include "dmatrix.h"
 
 #define MKL_Complex16 std::complex<double>
@@ -95,8 +94,8 @@ class SpMatrix {
 
 		// Dense conversion
 		void denseConvert(DMatrix &Mat_in);
-		void denseConvert(Eigen::MatrixXd&);
-		void denseConvert(Eigen::MatrixXcd&);
+		//void denseConvert(Eigen::MatrixXd&);
+		//void denseConvert(Eigen::MatrixXcd&);
 
 		// Eigensolvers
 		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs);
