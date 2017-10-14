@@ -5,8 +5,9 @@ cmake_minimum_required(VERSION 2.6)
 
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src/)
-if(MKL_GNU)
-	INCLUDE_DIRECTORIES(${MKL_INCLUDE_DIRS})
+if(MKL_OFF)
+else()
+	INCLUDE_DIRECTORIES(${FFTW_INCLUDES} ${MKL_INCLUDE_DIRS})
 endif()
 
 ######################################################################################
@@ -14,8 +15,9 @@ endif()
 ######################################################################################
 
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR}/lib)
-if(MKL_GNU)
-	LINK_DIRECTORIES(${MKL_LIBRARIES})
+if(MKL_OFF)
+else()
+	LINK_DIRECTORIES(${FFTW_LIBRARIES} ${MKL_LIBRARIES})
 endif()
 
 ######################################################################################
@@ -33,7 +35,9 @@ ADD_DEPENDENCIES(LEO2D leo2d)
 ######################################################################################
 
 if(MKL_GNU)
-	TARGET_LINK_LIBRARIES(LEO2D leo2d mkl_intel_lp64 mkl_sequential mkl_core)
+	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_sequential mkl_core)
+elseif(MKL_INTEL)
+	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m dl)
 else()
 	TARGET_LINK_LIBRARIES(LEO2D leo2d)
 endif()

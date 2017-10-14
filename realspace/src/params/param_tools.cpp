@@ -548,7 +548,9 @@ void Param_tools::conductivityTransform(Job_params& job){
 	int d_cond = job.getInt("d_cond");
 
 	if (d_cond > 0){
+
 		Param_tools::matrixResponseTransform(job,"M_xx");
+		
 		if (d_cond > 1){
 			Param_tools::matrixResponseTransform(job,"M_yy");
 			Param_tools::matrixResponseTransform(job,"M_xy");
@@ -577,13 +579,14 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 	std::vector< std::vector< std::complex<double> > > matrixOut_cpx;
 
 	int type = 0;
-
+	
 	try{
 		matrixIn = job.getDoubleMat(tag);
 	} catch(const std::invalid_argument& ia){
 		matrixIn_cpx = job.getCpxDoubleMat(tag);
 		type = 1;
 	}
+	
 
 	double g[poly_order];
 	for (int i = 0; i < poly_order; ++i){
@@ -594,16 +597,17 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 	if (type == 0){
 		double in[poly_order*poly_order];
 		double out[poly_order*poly_order];
-		fftw_plan p;
-		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
+		// fftw_plan p;
+		// p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
 
 		for (int i = 0; i < poly_order; ++i){
 			for (int j = 0; j < poly_order; ++j){
 				in[i*poly_order + j] = 2*g[i]*g[j]*matrixIn[i][j];
-				out[i*poly_order + j] = 1.2345;
-			}
+				}
 		}
-
+		
+		fftw_plan p;
+		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 		fftw_execute(p);
 
 		matrixOut.resize(poly_order);
@@ -613,9 +617,8 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 				matrixOut[i][j] = out[i*poly_order + j];
 			}
 		}
-
+		
 		job.setParam(tag,matrixOut);
-
 		fftw_destroy_plan(p);
 
 	} else if (type == 1){

@@ -16,15 +16,15 @@ SET(CMAKE_CXX_COMPILER mpicxx)
 
 # setup packages
 
-option(MKL_INTEL "Using MKL Library with Intel compilers" OFF)
-option(MKL_GNU "Using MKL Library with GNU compilers" ON)
+option(MKL_INTEL "Using MKL Library with Intel compilers" ON)
+option(MKL_GNU "Using MKL Library with GNU compilers" OFF)
 option(MKL_OFF "No MKL usage (use Eigen instead)" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
 
 # (WITH MKL, INTEL)
 if(MKL_INTEL)
-	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -mkl -DUSE_MKL -Wno-unused-variable -Wno-unused-parameter")
+	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -DUSE_MKL -I$ENV{MKLROOT}/include")
 endif()
 
 # (WITH MKL, GNU)
@@ -42,14 +42,14 @@ endif()
 
 #MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
 
-find_package(FFTW REQUIRED)
 find_package(MPI)
+find_package(FFTW REQUIRED)
 
 # include required directories
 if(MKL_OFF)
 	include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH} ${EIGEN3_INCLUDE_DIR})
 else()
-	include_directories(${FFTW_INCLUDES} ${MPI_INCLUDE_PATH})
+	include_directories(${MPI_INCLUDE_PATH} ${FFTW_INCLUDES} ${MKL_INCLUDE_DIR})
 endif()
 
 
