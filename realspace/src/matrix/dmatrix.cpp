@@ -93,7 +93,23 @@ DMatrix::~DMatrix(){
 
 }
 
+void DMatrix::debugPrint(){
 
+
+	for (int r = 0; r < nrows; ++r){
+		printf("         ");
+		for (int c = 0; c < ncols; ++c){
+			if (type == 0){
+				printf("%lf ", val[c*nrows + r]);
+			} else if (type == 1){
+				printf("[%lf,%lf] ", val_c[c*nrows + r].real(),val_c[c*nrows + r].imag());
+			}
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+}
 
 void DMatrix::setup(int nr, int nc){
 
@@ -206,7 +222,7 @@ void DMatrix::getCPPValCopy(std::vector< std::vector<double> >& val_copy) const{
 
 			val_copy.push_back(temp);
 
-		}	
+		}
 	}
 
 }
@@ -234,9 +250,9 @@ void DMatrix::getCPPValCopy(std::vector< std::vector< std::complex<double> > >& 
 
 			val_copy.push_back(temp);
 
-		}	
-	}	
-	
+		}
+	}
+
 }
 
 void DMatrix::setVal(double* ptr){

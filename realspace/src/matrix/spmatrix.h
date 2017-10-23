@@ -63,6 +63,8 @@ class SpMatrix {
 		// Normal complex constructor
 		SpMatrix(int,int,std::complex<double>*,int*,int*,int);
 
+		void debugPrint();
+
 		int* allocColIndx();
 
 		int* allocRowPtr();

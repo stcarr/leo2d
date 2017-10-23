@@ -5,9 +5,9 @@
  * Created on August 21, 2017, 11:02 AM
  */
 #ifndef PARAM_TOOLS_H
-#define PARAM_TOOLS_H 
- 
- 
+#define PARAM_TOOLS_H
+
+
 #include "job_params.h"
 
 /**
@@ -17,26 +17,29 @@ namespace Param_tools{
 
 	// Save data from job to outFile
 	void save(Job_params job, std::ofstream& outFile);
-	
+
 	// Save header information for job to outFile
 	void saveHeader(Job_params job, std::ofstream& outFile);
 
 	// Print some settings for job to terminal
 	// Maybe not use, already implemented in Job_params class pretty easily
-	//void printParams(Job_params job);	
-	
+	//void printParams(Job_params job);
+
 	// Used in locality to save the time it took to get from previous to current tag
 	void saveTiming(Job_params& job, double t, std::string tag);
 
+  // Compute area of the brillioun zone for a giving real-space unitcell
+  double computeReciprocalArea(vector< vector<double> > uc);
+
 	// Transform from chebyshev basis to energy basis
 	void densityTransform(Job_params& job);
-	
+
 	// Transform from chebyshev basis to energy basis
 	void conductivityTransform(Job_params& job);
 
 	// Transform any matrix from chebyshev basis to energy basis
 	void matrixResponseTransform(Job_params& job, std::string tag);
-	
+
 	// load MLMC data from file_name into job
 	void mlmc_load(Job_params& job, std::string file_name);
 
@@ -58,4 +61,3 @@ namespace Param_tools{
 }
 
 #endif /* PARAM_TOOLS_H */
-

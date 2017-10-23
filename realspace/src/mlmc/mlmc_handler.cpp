@@ -218,23 +218,35 @@ void Mlmc_handler::process(Job_params results){
 				}
 			}
 
+			printf("M_xx[43][31] = %lf (k_num = %d) \n",k_staging_results[result_index][0].getDoubleMat("M_xx")[42][30],0);
+
 			for (int i = 1; i < num_k; ++i){
 
-				for (int x = 0; x < (int)M_xx.size(); ++x){
-					for (int y = 0; y < (int)M_xx[x].size(); ++y){
-						M_xx[x][y] = M_xx[x][y] + (k_staging_results[result_index][i].getDoubleMat("M_xx")[x][y]);
+				std::vector< std::vector<double> > temp_mat = k_staging_results[result_index][i].getDoubleMat("M_xx");
+
+				if (d_cond > 0){
+					for (int x = 0; x < (int)M_xx.size(); ++x){
+						for (int y = 0; y < (int)M_xx[x].size(); ++y){
+							M_xx[x][y] = M_xx[x][y] + temp_mat[x][y];
+							if (x == 43-1 && y == 31-1){
+								printf("M_xx[43][31] = %lf (k_num = %d) \n",temp_mat[x][y],i);
+							}
+						}
 					}
 				}
-
-				for (int x = 0; x < (int)M_xy.size(); ++x){
-					for (int y = 0; y < (int)M_xy[x].size(); ++y){
-						M_xy[x][y] = M_xy[x][y] + (k_staging_results[result_index][i].getDoubleMat("M_xx")[x][y]);
+				if (d_cond > 1){
+					temp_mat = k_staging_results[result_index][i].getDoubleMat("M_xy");
+					for (int x = 0; x < (int)M_xy.size(); ++x){
+						for (int y = 0; y < (int)M_xy[x].size(); ++y){
+							M_xy[x][y] = M_xy[x][y] + temp_mat[x][y];
+						}
 					}
-				}
 
-				for (int x = 0; x < (int)M_yy.size(); ++x){
-					for (int y = 0; y < (int)M_yy[x].size(); ++y){
-						M_yy[x][y] = M_yy[x][y] + (k_staging_results[result_index][i].getDoubleMat("M_xx")[x][y]);
+					temp_mat = k_staging_results[result_index][i].getDoubleMat("M_yy");
+					for (int x = 0; x < (int)M_yy.size(); ++x){
+						for (int y = 0; y < (int)M_yy[x].size(); ++y){
+							M_yy[x][y] = M_yy[x][y] + temp_mat[x][y];
+						}
 					}
 				}
 

@@ -73,6 +73,9 @@ class DMatrix {
 		// Destructor
 		~DMatrix();
 
+		// Debug call
+		void debugPrint();
+
 		// Value accessing
 		double* getValPtr();
 		std::complex<double>* getCpxValPtr();
@@ -81,7 +84,7 @@ class DMatrix {
 		void getValCopy(std::complex<double>*) const;
 		void getCPPValCopy(std::vector< std::vector<              double  > >& val_copy) const;
 		void getCPPValCopy(std::vector< std::vector< std::complex<double> > >& val_copy) const;
-		
+
 
 		void setVal(double*);
 		void setVal(std::complex<double>* ptr);

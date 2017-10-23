@@ -195,6 +195,28 @@ void SpMatrix::setup(int nr, int nc, double *val0, int *colIndex0, int *rowPoint
 	#endif
 }
 
+void SpMatrix::debugPrint(){
+
+	for (int r = 0; r < nrows; ++r){
+		printf("      ");
+
+		int begin = rowPointer[r];
+		int end = rowPointer[r+1];
+
+		for (int i = begin; i < end; ++i){
+			if (type == 0){
+				printf("%lf(%d,%d) ",val[i],r,colIndex[i]);
+			} else if (type == 1){
+				printf("[%lf,%lf](%d,%d) ",val_c[i].real(), val_c[i].imag(),r,colIndex[i]);
+			}
+		}
+		printf("\n");
+
+	}
+	printf("\n");
+
+}
+
 int* SpMatrix::allocColIndx(){
 	colIndex = new int[maxnnz];
 	return colIndex;
@@ -207,12 +229,18 @@ int* SpMatrix::allocRowPtr(){
 
 double* SpMatrix::allocRealVal(){
 	val = new double[maxnnz];
+	for (int idx = 0; idx < maxnnz; ++idx){
+		val[idx] = 0.0;
+	}
 	type = 0;
 	return val;
 }
 
 std::complex<double>* SpMatrix::allocCpxVal(){
 	val_c = new std::complex<double>[maxnnz];
+	for (int idx = 0; idx < maxnnz; ++idx){
+		val_c[idx] = std::complex<double>(0.0,0.0);
+	}
 	type = 1;
 	return val_c;
 }
@@ -500,12 +528,12 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> 
 	int ncols_C;
 	int nrows_C;
 
-	if (C.getValPtr() == NULL){
+	if (C.getCpxValPtr() == NULL){
 
 		ncols_C = ncols_B;
 		nrows_C = nrows_A;
 
-		C.setup(nrows_C,ncols_C);
+		C.setup(nrows_C,ncols_C,1);
 		nval_C = nrows_C*ncols_C;
 		val_C = C.allocCpxVal();
 
