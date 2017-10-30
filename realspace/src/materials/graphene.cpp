@@ -61,7 +61,7 @@ double Coupling::Intralayer::graphene(
     int r = hom_vec[0] * (hom_vec[0] + hom_vec[1]) + hom_vec[1]*hom_vec[1];
 
     const double onsite = 0.3504;
-	  //const double t_arr[9] = {onsite, -2.8922, 0, 0, 0, 0, 0, 0, 0}; // only nearest neighbors (debug/testing)!
+	  //const double t_arr[9] = {0, -2.8922, 0, 0, 0, 0, 0, 0, 0}; // only nearest neighbors (debug/testing)!
     const double t_arr[9] = {onsite, -2.8922, 0.2425, -0.2656, 0.0235, 0.0524, -0.0209, -0.0148, -0.0211};
     switch (r)
     {
@@ -115,11 +115,14 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
     double r = std::sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
     if (r < Graphene::inter_cutoff_radius)
     {
+        // An angularly symmetric form, for testing purposes
+        //return 0.310*std::exp(-1.75*(r/Graphene::a)*(r/Graphene::a));
+
         double ac = std::atan2(vector[1], vector[0]);
 
         // theta21 (angle to bond on sheet 1)
 
-        double theta21 = ac + theta_row;
+        double theta21 = ac - theta_row;
         if (orbit_row == Orbital::B_pz)
             theta21 += numbers::PI_6;
         else // (orbit_row == Orbital::A_pz)
@@ -127,7 +130,7 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
 
         // theta12 (angle to bond on sheet 2)
 
-        double theta12 = ac + theta_col + numbers::PI;
+        double theta12 = ac - theta_col + numbers::PI;
         if (orbit_col == Orbital::B_pz)
             theta12 += numbers::PI_6;
         else // (orbit2_col == Orbital::A_pz)
@@ -135,31 +138,49 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
 
         double rs = r/Graphene::a;
 
-		double z_eps = (3.40 - fabs(vector[2]))/3.40;
+    		double z_eps = (3.40 - fabs(vector[2]))/3.40;
 
-		double lambda_0 =  0.310 + 1.882*z_eps + 7.741*z_eps*z_eps;
-		double xi_0     =  1.750 + 1.618*z_eps + 1.848*z_eps*z_eps;
-		double kappa_0  =  1.989 + 1.006*z_eps +  2.426*z_eps*z_eps;
+        // New coefficients (with compression dependence fitting)
+        /*
+    		double lambda_0 =  0.310 + 1.882*z_eps + 7.741*z_eps*z_eps;
+    		double xi_0     =  1.750 + 1.618*z_eps + 1.848*z_eps*z_eps;
+    		double kappa_0  =  1.989 + 1.006*z_eps +  2.426*z_eps*z_eps;
 
-		double lambda_3 = -0.068 + 0.399*z_eps + 1.739*z_eps*z_eps;
-		double xi_3     =  3.286 - 0.916*z_eps + 11.996*z_eps*z_eps;
-		double x_3      =  0.500 + 0.322*z_eps + 0.906*z_eps*z_eps;
+    		double lambda_3 = -0.068 + 0.399*z_eps + 1.739*z_eps*z_eps;
+    		double xi_3     =  3.286 - 0.916*z_eps + 11.996*z_eps*z_eps;
+    		double x_3      =  0.500 + 0.322*z_eps + 0.906*z_eps*z_eps;
 
-		double lambda_6 = -0.008 + 0.046*z_eps - 0.183*z_eps*z_eps;
-		double xi_6     =  2.272 + 0.719*z_eps - 4.415*z_eps*z_eps;
-		double x_6      =  1.217 + 0.027*z_eps - 0.658*z_eps*z_eps;
-		double kappa_6  =  1.561 + 0.371*z_eps - 0.134*z_eps*z_eps;
+    		double lambda_6 = -0.008 + 0.046*z_eps - 0.183*z_eps*z_eps;
+    		double xi_6     =  2.272 + 0.719*z_eps - 4.415*z_eps*z_eps;
+    		double x_6      =  1.217 + 0.027*z_eps - 0.658*z_eps*z_eps;
+    		double kappa_6  =  1.561 + 0.371*z_eps - 0.134*z_eps*z_eps;
+        */
+        // Old coefficients (From: S. Fang, Phys. Rev. B 93, 235153 – Published 27 June 2016)
+        ///*
+        double lambda_0 =  0.3155;
+    		double xi_0     =  1.7543;
+    		double kappa_0  =  2.0010;
+
+    		double lambda_3 = -0.0688;
+    		double xi_3     =  3.4692;
+    		double x_3      =  0.5212;
+
+    		double lambda_6 = -0.0083;
+    		double xi_6     =  2.8764;
+    		double x_6      =  1.5206;
+    		double kappa_6  =  1.5731;
+        //*/
 
         double V0 = lambda_0 *         std::exp(-xi_0*(rs    )*(rs    )) * std::cos(kappa_0*rs);
         double V3 = lambda_3 * rs*rs * std::exp(-xi_3*(rs-x_3)*(rs-x_3))                       ;
         double V6 = lambda_6 *         std::exp(-xi_6*(rs-x_6)*(rs-x_6)) * std::sin(kappa_6*rs);
 
-		// Values from model w/o compression fitting
-		/*
-        double V0 = .3155 * std::exp(-1.7543*rs*rs) * std::cos(2.001*rs);
-        double V3 = -.0688 * rs*rs * std::exp(-3.4692*(rs-.5212)*(rs-.5212));
-        double V6 = -.0083 * std::exp(-2.8764*(rs-1.5206)*(rs-1.5206)) * std::sin(1.5731*rs);
-		*/
+    		// Values from model w/o compression fitting
+    		/*
+            double V0 = .3155 * std::exp(-1.7543*rs*rs) * std::cos(2.001*rs);
+            double V3 = -.0688 * rs*rs * std::exp(-3.4692*(rs-.5212)*(rs-.5212));
+            double V6 = -.0083 * std::exp(-2.8764*(rs-1.5206)*(rs-1.5206)) * std::sin(1.5731*rs);
+    		*/
 
         double t = V0 + V3*(std::cos(3*theta12)+std::cos(3*theta21)) + V6*(std::cos(6*theta12)+std::cos(6*theta21));
 

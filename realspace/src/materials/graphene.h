@@ -89,10 +89,10 @@ namespace Graphene {
      */
     const int               n_orbitals = 2;
     const double            intra_cutoff_radius = 4 * numbers::SQRT3_3 * a + 1e-5;
-    const double            inter_cutoff_radius = 8.;
+    const double            inter_cutoff_radius = 8.0;
 
     const double            intra_search_radius = 4.0;//intra_cutoff_radius + a * numbers::SQRT3_3;
-    const double            inter_search_radius = 4.0;//inter_cutoff_radius + a * numbers::SQRT3_3;
+    const double            inter_search_radius = 6.0;//inter_cutoff_radius + a * numbers::SQRT3_3;
 
 
 /**

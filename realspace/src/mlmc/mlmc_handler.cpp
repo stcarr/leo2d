@@ -108,7 +108,7 @@ void Mlmc_handler::process(Job_params results){
 	//printf("Entering mlmc_handler.process() \n");
 
 	if (d_cond > 0){
-		Param_tools::conductivityTransform(results);
+		//Param_tools::conductivityTransform(results);
 	}
 
 	int jobID = results.getInt("mlmcID");
@@ -218,7 +218,6 @@ void Mlmc_handler::process(Job_params results){
 				}
 			}
 
-			printf("M_xx[43][31] = %lf (k_num = %d) \n",k_staging_results[result_index][0].getDoubleMat("M_xx")[42][30],0);
 
 			for (int i = 1; i < num_k; ++i){
 
@@ -228,9 +227,6 @@ void Mlmc_handler::process(Job_params results){
 					for (int x = 0; x < (int)M_xx.size(); ++x){
 						for (int y = 0; y < (int)M_xx[x].size(); ++y){
 							M_xx[x][y] = M_xx[x][y] + temp_mat[x][y];
-							if (x == 43-1 && y == 31-1){
-								printf("M_xx[43][31] = %lf (k_num = %d) \n",temp_mat[x][y],i);
-							}
 						}
 					}
 				}

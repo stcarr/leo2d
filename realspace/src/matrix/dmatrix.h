@@ -102,7 +102,7 @@ class DMatrix {
 		void matrixMultiply(DMatrix&, DMatrix&, std::complex<double>, std::complex<double>, char, char);
 
 		//
-		void eleMatrixMultiply(DMatrix&, DMatrix&, double, double);
+		void eleMatrixMultiply(DMatrix&, DMatrix&, double, double, char A_type, char B_type);
 
 		// Eigensolvers
 		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs);

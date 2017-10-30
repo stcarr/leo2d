@@ -351,12 +351,13 @@ void Locality::constructGeom(){
 			if (fft_from_file == 0){
 				// Generate FFT of interlayer coupling for Momentum space
 				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
-					int n_x = 20;
-					int n_y = 20;
-					int L_x = 20;
-					int L_y = 20;
-					int length_x = 4;
-					int length_y = 4;
+					int fft_scaling = 2;
+					int n_x = 40;
+					int n_y = 40;
+					int L_x = 40*fft_scaling;
+					int L_y = 40*fft_scaling;
+					int length_x = 2;
+					int length_y = 2;
 					std::string fft_file = "interlayer_fft.dat";
 				//
 
@@ -801,7 +802,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		// With MLMC
 
 		if (solver_type == 3){
-
 			std::vector< std::vector<int> > mlmc_vacs;
 			std::vector< std::vector<int> > mlmc_ids;
 
@@ -1013,58 +1013,100 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 			} else if (k_type == 1){
 
-				std::vector<Job_params> k_jobArray;
-
-				nShifts = opts.getInt("nShifts");
-				maxJobs = nShifts*nShifts;
+				double num_k1 = opts.getInt("num_k1");
+				maxJobs = num_k1;
 
 				std::vector< std::vector<double> > b1 = getReciprocal(0);
 				std::vector< std::vector<double> > b2 = getReciprocal(1);
-
-				// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
-				//b1[1][0] = -b1[1][0];
-				//b2[1][0] = -b2[1][0];
 
 				printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
 				printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
 
 				//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
-				double p1[2];
-				double p2[2];
+				double k_1[2];
+				double k_2[2];
 
-				p1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
-				p1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+				// k_1 = K of layer 1, k_2 = K of layer 2
+				/*
+				k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+				k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
 
-				p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
-				p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+				k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+				k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+				*/
 
-				printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+				k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+				k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
+
+				k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
+				k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
+
+				double k[2];
+				double gamma[2];
+				double m[2];
+
+				k[0] = k_1[0];
+				k[1] = k_1[1];
+
+				double d = (1.0/2.0)*sqrt((k_2[0] - k_1[0])*(k_2[0] - k_1[0]) + (k_2[1] - k_1[1])*(k_2[1] - k_1[1]));
+				double x_dir[2];
+				double y_dir[2];
+
+				y_dir[0] = (k_2[0] - k_1[0])/(2.0*d);
+				y_dir[1] = (k_2[1] - k_1[1])/(2.0*d);
+				x_dir[0] = cos(-M_PI/2)*y_dir[0] - sin(-M_PI/2)*y_dir[1];
+				x_dir[1] = sin(-M_PI/2)*y_dir[0] + cos(-M_PI/2)*y_dir[0];
+
+				gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
+				gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
+
+				m[0] = k[0] + d*y_dir[0];
+				m[1] = k[1] + d*y_dir[1];
+
+				printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
 
 				int k_jobID = 1;
-				for (int i = 0; i < maxJobs; ++i){
+				std::vector<Job_params> k_jobArray;
+				for (int j = 0; j < (int) jobArray.size(); ++j){
+					for (int i = 0; i < maxJobs; ++i){
+						//double x = (1.0/((double) maxJobs))*i;
+						//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+						//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+						double c = (3.0/((double) maxJobs))*i;
 
-					//double x = (1.0/((double) maxJobs))*i;
-					double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
-					//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+						double k_x = 0;
+						double k_y = 0;
 
-					Job_params tempJob(jobArray[i]);
-					//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
-					tempJob.setParam("jobID",k_jobID);
+						if (c <= 1) {
+							k_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+							k_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+						} else if (c <= 2) {
+							k_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+							k_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+						} else {
+							k_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+							k_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+						}
 
-					std::vector<double> k_vec;
-					k_vec.resize(2);
-					k_vec[0] = (1.0-x)*p1[0] + (x)*p2[0];
-					k_vec[1] = (1.0-x)*p1[1] + (x)*p2[1];
-					printf("x = %lf, k = [%lf, %lf]\n",x,k_vec[0],k_vec[1]);
-					tempJob.setParam("k_vec",k_vec);
+						Job_params tempJob(jobArray[j]);
+						//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+						tempJob.setParam("jobID",k_jobID);
 
-					k_jobArray.push_back(tempJob);
-					++k_jobID;
+						std::vector<double> k_vec;
+						k_vec.resize(2);
+						k_vec[0] = k_x;
+						k_vec[1] = k_y;
+						printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+						tempJob.setParam("k_vec",k_vec);
+
+						k_jobArray.push_back(tempJob);
+						++k_jobID;
 
 					}
-					jobArray = k_jobArray;
+				}
 
+				jobArray = k_jobArray;
 
 			}
 
@@ -1382,6 +1424,26 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 	// ---------------------
 	// Enter MPI worker loop
 	// ---------------------
+
+	// Load FFT data once if its momentum-space code...
+	if (opts.getInt("solver_space") == 1){
+		// Load FFTW data into Momentum_coupling object
+
+		// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
+		// They define the settings used to generate the interlayer_fft.dat file
+			int fft_scaling = 2;
+			int n_x = 40;
+			int n_y = 40;
+			int L_x = 40*fft_scaling;
+			int L_y = 40*fft_scaling;
+			int length_x = 2;
+			int length_y = 2;
+			std::string fft_file = "interlayer_fft.dat";
+		//
+
+		fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
+	}
+
 	while (1) {
 
 		Job_params jobIn;
@@ -1404,6 +1466,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		int diagonalize = jobIn.getInt("diagonalize");
 		int boundary_condition = jobIn.getInt("boundary_condition");
 		int chiral_on = jobIn.getInt("chiral_on");
+		int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 		int d_vecs =  jobIn.getInt("d_vecs");
 		int d_cond =  jobIn.getInt("d_cond");
 		int d_weights = jobIn.getInt("d_weights");
@@ -1579,11 +1642,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				DMatrix eigvecs;
 
+				DMatrix kpm_dos;
 				DMatrix M_xx;
 				DMatrix M_yy;
 				DMatrix M_xy;
 
-				computeEigen(eigenvalue_array, eigvecs, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
+				computeEigen(eigenvalue_array, eigvecs, kpm_dos, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
 
 				std::vector< std::vector<double> > eigenweights;
 				std::vector< std::vector<double> > eigenvectors;
@@ -1595,6 +1659,37 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				double* eigenvector_array;
 				eigenvector_array = eigvecs.getValPtr();
+
+				if (d_kpm_dos == 1){
+
+					std::vector<double> kpm_dos_out;
+					std::vector< std::vector<double> > kpm_dos_in;
+
+					double* val_kpm_dos;
+					val_kpm_dos = kpm_dos.getValPtr();
+
+
+					for (int i = 0; i < poly_order; ++i){
+						std::vector<double> temp_vec;
+
+						for (int j = 0; j < poly_order; ++j) {
+							temp_vec.push_back(val_kpm_dos[i + j*poly_order]);
+						}
+
+						kpm_dos_in.push_back(temp_vec);
+					}
+
+					results_out.setParam("kpm_dos_mat",kpm_dos_in);
+					Param_tools::matrixResponseTransform(results_out, "kpm_dos_mat");
+					kpm_dos_in = results_out.getDoubleMat("kpm_dos_mat");
+
+					for (int i = 0; i < poly_order; ++i){
+						kpm_dos_out.push_back(kpm_dos_in[i][i]);
+					}
+
+					results_out.setParam("kpm_dos",kpm_dos_out);
+
+				}
 
 				if (d_weights == 1){
 
@@ -1691,11 +1786,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				DMatrix eigvecs;
 
+				DMatrix kpm_dos;
 				DMatrix M_xx;
 				DMatrix M_yy;
 				DMatrix M_xy;
 
-				computeEigenComplex(eigenvalue_array, eigvecs, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
+				computeEigenComplex(eigenvalue_array, eigvecs, kpm_dos, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
 
 				std::vector< std::vector<double> > eigenweights;
 				std::vector< std::vector<double> > eigenvectors;
@@ -1714,6 +1810,37 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				std::complex<double>* eigenvector_array;
 				eigenvector_array = eigvecs.getCpxValPtr();
+
+				if (d_kpm_dos == 1){
+
+					std::vector<double> kpm_dos_out;
+					std::vector< std::vector<double> > kpm_dos_in;
+
+					double* val_kpm_dos;
+					val_kpm_dos = kpm_dos.getValPtr();
+
+
+					for (int i = 0; i < poly_order; ++i){
+						std::vector<double> temp_vec;
+
+						for (int j = 0; j < poly_order; ++j) {
+							temp_vec.push_back(val_kpm_dos[i + j*poly_order]);
+						}
+
+						kpm_dos_in.push_back(temp_vec);
+					}
+
+					results_out.setParam("kpm_dos_mat",kpm_dos_in);
+					Param_tools::matrixResponseTransform(results_out, "kpm_dos_mat");
+					kpm_dos_in = results_out.getDoubleMat("kpm_dos_mat");
+
+					for (int i = 0; i < poly_order; ++i){
+						kpm_dos_out.push_back(kpm_dos_in[i][i]);
+					}
+
+					results_out.setParam("kpm_dos",kpm_dos_out);
+
+				}
 
 				if (d_weights == 1){
 
@@ -1802,6 +1929,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 							results_out.setParam("M_xy", cond_xy);
 						}
 					}
+
+
+					// convert to E basis
+					Param_tools::conductivityTransform(results_out);
+
 				}
 
 				if (chiral_on == 1){
@@ -2282,21 +2414,19 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				}
 
 				if (t != 0){
-					//printf("intra coupling (%d, %d) [%lf, %lf, %lf] -> [%lf, %lf, %lf] (%lf, %lf) = %lf \n",k_i,new_k,x1,y1,z1,x2,y2,z2,new_pos_shift_x,new_pos_shift_y,t);
-
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
-					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
-
+					//printf("intra coupling (%d, %d) [%lf, %lf, %lf] -> [%lf, %lf, %lf] (%lf, %lf) = %lf \n",k_i,new_k,x1,y1,z1,x2,y2,z2,new_pos_shift_x,new_pos_shift_y,t)
 					//printf("intra_t [%d,%d] = %lf \n",k_i,new_k,t);
 					v[input_counter] += t;
 					v_dx[input_counter] += (x1 - x2)*t; // (delta_x)*t
 					v_dy[input_counter] += (y1 - y2)*t; // (delta_y)*t
+				}
 
 				// check if next pair is identical (possible with periodic wrapping), and save
-					if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
-						++input_counter;
-					}
+				if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
+					col_index[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+					++input_counter;
 				}
 
 			}
@@ -2376,21 +2506,24 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					z2 - z1}};
 
 				t = Materials::interlayer_term(orbit1, orbit2,disp, theta1, theta2,mat1, mat2)/energy_rescale;
+
+				//if ( (new_k == 568 && k_i == 3941) || (new_k == 3941 && k_i == 568) ){
+					//printf("inter[%d,%d] = %lf, [%lf, %lf] -> [%lf, %lf] \n", k_i,new_k,t, x1,y1, x2,y2);
+				//}
+
 				//t += interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (t != 0 ){
-
-					col_index[input_counter] = new_k - current_index_reduction[new_k];
-					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
-					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
-
 					v[input_counter] += t;
 					v_dx[input_counter] += (x1 - x2 )*t;
 					v_dy[input_counter] += (y1 - y2)*t;
+				}
 
-					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
-					if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){
-						++input_counter;
-					}
+				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
+				if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){
+					col_index[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+					++input_counter;
 				}
 
 			}
@@ -2569,7 +2702,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	k_vec[1] = 0.0;
 	if (k_sampling == 1){
 		k_vec = jobIn.getDoubleVec("k_vec");
-		printf("k_vec [%lf, %lf]\n",k_vec[0],k_vec[1]);
+		//printf("k_vec [%lf, %lf]\n",k_vec[0],k_vec[1]);
 	}
 
 	//jobIn.printParams();
@@ -2774,9 +2907,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 				if (t_cpx != std::complex<double>(0.0)){
 					//printf("intra coupling (%d, %d) [%lf, %lf, %lf] -> [%lf, %lf, %lf] (%lf, %lf) = %lf \n",k_i,new_k,x1,y1,z1,x2,y2,z2,new_pos_shift_x,new_pos_shift_y,t);
 
+					// moved to index checking block, as we want column info saved even if t != 0!
+					/*
 					col_index[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
 					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+					*/
 
 					v_c[input_counter] += t_cpx;
 					v_c_dx[input_counter] += (x1 - x2)*t_cpx;
@@ -2799,13 +2935,13 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 						v_c_dH_0_minus[input_counter] += std::complex<double>( (x1 - x2),-(y1 - y2))*t_cpx;
 						v_c_dH_0_plus[input_counter]  += std::complex<double>( (x1 - x2), (y1 - y2))*t_cpx;
 					}
-
-					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
-					if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
-
-						++input_counter;
-					}
-
+				}
+				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
+				if ((intra_counter+1) == max_intra_pairs || k_i != intra_pairs[(intra_counter+1)*2 + 0] || new_k != intra_pairs[(intra_counter+1)*2 + 1]){
+					col_index[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
+					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+					++input_counter;
 				}
 			}
 
@@ -2825,7 +2961,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 			// if the first index of inter_pairs changes, we stop
 			if (inter_counter == max_inter_pairs || inter_pairs[inter_counter*2 + 0] != k_i) {
 				same_index2 = false;
-				continue; // go to "while(same_index2)" which will end this loop
+				continue; // go back up to "while(same_index2)" which will end this loop
 			}
 
 			int new_k = inter_pairs[inter_counter*2 + 1];
@@ -2892,14 +3028,19 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 				// Then get k dot R phase from the supercell wrapping
 				phase = phase + k_vec[0]*(-new_pos_shift_x) + k_vec[1]*(-new_pos_shift_y);
-
+				//printf("[%d, %d]: phase = %lf, k_vec = [%lf, %lf], R = [%lf, %lf] \n",k_i,new_k,phase, k_vec[0],k_vec[1], -new_pos_shift_x, -new_pos_shift_y);
 				//t_cpx = t_cpx + std::polar(t, phase);
 					t_cpx = std::polar(t,phase);
 				if (t_cpx != std::complex<double>(0.0)){
 
+					// moved to index checking block, as we want column info saved even if t != 0!
+					/*
 					col_index[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
+					*/
+					//printf("[%d, %d] @ (%d, %d): v_c[%d] += %lf | ",k_i,new_k,k_i,col_index[input_counter],input_counter,t_cpx.real());
+					//printf("new_k = %d, next_k = %d \n",inter_pairs[(inter_counter+0)*2 + 1], inter_pairs[(inter_counter+1)*2 + 1]);
 
 					v_c[input_counter] += t_cpx;
 					v_c_dx[input_counter] += (x1 - x2)*t_cpx; // (delta_x)*t
@@ -2918,12 +3059,16 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 						v_c_dH_0_plus[input_counter]  += std::complex<double>( (x1 - x2), (y1 - y2))*t_cpx;
 					}
 
-					// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
-					if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){
-						++input_counter;
-					}
-
 				}
+
+				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
+				if ( (inter_counter+1) == max_inter_pairs || k_i != inter_pairs[(inter_counter+1)*2 + 0] || new_k != inter_pairs[(inter_counter+1)*2 + 1]){
+					col_index[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
+					col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
+					++input_counter;
+				}
+
 			}
 
 			++inter_counter;
@@ -3208,22 +3353,24 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	// Count the current element, i.e. "i = input_counter"
 	int input_counter = 0;
 
+	/*
 	// Load FFTW data into Momentum_coupling object
 
 	// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 	// They define the settings used to generate the interlayer_fft.dat file
-		int n_x = 20;
-		int n_y = 20;
-		int L_x = 20;
-		int L_y = 20;
-		int length_x = 4;
-		int length_y = 4;
+		int fft_scaling = 2;
+		int n_x = 30;
+		int n_y = 30;
+		int L_x = 40*fft_scaling;
+		int L_y = 40*fft_scaling;
+		int length_x = 3;
+		int length_y = 3;
 		std::string fft_file = "interlayer_fft.dat";
 	//
 
 	Momentum_coupling fftw_inter;
 	fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
-
+	*/
 	//printf("Momentum Space coupling term [0][0] at k = (0,0) = %lf + i*%lf \n",7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,0),7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,1));
 
 
@@ -3367,7 +3514,14 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				if (k_i <= new_k){
 					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				} else if (k_i > new_k) {
-					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
+					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),-fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
+					//t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
+				}
+
+				if ((new_k == 120  && k_i == 243) || (new_k == 243 && k_i == 120)){
+					printf("[%d, %d]: t = [%lf, %lf] \n",k_i, new_k, t.real(),t.imag());
+					printf("dx = %lf, dy = %lf, o1 = %d, o2 = %d \n",dx,dy,orbit1,orbit2);
+
 				}
 
 				// following used for debugging specific elements of H
@@ -3393,11 +3547,14 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				//printf("[%d,%d] = %lf + %lf i \n",k_i,new_k,t.real(),t.imag());
 
 					// Controls Momentum Interlayer coupling (set to 0 to turn off interlayer interaction!)
+					/*
 					if (k_i <= new_k){
 						v_c[input_counter] = t/energy_rescale;
 					} else if (k_i > new_k) {
 						v_c[input_counter] = std::conj(t)/energy_rescale;
 					}
+					*/
+					v_c[input_counter] = t/energy_rescale;
 					++input_counter;
 				}
 			}
@@ -3877,11 +4034,12 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 
 }
 
-void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &kpm_dos, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int d_weights = jobIn.getInt("d_weights");
 	int d_vecs = jobIn.getInt("d_vecs");
 	int d_cond = jobIn.getInt("d_cond");
+	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int p = jobIn.getInt("poly_order");
 
 	int debugPrint = 0;
@@ -3927,6 +4085,36 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 		// for all eigenvectors |n>,|m>, and for j_x and j_y (via dxH, dyH)
 
 		// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
+
+		if (d_kpm_dos > 0){
+
+			int N = local_max_index;
+			DMatrix cheb_eigvals;
+			cheb_eigvals.setup(N,p);
+			double* v_cheb;
+			v_cheb = cheb_eigvals.allocRealVal();
+
+			// COLUMN MAJOR ORDER (for Fortran MKL subroutines)
+			//
+			// Compute Cheby. coeffs. T_m(lambda_i) as a matrix
+
+			for (int i = 0; i < N; ++i){
+				// m = 0
+				v_cheb[0*N + i] = 1;
+				v_cheb[1*N + i] = eigvals[i];
+			}
+
+			// Chebyshev iteration on eigenvalues
+			for (int m = 2; m < p; ++m){
+				// start cheb iteration p
+				for (int i = 0; i < N; ++i){
+					v_cheb[m*N + i] = 2*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
+				}
+			}
+
+			cheb_eigvals.matrixMultiply(kpm_dos,cheb_eigvals, 1.0/local_max_index, 0, 'T', 'N');
+
+		}
 
 		if (d_cond > 0){
 
@@ -3978,7 +4166,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 			// J_xx element-wise via vdMul in MKL
 			DMatrix J_xx;
-			J_x.eleMatrixMultiply(J_xx, J_x, 1, 0);
+			J_x.eleMatrixMultiply(J_xx, J_x, 1, 0, 'N', 'N');
 
 			if (debugPrint == 1)
 				J_xx.debugPrint();
@@ -3989,7 +4177,9 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 			if (debugPrint == 1)
 				temp_mat_xx.debugPrint();
 
-			cheb_eigvals.matrixMultiply(M_xx,temp_mat_xx, 1.0/local_max_index, 0, 'T', 'N');
+			//cheb_eigvals.matrixMultiply(M_xx,temp_mat_xx, 1.0/local_max_index, 0, 'T', 'N');
+			cheb_eigvals.matrixMultiply(M_xx,cheb_eigvals, 1.0/local_max_index, 0, 'T', 'N');
+
 
 			if (debugPrint == 1)
 				M_xx.debugPrint();
@@ -4004,9 +4194,9 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 				// J_yy, J_xy, element-wise via vdMul in MKL
 				DMatrix J_yy;
-				J_y.eleMatrixMultiply(J_yy, J_y, 1, 0);
+				J_y.eleMatrixMultiply(J_yy, J_y, 1, 0, 'N', 'N');
 				DMatrix J_xy;
-				J_x.eleMatrixMultiply(J_xy, J_y, 1, 0);
+				J_x.eleMatrixMultiply(J_xy, J_y, 1, 0, 'N', 'N');
 
 				//printf("J_ij construction complete \n");
 
@@ -4025,11 +4215,12 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 }
 
-void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvecs,  DMatrix &kpm_dos, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int d_weights = jobIn.getInt("d_weights");
 	int d_vecs = jobIn.getInt("d_vecs");
 	int d_cond = jobIn.getInt("d_cond");
+	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int chiral_on = jobIn.getInt("chiral_on");
 	int p = jobIn.getInt("poly_order");
 
@@ -4078,6 +4269,36 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 		// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
 
+		if (d_kpm_dos > 0){
+
+			int N = local_max_index;
+			DMatrix cheb_eigvals;
+			cheb_eigvals.setup(N,p);
+			double* v_cheb;
+			v_cheb = cheb_eigvals.allocRealVal();
+
+			// COLUMN MAJOR ORDER (for Fortran MKL subroutines)
+			//
+			// Compute Cheby. coeffs. T_m(lambda_i) as a matrix
+
+			for (int i = 0; i < N; ++i){
+				// m = 0
+				v_cheb[0*N + i] = 1;
+				v_cheb[1*N + i] = eigvals[i];
+			}
+
+			// Chebyshev iteration on eigenvalues
+			for (int m = 2; m < p; ++m){
+				// start cheb iteration p
+				for (int i = 0; i < N; ++i){
+					v_cheb[m*N + i] = 2*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
+				}
+			}
+
+			cheb_eigvals.matrixMultiply(kpm_dos,cheb_eigvals, 1.0/local_max_index, 0, 'T', 'N');
+
+		}
+
 		if (d_cond > 0){
 
 			//int p = jobIn.getInt("poly_order");
@@ -4098,7 +4319,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 			if (debugPrint == 1)
 				temp_matrix_x.debugPrint();
 
-			eigvecs.matrixMultiply(J_x, temp_matrix_x, a_cpx, b_cpx,'T','N');
+			eigvecs.matrixMultiply(J_x, temp_matrix_x, a_cpx, b_cpx,'C','N');
 
 			if (debugPrint == 1)
 				J_x.debugPrint();
@@ -4135,7 +4356,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 			// J_xx = J_x.*J_x, that is to say: J_xx^{ij} = (J_x^{ij})^2
 			DMatrix J_xx;
 			J_xx.setup(local_max_index,local_max_index,1);
-			J_x.eleMatrixMultiply(J_xx, J_x, 1, 0);
+			J_x.eleMatrixMultiply(J_xx, J_x, 1, 0, 'C', 'N');
 
 			if (debugPrint == 1)
 				J_xx.debugPrint();
@@ -4162,9 +4383,9 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 				// J_yy, J_xy, element-wise via vdMul in MKL
 				DMatrix J_yy;
-				J_y.eleMatrixMultiply(J_yy, J_y, 1, 0);
+				J_y.eleMatrixMultiply(J_yy, J_y, 1, 0, 'C', 'N');
 				DMatrix J_xy;
-				J_x.eleMatrixMultiply(J_xy, J_y, 1, 0);
+				J_x.eleMatrixMultiply(J_xy, J_y, 1, 0, 'C', 'N');
 
 				//printf("J_ij construction complete \n");
 

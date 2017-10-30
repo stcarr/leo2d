@@ -132,42 +132,54 @@ double Momentum_coupling::interp_fft(double x_input, double y_input, int o1, int
 	// o1, o2 are two two orbitals whose interlayer coupling you are computing
 	// entry is 0 for real and 1 for imaginary part
 
-	fftw_complex* data;
-	data = fftw_data[o1][o2];
+	double momentum_inner_cutoff = 5.0;
+	double momentum_outer_cutoff = 4.0;
 
-	int x_s = length_x*L_x;
-	int y_s = length_y*L_y;
-	double x = x_input*L_x/M_PI+x_s;
-	double y = y_input*L_y/M_PI;
+	double r_sq = (x_input)*(x_input) + (y_input)*(y_input);
 
-	// Keep track of odd/even nature of discrete FT symmetry
-	double sign = 1;
+	if (r_sq > momentum_outer_cutoff*momentum_outer_cutoff){
+		return 0.0;
+	} else {
 
-	if (y < 0){
+		int x_s = length_x*L_x;
+		int y_s = length_y*L_y;
+		double x = x_input*L_x/M_PI+x_s;
+		double y = y_input*L_y/M_PI;
 
-		y = -y; // we use the y-symmetry in a FFT of purely real input data
+		// Keep track of odd/even nature of discrete FT symmetry
+		double sign = 1;
 
-		if (x >= 1){
-			x =  2*x_s - x; // also need to flip the x-axis about its center (the first x row stays the same though)!
+		if (y < 0){
+
+			y = -y; // we use the y-symmetry in a FFT of purely real input data
+
+			if (x >= 1){
+				x =  2*x_s - x; // also need to flip the x-axis about its center (the first x row stays the same though)!
+			}
+
+			if (entry == 1){
+				sign = -1; // complex part is odd, real part is even
+			}
+
+
 		}
 
-		if (entry == 1){
-			sign = -1; // complex part is odd, real part is even
+		if (x < 0 || x > 2*x_s - 1 || y > y_s - 1){ // here we do "- 1" to prevent wrap-around errors (i.e. interpolating at [2*x_s,y] would sample [0,y+1] for right-hand points!!
+			return 0;
 		}
 
+		int x_int = int(x);
+		int y_int = int(y);
 
+		double value = interp_4point(x-x_int,y-y_int, fftw_data[o1][o2][y_int + x_int*y_s][entry], fftw_data[o1][o2][y_int + (x_int+1)*y_s][entry], fftw_data[o1][o2][y_int+1 + x_int*y_s][entry],fftw_data[o1][o2][y_int+1+(x_int+1)*y_s][entry]);
+
+		if (r_sq < momentum_inner_cutoff*momentum_inner_cutoff){
+			return sign*value;
+		} else {
+			double r_sq_diff = r_sq - momentum_inner_cutoff*momentum_inner_cutoff;
+			return sign*value*exp(-2.0*r_sq_diff);
+		}
 	}
-
-	if (x < 0 || x > 2*x_s - 1 || y > y_s - 1){ // here we do "- 1" to prevent wrap-around errors (i.e. interpolating at [2*x_s,y] would sample [0,y+1] for right-hand points!!
-		return 0;
-	}
-
-	int x_int = int(x);
-	int y_int = int(y);
-
-	double value = interp_4point(x-x_int,y-y_int, data[y_int + x_int*y_s][entry], data[y_int + (x_int+1)*y_s][entry], data[y_int+1 + x_int*y_s][entry],data[y_int+1+(x_int+1)*y_s][entry]);
-
-	return sign*value;
 
 }
 

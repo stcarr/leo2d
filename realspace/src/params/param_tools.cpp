@@ -21,6 +21,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 	int jobID = job.getInt("jobID");
 	int verbose_save = job.getInt("verbose_save");
 	int diagonalize = job.getInt("diagonalize");
+	int d_kpm_dos = job.getInt("d_kpm_dos");
 	int d_weights = job.getInt("d_weights");
 	int d_vecs = job.getInt("d_vecs");
 	int d_cond = job.getInt("d_cond");
@@ -252,14 +253,49 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 			}
 		} else if (diagonalize == 1){
 
-			if (chiral_on == 0){
-				std::vector<double> eigenvalues = job.getDoubleVec("eigenvalues");
+			if (d_kpm_dos == 1){
 
-				int local_max_index = eigenvalues.size();
-				for(int j = 0; j < local_max_index - 1; ++j){
-					outFile << eigenvalues[j] << ", ";
+				if (jobID == 1){
+					//print E vals:
+					double E[poly_order];
+
+					for (int i = 0; i < poly_order; ++i){
+						E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+						outFile << E[i] << " ";
+					}
+					outFile << "\n";
 				}
-				outFile << eigenvalues[local_max_index - 1] << "\n";
+
+				std::vector<double> kpm_dos = job.getDoubleVec("kpm_dos");
+				for (int i = 0; i < poly_order-1; ++i){
+					outFile << kpm_dos[i] << ", ";
+				}
+				outFile << kpm_dos[poly_order - 1] << "\n";
+			}
+
+			if (chiral_on == 0 && d_kpm_dos == 0){
+				if (d_cond  == 0) {
+					std::vector<double> eigenvalues = job.getDoubleVec("eigenvalues");
+
+					int local_max_index = eigenvalues.size();
+					for(int j = 0; j < local_max_index - 1; ++j){
+						outFile << eigenvalues[j] << ", ";
+					}
+					outFile << eigenvalues[local_max_index - 1] << "\n";
+				} else if (d_cond > 0){
+
+					std::vector< std::vector<double> > M_xx = job.getDoubleMat("M_xx");
+
+					for(int j = 0; j < poly_order; ++j){
+						for (int m = 0; m < poly_order - 1; ++m){
+							outFile << M_xx[j][m] << ", ";
+						}
+						outFile << M_xx[j][poly_order - 1] << "\n";
+					}
+
+					outFile << "\n";
+				}
+
 			} else if (chiral_on == 1){
 
 				if (jobID == 1){
@@ -518,7 +554,7 @@ double Param_tools::computeReciprocalArea(vector< vector<double> > uc){
 		area = -area;
 	}
 
-	printf("computeReciprocalArea: uc = [%lf, %lf; %lf, %lf], area = %lf \n",uc[0][0],uc[0][1],uc[1][0],uc[1][1],area);
+	//printf("computeReciprocalArea: uc = [%lf, %lf; %lf, %lf], area = %lf \n",uc[0][0],uc[0][1],uc[1][0],uc[1][1],area);
 
 	return area;
 }
@@ -614,7 +650,6 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 		type = 1;
 	}
 
-
 	double g[poly_order];
 	for (int i = 0; i < poly_order; ++i){
 		// Jackson coefficients
@@ -622,8 +657,10 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 	}
 
 	if (type == 0){
-		double in[poly_order*poly_order];
-		double out[poly_order*poly_order];
+
+		double* in = new double[poly_order*poly_order];
+		double* out = new double[poly_order*poly_order];
+
 		// fftw_plan p;
 		// p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
 
@@ -647,6 +684,9 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 
 		job.setParam(tag,matrixOut);
 		fftw_destroy_plan(p);
+
+		delete in;
+		delete out;
 
 	} else if (type == 1){
 

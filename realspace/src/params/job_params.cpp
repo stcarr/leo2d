@@ -30,8 +30,8 @@ Job_params::Job_params() {
 	lc_points[0][0] = 0;
 	lc_points[0][1] = 0;
 	lc_points[1][0] = 1.0;
-	lc_points[1][1] = 1.0;	
-	
+	lc_points[1][1] = 1.0;
+
 	setParam("nShifts",i_one);
 	setParam("num_sheets",i_one);
 	setParam("num_shift_sheets",i_one);
@@ -48,6 +48,7 @@ Job_params::Job_params() {
 	setParam("verbose_save",i_one);
 	setParam("diagonalize",i_zero);
 	setParam("chiral_on",i_zero);
+	setParam("d_kpm_dos",i_zero);	
 	setParam("d_weights",i_zero);
 	setParam("d_vecs",i_zero);
 	setParam("d_cond",i_zero);
@@ -144,7 +145,7 @@ Job_params::Job_params(const Job_params& orig){
 		string tag = temp_tags[i];
 		setParam(tag, orig.getDoubleMat(tag));
 	}
-	
+
 	// loop over cpxDoubleMat
 	temp_tags = orig.getParamTags("cpxDoubleMat");
 	for (int i = 0; i < temp_tags.size(); ++i){
@@ -480,7 +481,7 @@ vector<string> Job_params::getParamTags(std::string name) const{
 		return double_mat_param_tags;
 	else if (name.compare("cpxDoubleMat") == 0)
 		return cpx_double_mat_param_tags;
-		
+
 	string error_str = "!!LEO2D Critical Error!!: getParamTags target '";
 	error_str = error_str + name + "' not recognized by job_params object\n";
 	throw invalid_argument(error_str);
@@ -640,8 +641,8 @@ void Job_params::sendParams(int target){
 
 	for (int i = 0; i < cpx_double_mat_size; ++i){
 		sendCpxDoubleMat(cpx_double_mat_param_tags[i],cpx_double_mat_params[i], target);
-	}	
-	
+	}
+
 }
 
 void Job_params::recvParams(int from){
@@ -782,7 +783,7 @@ void Job_params::recvParams(int from){
 	for (int i = 0; i < cpx_double_mat_size; ++i){
 		recvCpxDoubleMat(from);
 	}
-	
+
 }
 
 void Job_params::sendTag(string tag, int target){
@@ -1506,7 +1507,7 @@ void Job_params::recvCpxDoubleMat(int from){
 				val[i][j].real(temp_val[counter]);
 				++counter;
 				val[i][j].imag(temp_val[counter]);
-				++counter;				
+				++counter;
 			}
 		}
 

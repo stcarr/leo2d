@@ -391,7 +391,9 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 
 	// A = this matrix
 	// C := alpha*op( A )*op( B ) + beta*C,
-
+	// *_type can be:
+	//								'N': Normal
+	//								'T': Transpose
 
 	if (type != 0){
 		throw std::invalid_argument("Using real matrixMultiply routine for non-real matrix! \n");
@@ -493,7 +495,6 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 	#ifdef USE_MKL
 		// A_type, B_type can be 'N' or 'T'
 		// 'N' For normal, 'T' for transpose
-
 		// C := alpha*op( A )*op( B ) + beta*C,
 		dgemm(
 			&A_type,		// Specifies operator on A, transpose or not
@@ -558,6 +559,11 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 
 	// A = this matrix
 	// C := alpha*op( A )*op( B ) + beta*C,
+	// *_type can be:
+	//								'N': Normal
+	//								'T': Transpose
+	//								'C': Conjugate Transpose (Hermitian Conjugate)
+
 
 
 	if (type != 1){
@@ -575,17 +581,17 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 			if (ncols_A != nrows_B){
 				throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
 			}
-		} else if (B_type == 'T'){
+		} else if (B_type == 'T' || B_type == 'C'){
 			if (ncols_A != ncols_B){
 				throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
 			}
 		}
-	} else if (A_type == 'T'){
+	} else if (A_type == 'T' || A_type == 'C'){
 		if (B_type == 'N'){
 			if (nrows_A != nrows_B){
 				throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
 			}
-		} else if (B_type == 'T'){
+		} else if (B_type == 'T' || B_type == 'C'){
 			if (nrows_A != ncols_B){
 				throw std::invalid_argument("Matrix Size Mismatch for A,B inner dimensions in C = A*B \n");
 			}
@@ -607,7 +613,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 
 		if (B_type == 'N'){
 			ncols_C = ncols_B;
-		} else if (B_type == 'T'){
+		} else if (B_type == 'T' || B_type == 'C'){
 			ncols_C = nrows_B;
 		}
 
@@ -615,7 +621,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 			nrows_C = nrows_A;
 			k_internal = ncols_A;
 			//printf("A = 'N' \n");
-		} else if (A_type == 'T'){
+		} else if (A_type == 'T' || A_type == 'C'){
 			nrows_C = ncols_A;
 			k_internal = nrows_A;
 			//printf("A = 'T' \n");
@@ -635,17 +641,17 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 				if (nrows_A != nrows_C || ncols_B != ncols_C){
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
-			} else if (B_type == 'T'){
+			} else if (B_type == 'T' || B_type == 'C'){
 				if (nrows_A != nrows_C || nrows_B != ncols_C){
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
 			}
-		} else if (A_type == 'T'){
+		} else if (A_type == 'T' || A_type == 'C'){
 			if (B_type == 'N'){
 				if (ncols_A != nrows_C || ncols_B != ncols_C){
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
-			} else if (B_type == 'T'){
+			} else if (B_type == 'T' || B_type == 'C'){
 				if (ncols_A != nrows_C || nrows_B != ncols_C){
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
@@ -697,6 +703,9 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 						} else if (B_type == 'T'){
 							// Access C(r,c) += A(r,k)*B(c,k)
 							val_C_c[c*nrows_C + r] += alpha*val_c[k*nrows_A + r]*val_B_c[k*nrows_B + c];
+						} else if (B_type == 'C'){
+							// Access C(r,c) += A(r,k)*B(c,k)
+							val_C_c[c*nrows_C + r] += alpha*val_c[k*nrows_A + r]*std::conj(val_B_c[k*nrows_B + c]);
 						}
 					} else if (A_type == 'T'){
 						if (B_type == 'N'){
@@ -705,6 +714,20 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 						} else if (B_type == 'T'){
 							// Access C(r,c) += A(k,r)*B(c,k)
 							val_C_c[c*nrows_C + r] += alpha*val_c[r*nrows_A + k]*val_B_c[k*nrows_B + c];
+						} else if (B_type == 'C'){
+							// Access C(r,c) += A(k,r)*B(c,k)
+							val_C_c[c*nrows_C + r] += alpha*val_c[r*nrows_A + k]*std::conj(val_B_c[k*nrows_B + c]);
+						}
+					} else if (A_type == 'C'){
+						if (B_type == 'N'){
+							// Access C(r,c) += A(k,r)*B(k,c)
+							val_C_c[c*nrows_C + r] += alpha*std::conj(val_c[r*nrows_A + k])*val_B_c[c*nrows_B + k];
+						} else if (B_type == 'T'){
+							// Access C(r,c) += A(k,r)*B(c,k)
+							val_C_c[c*nrows_C + r] += alpha*std::conj(val_c[r*nrows_A + k])*val_B_c[k*nrows_B + c];
+						} else if (B_type == 'C'){
+							// Access C(r,c) += A(k,r)*B(c,k)
+							val_C_c[c*nrows_C + r] += alpha*std::conj(val_c[r*nrows_A + k])*std::conj(val_B_c[k*nrows_B + c]);
 						}
 					}
 				}
@@ -715,10 +738,12 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 
 }
 
-void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta){
+void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, char A_type, char B_type){
 
 	// A = this matrix
 	// C := alpha*A.*B + beta*C,
+	// *_type can be 'N' (normal) or 'C' (conjugate, but NOT transpose).
+
 
 	int type_A = type;
 	int type_B = B.getType();
@@ -809,18 +834,48 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 					val_C_c[i] = alpha*val[i]*val_B[i] + beta*val_C_c[i];
 				}
 			} else if (type_A == 1){
-				for (int i = 0; i < nval_C; ++i){
-					val_C_c[i] = alpha*val_c[i]*val_B[i] + beta*val_C_c[i];
+				if (A_type == 'N'){
+					for (int i = 0; i < nval_C; ++i){
+						val_C_c[i] = alpha*val_c[i]*val_B[i] + beta*val_C_c[i];
+					}
+				} else if (A_type == 'C'){
+					for (int i = 0; i < nval_C; ++i){
+						val_C_c[i] = alpha*std::conj(val_c[i])*val_B[i] + beta*val_C_c[i];
+					}
 				}
 			}
 		} else if (type_B == 1){
 			if (type_A == 0){
-				for (int i = 0; i < nval_C; ++i){
-					val_C_c[i] = alpha*val[i]*val_B_c[i] + beta*val_C_c[i];
+				if (B_type == 'N') {
+					for (int i = 0; i < nval_C; ++i){
+						val_C_c[i] = alpha*val[i]*val_B_c[i] + beta*val_C_c[i];
+					}
+				} else if (B_type == 'C'){
+					for (int i = 0; i < nval_C; ++i){
+						val_C_c[i] = alpha*val[i]*std::conj(val_B_c[i]) + beta*val_C_c[i];
+					}
 				}
 			} else if (type_A == 1){
-				for (int i = 0; i < nval_C; ++i){
-					val_C_c[i] = alpha*val_c[i]*val_B_c[i] + beta*val_C_c[i];
+				if (B_type == 'N') {
+					if (A_type == 'N') {
+						for (int i = 0; i < nval_C; ++i){
+							val_C_c[i] = alpha*val_c[i]*val_B_c[i] + beta*val_C_c[i];
+						}
+					} else if (A_type == 'C'){
+						for (int i = 0; i < nval_C; ++i){
+							val_C_c[i] = alpha*std::conj(val_c[i])*val_B_c[i] + beta*val_C_c[i];
+						}
+					}
+				} else if (B_type == 'C'){
+					if (A_type == 'N') {
+						for (int i = 0; i < nval_C; ++i){
+							val_C_c[i] = alpha*val_c[i]*std::conj(val_B_c[i]) + beta*val_C_c[i];
+						}
+					} else if (A_type == 'C'){
+						for (int i = 0; i < nval_C; ++i){
+							val_C_c[i] = alpha*std::conj(val_c[i])*std::conj(val_B_c[i]) + beta*val_C_c[i];
+						}
+					}
 				}
 			}
 		}

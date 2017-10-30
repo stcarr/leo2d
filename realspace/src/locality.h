@@ -70,6 +70,10 @@ class Locality {
 
   		// Solver settings
   		int root;
+
+      // Momentum FFT coupling data
+      Momentum_coupling fftw_inter;
+
   		/*
   		int nShifts;
   		double energy_rescale;
@@ -85,17 +89,17 @@ class Locality {
 
   		void recursiveShiftCalc(std::vector<Job_params>&, std::vector< std::vector<double> >, int, int, int, int, int, std::vector<int>, std::vector< std::vector<int> >);
 
-  		void rootChebSolve(int* index_to_grid, double* index_to_pos, 
+  		void rootChebSolve(int* index_to_grid, double* index_to_pos,
 						int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 						int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices);
 
-		
-		void workerChebSolve(int* index_to_grid, double* index_to_pos, 
-							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, 
-							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs, 
+
+		void workerChebSolve(int* index_to_grid, double* index_to_pos,
+							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
+							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 							std::vector< std::vector<double> > shift_configs);
-							
+
   		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Job_params);
 
 	    std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
@@ -126,8 +130,8 @@ class Locality {
 
   		// Construct and solve the tight binding problem. Also saves output files
   		void constructMatrix(int* index_to_grid,double* index_to_pos, int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
-					int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs, 
-					std::vector< std::vector<double> > shift_configs, std::vector< std::vector<int> > v_work, 
+					int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
+					std::vector< std::vector<double> > shift_configs, std::vector< std::vector<int> > v_work,
 					std::vector< std::vector<int> > target_indices);
 
   		// Updates the index_to_pos array for a specific job's orbital positions (i.e. with shift and strain)
@@ -157,13 +161,13 @@ class Locality {
   		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int, double*);
 
   		// Direct solver using Eigen package
-  		void computeEigen(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
-  		void computeEigenComplex(std::vector<double>&, DMatrix&, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
-		
+  		void computeEigen(std::vector<double>&, DMatrix&, DMatrix &kpm_dos, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
+  		void computeEigenComplex(std::vector<double>&, DMatrix&, DMatrix &kpm_dos, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
+
 		// Computes the material's response to matIn saved via <Cheb_1|matOut|Cheb_2>
 		// Use param_tools conductivityTransform method to transform to <E_1|matOut|E_2>
 		void computeMatrixResponse(Job_params jobIn, std::vector<double> eigvecs, DMatrix& eigvals, SpMatrix& matIn, DMatrix& matOut);
-		
+
   		// Calculates Peierls phase between two hopping sites;
   		double peierlsPhase(double, double, double, double, double);
 

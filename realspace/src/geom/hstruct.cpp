@@ -269,6 +269,11 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 	// loop over all orbitals (kh = "k here")
 	for (int kh = 0; kh < max_index; ++kh){
 
+    int print_debug_on = 0;
+    //if (kh == 568 || kh == 3941){
+      //print_debug_on = 1;
+    //}
+
     std::vector<std::vector<int> > kh_pair_array;
     std::vector<std::vector<int> > kh_supercell_vecs;
 
@@ -290,6 +295,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 			kh_pos_here[0] = -kh_pos_here[0];
 			kh_pos_here[1] = -kh_pos_here[1];
 			kh_pos_here[2] = -kh_pos_here[2];
+      searchsize += 2;
 		}
 
 
@@ -297,8 +303,8 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     int sc_y_stride = 0;
 
     if (boundary_condition == 1){
-      sc_x_stride = 1;
-      sc_y_stride = 1;
+      sc_x_stride = 2;
+      sc_y_stride = 2;
     }
 
     // We check all nearby supercells
@@ -308,20 +314,20 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
         double pos_here[3];
 
         // compute the supercell vector (for k sampling usually)
-		std::vector<int> sc_vec;
-		sc_vec.resize(2);
-		sc_vec[0] = 0;
-		sc_vec[1] = 0;
+    		std::vector<int> sc_vec;
+    		sc_vec.resize(2);
+    		sc_vec[0] = 0;
+    		sc_vec[1] = 0;
 
-		
+
         std::vector<double> sc_disp;
         sc_disp.resize(2);
         sc_disp[0] = 0.0;
         sc_disp[1] = 0.0;
 
         if (boundary_condition == 1){
-		  sc_vec[0] = dx;
-		  sc_vec[1] = dy;
+    		  sc_vec[0] = dx;
+    		  sc_vec[1] = dy;
           sc_disp[0] = dx*supercell[0][0] + dy*supercell[1][0];
           sc_disp[1] = dx*supercell[0][1] + dy*supercell[1][1];
         }
@@ -384,8 +390,15 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     							double x2 = posAtomIndex(k2+base_index,0);
     							double y2 = posAtomIndex(k2+base_index,1);
 
+                  if (print_debug_on == 1){
+                    printf("[%lf, %lf] to [%lf, %lf] @ [%d,%d] \n", pos_here[0],pos_here[1], x2,y2, kh,k2+base_index);
+                  }
+
     							// If the positions are within the cutoff range we save their indices as a pair for our tight-binding model
     							if ((x2 - pos_here[0])*(x2 - pos_here[0]) + (y2 - pos_here[1])*(y2 - pos_here[1]) < inter_cutoff*inter_cutoff) {
+                    if (print_debug_on == 1){
+                      printf("adding to pair list! \n");
+                    }
     								std::vector<int> pair_here;
     								pair_here.push_back(kh);
     								pair_here.push_back(k2 + base_index);
@@ -437,8 +450,15 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     							double x2 = posAtomIndex(k2+base_index,0);
     							double y2 = posAtomIndex(k2+base_index,1);
 
+                  if (print_debug_on == 1){
+                    printf("[%lf, %lf] to [%lf, %lf] @ [%d,%d] \n", pos_here[0],pos_here[1], x2,y2, kh,k2+base_index);
+                  }
+
     							// If the positions are within the cutoff range we save their indices as a pair for our tight-binding model
     							if ((x2 - pos_here[0])*(x2 - pos_here[0]) + (y2 - pos_here[1])*(y2 - pos_here[1]) < inter_cutoff*inter_cutoff) {
+                    if (print_debug_on == 1){
+                      printf("adding to pair list! \n");
+                    }
     								std::vector<int> pair_here;
     								pair_here.push_back(kh);
     								pair_here.push_back(k2 + base_index);
@@ -940,12 +960,17 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 			double z1 = heights[0];
 			double z2 = heights[1];
 
-			double o1_shift_x = sheets[0].getOrbPos(o1,0);
-			double o1_shift_y = sheets[0].getOrbPos(o1,1);
+			double o1_shift_temp_x = sheets[0].getOrbPos(o1,0);
+			double o1_shift_temp_y = sheets[0].getOrbPos(o1,1);
 			double o1_shift_z = sheets[0].getOrbPos(o1,2);
-			double o2_shift_x = sheets[1].getOrbPos(o2,0);
-			double o2_shift_y = sheets[1].getOrbPos(o2,1);
+      double o1_shift_x = cos(angle1)*o1_shift_temp_x - sin(angle1)*o1_shift_temp_y;
+      double o1_shift_y = sin(angle1)*o1_shift_temp_x + cos(angle1)*o1_shift_temp_y;
+
+			double o2_shift_temp_x = sheets[1].getOrbPos(o2,0);
+			double o2_shift_temp_y = sheets[1].getOrbPos(o2,1);
 			double o2_shift_z = sheets[1].getOrbPos(o2,2);
+      double o2_shift_x = cos(angle2)*o2_shift_temp_x - sin(angle2)*o2_shift_temp_y;
+      double o2_shift_y = sin(angle2)*o2_shift_temp_x + cos(angle2)*o2_shift_temp_y;
 
 			double x_pos,y_pos;
 			int x_size = n_x*(2*L_x)+2;
@@ -996,8 +1021,8 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 					fout_debug << std::endl;
 				}
 				fout_debug.close();
-			}			
-			
+			}
+
 			if (o1 == 0 && o2 == 1){
 				std::ofstream fout_debug("interlayer_input_1_to_2.dat");
 				for (int i = 0; i < x_size; i++){

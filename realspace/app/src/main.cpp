@@ -382,6 +382,13 @@ int main(int argc, char** argv) {
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "D_KPM_DOS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("d_kpm_dos",atoi(in_string.c_str()));
+				}
+
+
 				if (in_string == "D_WEIGHTS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -585,12 +592,12 @@ int main(int argc, char** argv) {
 				// we assume unitCell is same for both sheets...
 				for (int i = 0; i < s_data.size(); ++i){
 
-					std::vector< std::vector<double> > unitCell;
-					unitCell.resize(2);
+					std::vector< std::vector<double> > base_unitCell;
+					base_unitCell.resize(2);
 					for(int n = 0; n < 2; ++n){
-						unitCell[n].resize(2);
+						base_unitCell[n].resize(2);
 						for(int m = 0; m < 2; ++m){
-							unitCell[n][m] = Materials::lattice(s_data[0].mat)[n][m];
+							base_unitCell[n][m] = Materials::lattice(s_data[0].mat)[n][m];
 						}
 					}
 
@@ -612,6 +619,20 @@ int main(int argc, char** argv) {
 						A2_num_a2 = (M+N);
 					}
 
+					std::vector< std::vector<double> > unitCell;
+					unitCell.resize(2);
+					unitCell[0].resize(2);
+					unitCell[1].resize(2);
+
+					// Not updating the twist-angle is correct, as this will make sure the supercell is always
+					// saved in coordinates relative to the individual sheet, not the overall heterostructure.
+					double theta_here = 0.0;
+
+					unitCell[0][0] = cos(theta_here)*base_unitCell[0][0] - sin(theta_here)*base_unitCell[0][1];
+					unitCell[0][1] = sin(theta_here)*base_unitCell[0][0] + cos(theta_here)*base_unitCell[0][1];
+					unitCell[1][0] = cos(theta_here)*base_unitCell[1][0] - sin(theta_here)*base_unitCell[1][1];
+					unitCell[1][1] = sin(theta_here)*base_unitCell[1][0] + cos(theta_here)*base_unitCell[1][1];
+
 					std::vector< std::vector<double> > sc_here;
 					sc_here.resize(2);
 					sc_here[0].resize(2);
@@ -632,9 +653,24 @@ int main(int argc, char** argv) {
 					sc_stride_here[1][0] = A2_num_a1;
 					sc_stride_here[1][1] = A2_num_a2;
 
+					/*
+					std::vector< std::vector<double> > local_sc_here;
+					local_sc_here.resize(2);
+					local_sc_here[0].resize(2);
+					local_sc_here[1].resize(2);
+
+					double theta_here = -angles[i];
+
+					local_sc_here[0][0] = cos(theta_here)*sc_here[0][0] - sin(theta_here)*sc_here[0][1];
+					local_sc_here[0][1] = sin(theta_here)*sc_here[0][0] + cos(theta_here)*sc_here[0][1];
+					local_sc_here[1][0] = cos(theta_here)*sc_here[1][0] - sin(theta_here)*sc_here[1][1];
+					local_sc_here[1][1] = sin(theta_here)*sc_here[1][0] + cos(theta_here)*sc_here[1][1];
+					*/
 					printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
 					printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+					//printf("local_supercell = [%lf %lf; %lf %lf]\n", local_sc_here[0][0], local_sc_here[0][1], local_sc_here[1][0], local_sc_here[1][1]);
 					printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
+
 
 					s_data[i].supercell = sc_here;
 					s_data[i].supercell_stride = sc_stride_here;
