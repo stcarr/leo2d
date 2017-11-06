@@ -23,6 +23,7 @@ class Mlmc_handler {
 		double energy_rescale;
 		double energy_shift;
 		int d_cond;
+    int d_kpm_dos;
 
 		std::string out_root;
 		std::string temp_root;
@@ -39,7 +40,7 @@ class Mlmc_handler {
 		Job_params cluster_average;
 		Job_params cluster_variance;
 		std::vector<Job_params> cluster_original;
-		
+
 		int k_sampling;
 		int num_k;
 		std::vector<std::vector<Job_params> > k_staging_results;
@@ -54,6 +55,7 @@ class Mlmc_handler {
 
 		void setup(Job_params);
 		void process(Job_params);
+    void k_sampling_average(std::vector<Job_params> k_samples, Job_params& k_results);
 		void save();
 
 };

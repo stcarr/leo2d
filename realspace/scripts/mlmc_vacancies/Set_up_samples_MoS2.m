@@ -12,6 +12,7 @@
 % FOR READING OUTPUT FROM LEO2D:
 %{
 
+    % for conductivity
     % Do something like this:
     p = 500;                                        % poly_order
     fM = fopen('ml_mos2_mlmc_L3_E_M_xx.bin','r');   % open the M_XX file
@@ -22,6 +23,20 @@
     fclose(fE);
 
     surf(E,E,M,'EdgeColor','none'), view(2), axis square; % simple plot
+
+    % for DoS
+    % Do something like this:
+    p = 500;                                        % poly_order
+    fdos = fopen('ml_mos2_mlmc_L3_E_dos.bin','r');   % open the M_XX file
+    fE = fopen('ml_mos2_mlmc_L3_ENERGIES.bin','r'); % open the Energy file
+    dos = fread(fdos,[p 1],'double');                   % p x p matrix load
+    E = fread(fE,[p 1],'double');                   % p energy samps load
+    fclose(fdos);
+    fclose(fE);
+
+    hold on
+    plot(E,dos), view(2), axis square; % simple plot
+    
 
 %}
 %----------------------------------------------------
@@ -65,6 +80,10 @@ k_grid = 1;
 outdir = '../out';
 tempdir = '../temp';
 
+% Default solver settings
+dos_on = 0;
+cond_on = 1;
+
 choice=-1;
 while choice~=0
     fprintf(1,'==> Menu <==\n');
@@ -89,6 +108,9 @@ while choice~=0
     fprintf(1,' 8 ... change output and scratch directories \n');
     fprintf(1,['         outdir = ',outdir,'\n']);
     fprintf(1,['         tempdir = ',tempdir,'\n']);
+    fprintf(1,' 9 ... change DoS and conductivity settings \n');
+    fprintf(1,'         DoS = %d \n',dos_on);
+    fprintf(1,'         Cond = %d \n',cond_on);    
     fprintf(1,' 0 ... proceed to generating config files\n');
     
     choice=input('Choice: ');
@@ -123,6 +145,9 @@ while choice~=0
         case 8
           outdir = input('Output directory: ','s');
           tempdir = input('Scratch directory: ','s');
+        case 9
+          dos_on = input('DoS (0/1 = off/on): ');
+          cond_on = input('Conductivity (0/1 = off/on): ');          
     end
     
 end
@@ -153,7 +178,7 @@ if answer~=0
     fprintf(1,'[BGN] Merging the files');
     strprompt = sprintf('Max level to be merged (value in [1,%d]): ',Nr_ext+1);
     max_lev = input(strprompt);
-    problem_dir=merge_v_files(max_lev,N_v,M_v,poly_order,k_sampling,k_grid,outdir,tempdir);
+    problem_dir=merge_v_files(max_lev,N_v,M_v,poly_order,k_sampling,k_grid,outdir,tempdir,dos_on,cond_on);
     fprintf(1,'Problem definition in: %s\n',problem_dir);
     fprintf(1,'[END]\n\n');
 end

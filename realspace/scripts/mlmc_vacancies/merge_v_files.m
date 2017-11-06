@@ -1,4 +1,4 @@
-function target_dir=merge_v_files(max_lev,sizes,num_CVs,poly_order,k_sampling,k_grid,final_outdir,final_tempdir)
+function target_dir=merge_v_files(max_lev,sizes,num_CVs,poly_order,k_sampling,k_grid,final_outdir,final_tempdir,dos_on,cond_on)
 % MERGE_V_FILES Convert vacancy files for MLMC hierarchy and convert them
 % to vacancy files where all samples on the same super cell size are
 % contained in one file (to take advantage of the fact that Stephen's code
@@ -187,7 +187,7 @@ for k=1:max_lev
   end
   
   hstruct_str = make_hstruct_in(sizes(k), poly_order, k_sampling_here, k_grid_here, max_lev, k,...
-      cv_here, final_outdir, final_tempdir);
+      cv_here, final_outdir, final_tempdir, dos_on, cond_on);
   fh2 = fopen([target_sub_dir,filesep,'hstruct.in'],'w');
   fprintf(fh2,hstruct_str);
   fclose(fh2);

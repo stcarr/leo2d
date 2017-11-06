@@ -756,6 +756,7 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 
 	int d_cond = job.getInt("d_cond");
+	int d_kpm_dos = job.getInt("d_kpm_dos");
 
 	// Use to load M_ij from a binary file
 	if (d_cond > 0) {
@@ -834,11 +835,39 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 
 		}
 	}
+
+	// Use to load dos from a binary file
+	if (d_kpm_dos == 1) {
+
+		std::string file_name_dos = file_name;
+
+		file_name_dos.append("dos.bin");
+
+		std::vector<double> dos;
+
+
+		std::ifstream file_dos(file_name_dos.c_str(), std::ifstream::binary);
+		file_dos.seekg(0, file_dos.end);
+		int length_dos = (int) (file_dos.tellg()*sizeof(char))/sizeof(double);
+		file_dos.seekg(0, file_dos.beg);
+
+		char buffer[length_dos*(sizeof(double)/sizeof(char))];
+		file_dos.read(buffer, length_dos*(sizeof(double)/sizeof(char)));
+		double* doub_buffer = (double*) buffer;
+		std::vector<double> temp_vec(doub_buffer, doub_buffer + length_dos);
+		dos = temp_vec;
+
+		file_dos.close();
+
+		job.setParam("kpm_dos",dos);
+	}
+
 }
 
 void Param_tools::mlmc_save(Job_params job, std::string file_name){
 
 	int d_cond = job.getInt("d_cond");
+	int d_kpm_dos = job.getInt("d_kpm_dos");
 
 	// Use to write M_ij to a binary file
 	if (d_cond > 0) {
@@ -889,6 +918,25 @@ void Param_tools::mlmc_save(Job_params job, std::string file_name){
 
 		}
 	}
+
+	if (d_kpm_dos == 1){
+
+		std::string file_name_dos = file_name;
+		file_name_dos.append("dos.bin");
+
+		std::vector<double> dos = job.getDoubleVec("kpm_dos");
+
+		std::ofstream file_dos(file_name_dos.c_str(), std::ofstream::binary);
+
+		if ( dos.size() > 0 ){
+			 char* buffer = (char*)(&dos[0]);
+			 file_dos.write(buffer, dos.size()*(sizeof(double)/sizeof(char)));
+		}
+
+		file_dos.close();
+
+	}
+
 }
 
 void Param_tools::mlmc_average(Job_params& total, Job_params samp){
@@ -898,7 +946,10 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
+	//printf("mlmc_averaging: (%d) s_t = %lf, s_s = %lf\n",mlmc_current_num_samples,s_t,s_s);
+
 	int d_cond = total.getInt("d_cond");
+	int d_kpm_dos = total.getInt("d_kpm_dos");
 
 	if (d_cond > 0){
 
@@ -951,6 +1002,22 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 		}
 	}
 
+	if (d_kpm_dos == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_dos");
+		std::vector<double> samp_dos = samp.getDoubleVec("kpm_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			dos = samp_dos;
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + samp_dos[i]*s_s;
+			}
+		}
+
+		total.setParam("kpm_dos",dos);
+	}
+
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
 }
 
@@ -962,6 +1029,7 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
 	int d_cond = total.getInt("d_cond");
+	int d_kpm_dos = total.getInt("d_kpm_dos");
 
 	if (d_cond > 0){
 
@@ -1032,6 +1100,25 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 		}
 	}
 
+	if (d_kpm_dos == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_dos");
+		std::vector<double> samp_dos = samp.getDoubleVec("kpm_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			dos.resize((int)samp_dos.size());
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = pow(samp_dos[i],2);
+			}
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + pow(samp_dos[i],2)*s_s;
+			}
+		}
+
+		total.setParam("kpm_dos",dos);
+	}
+
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
 }
 
@@ -1043,6 +1130,7 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
 	int d_cond = total.getInt("d_cond");
+	int d_kpm_dos = total.getInt("d_kpm_dos");
 
 	if (d_cond > 0){
 
@@ -1123,6 +1211,27 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 		}
 	}
 
+	if (d_kpm_dos == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_dos");
+		std::vector<double> samp_orig_dos = samp_orig.getDoubleVec("kpm_dos");
+		std::vector<double> samp_cluster_dos =samp_cluster.getDoubleVec("kpm_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			int size = (int) samp_orig_dos.size();
+			dos.resize(size);
+			for (int i = 0; i < size; ++i){
+				dos[i] = samp_orig_dos[i] - samp_cluster_dos[i];
+			}
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + (samp_orig_dos[i] - samp_cluster_dos[i])*s_s;
+			}
+		}
+
+		total.setParam("kpm_dos",dos);
+	}
+
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
 }
 
@@ -1134,6 +1243,7 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
 	int d_cond = total.getInt("d_cond");
+	int d_kpm_dos = total.getInt("d_kpm_dos");
 
 	if (d_cond > 0){
 
@@ -1211,6 +1321,27 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 			total.setParam("M_xy",M_xy);
 
 		}
+	}
+
+	if (d_kpm_dos == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_dos");
+		std::vector<double> samp_orig_dos = samp_orig.getDoubleVec("kpm_dos");
+		std::vector<double> samp_cluster_dos =samp_cluster.getDoubleVec("kpm_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			int size = (int) samp_orig_dos.size();
+			dos.resize(size);
+			for (int i = 0; i < size; ++i){
+				dos[i] = pow(samp_orig_dos[i] - samp_cluster_dos[i],2);
+			}
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + pow(samp_orig_dos[i] - samp_cluster_dos[i],2)*s_s;
+			}
+		}
+
+		total.setParam("kpm_dos",dos);
 	}
 
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);

@@ -351,7 +351,7 @@ void Locality::constructGeom(){
 			if (fft_from_file == 0){
 				// Generate FFT of interlayer coupling for Momentum space
 				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
-					int fft_scaling = 2;
+					int fft_scaling = 1;
 					int n_x = 40;
 					int n_y = 40;
 					int L_x = 40*fft_scaling;
@@ -1431,7 +1431,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 		// They define the settings used to generate the interlayer_fft.dat file
-			int fft_scaling = 2;
+			int fft_scaling = 1;
 			int n_x = 40;
 			int n_y = 40;
 			int L_x = 40*fft_scaling;
@@ -1679,9 +1679,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						kpm_dos_in.push_back(temp_vec);
 					}
 
-					results_out.setParam("kpm_dos_mat",kpm_dos_in);
-					Param_tools::matrixResponseTransform(results_out, "kpm_dos_mat");
-					kpm_dos_in = results_out.getDoubleMat("kpm_dos_mat");
+					Job_params dummy_result(results_out);
+					dummy_result.setParam("kpm_dos_mat",kpm_dos_in);
+					Param_tools::matrixResponseTransform(dummy_result, "kpm_dos_mat");
+					kpm_dos_in = dummy_result.getDoubleMat("kpm_dos_mat");
 
 					for (int i = 0; i < poly_order; ++i){
 						kpm_dos_out.push_back(kpm_dos_in[i][i]);
@@ -1819,7 +1820,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					double* val_kpm_dos;
 					val_kpm_dos = kpm_dos.getValPtr();
 
-
 					for (int i = 0; i < poly_order; ++i){
 						std::vector<double> temp_vec;
 
@@ -1830,9 +1830,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						kpm_dos_in.push_back(temp_vec);
 					}
 
-					results_out.setParam("kpm_dos_mat",kpm_dos_in);
-					Param_tools::matrixResponseTransform(results_out, "kpm_dos_mat");
-					kpm_dos_in = results_out.getDoubleMat("kpm_dos_mat");
+					Job_params dummy_result(results_out);
+					dummy_result.setParam("kpm_dos_mat",kpm_dos_in);
+					Param_tools::matrixResponseTransform(dummy_result, "kpm_dos_mat");
+					kpm_dos_in = dummy_result.getDoubleMat("kpm_dos_mat");
 
 					for (int i = 0; i < poly_order; ++i){
 						kpm_dos_out.push_back(kpm_dos_in[i][i]);
@@ -1970,6 +1971,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 				}
 			}
 		}
+
 
 		// Save time at which solver finished
 
@@ -4270,7 +4272,6 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 		// Probably need to rewrite as sparse-matrix x dense-matrix multiplication for speedup
 
 		if (d_kpm_dos > 0){
-
 			int N = local_max_index;
 			DMatrix cheb_eigvals;
 			cheb_eigvals.setup(N,p);
@@ -4294,9 +4295,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 					v_cheb[m*N + i] = 2*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
 				}
 			}
-
 			cheb_eigvals.matrixMultiply(kpm_dos,cheb_eigvals, 1.0/local_max_index, 0, 'T', 'N');
-
 		}
 
 		if (d_cond > 0){

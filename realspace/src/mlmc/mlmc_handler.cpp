@@ -30,35 +30,41 @@ void Mlmc_handler::setup(Job_params opts_in){
 	opts = opts_in;
 
 	std::vector< std::vector<double> > blank_double_mat;
+	std::vector<double> blank_double_vec;
 
 	average = Job_params(opts);
 	average.setParam("mlmc_current_num_samples",1);
 	average.setParam("M_xx",blank_double_mat);
 	average.setParam("M_yy",blank_double_mat);
 	average.setParam("M_xy",blank_double_mat);
+	average.setParam("kpm_dos",blank_double_vec);
 
 	variance = Job_params(opts);
 	variance.setParam("mlmc_current_num_samples",1);
 	variance.setParam("M_xx",blank_double_mat);
 	variance.setParam("M_yy",blank_double_mat);
 	variance.setParam("M_xy",blank_double_mat);
+	variance.setParam("kpm_dos",blank_double_vec);
 
 	cluster_average = Job_params(opts);
 	cluster_average.setParam("mlmc_current_num_samples",1);
 	cluster_average.setParam("M_xx",blank_double_mat);
 	cluster_average.setParam("M_yy",blank_double_mat);
 	cluster_average.setParam("M_xy",blank_double_mat);
+	cluster_average.setParam("kpm_dos",blank_double_vec);
 
 	cluster_variance = Job_params(opts);
 	cluster_variance.setParam("mlmc_current_num_samples",1);
 	cluster_variance.setParam("M_xx",blank_double_mat);
 	cluster_variance.setParam("M_yy",blank_double_mat);
 	cluster_variance.setParam("M_xy",blank_double_mat);
+	cluster_variance.setParam("kpm_dos",blank_double_vec);
 
 	poly_order = opts.getInt("poly_order");
 	energy_rescale = opts.getDouble("energy_rescale");
 	energy_shift = opts.getDouble("energy_shift");
 	d_cond = opts.getInt("d_cond");
+	d_kpm_dos = opts.getInt("d_kpm_dos");
 
 	k_sampling = opts.getInt("k_sampling");
 	if (k_sampling == 1){
@@ -204,77 +210,11 @@ void Mlmc_handler::process(Job_params results){
 
 		if(k_staging_k_count[result_index] == num_k){
 
-			std::vector< std::vector<double> > M_xx;
-			std::vector< std::vector<double> > M_xy;
-			std::vector< std::vector<double> > M_yy;
-
 			// kind of hacky, need to find a better way to do this!
 			Job_params k_results(results);
-			if (d_cond > 0){
-				M_xx = k_staging_results[result_index][0].getDoubleMat("M_xx");
-				if (d_cond > 1){
-					M_xy = k_staging_results[result_index][0].getDoubleMat("M_xy");
-					M_yy = k_staging_results[result_index][0].getDoubleMat("M_yy");
-				}
-			}
 
+			k_sampling_average(k_staging_results[result_index],k_results);
 
-			for (int i = 1; i < num_k; ++i){
-
-				std::vector< std::vector<double> > temp_mat = k_staging_results[result_index][i].getDoubleMat("M_xx");
-
-				if (d_cond > 0){
-					for (int x = 0; x < (int)M_xx.size(); ++x){
-						for (int y = 0; y < (int)M_xx[x].size(); ++y){
-							M_xx[x][y] = M_xx[x][y] + temp_mat[x][y];
-						}
-					}
-				}
-				if (d_cond > 1){
-					temp_mat = k_staging_results[result_index][i].getDoubleMat("M_xy");
-					for (int x = 0; x < (int)M_xy.size(); ++x){
-						for (int y = 0; y < (int)M_xy[x].size(); ++y){
-							M_xy[x][y] = M_xy[x][y] + temp_mat[x][y];
-						}
-					}
-
-					temp_mat = k_staging_results[result_index][i].getDoubleMat("M_yy");
-					for (int x = 0; x < (int)M_yy.size(); ++x){
-						for (int y = 0; y < (int)M_yy[x].size(); ++y){
-							M_yy[x][y] = M_yy[x][y] + temp_mat[x][y];
-						}
-					}
-				}
-
-			}
-
-			// normalize
-			///*
-			for (int x = 0; x < (int)M_xx.size(); ++x){
-				for (int y = 0; y < (int)M_xx[x].size(); ++y){
-					M_xx[x][y] = M_xx[x][y]/(double)num_k;
-				}
-			}
-
-			for (int x = 0; x < (int)M_xy.size(); ++x){
-				for (int y = 0; y < (int)M_xy[x].size(); ++y){
-					M_xy[x][y] = M_xy[x][y]/(double)num_k;
-				}
-			}
-
-			for (int x = 0; x < (int)M_yy.size(); ++x){
-				for (int y = 0; y < (int)M_yy[x].size(); ++y){
-					M_yy[x][y] = M_yy[x][y]/(double)num_k;
-				}
-			}
-			//*/
-			if (d_cond > 0){
-				k_results.setParam("M_xx", M_xx);
-				if (d_cond > 1){
-					k_results.setParam("M_xy", M_xy);
-					k_results.setParam("M_yy", M_yy);
-					}
-			}
 			// First check if this is part of a cluster
 			if (mlmc_clusterID == -1){
 
@@ -325,6 +265,99 @@ void Mlmc_handler::process(Job_params results){
 		}
 
 	}
+
+}
+
+void Mlmc_handler::k_sampling_average(std::vector<Job_params> k_samples, Job_params& k_results){
+
+	if (d_cond > 0){
+
+		std::vector< std::vector<double> > M_xx;
+		std::vector< std::vector<double> > M_xy;
+		std::vector< std::vector<double> > M_yy;
+
+		M_xx = k_samples[0].getDoubleMat("M_xx");
+
+			if (d_cond > 1){
+					M_xy = k_samples[0].getDoubleMat("M_xy");
+					M_yy = k_samples[0].getDoubleMat("M_yy");
+			}
+
+		for (int i = 1; i < num_k; ++i){
+
+			std::vector< std::vector<double> > temp_mat = k_samples[i].getDoubleMat("M_xx");
+
+				for (int x = 0; x < (int)M_xx.size(); ++x){
+					for (int y = 0; y < (int)M_xx[x].size(); ++y){
+						M_xx[x][y] = M_xx[x][y] + temp_mat[x][y];
+					}
+				}
+
+				if (d_cond > 1){
+					temp_mat = k_samples[i].getDoubleMat("M_xy");
+					for (int x = 0; x < (int)M_xy.size(); ++x){
+						for (int y = 0; y < (int)M_xy[x].size(); ++y){
+							M_xy[x][y] = M_xy[x][y] + temp_mat[x][y];
+						}
+					}
+
+					temp_mat = k_samples[i].getDoubleMat("M_yy");
+					for (int x = 0; x < (int)M_yy.size(); ++x){
+						for (int y = 0; y < (int)M_yy[x].size(); ++y){
+							M_yy[x][y] = M_yy[x][y] + temp_mat[x][y];
+						}
+					}
+				}
+
+		}
+
+		// normalize
+
+		for (int x = 0; x < (int)M_xx.size(); ++x){
+			for (int y = 0; y < (int)M_xx[x].size(); ++y){
+				M_xx[x][y] = M_xx[x][y]/(double)num_k;
+			}
+		}
+		k_results.setParam("M_xx", M_xx);
+
+		if (d_cond > 1){
+			for (int x = 0; x < (int)M_xy.size(); ++x){
+				for (int y = 0; y < (int)M_xy[x].size(); ++y){
+					M_xy[x][y] = M_xy[x][y]/(double)num_k;
+				}
+			}
+
+			for (int x = 0; x < (int)M_yy.size(); ++x){
+				for (int y = 0; y < (int)M_yy[x].size(); ++y){
+					M_yy[x][y] = M_yy[x][y]/(double)num_k;
+				}
+			}
+		}
+
+		k_results.setParam("M_xy", M_xy);
+		k_results.setParam("M_yy", M_yy);
+
+	}
+
+	if (d_kpm_dos > 0){
+
+		std::vector<double> dos = k_samples[0].getDoubleVec("kpm_dos");
+
+		for (int i = 1; i < num_k; ++i){
+			std::vector<double> temp_dos = k_samples[i].getDoubleVec("kpm_dos");
+			for (int x = 0; x < (int)dos.size(); ++x){
+				dos[x] = dos[x] + temp_dos[x];
+			}
+		}
+
+		// normalize
+		for (int x = 0; x < (int)dos.size(); ++x){
+			dos[x] = dos[x]/(double)num_k;
+		}
+		k_results.setParam("kpm_dos", dos);
+
+	}
+
 
 }
 

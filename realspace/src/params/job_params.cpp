@@ -48,7 +48,7 @@ Job_params::Job_params() {
 	setParam("verbose_save",i_one);
 	setParam("diagonalize",i_zero);
 	setParam("chiral_on",i_zero);
-	setParam("d_kpm_dos",i_zero);	
+	setParam("d_kpm_dos",i_zero);
 	setParam("d_weights",i_zero);
 	setParam("d_vecs",i_zero);
 	setParam("d_cond",i_zero);
