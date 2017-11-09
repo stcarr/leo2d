@@ -187,6 +187,108 @@ void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vect
 	}
 }
 
+double Locality::getLocalTheta(int k1, int* index_to_grid, double* index_to_pos, int max){
+
+
+	// we don't have access to the grid_to_index array anymore
+	// so we have to try to find neighbours by guessing their index:
+
+	// first, the starting info
+	int i1 = index_to_grid[k1*4 + 0];
+	int j1 = index_to_grid[k1*4 + 1];
+	int o1 = index_to_grid[k1*4 + 2];
+	int s1 = index_to_grid[k1*4 + 3];
+	
+	double x1 = index_to_pos[k1*3 + 0];
+	double y1 = index_to_pos[k1*3 + 1];
+	double z1 = index_to_pos[k1*3 + 2];
+	
+	// now loop over 4 possible nearest neighbors 
+	// these are in the same "j" column of the tight-binding model)
+	int k2, i2, j2, o2, s2;
+	int found_neighbor = 0;
+	
+	for (int dk = -3; dk < 4; dk = dk + 2) {
+		int temp_k = k1 + dk;
+		if (temp_k >= 0 && temp_k < max){ 
+			int temp_i = index_to_grid[temp_k*4 + 0];
+			int temp_j = index_to_grid[temp_k*4 + 1];
+			int temp_o = index_to_grid[temp_k*4 + 2];
+			int temp_s = index_to_grid[temp_k*4 + 3];
+		
+			if (isNearestNeighbor(i1, j1, o1, s1, temp_i, temp_j, temp_o, temp_s)){
+				k2 = temp_k;
+				i2 = temp_i;
+				j2 = temp_j;
+				o2 = temp_o;
+				s2 = temp_s;
+				found_neighbor = 1;
+			}
+		}
+		
+		if (found_neighbor == 1)
+			break;
+	}
+	
+	double theta;
+	if (found_neighbor == 1){
+		double x2 = index_to_pos[k2*3 + 0];
+		double y2 = index_to_pos[k2*3 + 1];
+		double z2 = index_to_pos[k2*3 + 2];
+		
+		double dx = x2 - x1;
+		double dy = y2 - y1;
+		
+		if (o1 == 0){
+			theta = atan2(dy, dx) - PI_6;
+		} else if (o1 == 1){
+			theta = atan2(dy, dx) - PI_2;			
+		}
+		//printf("found neighbour with r = %lf (%lf, %lf) \n",sqrt(dx*dx + dy*dy),dx,dy);
+		
+	} else {
+		// we couldn't find a nearest neighbor, so just throw the global twist... 
+		// (should only occurs on a few edge orbitals, so not very important)
+		theta = angles[s1];
+	}
+	
+	return theta;
+	
+}
+
+int Locality::isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, int o2, int s2){
+
+	// have to be on same sheet
+	if (s1 == s2){	
+		// have to have conjugate orbs
+		if ((o1 == 0 && o2 == 1) || (o1 == 1 && o2 ==0)){ 
+		
+			// hardcoded for graphene... should use Material::(type) function call instead...
+			// in same unit cell, or one of the nearby unit-cells with right orbital coupling
+			if (i1 == i2 && j1 == j2){
+				return 1;
+			} else if (o1 == 0){
+				if ( (i2 - i1) == -1 && (j2 - j1) == 0 )
+					return 1;
+					
+				if ( (i2 - i1) == 0  && (j2 - j1) == -1 )
+					return 1;
+					
+			} else if (o1 == 1){
+				if ( (i2 - i1) == 1  && (j2 - j1) == 0 )
+					return 1;
+					
+				if ( (i2 - i1) == 0  && (j2 - j1) == 1 )
+					return 1;
+			}
+			
+		}
+	}
+	
+	return 0;
+
+} 
+
 int Locality::initMPI(int argc, char** argv){
 
 	// Start  MPI on each rank
@@ -2180,11 +2282,11 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 	int intra_searchsize = opts.getInt("intra_searchsize");
 
-
 	int solver_type = jobIn.getInt("solver_type");
 	int observable_type = jobIn.getInt("observable_type");
-	int strain_type = jobIn.getInt("strain_type");
 	int boundary_condition = jobIn.getInt("boundary_condition");
+	int strain_type = jobIn.getInt("strain_type");
+	
 	int diagonalize = jobIn.getInt("diagonalize");
 	int elecOn = jobIn.getInt("elecOn");
 	double E = jobIn.getDouble("E");
@@ -2313,6 +2415,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				double x2 = i2pos[new_k*3 + 0];
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
+				
+				double raw_t;
 
 				if (strain_type == 1){
 
@@ -2330,7 +2434,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				 double yh = i2pos[new_k*3 + 1];
 				 double zh = i2pos[new_k*3 + 2];
 
-                 std::array<int,2> grid_disp = {{
+				 std::array<int,2> grid_disp = {{
 				 ih-i0,
 				 jh-j0 }};
 
@@ -2398,22 +2502,27 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					strain_rot[1][0] = strain_rot[0][1];
 
 					Materials::Mat mat = sdata[s0].mat;
-					t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+					double raw_t;
+					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
 
 				} else {
-					// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
-					// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
-					if (new_k == k_i){
-						if (elecOn == 1){
-							t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;
-						} else if (elecOn == 0)
-							t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
-					// Otherwise we enter the value just with rescaling
-					}
-					else {
-						t = intra_pairs_t[intra_counter]/energy_rescale;
-					}
+
+					raw_t = intra_pairs_t[intra_counter];
+
 				}
+				
+				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
+				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+				if (new_k == k_i){
+					if (elecOn == 1){
+						t = (raw_t + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;
+					} else if (elecOn == 0)
+						t = (raw_t + energy_shift)/energy_rescale;
+				// Otherwise we enter the value just with rescaling
+				}
+				else {
+					t = raw_t/energy_rescale;
+				}				
 
 				if (t != 0){
 					//printf("intra coupling (%d, %d) [%lf, %lf, %lf] -> [%lf, %lf, %lf] (%lf, %lf) = %lf \n",k_i,new_k,x1,y1,z1,x2,y2,z2,new_pos_shift_x,new_pos_shift_y,t)
@@ -2496,8 +2605,17 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				Materials::Mat mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
 
 				// and the angle of the sheet each orbital is on
-				double theta1 = angles[index_to_grid[k_i*4 + 3]];
-				double theta2 = angles[index_to_grid[new_k*4 + 3]];
+				double theta1;
+				double theta2;
+				if (strain_type == 0){
+					theta1 = angles[index_to_grid[k_i*4 + 3]];
+					theta2 = angles[index_to_grid[new_k*4 + 3]];
+				} else {
+					// with strain, we need to compute the local theta by nearest neighbor bonding
+					// HARDCODED FOR GRAPHENE CURRENTLY
+					theta1 = getLocalTheta(k_i, index_to_grid, i2pos, max_index);
+					theta2 = getLocalTheta(new_k, index_to_grid, i2pos, max_index);
+				}
 
 				// use all this information to determine coupling energy
 				// !!! Currently NOT generalized for materials other than graphene, need to do a material index call for both sheets and pass to a general "inter_coupling" method !!!
@@ -2685,6 +2803,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	int solver_type = jobIn.getInt("solver_type");
 	int observable_type = jobIn.getInt("observable_type");
 	int boundary_condition = jobIn.getInt("boundary_condition");
+	int strain_type = opts.getInt("strain_type");
+
 	int diagonalize = jobIn.getInt("diagonalize");
 	int chiral_on = jobIn.getInt("chiral_on");
 	int magOn = jobIn.getInt("magOn");
@@ -2794,8 +2914,6 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	// Loop through every orbital (i.e. rows of H)
 	for (int k_i = 0; k_i < max_index; ++k_i){
 
-
-
 		std::complex<double> t_cpx;
 		t_cpx = 0;
 		int skip_here1 = 0;
@@ -2882,19 +3000,113 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 				double z2 = i2pos[new_k*3 + 2];
 
 				double t;
+				double raw_t;
 
+				if (strain_type == 1){
+
+				 int i0 = index_to_grid[k_i*4 + 0];
+				 int j0 = index_to_grid[k_i*4 + 1];
+				 int l0 = index_to_grid[k_i*4 + 2];
+				 int s0 = index_to_grid[k_i*4 + 3];
+
+				 int ih = index_to_grid[new_k*4 + 0];
+				 int jh = index_to_grid[new_k*4 + 1];
+				 int lh = index_to_grid[new_k*4 + 2];
+				 int sh = index_to_grid[new_k*4 + 3];
+
+				 double xh = i2pos[new_k*3 + 0];
+				 double yh = i2pos[new_k*3 + 1];
+				 double zh = i2pos[new_k*3 + 2];
+
+				 std::array<int,2> grid_disp = {{
+				 ih-i0,
+				 jh-j0 }};
+
+				  // we correct the grid values by the supercell_stride when there are periodic BCs
+				  if (boundary_condition == 1){
+					grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
+					grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
+				  }
+
+					// take strain as avg of both orbital strains
+					std::vector< std::vector<double> > strain_here;
+					strain_here.resize(2);
+
+					for (int i = 0; i < 2; ++i){
+						strain_here[i].resize(2);
+						for (int j = 0; j < 2; ++j){
+							strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
+						}
+					}
+
+					// we need to find the bonding angle relative the u_ij definitions:
+					std::array<double, 2> strain_dir;
+
+					strain_dir[0] = xh - x1;
+					strain_dir[1] = yh - y1;
+
+					double strain_dir_norm = sqrt(strain_dir[0]*strain_dir[0] + strain_dir[1]*strain_dir[1]);
+
+					// angle (counter-clockwise) from a bonding direction of +x
+					double strain_theta = 0;
+
+					if (strain_dir_norm != 0){
+						strain_dir[0] = strain_dir[0]/strain_dir_norm;
+						strain_dir[1] = strain_dir[1]/strain_dir_norm;
+
+						if (strain_dir[0] == 0.0){
+							if (strain_dir[1] > 0){
+								strain_theta = PI_2;
+							} else {
+								strain_theta = -PI_2;
+							}
+						} else {
+							double ratio = strain_dir[1]/strain_dir[0];
+							strain_theta = atan(ratio);
+							if (strain_dir[0] < 0){
+								strain_theta = strain_theta + PI;
+							}
+						}
+					}
+
+					// now rotate;
+					std::vector< std::vector<double> > strain_rot;
+					strain_rot.resize(2);
+					strain_rot[0].resize(2);
+					strain_rot[1].resize(2);
+
+					strain_rot[0][0] =  strain_here[0][0]*cos(strain_theta)*cos(strain_theta) +
+									    strain_here[1][1]*sin(strain_theta)*sin(strain_theta) +
+									    strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
+					strain_rot[1][1] =  strain_here[0][0]*sin(strain_theta)*sin(strain_theta) +
+									    strain_here[1][1]*cos(strain_theta)*cos(strain_theta) +
+									 -2*strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
+					strain_rot[0][1] =  (strain_here[1][1] - strain_here[0][0])*sin(strain_theta)*cos(strain_theta) +
+									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
+					strain_rot[1][0] = strain_rot[0][1];
+
+					Materials::Mat mat = sdata[s0].mat;
+					double raw_t;
+					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+
+				} else {
+
+					raw_t = intra_pairs_t[intra_counter];
+
+				}
+				
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
 				if (new_k == k_i){
 					if (elecOn == 1){
-						t = (intra_pairs_t[intra_counter] + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;
+						t = (raw_t + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;
 					} else if (elecOn == 0)
-						t = (intra_pairs_t[intra_counter] + energy_shift)/energy_rescale;
+						t = (raw_t + energy_shift)/energy_rescale;
 				// Otherwise we enter the value just with rescaling
 				}
 				else {
-					t = intra_pairs_t[intra_counter]/energy_rescale;
-				}
+					t = raw_t/energy_rescale;
+				}		
 
 				// First get Magnetic field phase
 				double phase = peierlsPhase(x1, x2, y1, y2, B);
@@ -3013,8 +3225,17 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 				Materials::Mat mat2 = sdata[index_to_grid[new_k*4 + 3]].mat;
 
 				// and the angle of the sheet each orbital is on
-				double theta1 = angles[index_to_grid[k_i*4 + 3]];
-				double theta2 = angles[index_to_grid[new_k*4 + 3]];
+				double theta1;
+				double theta2;
+				if (strain_type == 0){
+					theta1 = angles[index_to_grid[k_i*4 + 3]];
+					theta2 = angles[index_to_grid[new_k*4 + 3]];
+				} else {
+					// with strain, we need to compute the local theta by nearest neighbour bonding
+					theta1 = getLocalTheta(k_i, index_to_grid, i2pos, max_index);
+					theta2 = getLocalTheta(new_k, index_to_grid, i2pos, max_index);
+					//printf("(%d, %d), theta1 = %lf, theta2 = %lf \n",k_i, new_k, theta1*(180.0/M_PI), theta2*(180.0/M_PI));
+				}
 
 				std::array<double, 3> disp = {{
 					x2 - x1,
