@@ -266,17 +266,17 @@ std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sh
 
 	std::vector<double> disp;
 	disp.resize(3);
-	
+
 	double amp = 20.0;
 	double freq = 1.0;
-	
+
 	// u_x:
 	disp[0] = amp*sin(2.0*PI*freq*pos_in[0]);
 	// u_y:
 	disp[1] = amp*cos(2.0*PI*freq*pos_in[1]);
 	// u_z:
 	disp[2] = 0.0;
-	
+
 	return disp;
 
 }
@@ -288,10 +288,10 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
 	strain_here.resize(2);
 	strain_here[0].resize(2);
 	strain_here[1].resize(2);
-	
+
 	double amp = 20.0;
 	double freq = 1.0;
-	
+
 	// u_xx:
 	strain_here[0][0] = -2.0*PI*freq*amp*cos(2.0*PI*freq*pos_in[0]);
 	// u_xy:
@@ -300,33 +300,33 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
 	strain_here[1][0] =  0.0;
 	// u_yy:
 	strain_here[1][1] =  2.0*PI*freq*amp*sin(2.0*PI*freq*pos_in[1]);
-	
+
 	// Now we rescale for the supercell:
-	
+
 	std::vector< std::vector<double> > sc = opts.getDoubleMat("supercell");
-	
+
 	std::vector< std::vector<double> > sc_inv;
 	sc_inv.resize(2);
 	sc_inv[0].resize(2);
 	sc_inv[1].resize(2);
-	
+
 	double det = sc[0][0]*sc[1][1] - sc[0][1]*sc[1][0];
 	sc_inv[0][0] =  sc[1][1]/det;
 	sc_inv[0][1] = -sc[1][0]/det;
 	sc_inv[1][0] = -sc[0][1]/det;
 	sc_inv[1][1] =  sc[0][0]/det;
-	
+
 	std::vector< std::vector<double> > strain_out;
 	strain_out.resize(2);
 	strain_out[0].resize(2);
 	strain_out[1].resize(2);
-	
+
 	for (int i = 0; i < 2; ++i){
 		for (int j = 0; j < 2; ++j){
 		strain_out[i][j] = sc_inv[j][0]*strain_here[i][0] + sc_inv[j][1]*strain_here[i][1];
 		}
 	}
-	
+
 	return strain_out;
 }
 
@@ -334,19 +334,19 @@ std::vector<double> StrainCalc::realspaceDisp(std::vector<double> pos_in, int sh
 
 	double lambda = opts.getDouble("strain_lambda");
 	double shift = opts.getDouble("strain_shift");
-	double a = 2.4768;	
-		
+	double a = 2.4768;
+
 	std::vector<double> disp;
 	disp.resize(3);
-	
-	
+
+
 	double x = pos_in[0] - shift;
-	
+
 	double disp_vec[2];
-	
+
 	disp_vec[0] = 0.5*a;
 	disp_vec[1] = SQRT3_6*a;
-	
+
 	if (sheet == 0){
 		// u_x:
 		disp[0] = disp_vec[0]*atan(x/lambda)/(PI_2);; // = a/PI * atan(x/lambda)
@@ -359,7 +359,7 @@ std::vector<double> StrainCalc::realspaceDisp(std::vector<double> pos_in, int sh
 		disp[1] = 0.0;
 		disp[2] = 0.0;
 	}
-	
+
 	//printf("disp = [%lf, %lf] \n",disp[0],disp[1]);
 	return disp;
 
@@ -376,9 +376,9 @@ std::vector< std::vector<double> > StrainCalc::realspaceStrain(std::vector<doubl
 	strain_here.resize(2);
 	strain_here[0].resize(2);
 	strain_here[1].resize(2);
-	
+
 	double x = pos_in[0] - shift;
-	
+
 	if (sheet == 0){
 		// u_xx:
 		strain_here[0][0] = (a/(PI*lambda)) / (1+(x/lambda)*(x/lambda));
@@ -396,8 +396,39 @@ std::vector< std::vector<double> > StrainCalc::realspaceStrain(std::vector<doubl
 		// u_yx:
 		strain_here[1][0] =  0.0;
 		// u_yy:
-		strain_here[1][1] =  0.0;	
+		strain_here[1][1] =  0.0;
 	}
-	
+
 	return strain_here;
+}
+
+double StrainCalc::gsfeHeight(std::vector<double> config_in){
+
+  // hard coded for graphene
+  double a0 = 2.4768;
+
+  double x = config_in[0]*a0  + config_in[1]*a0/2.0;
+  double y = config_in[0]*0.0 + config_in[1]*a0/SQRT3_2;
+
+  double psi = y + a0/SQRT3;
+  double phi = x;
+
+  double pre = 2*PI/a0;
+  // GSFE d = 3.39, our d = 3.34
+  double c0 =     3.47889 - 0.05;
+  double c1 =    -0.02648;
+  double c2 =    -0.00352;
+  double c3 =     0.00037;
+  double c4 =     SQRT3*c1;
+  double c5 =    -SQRT3*c3;
+
+
+  double F =  c0 +
+              c1*(cos(pre*(phi + psi/SQRT3)) + cos(pre*(phi - psi/SQRT3)) + cos(pre*2*psi/SQRT3) ) +
+              c2*(cos(pre*(phi + psi*SQRT3)) + cos(pre*(phi - psi*SQRT3)) + cos(pre*2*phi) ) +
+              c3*(cos(pre*(2*phi + 2*psi/SQRT3)) + cos(pre*(2*phi - 2*psi/SQRT3)) + cos(pre*4*psi/SQRT3) ) +
+              c4*(sin(pre*(phi - psi/SQRT3)) - sin(pre*(phi + psi/SQRT3)) + sin(pre*2*psi/SQRT3) ) +
+              c5*(sin(pre*(2*phi - 2*psi/SQRT3)) - sin(pre*(2*phi + 2*psi/SQRT3)) + sin(pre*4*psi/SQRT3) );
+  return F - 3.34;
+
 }

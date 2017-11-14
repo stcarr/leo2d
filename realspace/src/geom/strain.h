@@ -33,17 +33,19 @@ class StrainCalc {
       ~StrainCalc();
 
       void loadConfigFile(std::string config_filename);
-	  void setOpts(Job_params opts_in);
-	  
+	     void setOpts(Job_params opts_in);
+
       std::vector<double> interpStrainDisp(std::vector<double> config_in, int sheet, int orb);
 
       double interp_4point(double x, double y, double v1, double v2, double v3, double v4);
 
-	  std::vector<double> supercellDisp(std::vector<double> pos_in, int sheet, int orb);
-	  std::vector< std::vector<double> > supercellStrain(std::vector<double> pos_in, int sheet, int orb);
-	  
-	  std::vector<double> realspaceDisp(std::vector<double> pos_in, int sheet, int orb);
-	  std::vector< std::vector<double> > realspaceStrain(std::vector<double> pos_in, int sheet, int orb);
+  	  std::vector<double> supercellDisp(std::vector<double> pos_in, int sheet, int orb);
+  	  std::vector< std::vector<double> > supercellStrain(std::vector<double> pos_in, int sheet, int orb);
+
+  	  std::vector<double> realspaceDisp(std::vector<double> pos_in, int sheet, int orb);
+  	  std::vector< std::vector<double> > realspaceStrain(std::vector<double> pos_in, int sheet, int orb);
+
+      double gsfeHeight(std::vector<double> config_in);
 
 };
 

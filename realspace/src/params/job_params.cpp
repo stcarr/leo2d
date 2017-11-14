@@ -37,6 +37,7 @@ Job_params::Job_params() {
 	setParam("num_shift_sheets",i_one);
 	setParam("solver_type",i_zero);
 	setParam("strain_type",i_zero);
+	setParam("gsfe_z_on",i_zero);
 	setParam("num_lc_points",i_one*2);
 	setParam("lc_points",lc_points);
 	setParam("observable_type",i_zero);

@@ -358,6 +358,12 @@ int main(int argc, char** argv) {
 					opts.setParam("strain_lambda",atof(in_string.c_str()));
 				}
 
+				if (in_string == "GSFE_Z_ON"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("gsfe_z_on",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "MATRIX_SAVE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -588,6 +594,9 @@ int main(int argc, char** argv) {
 				int N = opts.getInt("n_supercell");
 
 				double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+				if (M < N){
+					theta = -theta;
+				}
 				printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
 				// we assume unitCell is same for both sheets...
 				for (int i = 0; i < s_data.size(); ++i){
@@ -606,12 +615,14 @@ int main(int argc, char** argv) {
 					int A2_num_a1;
 					int A2_num_a2;
 					if (i == 0){
+						printf("i = 0\n");
 						angles[0] = 0;
 						A1_num_a1 = N;
 						A1_num_a2 = M;
 						A2_num_a1 = -M;
 						A2_num_a2 = (M+N);
 					} else if (i == 1){
+						printf("i = 1\n");
 						angles[1] = theta;
 						A1_num_a1 = M;
 						A1_num_a2 = N;

@@ -198,24 +198,24 @@ double Locality::getLocalTheta(int k1, int* index_to_grid, double* index_to_pos,
 	int j1 = index_to_grid[k1*4 + 1];
 	int o1 = index_to_grid[k1*4 + 2];
 	int s1 = index_to_grid[k1*4 + 3];
-	
+
 	double x1 = index_to_pos[k1*3 + 0];
 	double y1 = index_to_pos[k1*3 + 1];
 	double z1 = index_to_pos[k1*3 + 2];
-	
-	// now loop over 4 possible nearest neighbors 
+
+	// now loop over 4 possible nearest neighbors
 	// these are in the same "j" column of the tight-binding model)
 	int k2, i2, j2, o2, s2;
 	int found_neighbor = 0;
-	
+
 	for (int dk = -3; dk < 4; dk = dk + 2) {
 		int temp_k = k1 + dk;
-		if (temp_k >= 0 && temp_k < max){ 
+		if (temp_k >= 0 && temp_k < max){
 			int temp_i = index_to_grid[temp_k*4 + 0];
 			int temp_j = index_to_grid[temp_k*4 + 1];
 			int temp_o = index_to_grid[temp_k*4 + 2];
 			int temp_s = index_to_grid[temp_k*4 + 3];
-		
+
 			if (isNearestNeighbor(i1, j1, o1, s1, temp_i, temp_j, temp_o, temp_s)){
 				k2 = temp_k;
 				i2 = temp_i;
@@ -225,44 +225,44 @@ double Locality::getLocalTheta(int k1, int* index_to_grid, double* index_to_pos,
 				found_neighbor = 1;
 			}
 		}
-		
+
 		if (found_neighbor == 1)
 			break;
 	}
-	
+
 	double theta;
 	if (found_neighbor == 1){
 		double x2 = index_to_pos[k2*3 + 0];
 		double y2 = index_to_pos[k2*3 + 1];
 		double z2 = index_to_pos[k2*3 + 2];
-		
+
 		double dx = x2 - x1;
 		double dy = y2 - y1;
-		
+
 		if (o1 == 0){
 			theta = atan2(dy, dx) - PI_6;
 		} else if (o1 == 1){
-			theta = atan2(dy, dx) - PI_2;			
+			theta = atan2(dy, dx) - PI_2;
 		}
 		//printf("found neighbour with r = %lf (%lf, %lf) \n",sqrt(dx*dx + dy*dy),dx,dy);
-		
+
 	} else {
-		// we couldn't find a nearest neighbor, so just throw the global twist... 
+		// we couldn't find a nearest neighbor, so just throw the global twist...
 		// (should only occurs on a few edge orbitals, so not very important)
 		theta = angles[s1];
 	}
-	
+
 	return theta;
-	
+
 }
 
 int Locality::isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, int o2, int s2){
 
 	// have to be on same sheet
-	if (s1 == s2){	
+	if (s1 == s2){
 		// have to have conjugate orbs
-		if ((o1 == 0 && o2 == 1) || (o1 == 1 && o2 ==0)){ 
-		
+		if ((o1 == 0 && o2 == 1) || (o1 == 1 && o2 ==0)){
+
 			// hardcoded for graphene... should use Material::(type) function call instead...
 			// in same unit cell, or one of the nearby unit-cells with right orbital coupling
 			if (i1 == i2 && j1 == j2){
@@ -270,24 +270,24 @@ int Locality::isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, 
 			} else if (o1 == 0){
 				if ( (i2 - i1) == -1 && (j2 - j1) == 0 )
 					return 1;
-					
+
 				if ( (i2 - i1) == 0  && (j2 - j1) == -1 )
 					return 1;
-					
+
 			} else if (o1 == 1){
 				if ( (i2 - i1) == 1  && (j2 - j1) == 0 )
 					return 1;
-					
+
 				if ( (i2 - i1) == 0  && (j2 - j1) == 1 )
 					return 1;
 			}
-			
+
 		}
 	}
-	
+
 	return 0;
 
-} 
+}
 
 int Locality::initMPI(int argc, char** argv){
 
@@ -2113,6 +2113,8 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	int solver_type = jobIn.getInt("solver_type");
 	int solver_space = jobIn.getInt("solver_space");
 	int strain_type = jobIn.getInt("strain_type");
+	int gsfe_z_on = jobIn.getInt("gsfe_z_on");
+
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
 	if (strain_type == 1){
@@ -2213,12 +2215,40 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				while (new_shift_configs[i][1] < 0.0){
 					new_shift_configs[i][1] = new_shift_configs[i][1] + 1.0;
 				}
+
+
 				//printf("on k=%d, sheet=%d, orbit=%d\n",i,s,orbit);
 				std::vector<double> disp_here = strainInfo.interpStrainDisp(new_shift_configs[i], s, orbit);
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
 				i2pos[i*3 + 2] = i2pos[i*3 + 2] + disp_here[2];
+
+				if (gsfe_z_on == 1){
+
+						int s_here = index_to_grid[i*4 + 3];
+						Materials::Mat mat = sdata[s_here].mat;
+					  std::array<std::array<double, 2>, 2> lattice = Materials::lattice(mat);
+
+						std::array<std::array<double, 2>, 2> lattice_inv;
+						double l_det = lattice[0][0]*lattice[1][1] - lattice[0][1]*lattice[1][0];
+						lattice_inv[0][0] =  lattice[1][1]/l_det;
+						lattice_inv[0][1] = -lattice[1][0]/l_det;
+						lattice_inv[1][0] = -lattice[0][1]/l_det;
+						lattice_inv[1][1] =  lattice[0][0]/l_det;
+
+						new_shift_configs[i][0] = new_shift_configs[i][0] + disp_here[0]*lattice_inv[0][0] + disp_here[1]*lattice_inv[1][0];
+						new_shift_configs[i][1] = new_shift_configs[i][1] + disp_here[0]*lattice_inv[0][1] + disp_here[1]*lattice_inv[1][1];
+
+						double dz = strainInfo.gsfeHeight(new_shift_configs[i]);
+						if (s_here == 0){
+							i2pos[i*3 + 2] = i2pos[i*3 + 2] - dz/2.0;
+						} else if (s_here == 1){
+							i2pos[i*3 + 2] = i2pos[i*3 + 2] + dz/2.0;
+						}
+
+
+				}
 
 			} else if (strain_type == 3){
 				//sample strain by actual realspace position
@@ -2286,7 +2316,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	int observable_type = jobIn.getInt("observable_type");
 	int boundary_condition = jobIn.getInt("boundary_condition");
 	int strain_type = jobIn.getInt("strain_type");
-	
+
 	int diagonalize = jobIn.getInt("diagonalize");
 	int elecOn = jobIn.getInt("elecOn");
 	double E = jobIn.getDouble("E");
@@ -2415,7 +2445,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				double x2 = i2pos[new_k*3 + 0];
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
-				
+
 				double raw_t;
 
 				if (strain_type == 1){
@@ -2510,7 +2540,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					raw_t = intra_pairs_t[intra_counter];
 
 				}
-				
+
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
 				if (new_k == k_i){
@@ -2522,7 +2552,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				}
 				else {
 					t = raw_t/energy_rescale;
-				}				
+				}
 
 				if (t != 0){
 					//printf("intra coupling (%d, %d) [%lf, %lf, %lf] -> [%lf, %lf, %lf] (%lf, %lf) = %lf \n",k_i,new_k,x1,y1,z1,x2,y2,z2,new_pos_shift_x,new_pos_shift_y,t)
@@ -3094,7 +3124,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 					raw_t = intra_pairs_t[intra_counter];
 
 				}
-				
+
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
 				if (new_k == k_i){
@@ -3106,7 +3136,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 				}
 				else {
 					t = raw_t/energy_rescale;
-				}		
+				}
 
 				// First get Magnetic field phase
 				double phase = peierlsPhase(x1, x2, y1, y2, B);
