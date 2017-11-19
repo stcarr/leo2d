@@ -7,7 +7,6 @@
 #include <complex>
 #include <vector>
 
-
 #define MKL_Complex16 std::complex<double>
 
 #ifndef DMATRIX_H
@@ -37,7 +36,7 @@ class DMatrix {
 
 		//! Maximum number of elements allowed in the allocated memory.
 		// maximum number of elements allowed in the allocated memory
-		int nval;
+		size_t nval;
 
     public:
 		// Empty Constructor

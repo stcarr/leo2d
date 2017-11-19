@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
+#include <iostream> // for cout
 
 #ifdef USE_MKL
 	#include "mkl.h"
@@ -36,7 +37,7 @@ DMatrix::DMatrix(const DMatrix& orig){
 
 	nrows = orig.getNumRows();
 	ncols = orig.getNumCols();
-	nval = nrows*ncols;
+	nval = (size_t)nrows*(size_t)ncols;
 	val = new double[nval];
 	orig.getValCopy(val);
 
@@ -47,7 +48,7 @@ DMatrix::DMatrix(int nr, int nc) {
     nrows = nr;
     ncols = nc;
     val = NULL;
-    nval = nr*nc;
+    nval = (size_t)nr*(size_t)nc;
 	type = 0;
 }
 
@@ -62,7 +63,7 @@ DMatrix::DMatrix(int nr, int nc, double *val0) {
 	ncols = nc;
 
 	val = val0;
-	nval = nr*nc;
+	nval = (size_t)nr*(size_t)nc;
 
 }
 
@@ -76,7 +77,7 @@ DMatrix::DMatrix(int nr, int nc, std::complex<double> *val_c0) {
 	ncols = nc;
 
 	val_c = val_c0;
-	nval = nr*nc;
+	nval = (size_t)nr*(size_t)nc;
 }
 
 
@@ -123,7 +124,7 @@ void DMatrix::setup(int nr, int nc, int t){
 
 	nrows = nr;
 	ncols = nc;
-	nval  = nr*nc;
+	nval  = (size_t)nr*(size_t)nc;
 	type = t;
 
 }
@@ -165,7 +166,11 @@ void DMatrix::setup(int nr, int nc, std::complex<double> *val_c0) {
 }
 
 std::complex<double>* DMatrix::allocCpxVal(){
+	std::vector<double> v;
+
 	val_c = new std::complex<double>[nval];
+	printf("done with val_c alloc \n");
+
 	for (int i = 0; i < nval; ++i){
 		val_c[i] = std::complex<double>(0.0, 0.0);
 	}

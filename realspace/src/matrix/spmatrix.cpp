@@ -607,32 +607,39 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> 
 void SpMatrix::denseConvert(DMatrix &Mat_in){
 
 	// dense matrix is in Column Major order
-
+	printf("1 \n");
 	Mat_in.setup(nrows, ncols, type);
+	printf("2 \n");
+
 	if (type == 0){
 
 		double* mat_val = Mat_in.allocRealVal();
 
-		for (int r = 0; r < nrows; ++r){
+		for (size_t r = 0; r < nrows; ++r){
 
 			int begin = rowPointer[r];
 			int end = rowPointer[r+1];
 
-			for (int i = begin; i < end; ++i){
+			for (size_t i = begin; i < end; ++i){
 				mat_val[colIndex[i]*nrows + r] = val[i];
 			}
 		}
 
 	} else if (type == 1){
+		printf("3 \n");
+
 
 		std::complex<double>* mat_val_c = Mat_in.allocCpxVal();
 
-		for (int r = 0; r < nrows; ++r){
+		for (size_t r = 0; r < nrows; ++r){
+			printf("r = %lu/%d \n",r,nrows);
 
-			int begin = rowPointer[r];
-			int end = rowPointer[r+1];
-
-			for (int i = begin; i < end; ++i){
+			size_t begin = rowPointer[r];
+			size_t end = rowPointer[r+1];
+			printf("begin = %lu, end = %lu \n",begin,end);
+			printf("maxnnz = %d, nrows*ncols = %lu, nrows = %d, ncols = %d \n", maxnnz, (size_t)nrows*(size_t)ncols, nrows, ncols);
+			for (size_t i = begin; i < end; ++i){
+				printf("i = %lu, colIndex[i] = %d, nrows = %d, r = %lu \n",i,colIndex[i],nrows,r);
 				mat_val_c[colIndex[i]*nrows + r] = val_c[i];
 			}
 		}
@@ -674,8 +681,11 @@ void SpMatrix::denseConvert(Eigen::MatrixXcd &H_in){
 void SpMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 
 	DMatrix dense_mat;
+	printf("doing denseConvert() \n");
 	denseConvert(dense_mat);
+	printf("entering dense_mat.eigenSolve() \n");
 	dense_mat.eigenSolve(eigvals, eigvecs);
+	printf("donem with dense_mat.eigenSolve() \n");
 
 }
 
