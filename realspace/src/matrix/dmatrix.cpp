@@ -145,7 +145,7 @@ void DMatrix::setup(int nr, int nc, double *val0){
 
 double* DMatrix::allocRealVal(){
 	val = new double[nval];
-	for (int i = 0; i < nval; ++i){
+	for (size_t i = 0; i < nval; ++i){
 		val[i] = 0;
 	}
 	type = 0;
@@ -169,9 +169,8 @@ std::complex<double>* DMatrix::allocCpxVal(){
 	std::vector<double> v;
 
 	val_c = new std::complex<double>[nval];
-	printf("done with val_c alloc \n");
 
-	for (int i = 0; i < nval; ++i){
+	for (size_t i = 0; i < nval; ++i){
 		val_c[i] = std::complex<double>(0.0, 0.0);
 	}
 	type = 1;

@@ -607,9 +607,7 @@ void SpMatrix::denseMatrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> 
 void SpMatrix::denseConvert(DMatrix &Mat_in){
 
 	// dense matrix is in Column Major order
-	printf("1 \n");
 	Mat_in.setup(nrows, ncols, type);
-	printf("2 \n");
 
 	if (type == 0){
 
@@ -626,15 +624,11 @@ void SpMatrix::denseConvert(DMatrix &Mat_in){
 		}
 
 	} else if (type == 1){
-		printf("3 \n");
 
 
 		std::complex<double>* mat_val_c = Mat_in.allocCpxVal();
 
 		for (size_t r = 0; r < nrows; ++r){
-			if (r%1000 == 0){
-				printf("r = %lu/%d \n",r,nrows);
-			}
 			size_t begin = rowPointer[r];
 			size_t end = rowPointer[r+1];
 			//printf("begin = %lu, end = %lu \n",begin,end);
@@ -644,7 +638,7 @@ void SpMatrix::denseConvert(DMatrix &Mat_in){
 				mat_val_c[((size_t)colIndex[i])*((size_t)nrows) + r] = val_c[i];
 			}
 		}
-		printf("done with dense val_c population \n");
+		//printf("done with dense val_c population \n");
 
 	}
 
@@ -687,7 +681,7 @@ void SpMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 	denseConvert(dense_mat);
 	printf("entering dense_mat.eigenSolve() \n");
 	dense_mat.eigenSolve(eigvals, eigvecs);
-	printf("donem with dense_mat.eigenSolve() \n");
+	printf("done with dense_mat.eigenSolve() \n");
 
 }
 
