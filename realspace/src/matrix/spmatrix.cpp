@@ -632,17 +632,19 @@ void SpMatrix::denseConvert(DMatrix &Mat_in){
 		std::complex<double>* mat_val_c = Mat_in.allocCpxVal();
 
 		for (size_t r = 0; r < nrows; ++r){
-			printf("r = %lu/%d \n",r,nrows);
-
+			if (r%1000 == 0){
+				printf("r = %lu/%d \n",r,nrows);
+			}
 			size_t begin = rowPointer[r];
 			size_t end = rowPointer[r+1];
-			printf("begin = %lu, end = %lu \n",begin,end);
-			printf("maxnnz = %d, nrows*ncols = %lu, nrows = %d, ncols = %d \n", maxnnz, (size_t)nrows*(size_t)ncols, nrows, ncols);
+			//printf("begin = %lu, end = %lu \n",begin,end);
+			//printf("maxnnz = %d, nrows*ncols = %lu, nrows = %d, ncols = %d \n", maxnnz, (size_t)nrows*(size_t)ncols, nrows, ncols);
 			for (size_t i = begin; i < end; ++i){
-				printf("i = %lu, colIndex[i] = %d, nrows = %d, r = %lu \n",i,colIndex[i],nrows,r);
-				mat_val_c[colIndex[i]*nrows + r] = val_c[i];
+				//printf("i = %lu, colIndex[i] = %d, nrows = %d, r = %lu \n",i,colIndex[i],nrows,r);
+				mat_val_c[((size_t)colIndex[i])*((size_t)nrows) + r] = val_c[i];
 			}
 		}
+		printf("done with dense val_c population \n");
 
 	}
 
