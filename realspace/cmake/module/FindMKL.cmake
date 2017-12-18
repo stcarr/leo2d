@@ -58,7 +58,7 @@ endif()
 
 if(MKL_SDL)
     find_library(MKL_LIBRARY mkl_rt
-        PATHS ${MKL_ROOT}/lib/ia32/)
+        PATHS ${MKL_ROOT}/lib/intel64/)
 
     set(MKL_MINIMAL_LIBRARY ${MKL_LIBRARY})
 else()

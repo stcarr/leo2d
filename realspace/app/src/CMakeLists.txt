@@ -35,7 +35,8 @@ ADD_DEPENDENCIES(LEO2D leo2d)
 ######################################################################################
 
 if(MKL_GNU)
-	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_sequential mkl_core)
+	#TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_sequential mkl_core)
+	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 ${MKL_LIBRARIES})
 elseif(MKL_INTEL)
 	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m dl)
 else()
