@@ -34,6 +34,21 @@ int main(int argc, char** argv) {
 
 	DMatrix temp_mat = getLeoMatrix(argv[1]);
 
+	int nrows = temp_mat.getNumRows();
+	int ncols = temp_mat.getNumCols();
+	int nval = nrows*ncols;
+
+	double* val = new double[nval];
+
+	// assigns values to the variable val
+	temp_mat.getValCopy(val);
+
+	//...
+	// Do stuff with val
+	//...
+
+	delete[] val;
+
 	temp_mat.debugPrint(); // Check the output
 	*/
 	// End of getLeoMatrix example
