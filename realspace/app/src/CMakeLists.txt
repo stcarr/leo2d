@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6) 
+cmake_minimum_required(VERSION 2.6)
 ######################################################################################
 ### 1) Include the sources
 ######################################################################################
@@ -27,7 +27,10 @@ endif()
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/app)
 
 ADD_EXECUTABLE(LEO2D main.cpp)
+ADD_EXECUTABLE(LEO2D_serial main_serial.cpp)
+
 ADD_DEPENDENCIES(LEO2D leo2d)
+ADD_DEPENDENCIES(LEO2D_serial leo2d)
 
 
 ######################################################################################
@@ -37,9 +40,12 @@ ADD_DEPENDENCIES(LEO2D leo2d)
 if(MKL_GNU)
 	#TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_sequential mkl_core)
 	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 ${MKL_LIBRARIES})
+	TARGET_LINK_LIBRARIES(LEO2D_serial leo2d fftw3 ${MKL_LIBRARIES})
 elseif(MKL_INTEL)
 	TARGET_LINK_LIBRARIES(LEO2D leo2d fftw3 mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m dl)
+	TARGET_LINK_LIBRARIES(LEO2D_serial leo2d fftw3 mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m dl)
 else()
 	TARGET_LINK_LIBRARIES(LEO2D leo2d)
+	TARGET_LINK_LIBRARIES(LEO2D_serial leo2d)
 endif()
 ######################################################################################
