@@ -17,7 +17,7 @@
 
 using namespace std;
 
-DMatrix getLeoMatrix(string hstruct_input_file) {
+DMatrix getLeoMatrix(string hstruct_input_file){
 
 	//printf("Serial version of LEO2D, Matrix Generation routine\n");
 
@@ -29,7 +29,7 @@ DMatrix getLeoMatrix(string hstruct_input_file) {
 	// First set basic information about the job
 	// -----------------------------------------
 
-	DMatrix mat_out;
+	DMatrix matrix_out;
 
 	// Determines the grid size (from min_size to max_size) which the simulation attempts to populate using a geometric condition (currently checks r < max_size)
 	int min_size = -50;
@@ -590,7 +590,8 @@ DMatrix getLeoMatrix(string hstruct_input_file) {
 			} else if (type == 1) { // (M,N) Supercell type
 				if ((int)s_data.size() > 2){
 					printf("!!WARNING!!: (M,N) Supercell method not defined for more than 2 sheets \nReturning empty matrix... \n");
-					return mat_out;
+					DMatrix junk_matrix;
+					return junk_matrix;
 				}
 				int M = opts.getInt("m_supercell");
 				int N = opts.getInt("n_supercell");
@@ -799,14 +800,15 @@ DMatrix getLeoMatrix(string hstruct_input_file) {
 		// Builds the geometry of the problem and creates one matrix
 		loc.constructGeom();
 
-		// Post processing operations. Save prints timing information from each node. File saves happen on the MPI loop from the root node!
-		mat_out = loc.getSavedMatrix();
-		return mat_out;
+		// Construct the output matrix from the locality_serial's matrix, then return.
+		DMatrix matrix_out = loc.getSavedMatrix();
+		return matrix_out;
 
 	} else {
 		printf("Input file '%s' not found, returning empty Matrix, \n",hstruct_input_file.c_str());
 	}
 
-	return mat_out;
+	DMatrix junk_matrix;
+	return junk_matrix;
 
 }

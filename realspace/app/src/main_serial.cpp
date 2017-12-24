@@ -25,7 +25,21 @@ int main(int argc, char** argv) {
 
 	printf("Serial version of LEO2D.\n");
 
-	//DMatrix temp_mat = getLeoMatrix(argv[1]);
+	// Example of how to get the DMatrix of a locality run
+	/*
+
+	// IMPORTANT, only use getLeoMatrix as a copy constructor!
+	// If you use assignment (i.e. declare temp_mat then assign it at a later line)
+	// then getLeoMAtrix will FAIL due to a lack of a proper assignment operator in DMatrix!
+
+	DMatrix temp_mat = getLeoMatrix(argv[1]);
+
+	temp_mat.debugPrint(); // Check the output
+	*/
+	// End of getLeoMatrix example
+
+
+	//Normal serial execution follows
 
 	// ------------------------------
 	// Generate input for simulation.
