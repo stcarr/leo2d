@@ -452,22 +452,18 @@ void Locality::constructGeom(){
 		if (solver_space == 1){
 			if (fft_from_file == 0){
 				// Generate FFT of interlayer coupling for Momentum space
-				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
-					int fft_scaling = 1;
-					int n_x = 40;
-					int n_y = 40;
-					int L_x = 40*fft_scaling;
-					int L_y = 40*fft_scaling;
-					int length_x = 2;
-					int length_y = 2;
-					std::string fft_file = "interlayer_fft.dat";
+					int n_x = opts.getInt("fft_n_x");
+					int n_y = opts.getInt("fft_n_y");
+					int L_x = opts.getInt("fft_L_x");
+					int L_y = opts.getInt("fft_L_y");
+					int length_x = opts.getInt("fft_length_x");
+					int length_y = opts.getInt("fft_length_y");
+					std::string fft_file = opts.getString("fft_file");
 				//
 
 				printf("Making *fft.dat file. \n");
-				double area_1 = h.getUnitArea(0);
-				double area_2 = h.getUnitArea(1);
 
-				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, area_1, area_2, fft_file);
+				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, fft_file);
 
 				// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
 
@@ -1300,7 +1296,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		// Linecut sampling
 		if (solver_type == 2){
 			nShifts = opts.getInt("nShifts");
-			maxJobs = nShifts*nShifts;
+			maxJobs = nShifts;
 
 			std::vector< std::vector<double> > b1 = getReciprocal(0);
 			std::vector< std::vector<double> > b2 = getReciprocal(1);
@@ -1533,14 +1529,13 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 		// They define the settings used to generate the interlayer_fft.dat file
-			int fft_scaling = 1;
-			int n_x = 40;
-			int n_y = 40;
-			int L_x = 40*fft_scaling;
-			int L_y = 40*fft_scaling;
-			int length_x = 2;
-			int length_y = 2;
-			std::string fft_file = "interlayer_fft.dat";
+			int n_x = opts.getInt("fft_n_x");
+			int n_y = opts.getInt("fft_n_y");
+			int L_x = opts.getInt("fft_L_x");
+			int L_y = opts.getInt("fft_L_y");
+			int length_x = opts.getInt("fft_length_x");
+			int length_y = opts.getInt("fft_length_y");
+			std::string fft_file = opts.getString("fft_file");
 		//
 
 		fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
@@ -3606,33 +3601,6 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	// Count the current element, i.e. "i = input_counter"
 	int input_counter = 0;
 
-	/*
-	// Load FFTW data into Momentum_coupling object
-
-	// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
-	// They define the settings used to generate the interlayer_fft.dat file
-		int fft_scaling = 2;
-		int n_x = 30;
-		int n_y = 30;
-		int L_x = 40*fft_scaling;
-		int L_y = 40*fft_scaling;
-		int length_x = 3;
-		int length_y = 3;
-		std::string fft_file = "interlayer_fft.dat";
-	//
-
-	Momentum_coupling fftw_inter;
-	fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
-	*/
-	//printf("Momentum Space coupling term [0][0] at k = (0,0) = %lf + i*%lf \n",7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,0),7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,1));
-
-
-	// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
-
-	// !! also when putting data[o1][o2] into H, will need to multiply every interlayer term by sqrt(Area(RL_1)*Area(RL_2))
-	// !! Using real-space area: This term is ~ 4*pi^2/sqrt(Area1*Area2) ~ 7.4308 for tBLG
-
-
 	// We keep the vacancy methods here, although momentum space in general has no vacancies...
 
 	// Loop through every orbital (i.e. rows of H)
@@ -3758,6 +3726,14 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double dx = x2 + x1 - shift_x;
 				double dy = y2 + y1 - shift_y;
 
+				// The graphene interlayer functions are always 2pi/3 symmetric
+				// we will impose this by averaging over rotated momentum values
+				double rot_param = (sqrt(3.0)/2.0);
+				double rot_dx = (-0.5)*dx - (rot_param)*dy;
+				double rot_dy = (rot_param)*dx + (-0.5)*dy;
+				double rot2_dx = (-0.5)*rot_dx - (rot_param)*rot_dy;
+				double rot2_dy = (rot_param)*rot_dx + (-0.5)*rot_dy;
+
 				std::complex<double> t;
 
 				// FFT file is based on sheet1 -> sheet2, so we need to keep track of which sheet k_i and new_k are on (i.e. k_i < new_k -> k_i on 1st sheet, k_i > new_k -> k_i on 2nd sheet)
@@ -3765,19 +3741,28 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 
 				if (k_i <= new_k){
-					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
+					t = (1.0/3.0)*(  std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1))
+													+std::complex<double>(fftw_inter.interp_fft(rot_dx,rot_dy,orbit1,orbit2,0),fftw_inter.interp_fft(rot_dx,rot_dy,orbit1,orbit2,1))
+													+std::complex<double>(fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit1,orbit2,0),fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit1,orbit2,1))
+														);
 				} else if (k_i > new_k) {
-					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),-fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
+					t = (1.0/3.0)*(  std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),-fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1))
+													+std::complex<double>(fftw_inter.interp_fft(rot_dx,rot_dy,orbit2,orbit1,0),-fftw_inter.interp_fft(rot_dx,rot_dy,orbit2,orbit1,1))
+													+std::complex<double>(fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit2,orbit1,0),-fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit2,orbit1,1))
+												);
 					//t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				}
 
+				// following used for debugging specific elements of H
+
+				/*
 				if ((new_k == 120  && k_i == 243) || (new_k == 243 && k_i == 120)){
 					printf("[%d, %d]: t = [%lf, %lf] \n",k_i, new_k, t.real(),t.imag());
 					printf("dx = %lf, dy = %lf, o1 = %d, o2 = %d \n",dx,dy,orbit1,orbit2);
 
 				}
+				*/
 
-				// following used for debugging specific elements of H
 				/*
 				if ( (k_i == 555 && new_k == 931) ) {
 					printf("interpair: [%d, %d] \n",k_i, new_k);

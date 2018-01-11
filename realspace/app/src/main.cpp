@@ -118,34 +118,6 @@ int main(int argc, char** argv) {
 					opts.setParam("boundary_condition",boundary_condition);
 				}
 
-				/*
-
-				if (in_string == "SUPERCELL_ALPHA") {
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					sc_a = atof(in_string.c_str());
-					int z = 0;
-					opts.setParam("supercell_type",z);
-				}
-
-				if (in_string == "SUPERCELL1"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < 2; ++i) {
-						getline(in_line,in_string,' ');
-						supercell[0][i] = sc_a*atof(in_string.c_str());
-					}
-				}
-
-				if (in_string == "SUPERCELL2"){
-					getline(in_line,in_string,' ');
-					for (int i = 0; i < 2; ++i) {
-						getline(in_line,in_string,' ');
-						supercell[1][i] = sc_a*atof(in_string.c_str());
-					}
-					opts.setParam("supercell",supercell);
-				}
-				*/
-
 				if (in_string == "SUPERCELL_M_N"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -317,8 +289,6 @@ int main(int argc, char** argv) {
 					}
 				}
 
-
-
 				if (in_string == "DOS_TRANSFORM"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -333,6 +303,54 @@ int main(int argc, char** argv) {
 					} else if (in_string[0] == 'M'){
 						opts.setParam("solver_space",1);
 					}
+				}
+
+				if (in_string == "FFT_FROM_FILE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_from_file",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "FFT_FILENAME"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("fft_file", in_string);
+				}
+
+				if (in_string == "FFT_N_X"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_n_x",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "FFT_N_Y"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_n_y",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "FFT_L_X"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_L_x",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "FFT_L_Y"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_L_y",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "FFT_LENGTH_X"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_length_x",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "FFT_LENGTH_Y"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("fft_length_y",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "STRAIN_TYPE"){

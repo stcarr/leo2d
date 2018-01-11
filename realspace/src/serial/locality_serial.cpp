@@ -442,10 +442,8 @@ void Locality_serial::constructGeom(){
 				//
 
 				printf("Making *fft.dat file. \n");
-				double area_1 = h.getUnitArea(0);
-				double area_2 = h.getUnitArea(1);
 
-				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, area_1, area_2, fft_file);
+				h.makeInterFFTFile(n_x, n_y, L_x, L_y, length_x, length_y, fft_file);
 
 				// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
 
