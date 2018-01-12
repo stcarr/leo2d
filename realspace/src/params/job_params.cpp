@@ -17,12 +17,13 @@
 // --------------------------------------
 Job_params::Job_params() {
 
-	// Set some default values here
-
+	// Set some default type defs here to avoid problems with incorrect casting
 	int i_one = 1;
 	int i_zero = 0;
+	double d_one = 1.0;
+	double d_zero = 0.0;
 
-
+	// A default line-cut setting
 	std::vector< std::vector<double> > lc_points;
 	lc_points.resize(2);
 	lc_points[0].resize(2);
@@ -32,37 +33,72 @@ Job_params::Job_params() {
 	lc_points[1][0] = 1.0;
 	lc_points[1][1] = 1.0;
 
-	setParam("nShifts",i_one);
-	setParam("num_sheets",i_one);
-	setParam("num_shift_sheets",i_one);
+	// Default job name
+	setParam("job_name","LEO2D_JOB");
+
+	// MPI sweep (job array) settings
 	setParam("solver_type",i_zero);
-	setParam("strain_type",i_zero);
-	setParam("gsfe_z_on",i_zero);
-	setParam("num_lc_points",i_one*2);
-	setParam("lc_points",lc_points);
 	setParam("observable_type",i_zero);
 	setParam("solver_space",i_zero);
+	setParam("nShifts",i_one);
+	setParam("num_shift_sheets",i_one);
+	setParam("num_lc_points",i_one*2);
+	setParam("lc_points",lc_points);
+
+	// Geometery settings
+	setParam("num_sheets",i_one);
 	setParam("boundary_condition",i_zero);
-	setParam("dos_transform",i_one);
+
+	// Strain settings
+	setParam("strain_type",i_zero);
+	setParam("gsfe_z_on",i_zero);
+
+	// Debug settings
 	setParam("matrix_save",i_zero);
 	setParam("matrix_pos_save", i_zero);
 	setParam("verbose_save",i_one);
+
+	// Diagonalization settings
 	setParam("diagonalize",i_zero);
 	setParam("chiral_on",i_zero);
 	setParam("d_kpm_dos",i_zero);
 	setParam("d_weights",i_zero);
 	setParam("d_vecs",i_zero);
 	setParam("d_cond",i_zero);
+
+	// K-sampling settngs (for periodic BCs)
 	setParam("k_sampling",i_zero);
 	setParam("k_type",i_zero);
+
+	// settings for the FFT for momentum-space interlayer coupling
 	setParam("fft_from_file",i_zero);
+	setParam("fft_n_x",20*i_one);
+	setParam("fft_n_y",20*i_one);
+	setParam("fft_L_x",10*i_one);
+	setParam("fft_L_y",10*i_one);
+	setParam("fft_length_x",2*i_one);
+	setParam("fft_length_y",2*i_one);
+	setParam("fft_file","interlayer_fft.dat");
+
+	// Hamiltonian pairing settings
 	setParam("intra_searchsize",5*i_one);
 	setParam("inter_searchsize",5*i_one);
+
+	// KPM settings
+	setParam("energy_rescale",20.0*d_one);
+	setParam("energy_shift",d_zero);
 	setParam("num_target_sheets",i_one);
 	setParam("num_targets",i_zero);
 	setParam("poly_order",20*i_one);
+	setParam("dos_transform",i_one);
+
+	// E&B Field settings
 	setParam("magOn",i_zero);
 	setParam("elecOn",i_zero);
+	setParam("B",d_zero);
+	setParam("E",d_zero);
+
+	// MLMC settings
 	setParam("mlmc",i_zero);
 	setParam("mlmc_max_level",i_one);
 	setParam("mlmc_level",i_zero);
@@ -70,23 +106,14 @@ Job_params::Job_params() {
 	setParam("mlmc_cluster_size",4*i_one);
 	setParam("mlmc_out_root","out");
 	setParam("mlmc_temp_root","temp");
-
 	setParam("mlmc_jobID",-1*i_one);
 	setParam("mlmc_clusterID",-1*i_one);
 
+	// Vacancy settings
 	setParam("vacancy_file","vacancies.dat");
 	setParam("num_vacancies",i_zero);
-
-	double d_one = 1.0;
-	double d_zero = 0.0;
-
-	setParam("energy_rescale",20.0*d_one);
-	setParam("energy_shift",d_zero);
-	setParam("B",d_zero);
-	setParam("E",d_zero);
 	setParam("vacancy_chance",d_zero);
 
-	setParam("job_name","LEO2D_JOB");
 }
 
 Job_params::Job_params(const Job_params& orig){

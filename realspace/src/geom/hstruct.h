@@ -52,8 +52,9 @@ class Hstruct {
       void getShiftConfigs(std::vector<std::vector<double> >&, Job_params);
 
       void getInterPairs(std::vector<std::vector<int> >&,std::vector<std::vector<int> >&,Job_params);
-		void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,std::vector<std::vector<int> >&,Job_params);
-  		std::vector<std::vector<int> > getIndexArray();
+		  void getIntraPairs(std::vector<int>&,std::vector<int>&,std::vector<double>&,std::vector<std::vector<int> >&,Job_params);
+
+      std::vector<std::vector<int> > getIndexArray();
   		int gridToIndex(int (&grid_index)[4]);
       std::vector<int> indexToGrid(int k);
   		void getIndexToPos(double*,int);
@@ -63,7 +64,7 @@ class Hstruct {
   		std::vector<std::vector<int> > getVacancyList(int,int);
   		std::vector<std::vector<int> > getTargetList(Job_params);
 
-  		void makeInterFFTFile(int, int, int, int, int, int, double, double, std::string);
+      void makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x, int length_y, std::string fft_file);
 
 
 };

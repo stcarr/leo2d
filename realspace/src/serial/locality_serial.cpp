@@ -5,12 +5,12 @@
  * Created on January 13, 2016, 3:16 PM
  */
 
-#include "locality.h"
+#include "locality_serial.h"
 #include "tools/numbers.h"
 #include "params/param_tools.h"
 
 #include <math.h>
-#include <mpi.h>
+//#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -26,7 +26,7 @@
 
 using namespace numbers;
 
-Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
+Locality_serial::Locality_serial(std::vector<Sdata> sdata_in,std::vector<double> heights_in,std::vector<double> angles_in) {
 
 	// Set all of the geometry options for matrix construction
 
@@ -38,27 +38,26 @@ Locality::Locality(std::vector<Sdata> sdata_in,std::vector<double> heights_in,st
 
 }
 
-Locality::Locality(const Locality& orig) {
+Locality_serial::Locality_serial(const Locality_serial& orig) {
 
 }
 
-Locality::~Locality() {
+Locality_serial::~Locality_serial() {
 
 }
 
-void Locality::setup(Job_params opts_in){
+void Locality_serial::setup(Job_params opts_in){
 
 	// Controls run-specific parameters of the solver methods
 	opts = opts_in;
 	job_name = opts.getString("job_name");
 
-	if (rank == root){
-		opts.printParams();
-	}
+	opts.printParams();
+
 
 }
 
-void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Job_params opts_in){
+void Locality_serial::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Job_params opts_in){
 
 	int solver_type = opts_in.getInt("solver_type");
 	std::string vacancy_file = opts.getString("vacancy_file");
@@ -187,7 +186,7 @@ void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vect
 	}
 }
 
-double Locality::getLocalTheta(int k1, int* index_to_grid, double* index_to_pos, int max){
+double Locality_serial::getLocalTheta(int k1, int* index_to_grid, double* index_to_pos, int max){
 
 
 	// we don't have access to the grid_to_index array anymore
@@ -256,7 +255,7 @@ double Locality::getLocalTheta(int k1, int* index_to_grid, double* index_to_pos,
 
 }
 
-int Locality::isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, int o2, int s2){
+int Locality_serial::isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, int o2, int s2){
 
 	// have to be on same sheet
 	if (s1 == s2){
@@ -289,25 +288,7 @@ int Locality::isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, 
 
 }
 
-int Locality::initMPI(int argc, char** argv){
-
-	// Start  MPI on each rank
-
-	MPI_Init(&argc,&argv);
-
-    root = 0;
-	print_rank = 1;
-
-	size = MPI::COMM_WORLD.Get_size();
-	rank = MPI::COMM_WORLD.Get_rank();
-
-	if (size == 1)
-		return -1;
-	else
-		return 0;
-}
-
-void Locality::constructGeom(){
+void Locality_serial::constructGeom(){
 
 	// The root node (rank == 0) uses the hstruct and sheet objects to figure out the geometery and tight-binding model sparse matrix structure
 	// This information is then pased to all worker nodes
@@ -351,7 +332,7 @@ void Locality::constructGeom(){
 	std::vector<std::vector<int> > v_work;
 	std::vector<std::vector<int> > target_indices;
 
-	if (rank == root){
+	if (1){
 
 		// Build Hstruct object
 		std::vector<Sheet> sheets;
@@ -361,7 +342,7 @@ void Locality::constructGeom(){
 			sheets.push_back(Sheet(sdata[i]));
 		}
 
-		printf("rank %d building Hstruct. \n", rank);
+		printf("Building Hstruct. \n");
 		Hstruct h(sheets,angles,heights,solver_space);
 
 		// Broadcast "index to grid" mapping information
@@ -390,9 +371,6 @@ void Locality::constructGeom(){
 		if (solver_type == 4){
 			getVacanciesFromFile(v_work, target_indices, opts);
 		}
-
-
-		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
 
 		std::vector<std::vector<int> > index_vec = h.getIndexArray();
 
@@ -452,25 +430,15 @@ void Locality::constructGeom(){
 		if (solver_space == 1){
 			if (fft_from_file == 0){
 				// Generate FFT of interlayer coupling for Momentum space
-<<<<<<< HEAD
 				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 					int fft_scaling = 1;
-					int n_x = 60;
-					int n_y = 60;
-					int L_x = 20*fft_scaling;
-					int L_y = 20*fft_scaling;
+					int n_x = 40;
+					int n_y = 40;
+					int L_x = 40*fft_scaling;
+					int L_y = 40*fft_scaling;
 					int length_x = 2;
 					int length_y = 2;
 					std::string fft_file = "interlayer_fft.dat";
-=======
-					int n_x = opts.getInt("fft_n_x");
-					int n_y = opts.getInt("fft_n_y");
-					int L_x = opts.getInt("fft_L_x");
-					int L_y = opts.getInt("fft_L_y");
-					int length_x = opts.getInt("fft_length_x");
-					int length_y = opts.getInt("fft_length_y");
-					std::string fft_file = opts.getString("fft_file");
->>>>>>> 2e670e8df38a4d150ffb14f293635a5189532f36
 				//
 
 				printf("Making *fft.dat file. \n");
@@ -486,9 +454,6 @@ void Locality::constructGeom(){
 				printf("Warning: Not creating FFT file, assuming a *fft.dat file exists in current directory. \n");
 			}
 		}
-
-		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
 
 		inter_pairs_i = new int[max_inter_pairs];
 		inter_pairs_j = new int[max_inter_pairs];
@@ -545,75 +510,7 @@ void Locality::constructGeom(){
 
 	}
 
-	if (rank != root){
-
-		// Allocate memory to receive pair and "index to grid" information
-		MPI::COMM_WORLD.Bcast(&max_index, 1, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(&max_inter_pairs, 1, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(&max_intra_pairs, 1, MPI_INT, root);
-
-		index_to_grid_i = new int[max_index];
-		index_to_grid_j = new int[max_index];
-		index_to_grid_l = new int[max_index];
-		index_to_grid_s = new int[max_index];
-
-		inter_pairs_i = new int[max_inter_pairs];
-		inter_pairs_j = new int[max_inter_pairs];
-		if (boundary_condition == 1){
-			inter_supercell_vecs_i = new int[max_inter_pairs];
-			inter_supercell_vecs_j = new int[max_inter_pairs];
-		}
-
-		intra_pairs_i = new int[max_intra_pairs];
-		intra_pairs_j = new int[max_intra_pairs];
-		intra_pairs_t = new double[max_intra_pairs];
-		if (boundary_condition == 1){
-			intra_supercell_vecs_i = new int[max_intra_pairs];
-			intra_supercell_vecs_j = new int[max_intra_pairs];
-		}
-
-		index_to_pos_x = new double[max_index];
-		index_to_pos_y = new double[max_index];
-		index_to_pos_z = new double[max_index];
-
-		if (strain_type == 2){
-			shift_configs_x = new double[max_index];
-			shift_configs_y = new double[max_index];
-		}
-
-	}
-
-	MPI::COMM_WORLD.Bcast(index_to_grid_i, max_index, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(index_to_grid_j, max_index, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(index_to_grid_l, max_index, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(index_to_grid_s, max_index, MPI_INT, root);
-
-	MPI::COMM_WORLD.Bcast(inter_pairs_i, max_inter_pairs, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(inter_pairs_j, max_inter_pairs, MPI_INT, root);
-
-	if (boundary_condition == 1){
-		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_i, max_inter_pairs, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_j, max_inter_pairs, MPI_INT, root);
-	}
-
-	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
-	MPI::COMM_WORLD.Bcast(intra_pairs_t, max_intra_pairs, MPI_DOUBLE, root);
-	if (boundary_condition == 1){
-		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_i, max_intra_pairs, MPI_INT, root);
-		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_j, max_intra_pairs, MPI_INT, root);
-	}
-
-	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
-	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
-	MPI::COMM_WORLD.Bcast(index_to_pos_z, max_index, MPI_DOUBLE, root);
 	int* index_to_grid = new int[max_index*4];
-
-	if (strain_type == 2){
-		MPI::COMM_WORLD.Bcast(shift_configs_x, max_index, MPI_DOUBLE, root);
-		MPI::COMM_WORLD.Bcast(shift_configs_y, max_index, MPI_DOUBLE, root);
-	}
-
 	for (int k = 0; k < max_index; ++k){
 		index_to_grid[k*4 + 0] = index_to_grid_i[k];
 		index_to_grid[k*4 + 1] = index_to_grid_j[k];
@@ -712,7 +609,7 @@ void Locality::constructGeom(){
 
 }
 
-void Locality::constructMatrix(int* index_to_grid,double* index_to_pos, int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
+void Locality_serial::constructMatrix(int* index_to_grid,double* index_to_pos, int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 					int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 					std::vector< std::vector<double> > shift_configs, std::vector< std::vector<int> > v_work,
 					std::vector< std::vector<int> > target_indices){
@@ -726,26 +623,26 @@ void Locality::constructMatrix(int* index_to_grid,double* index_to_pos, int* int
 
 	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
 	if(solver_type < 6){
-		if (rank == root) {
+		if (1) {
 			rootChebSolve(index_to_grid, index_to_pos,
 						inter_pairs, inter_sc_vecs,
 						intra_pairs, intra_pairs_t, intra_sc_vecs,
-						v_work, target_indices);
+						v_work, target_indices, shift_configs);
 		} else {
-			workerChebSolve(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs,shift_configs);
+			//workerChebSolve(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,intra_pairs,intra_pairs_t,intra_sc_vecs,shift_configs);
 		}
 	}
 
 	time(&solveEnd);
 }
 
-void Locality::sendRootWork(Job_params jobIn, int target_r){
+void Locality_serial::sendRootWork(Job_params jobIn, int target_r){
 
 	jobIn.sendParams(target_r);
 
 }
 
-void Locality::recursiveShiftCalc(std::vector<Job_params>& jobArray, std::vector< std::vector<double> > shifts, int solver_type, int nShifts, int maxJobs, int num_sheets, int num_shift_sheets, std::vector<int> shift_sheets, std::vector< std::vector<int> > target_indices) {
+void Locality_serial::recursiveShiftCalc(std::vector<Job_params>& jobArray, std::vector< std::vector<double> > shifts, int solver_type, int nShifts, int maxJobs, int num_sheets, int num_shift_sheets, std::vector<int> shift_sheets, std::vector< std::vector<int> > target_indices) {
 
 	// Uniform sample over a grid
 	if (solver_type == 1){
@@ -794,10 +691,11 @@ void Locality::recursiveShiftCalc(std::vector<Job_params>& jobArray, std::vector
 
 }
 
-void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
+void Locality_serial::rootChebSolve(int* index_to_grid, double* index_to_pos,
 						int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 						int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
-						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices) {
+						std::vector< std::vector<int> > v_work, std::vector< std::vector<int> > target_indices,
+						std::vector< std::vector<double> > shift_configs) {
 
 	int solver_type = opts.getInt("solver_type");
 	int observable_type = opts.getInt("observable_type");
@@ -1308,7 +1206,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		// Linecut sampling
 		if (solver_type == 2){
 			nShifts = opts.getInt("nShifts");
-			maxJobs = nShifts;
+			maxJobs = nShifts*nShifts;
 
 			std::vector< std::vector<double> > b1 = getReciprocal(0);
 			std::vector< std::vector<double> > b2 = getReciprocal(1);
@@ -1344,8 +1242,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			double gamma[2];
 			double m[2];
 
-			double gamma_2[2];
-
 			k[0] = k_1[0];
 			k[1] = k_1[1];
 
@@ -1361,9 +1257,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
 			gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
 
-			gamma_2[0] = k[0] + d*y_dir[0] - sqrt(3)*d*x_dir[0];
-			gamma_2[1] = k[1] + d*y_dir[1] - sqrt(3)*d*x_dir[1];
-
 			m[0] = k[0] + d*y_dir[0];
 			m[1] = k[1] + d*y_dir[1];
 
@@ -1373,16 +1266,11 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				//double x = (1.0/((double) maxJobs))*i;
 				//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
 				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
-
-
-				//double c = (3.0/((double) maxJobs))*i;
-
-				double c = (6.0/((double) maxJobs))*i;
+				double c = (3.0/((double) maxJobs))*i;
 
 				double shift_x = 0;
 				double shift_y = 0;
 
-				/*
 				if (c <= 1) {
 					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
 					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
@@ -1393,32 +1281,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
 					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
 				}
-				*/
 
-				if (c <= 1) {
-					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
-					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
-				} else if (c <= 2) {
-					shift_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
-					shift_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
-				} else if (c <= 3) {
-					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
-					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
-				} else if (c <= 4) {
-					shift_x = (4.0-c)*k[0] + (c-3.0)*gamma_2[0];
-					shift_y = (4.0-c)*k[1] + (c-3.0)*gamma_2[1];
-				} else if (c <= 5) {
-					shift_x = (5.0-c)*gamma_2[0] + (c-4.0)*m[0];
-					shift_y = (5.0-c)*gamma_2[1] + (c-4.0)*m[1];
-				} else {
-					shift_x = (6.0-c)*m[0] + (c-5.0)*k[0];
-					shift_y = (6.0-c)*m[1] + (c-5.0)*k[1];
-				}
 
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
-
-				printf("%lf %lf \n",shift_x, shift_y);
 
 
 
@@ -1444,10 +1310,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				tempJob.setParam("max_jobs",maxJobs);
 				tempJob.setParam("num_targets",n_targets);
 				tempJob.setParam("target_list",targets);
-
 				jobArray.push_back(tempJob);
-
-
 
 			}
 		}
@@ -1458,86 +1321,34 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 	}
 
-	// Now do the job send/recv loop
-
-	MPI::Status status;
-
-	//std::vector<std::vector<double> > result_array;
-	//result_array.resize(maxJobs);
+	// Now do the job loop
 
 	maxJobs = (int) jobArray.size();
 	std::vector<Job_params> result_array;
 	result_array.resize(maxJobs);
 
-	// try to give each worker its first job
-
-	for (int r = 1; r < size; ++r) {
-		if (currentJob < maxJobs) {
-
-			sendRootWork(jobArray[currentJob], r);
-			++currentJob;					// one more job sent out!
-			printf("rank %d has sent job to worker rank %d (%d/%d) \n", rank, r, currentJob, maxJobs);
-
-		}
-
-	}
-
-
-	// printf("rank %d has sent first batch of work... \n", rank);
-
-	// Receive results and dispense new work
-
 	while (currentJob < maxJobs) {
 
-		int source;
+		printf("starting job %d/%d \n", currentJob+1, maxJobs);
 		Job_params temp_result;
+		temp_result = workerChebSolve(index_to_grid,index_to_pos,inter_pairs,inter_sc_vecs,
+																	intra_pairs,intra_pairs_t,intra_sc_vecs,shift_configs,
+																	jobArray[currentJob]);
 
-		source = temp_result.recvSpool();
-
-		int jobTag = temp_result.getInt("jobID");
-
+	  int matrix_only = opts.getInt("matrix_only");
+		if (matrix_only == 1){
+			return;
+		}
 		if (mlmc == 0){
-			result_array[jobTag-1] = (temp_result);
+			result_array[currentJob] = temp_result;
 		} else if (mlmc == 1){
 			mlmc_h.process(temp_result);
 		}
 
-		sendRootWork(jobArray[currentJob], source);
-		++currentJob;						// one more job sent out!
-		printf("rank %d has sent job to worker rank %d (%d/%d) \n", rank, source, currentJob, maxJobs);
-	}
-
-	// Receive final work
-	// and tell workers to exit workerMatrixSolve()
-
-	int r_done = 0;
-
-	while (r_done < size-1){
-
-		int source;
-		Job_params temp_result;
-
-		source = temp_result.recvSpool();
-
-		int jobTag = temp_result.getInt("jobID");
-
-		if (mlmc == 0){
-			result_array[jobTag-1] = temp_result;
-		} else if (mlmc == 1){
-			mlmc_h.process(temp_result);
-		}
-
-		printf("rank %d has received final work from rank %d. \n", rank, source);
-
-		Job_params tempJob;
-
-		// solver_type == -1 is the STOPTAG for workers
-		tempJob.setParam("solver_type", -1);
-
-		sendRootWork(tempJob, source);
-		++r_done;
+		++currentJob;					// one more job sent out!
 
 	}
+
 
 	if (mlmc == 0){
 
@@ -1560,15 +1371,12 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 }
 
-void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
+Job_params Locality_serial::workerChebSolve(int* index_to_grid, double* index_to_pos,
 							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
-							std::vector< std::vector<double> > shift_configs) {
+							std::vector< std::vector<double> > shift_configs, Job_params jobIn) {
 
-	MPI::Status status;
-	// ---------------------
-	// Enter MPI worker loop
-	// ---------------------
+
 
 	// Load FFT data once if its momentum-space code...
 	if (opts.getInt("solver_space") == 1){
@@ -1576,40 +1384,21 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 		// They define the settings used to generate the interlayer_fft.dat file
-<<<<<<< HEAD
 			int fft_scaling = 1;
-			int n_x = 60;
-			int n_y = 60;
-			int L_x = 20*fft_scaling;
-			int L_y = 20*fft_scaling;
+			int n_x = 40;
+			int n_y = 40;
+			int L_x = 40*fft_scaling;
+			int L_y = 40*fft_scaling;
 			int length_x = 2;
 			int length_y = 2;
 			std::string fft_file = "interlayer_fft.dat";
-=======
-			int n_x = opts.getInt("fft_n_x");
-			int n_y = opts.getInt("fft_n_y");
-			int L_x = opts.getInt("fft_L_x");
-			int L_y = opts.getInt("fft_L_y");
-			int length_x = opts.getInt("fft_length_x");
-			int length_y = opts.getInt("fft_length_y");
-			std::string fft_file = opts.getString("fft_file");
->>>>>>> 2e670e8df38a4d150ffb14f293635a5189532f36
 		//
 
 		fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
 	}
 
-	while (1) {
 
-		Job_params jobIn;
-		jobIn.recvParams(root);
 		int solver_type = jobIn.getInt("solver_type");
-
-		// If worker gets solver_type = -1 it ends this loop
-		if (solver_type == -1) {
-			//printf("rank %d received STOPTAG. \n", rank);
-			return;
-		}
 
 		Job_params results_out(jobIn);
 
@@ -1757,6 +1546,17 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		// ---------------------
 		// Chebyshev Computation
 		// ---------------------
+
+		int matrix_only = opts.getInt("matrix_only");
+
+		if (matrix_only == 1){
+
+			H.denseConvert(saved_matrix);
+
+			delete alpha_0_x_arr;
+			delete alpha_0_y_arr;
+			return results_out;
+		}
 
 		if (diagonalize == 0){
 			if (observable_type == 0){
@@ -2138,16 +1938,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		timeSolve = clock();
 		Param_tools::saveTiming(results_out, ( ((double)timeSolve) - ((double)timeMat) )/((double)CLOCKS_PER_SEC), "SOLVER");
 
-		// send back work to root, with a trash value sent first to get picked up by the recvSpool
-		int trash = 1;
-		MPI::COMM_WORLD.Send(
-			&trash, 			// input buffer
-			1,					// size of buffer
-			MPI::INT,			// type of buffer
-			root,				// rank to receive
-			0);					// MPI label
-
-		results_out.sendParams(root);
+		return results_out;
 
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
@@ -2156,12 +1947,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		delete alpha_0_x_arr;
 		delete alpha_0_y_arr;
 
-		// End of while(1) means we wait for another instruction from root
-	}
-
 }
 
-void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* index_to_grid, std::vector< std::vector<double> >& new_shift_configs, std::vector< std::vector<double> >& shift_configs, std::vector< std::vector< std::vector<double> > > &strain, Job_params jobIn){
+void Locality_serial::setConfigPositions(double* i2pos, double* index_to_pos, int* index_to_grid, std::vector< std::vector<double> >& new_shift_configs, std::vector< std::vector<double> >& shift_configs, std::vector< std::vector< std::vector<double> > > &strain, Job_params jobIn){
 
 	int solver_type = jobIn.getInt("solver_type");
 	int solver_space = jobIn.getInt("solver_space");
@@ -2349,7 +2137,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 }
 
-std::vector<double> Locality::getConfigDisp(std::vector<double> config_in, int s){
+std::vector<double> Locality_serial::getConfigDisp(std::vector<double> config_in, int s){
 
 	std::vector<double> disp;
 	disp.resize(2);
@@ -2359,7 +2147,7 @@ std::vector<double> Locality::getConfigDisp(std::vector<double> config_in, int s
 	return disp;
 }
 
-void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
+void Locality_serial::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
 			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
 			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index){
 
@@ -2876,7 +2664,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 }
 
-void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix &cd_plus, SpMatrix &cd_minus, SpMatrix &dH_0_minus, SpMatrix &dH_0_plus,
+void Locality_serial::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix &cd_plus, SpMatrix &cd_minus, SpMatrix &dH_0_minus, SpMatrix &dH_0_plus,
 			double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
 			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
 			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index){
@@ -3532,7 +3320,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 }
 
-void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
+void Locality_serial::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, double* i2pos, int* inter_pairs, int* intra_pairs, double* intra_pairs_t, std::vector<int> current_index_reduction, int local_max_index){
 
 	int solver_type = jobIn.getInt("solver_type");
 	int jobID = jobIn.getInt("jobID");
@@ -3659,6 +3447,33 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	// Count the current element, i.e. "i = input_counter"
 	int input_counter = 0;
 
+	/*
+	// Load FFTW data into Momentum_coupling object
+
+	// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
+	// They define the settings used to generate the interlayer_fft.dat file
+		int fft_scaling = 2;
+		int n_x = 30;
+		int n_y = 30;
+		int L_x = 40*fft_scaling;
+		int L_y = 40*fft_scaling;
+		int length_x = 3;
+		int length_y = 3;
+		std::string fft_file = "interlayer_fft.dat";
+	//
+
+	Momentum_coupling fftw_inter;
+	fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
+	*/
+	//printf("Momentum Space coupling term [0][0] at k = (0,0) = %lf + i*%lf \n",7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,0),7.4308*fftw_inter.interp_fft(0.0,0.0,0,0,1));
+
+
+	// fft_data is accessed via fft_data[orbital_1][orbital_2][position][real/cpx]
+
+	// !! also when putting data[o1][o2] into H, will need to multiply every interlayer term by sqrt(Area(RL_1)*Area(RL_2))
+	// !! Using real-space area: This term is ~ 4*pi^2/sqrt(Area1*Area2) ~ 7.4308 for tBLG
+
+
 	// We keep the vacancy methods here, although momentum space in general has no vacancies...
 
 	// Loop through every orbital (i.e. rows of H)
@@ -3776,7 +3591,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
 
-				// get the sheet indices
+				//and sheet
 				int s1 = index_to_grid[k_i*4 + 3];
 				int s2 = index_to_grid[new_k*4 + 3];
 
@@ -3788,16 +3603,6 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double dx = x2 + x1 - shift_x;
 				double dy = y2 + y1 - shift_y;
 
-				// The graphene interlayer functions are always 2pi/3 symmetric
-				// we will impose this by averaging over rotated momentum values
-				/*
-				double rot_param = (sqrt(3.0)/2.0);
-				double rot_dx = (-0.5)*dx - (rot_param)*dy;
-				double rot_dy = (rot_param)*dx + (-0.5)*dy;
-				double rot2_dx = (-0.5)*rot_dx - (rot_param)*rot_dy;
-				double rot2_dy = (rot_param)*rot_dx + (-0.5)*rot_dy;
-				*/
-
 				std::complex<double> t;
 
 				// FFT file is based on sheet1 -> sheet2, so we need to keep track of which sheet k_i and new_k are on (i.e. k_i < new_k -> k_i on 1st sheet, k_i > new_k -> k_i on 2nd sheet)
@@ -3807,91 +3612,30 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double orb_disp_y = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,1);
 
 				std::complex<double> phase_here;
-				phase_here = -std::polar(1.0, dx*orb_disp_x + dy*orb_disp_y);
+				phase_here = std::polar(1.0, dx*orb_disp_x + dy*orb_disp_y);
 
-				std::complex<double> t_prephase = std::complex<double>(0.0,0.0);
-
-				// impose rotation and mirror symm on the FFT of the interlayer Coupling
-				// our graphene model has 3-fold rotational symm and a mirror-plane symmetry
-				int rot_max = 1;
-				int mirror_max = 1;
-				for (int rot_index = 0; rot_index < rot_max; ++rot_index){
-					for (int mirror_index = 0; mirror_index < mirror_max; ++mirror_index){
-
-						double new_dx, new_dy;
-						double rot_dx, rot_dy;
-
-						double theta = (2.0*M_PI/3.0)*((double)rot_index);
-
-						rot_dx = cos(theta)*dx - sin(theta)*dy;
-						rot_dy = sin(theta)*dx + cos(theta)*dy;
-
-						double mirror_theta = M_PI/2.0 + (angles[s1] + angles[s2])/2.0;
-						double mirror_plane_x = cos(mirror_theta);
-						double mirror_plane_y = sin(mirror_theta);
-
-						// when mirroring, new_vec = -rot_vec + 2*v*(v dot rot_vec)
-						// where v is the vector [mirror_plane_x mirror_plane_y]
-
-						if (mirror_index == 0){
-							new_dx = rot_dx;
-							new_dy = rot_dy;
-						} else {
-							double mirror_dot_prod = mirror_plane_x*rot_dx + mirror_plane_y*rot_dy;
-							new_dx = -rot_dx + 2*mirror_plane_x*mirror_dot_prod;
-							new_dy = -rot_dy + 2*mirror_plane_x*mirror_dot_prod;
-						}
-
-						if (k_i <= new_k){
-							// factor of 1/6 for the 3*2=6 symmetric points
-							t_prephase += (1.0 / ((double)(rot_max*mirror_max)) )*
-														(std::complex<double>(fftw_inter.interp_fft(new_dx,new_dy,s1,s2,orbit1,orbit2,0),
-																									fftw_inter.interp_fft(new_dx,new_dy,s1,s2,orbit1,orbit2,1))
-																								);
-						} else if (k_i > new_k) {
-
-						// factor of 1/6 for the 3*2=6 symmetric points
-						t_prephase += (1.0 / ((double)(rot_max*mirror_max)) )*
-													(std::complex<double>(fftw_inter.interp_fft(new_dx,new_dy,s2,s1,orbit2,orbit1,0),
-																								-fftw_inter.interp_fft(new_dx,new_dy,s2,s1,orbit2,orbit1,1))
-																							);
-
-						}
-					}
-				}
-
-				//printf("phase_here = [%lf,%lf] \n",phase_here.real(), phase_here.imag());
-				//printf("t_prephase = [%lf,%lf] \n",t_prephase.real(), t_prephase.imag());
-
+				std::complex<double> t_prephase;
+				t_prephase = std::complex<double>(fftw_inter.interp_fft(dx,dy,s1,s2,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,s1,s2,orbit1,orbit2,1));
 
 				t = phase_here*t_prephase;
-				//printf("[%d, %d] = [%lf, %lf] \n",k_i,new_k,t.real(),t.imag());
 
 				/*
 				if (k_i <= new_k){
-					t = (1.0/3.0)*(  std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1))
-													+std::complex<double>(fftw_inter.interp_fft(rot_dx,rot_dy,orbit1,orbit2,0),fftw_inter.interp_fft(rot_dx,rot_dy,orbit1,orbit2,1))
-													+std::complex<double>(fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit1,orbit2,0),fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit1,orbit2,1))
-														);
+					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,s1,s2,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				} else if (k_i > new_k) {
-					t = (1.0/3.0)*(  std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),-fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1))
-													+std::complex<double>(fftw_inter.interp_fft(rot_dx,rot_dy,orbit2,orbit1,0),-fftw_inter.interp_fft(rot_dx,rot_dy,orbit2,orbit1,1))
-													+std::complex<double>(fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit2,orbit1,0),-fftw_inter.interp_fft(rot2_dx,rot2_dy,orbit2,orbit1,1))
-												);
+					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),-fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
 					//t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				}
 				*/
-
-				// following used for debugging specific elements of H
 
 				/*
 				if ((new_k == 120  && k_i == 243) || (new_k == 243 && k_i == 120)){
 					printf("[%d, %d]: t = [%lf, %lf] \n",k_i, new_k, t.real(),t.imag());
 					printf("dx = %lf, dy = %lf, o1 = %d, o2 = %d \n",dx,dy,orbit1,orbit2);
-
 				}
 				*/
 
+				// following used for debugging specific elements of H
 				/*
 				if ( (k_i == 555 && new_k == 931) ) {
 					printf("interpair: [%d, %d] \n",k_i, new_k);
@@ -4018,7 +3762,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 }
 
-void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality_serial::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
@@ -4211,7 +3955,7 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 	} // end complex matrix block
 }
 
-void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
+void Locality_serial::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
 
 
 	int magOn = jobIn.getInt("magOn");
@@ -4401,7 +4145,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 
 }
 
-void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &kpm_dos, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality_serial::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMatrix &kpm_dos, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int d_weights = jobIn.getInt("d_weights");
 	int d_vecs = jobIn.getInt("d_vecs");
@@ -4582,7 +4326,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 }
 
-void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvecs,  DMatrix &kpm_dos, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+void Locality_serial::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvecs,  DMatrix &kpm_dos, DMatrix &M_xx, DMatrix &M_yy, DMatrix &M_xy, SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
 
 	int d_weights = jobIn.getInt("d_weights");
 	int d_vecs = jobIn.getInt("d_vecs");
@@ -4767,7 +4511,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 }
 
-void Locality::computeMatrixResponse(Job_params jobIn, std::vector<double> eigvals, DMatrix& eigvecs, SpMatrix& matIn, DMatrix& matOut){
+void Locality_serial::computeMatrixResponse(Job_params jobIn, std::vector<double> eigvals, DMatrix& eigvecs, SpMatrix& matIn, DMatrix& matOut){
 
 	// mat_1 = eigvecs*matIn*eigvecs
 
@@ -4813,18 +4557,18 @@ void Locality::computeMatrixResponse(Job_params jobIn, std::vector<double> eigva
 
 }
 
-double Locality::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){
+double Locality_serial::peierlsPhase(double x1, double x2, double y1, double y2, double B_in){
 	double preFactor = 3.14e-5; // This should be changed to be equal to (2 Pi)/(Flux Quanta), with Flux Quanta = h/e, in units of (T*Ang^2)^-1
 	double phase = preFactor*B_in*(x2 - x1)*(0.5)*(y1 + y2);
 	return phase;
 }
 
-double Locality::onSiteE(double x, double y, double z, double E_in){
+double Locality_serial::onSiteE(double x, double y, double z, double E_in){
 	// E a constant in the Z direction, return z*E (physical prefactors missing!!!)
 	return z*E_in;
 }
 
-std::vector< std::vector<double> > Locality::getReciprocal(int s){
+std::vector< std::vector<double> > Locality_serial::getReciprocal(int s){
 
 	std::vector< std::vector<double> > orig_a = sdata[s].a;
 	double theta = angles[s];
@@ -4845,7 +4589,7 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 	return b;
 }
 
-std::vector< std::vector<double> > Locality::getReciprocal(std::vector< std::vector<double> > a_in){
+std::vector< std::vector<double> > Locality_serial::getReciprocal(std::vector< std::vector<double> > a_in){
 
 	// Here we assume a is a 2x2 matrix
 	std::vector< std::vector<double> > a;
@@ -4894,7 +4638,7 @@ std::vector< std::vector<double> > Locality::getReciprocal(std::vector< std::vec
 	return b;
 }
 
-double Locality::crossProd(std::vector<double> x, std::vector<double> y, int dim){
+double Locality_serial::crossProd(std::vector<double> x, std::vector<double> y, int dim){
 
 	if (dim == 0){
 		return ( x[1]*y[2] - x[2]*y[1] );
@@ -4921,43 +4665,21 @@ void Locality::writeBufferToFile(double* buff, int length, std::string file){
 }
 */
 
-void Locality::save(){
+DMatrix Locality_serial::getSavedMatrix(){
+	return saved_matrix;
+}
 
-	if (rank != root){
-		int jobCount = solverTimes.size() / 2;
-		double avgTime = 0;
-		double maxTime = 0;
-		double minTime = difftime(solverTimes[1],solverTimes[0]);
+void Locality_serial::save(){
 
-		for (int i = 0; i < jobCount; ++i){
-			double tempTime = difftime(solverTimes[2*i + 1],solverTimes[2*i]);
-			if (tempTime > maxTime)
-				maxTime = tempTime;
-			if (tempTime < minTime)
-				minTime = tempTime;
-			avgTime += tempTime/( (double) jobCount);
-		}
-
-		printf(	"=======- RANK %d TIMING -======= \n"
-			"Number of Jobs: %d \n"
-			"Avg Solve Time: %lf sec \n"
-			"Max Solve Time: %lf sec \n"
-			"Min Solve Time: %lf sec \n"
-			"================================ \n",
-			rank, jobCount, avgTime, maxTime, minTime);
-	}
-
-	if (rank == print_rank){
 		printf(	"=======- TIMING RESULTS -======= \n"
 		        "Construct Geom: %lf sec \n"
 			"Solver        : %lf sec \n"
 			"================================ \n",
 			difftime(constructEnd, constructStart),
 			difftime(solveEnd, solveStart));
-	}
 }
 
-void Locality::printTiming(std::vector< Job_params > results){
+void Locality_serial::printTiming(std::vector< Job_params > results){
 
 	std::vector<std::vector<double> > times;
 	std::vector<std::string> tags = results[0].getStringVec("cpu_time_type");
@@ -4993,12 +4715,5 @@ void Locality::printTiming(std::vector< Job_params > results){
 		printf(": %lf sec \n",avg_times[t]);
 	}
 	printf("================================\n");
-
-}
-
-void Locality::finMPI(){
-	//printf("rank %d finalizing MPI. \n", rank);
-
-	MPI_Finalize();
 
 }

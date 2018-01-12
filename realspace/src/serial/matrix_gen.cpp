@@ -1,12 +1,11 @@
 /*
- * File:   main.cpp
+ * File:   matrix_gen.cpp
  * Author: Stephen Carr
  *
  * Created on January 27, 2016, 2:45 PM
  */
 
-#include "locality.h"
-#include "materials/materials.h"
+#include "matrix_gen.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -16,11 +15,11 @@
 #include <string>
 #include <sstream>
 
-
-
 using namespace std;
 
-int main(int argc, char** argv) {
+DMatrix getLeoMatrix(string hstruct_input_file){
+
+	//printf("Serial version of LEO2D, Matrix Generation routine\n");
 
 	// ------------------------------
 	// Generate input for simulation.
@@ -29,6 +28,8 @@ int main(int argc, char** argv) {
 	// -----------------------------------------
 	// First set basic information about the job
 	// -----------------------------------------
+
+	DMatrix matrix_out;
 
 	// Determines the grid size (from min_size to max_size) which the simulation attempts to populate using a geometric condition (currently checks r < max_size)
 	int min_size = -50;
@@ -73,7 +74,7 @@ int main(int argc, char** argv) {
 
 	string line;
 	ifstream in_file;
-	in_file.open(argv[1]);
+	in_file.open(hstruct_input_file.c_str());
 	if (in_file.is_open())
 	{
 		while ( getline(in_file,line) )
@@ -117,6 +118,34 @@ int main(int argc, char** argv) {
 					boundary_condition = atoi(in_string.c_str());
 					opts.setParam("boundary_condition",boundary_condition);
 				}
+
+				/*
+
+				if (in_string == "SUPERCELL_ALPHA") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					sc_a = atof(in_string.c_str());
+					int z = 0;
+					opts.setParam("supercell_type",z);
+				}
+
+				if (in_string == "SUPERCELL1"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < 2; ++i) {
+						getline(in_line,in_string,' ');
+						supercell[0][i] = sc_a*atof(in_string.c_str());
+					}
+				}
+
+				if (in_string == "SUPERCELL2"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < 2; ++i) {
+						getline(in_line,in_string,' ');
+						supercell[1][i] = sc_a*atof(in_string.c_str());
+					}
+					opts.setParam("supercell",supercell);
+				}
+				*/
 
 				if (in_string == "SUPERCELL_M_N"){
 					getline(in_line,in_string,' ');
@@ -289,6 +318,8 @@ int main(int argc, char** argv) {
 					}
 				}
 
+
+
 				if (in_string == "DOS_TRANSFORM"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -303,54 +334,6 @@ int main(int argc, char** argv) {
 					} else if (in_string[0] == 'M'){
 						opts.setParam("solver_space",1);
 					}
-				}
-
-				if (in_string == "FFT_FROM_FILE"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_from_file",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_FILENAME"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					opts.setParam("fft_file", in_string);
-				}
-
-				if (in_string == "FFT_N_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_n_x",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_N_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_n_y",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_L_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_L_x",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_L_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_L_y",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_LENGTH_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_length_x",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_LENGTH_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_length_y",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "STRAIN_TYPE"){
@@ -558,6 +541,7 @@ int main(int argc, char** argv) {
 		}
 		in_file.close();
 
+		/*
 		if (opts.getInt("poly_order")%4 != 0){
 			printf("!!WARNING!!: poly_order = %d is NOT divisible 4 (needed for KPM iterative method) \nLEO2D Quiting... \n",opts.getInt("poly_order"));
 			return -1;
@@ -567,7 +551,7 @@ int main(int argc, char** argv) {
 			opts.setParam("nShifts",opts.getInt("nShifts") + 1);
 			printf("!!WARNING!!: Setting nShifts to an odd number for the vacancy sweep method! nShifts = %d \n",opts.getInt("nShifts"));
 		}
-
+		*/
 		/*
 		if (num_sheets > 1 && boundary_condition == 1){
 			printf("!!WARNING: multiple sheet periodic run detected! Periodic boundary conditions not yet implemented for interlayer coupling! \n");
@@ -605,8 +589,9 @@ int main(int argc, char** argv) {
 				}
 			} else if (type == 1) { // (M,N) Supercell type
 				if ((int)s_data.size() > 2){
-					printf("!!WARNING!!: (M,N) Supercell method not defined for more than 2 sheets \nLEO2D Quiting... \n");
-					return -1;
+					printf("!!WARNING!!: (M,N) Supercell method not defined for more than 2 sheets \nReturning empty matrix... \n");
+					DMatrix junk_matrix;
+					return junk_matrix;
 				}
 				int M = opts.getInt("m_supercell");
 				int N = opts.getInt("n_supercell");
@@ -796,35 +781,34 @@ int main(int argc, char** argv) {
 		}
 
 		// Create the locality object with the sheet input data
-		Locality loc(s_data,heights,angles);
+		Locality_serial loc(s_data,heights,angles);
 
 		// Start MPI within Locality object on each processor
+		/*
 		int multi_rank_job = loc.initMPI(argc, argv);
 		if (multi_rank_job == -1){
 			printf("Error: Only 1 MPI rank detected (need to run with n > 1).\n");
 			loc.finMPI();
 			return -1;
 		}
+		*/
 
 		// Simulation's solver is set with setup call to Locality object
+		opts.setParam("matrix_only",1);
 		loc.setup(opts);
 
-		// Builds the geometry of the problem on the root node and then sends them to workers via MPI
+		// Builds the geometry of the problem and creates one matrix
 		loc.constructGeom();
 
-		// Post processing operations. Save prints timing information from each node. File saves happen on the MPI loop from the root node!
-		loc.save();
-
-		// End MPI processes and finish
-		loc.finMPI();
-
+		// Construct the output matrix from the locality_serial's matrix, then return.
+		DMatrix matrix_out = loc.getSavedMatrix();
+		return matrix_out;
 
 	} else {
-		printf("Input file '%s' not found, stopping, \n",argv[1]);
-
+		printf("Input file '%s' not found, returning empty Matrix, \n",hstruct_input_file.c_str());
 	}
 
-	// No errors hopefully!
-	return 0;
+	DMatrix junk_matrix;
+	return junk_matrix;
 
 }

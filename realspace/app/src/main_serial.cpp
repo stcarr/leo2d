@@ -5,8 +5,9 @@
  * Created on January 27, 2016, 2:45 PM
  */
 
-#include "locality.h"
+#include "serial/locality_serial.h"
 #include "materials/materials.h"
+#include "serial/matrix_gen.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -21,6 +22,39 @@
 using namespace std;
 
 int main(int argc, char** argv) {
+
+	printf("Serial version of LEO2D.\n");
+
+	// Example of how to get the DMatrix of a locality run
+	/*
+
+	// IMPORTANT, only use getLeoMatrix as a copy constructor!
+	// If you use assignment (i.e. declare temp_mat then assign it at a later line)
+	// then getLeoMAtrix will FAIL due to a lack of a proper assignment operator in DMatrix!
+
+	DMatrix temp_mat = getLeoMatrix(argv[1]);
+
+	int nrows = temp_mat.getNumRows();
+	int ncols = temp_mat.getNumCols();
+	int nval = nrows*ncols;
+
+	double* val = new double[nval];
+
+	// assigns values to the variable val
+	temp_mat.getValCopy(val);
+
+	//...
+	// Do stuff with val
+	//...
+
+	delete[] val;
+
+	temp_mat.debugPrint(); // Check the output
+	*/
+	// End of getLeoMatrix example
+
+
+	//Normal serial execution follows
 
 	// ------------------------------
 	// Generate input for simulation.
@@ -117,6 +151,34 @@ int main(int argc, char** argv) {
 					boundary_condition = atoi(in_string.c_str());
 					opts.setParam("boundary_condition",boundary_condition);
 				}
+
+				/*
+
+				if (in_string == "SUPERCELL_ALPHA") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					sc_a = atof(in_string.c_str());
+					int z = 0;
+					opts.setParam("supercell_type",z);
+				}
+
+				if (in_string == "SUPERCELL1"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < 2; ++i) {
+						getline(in_line,in_string,' ');
+						supercell[0][i] = sc_a*atof(in_string.c_str());
+					}
+				}
+
+				if (in_string == "SUPERCELL2"){
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < 2; ++i) {
+						getline(in_line,in_string,' ');
+						supercell[1][i] = sc_a*atof(in_string.c_str());
+					}
+					opts.setParam("supercell",supercell);
+				}
+				*/
 
 				if (in_string == "SUPERCELL_M_N"){
 					getline(in_line,in_string,' ');
@@ -289,6 +351,8 @@ int main(int argc, char** argv) {
 					}
 				}
 
+
+
 				if (in_string == "DOS_TRANSFORM"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -303,54 +367,6 @@ int main(int argc, char** argv) {
 					} else if (in_string[0] == 'M'){
 						opts.setParam("solver_space",1);
 					}
-				}
-
-				if (in_string == "FFT_FROM_FILE"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_from_file",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_FILENAME"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					opts.setParam("fft_file", in_string);
-				}
-
-				if (in_string == "FFT_N_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_n_x",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_N_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_n_y",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_L_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_L_x",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_L_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_L_y",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_LENGTH_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_length_x",atoi(in_string.c_str()));
-				}
-
-				if (in_string == "FFT_LENGTH_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-	        opts.setParam("fft_length_y",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "STRAIN_TYPE"){
@@ -795,16 +811,20 @@ int main(int argc, char** argv) {
 			}
 		}
 
+		opts.setParam("matrix_only",0);
+
 		// Create the locality object with the sheet input data
-		Locality loc(s_data,heights,angles);
+		Locality_serial loc(s_data,heights,angles);
 
 		// Start MPI within Locality object on each processor
+		/*
 		int multi_rank_job = loc.initMPI(argc, argv);
 		if (multi_rank_job == -1){
 			printf("Error: Only 1 MPI rank detected (need to run with n > 1).\n");
 			loc.finMPI();
 			return -1;
 		}
+		*/
 
 		// Simulation's solver is set with setup call to Locality object
 		loc.setup(opts);
@@ -814,9 +834,6 @@ int main(int argc, char** argv) {
 
 		// Post processing operations. Save prints timing information from each node. File saves happen on the MPI loop from the root node!
 		loc.save();
-
-		// End MPI processes and finish
-		loc.finMPI();
 
 
 	} else {

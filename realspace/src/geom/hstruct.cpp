@@ -925,7 +925,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Job_params opts){
 
 }
 
-void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x, int length_y, double A1, double A2, std::string fft_file){
+void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x, int length_y, std::string fft_file){
 
 	// !!!!!!!! WARNING !!!!!!!!!
 	//This is hard-coded for a "perfect" (no E,B,vacancies, or strain) twisted bilayer, momentum-space is not expected to work well for more general systems, use real-space instead!
@@ -936,173 +936,207 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 	// length_i is the total length in the i direction in momentum-space to save, i.e. in K: <----- L_i ------>
 	// o_1,o_2 are the orbitals of interest for this FFT
 	// theta is the relative angle between 1 and 2*L_x
-	// A1, A2 are real-space areas of each layer's unit cell
+	// area_list  are real-space areas of each layer's unit cell
 	// fft_file is the desired file name for the output
 
-	int num_orb_1 = sheets[0].getNumAtoms();
-	int num_orb_2 = sheets[1].getNumAtoms();
+  std::ofstream fout(fft_file.c_str());
 
-  Materials::Mat mat1 = sheets[0].getMat();
-  Materials::Mat mat2 = sheets[1].getMat();
+  // if we assume that sheets only couple to their immediate neighbors
+  // then the total number of internal FFT loops should be (num_sheets - 1)*2
 
-	double angle1 = angles[0];
-  double angle2 = angles[1];
+  fout << max_sheets << std::endl;
+
+  fout << sheets[0].getNumAtoms();
+
+  for (int s = 1; s < max_sheets; ++s){
+    fout << " " << sheets[s].getNumAtoms();
+  }
+
+  fout << std::endl;
+  fout << std::endl;
+
+  for (int s = 0; s < max_sheets-1; ++s){
+    for (int type = 0; type < 2; ++type){
+
+      int s1, s2;
+      if (type == 0){
+        s1 = s;
+        s2 = s+1;
+      }else if (type == 1){
+        s1 = s+1;
+        s2 = s;
+      }
+
+      int num_orb_1 = sheets[s1].getNumAtoms();
+      int num_orb_2 = sheets[s2].getNumAtoms();
+
+      Materials::Mat mat1 = sheets[s1].getMat();
+      Materials::Mat mat2 = sheets[s2].getMat();
+
+      double angle1 = angles[s1];
+      double angle2 = angles[s2];
+
+      double A1 = getUnitArea(s1);
+      double A2 = getUnitArea(s2);
+
+    	for (int o1 = 0; o1 < num_orb_1; ++o1){
+    		for (int o2 = 0; o2 < num_orb_2; ++o2){
+
+    			double z1 = heights[s1];
+    			double z2 = heights[s2];
+
+    			double o1_shift_temp_x = sheets[s1].getOrbPos(o1,0);
+    			double o1_shift_temp_y = sheets[s1].getOrbPos(o1,1);
+    			double o1_shift_z = sheets[s1].getOrbPos(o1,2);
+          double o1_shift_x = cos(angle1)*o1_shift_temp_x - sin(angle1)*o1_shift_temp_y;
+          double o1_shift_y = sin(angle1)*o1_shift_temp_x + cos(angle1)*o1_shift_temp_y;
+
+    			double o2_shift_temp_x = sheets[s2].getOrbPos(o2,0);
+    			double o2_shift_temp_y = sheets[s2].getOrbPos(o2,1);
+    			double o2_shift_z = sheets[s2].getOrbPos(o2,2);
+          double o2_shift_x = cos(angle2)*o2_shift_temp_x - sin(angle2)*o2_shift_temp_y;
+          double o2_shift_y = sin(angle2)*o2_shift_temp_x + cos(angle2)*o2_shift_temp_y;
+
+    			double x_pos,y_pos;
+    			int x_size = n_x*(2*L_x)+2;
+    			int y_size = n_y*(2*L_y)+2;
+    			int y_size2 = y_size/2+1; // r2c y-direction size
+    			double* in = new double[x_size*y_size];
+
+    			double dx = 1.0/n_x;
+    			double dy = 1.0/n_y;
+    			fftw_complex *out;
+    			out = (fftw_complex*) fftw_malloc(x_size*y_size2*sizeof(fftw_complex));
+
+    			fftw_plan p;
+    			p = fftw_plan_dft_r2c_2d(x_size,y_size,in,out,FFTW_MEASURE);
+
+    			for (int i = 0; i < x_size; i++){
+    				for (int j = 0; j < y_size; j++){
+
+    					if (i < x_size/2)
+    						x_pos = -dx*i;
+    					else
+    						x_pos = -dx*i + dx*(x_size-1);
+
+    					if (j < y_size/2)
+    						y_pos = -dy*j;
+    					else
+    						y_pos = -dy*j + dy*(y_size-1);
+
+    					//printf("[%lf, %lf, %lf, %lf, %lf, %lf, %d, %d, 0, %lf, %d, %d] \n", o1_shift_x, o1_shift_y, z1, x_pos+o2_shift_x, y_pos+o2_shift_y, z2, o1, o2, theta, mat1, mat2);
+    					std::array<double, 3> disp = {{ x_pos, y_pos, z2-z1 }};
+    					in[j + i*y_size] = Materials::interlayer_term(o1, o2, disp, angle1, angle2, mat1, mat2)/(sqrt(A1*A2));
+
+    				}
+    			}
+
+    			// !!! START DEBUG !!!
+    			// Debug on the "in" matrix
+    			/*
+
+    			// consider [0,1] off-diagonal term (was causing issues).
+
+    			if (s1 == 0 && s2 == 1 && o1 == 0 && o2 == 0){
+    				std::ofstream fout_debug("interlayer_input_1_to_1.dat");
+    				for (int i = 0; i < x_size; i++){
+    					for (int j = 0; j < y_size; j++){
+    						fout_debug << in[j + i*y_size] << " ";
+    					}
+    					fout_debug << std::endl;
+    				}
+    				fout_debug.close();
+    			}
+
+    			if (s1 == 0 && s2 == 1 && o1 == 0 && o2 == 1){
+    				std::ofstream fout_debug("interlayer_input_1_to_2.dat");
+    				for (int i = 0; i < x_size; i++){
+    					for (int j = 0; j < y_size; j++){
+    						fout_debug << in[j + i*y_size] << " ";
+    					}
+    					fout_debug << std::endl;
+    				}
+    				fout_debug.close();
+    			}
+
+    			*/
+    			// !!! END DEBUG !!!
+
+    			fftw_execute(p);
 
 
-	std::ofstream fout(fft_file.c_str());
+    			double rescale = n_x*n_y;
 
-	fout << num_orb_1 << " " << num_orb_2 << std::endl;
-	fout << "\n";
+    			for (int i = 0; i < x_size*y_size2; i++){
+    				out[i][0] = out[i][0]/rescale;
+    				out[i][1] = out[i][1]/rescale;
+    			}
 
-	for (int o1 = 0; o1 < num_orb_1; ++o1){
-		for (int o2 = 0; o2 < num_orb_2; ++o2){
+    		   //save_fftw_complex(out,x_size,y_size2,L_x*length_x,L_y*length_y,fft_file);
 
-			double z1 = heights[0];
-			double z2 = heights[1];
+    			// Now we save the FFT to file
+    			// Need defined:
 
-			double o1_shift_temp_x = sheets[0].getOrbPos(o1,0);
-			double o1_shift_temp_y = sheets[0].getOrbPos(o1,1);
-			double o1_shift_z = sheets[0].getOrbPos(o1,2);
-      double o1_shift_x = cos(angle1)*o1_shift_temp_x - sin(angle1)*o1_shift_temp_y;
-      double o1_shift_y = sin(angle1)*o1_shift_temp_x + cos(angle1)*o1_shift_temp_y;
+    			//		fftw_complex* out 	: output from fftw3 = out
+    			//		int x_size, y_size 	: 					= x_size, y_size2
+    			// 		int x_L, y_L		: 					= L_x*length_x, L_y*length_y
+    			//		string file			: filename of output= fft_file
 
-			double o2_shift_temp_x = sheets[1].getOrbPos(o2,0);
-			double o2_shift_temp_y = sheets[1].getOrbPos(o2,1);
-			double o2_shift_z = sheets[1].getOrbPos(o2,2);
-      double o2_shift_x = cos(angle2)*o2_shift_temp_x - sin(angle2)*o2_shift_temp_y;
-      double o2_shift_y = sin(angle2)*o2_shift_temp_x + cos(angle2)*o2_shift_temp_y;
+    			int x_L = L_x*length_x;
+    			int y_L = L_y*length_y;
+    			y_size = y_size2;
 
-			double x_pos,y_pos;
-			int x_size = n_x*(2*L_x)+2;
-			int y_size = n_y*(2*L_y)+2;
-			int y_size2 = y_size/2+1; // r2c y-direction size
-			double* in = new double[x_size*y_size];
+    			// So redefine: y_size = y_size2, file = fft_file
+    			// and define: x_L = L_x*length, y_L = L_y*length
 
-			double dx = 1.0/n_x;
-			double dy = 1.0/n_y;
-			fftw_complex *out;
-			out = (fftw_complex*) fftw_malloc(x_size*y_size2*sizeof(fftw_complex));
+    			fout  << s1 << " " << s2 << " " << o1 << " " << o2 << " "
+                << o2_shift_x - o1_shift_x << " " << o2_shift_y - o1_shift_y << " "
+                << x_L << " " << y_L << " 0" << std::endl;
 
-			fftw_plan p;
-			p = fftw_plan_dft_r2c_2d(x_size,y_size,in,out,FFTW_MEASURE);
+    			// save real data to file in plain-text matrix format
+    			for (int i = 0; i < 2*x_L; i++) {
+    				for (int j = 0; j < y_L; j++) {
+    					if (i < x_L)
+    						fout << out[j+(x_size - x_L+i)*y_size][0] << " ";
+    					else
+    						fout << out[j+(i-x_L)*y_size][0] << " ";
+    					}
 
-			for (int i = 0; i < x_size; i++){
-				for (int j = 0; j < y_size; j++){
+    				fout << std::endl;
+    			}
 
-					if (i < x_size/2)
-						x_pos = -dx*i;
-					else
-						x_pos = -dx*i + dx*(x_size-1);
+    			fout << std::endl;
 
-					if (j < y_size/2)
-						y_pos = -dy*j;
-					else
-						y_pos = -dy*j + dy*(y_size-1);
+          fout  << s1 << " " << s2 << " " << o1 << " " << o2 << " "
+                << o2_shift_x - o1_shift_x << " " << o2_shift_y - o1_shift_y << " "
+                << x_L << " " << y_L << " 1" << std::endl;
+                
+    			// save complex data to file in plain-text matrix format
+    			for (int i = 0; i < 2*x_L; i++) {
+    				for (int j = 0; j < y_L; j++) {
+    					if (i < x_L)
+    						fout << out[j+(x_size-x_L+i)*y_size][1] << " ";
+    					else
+    						fout << out[j+(i-x_L)*y_size][1] << " ";
+    					}
 
-					//printf("[%lf, %lf, %lf, %lf, %lf, %lf, %d, %d, 0, %lf, %d, %d] \n", o1_shift_x, o1_shift_y, z1, x_pos+o2_shift_x, y_pos+o2_shift_y, z2, o1, o2, theta, mat1, mat2);
-					std::array<double, 3> disp = {{ x_pos - o1_shift_x + o2_shift_x, y_pos - o1_shift_y + o2_shift_y, z2-z1 }};
-					in[j + i*y_size] = Materials::interlayer_term(o1, o2, disp, angle1, angle2, mat1, mat2)/(sqrt(A1*A2));
+    				fout << std::endl;
+    			}
 
-				}
-			}
+    			fout << std::endl;
 
-			// !!! START DEBUG !!!
-			// Debug on the "in" matrix
-			// /*
+    			fftw_destroy_plan(p);
+    			fftw_free(out);
 
-			// consider [0,1] off-diagonal term (was causing issues).
+    			delete in;
 
-			if (o1 == 0 && o2 == 0){
-				std::ofstream fout_debug("interlayer_input_1_to_1.dat");
-				for (int i = 0; i < x_size; i++){
-					for (int j = 0; j < y_size; j++){
-						fout_debug << in[j + i*y_size] << " ";
-					}
-					fout_debug << std::endl;
-				}
-				fout_debug.close();
-			}
+    		}
+    	}
 
-			if (o1 == 0 && o2 == 1){
-				std::ofstream fout_debug("interlayer_input_1_to_2.dat");
-				for (int i = 0; i < x_size; i++){
-					for (int j = 0; j < y_size; j++){
-						fout_debug << in[j + i*y_size] << " ";
-					}
-					fout_debug << std::endl;
-				}
-				fout_debug.close();
-			}
-
-			// */
-			// !!! END DEBUG !!!
-
-			fftw_execute(p);
+    } // end of type loop
 
 
-			double rescale = n_x*n_y;
-
-			for (int i = 0; i < x_size*y_size2; i++){
-				out[i][0] = out[i][0]/rescale;
-				out[i][1] = out[i][1]/rescale;
-			}
-
-		   //save_fftw_complex(out,x_size,y_size2,L_x*length_x,L_y*length_y,fft_file);
-
-			// Now we save the FFT to file
-			// Need defined:
-
-			//		fftw_complex* out 	: output from fftw3 = out
-			//		int x_size, y_size 	: 					= x_size, y_size2
-			// 		int x_L, y_L		: 					= L_x*length_x, L_y*length_y
-			//		string file			: filename of output= fft_file
-
-			int x_L = L_x*length_x;
-			int y_L = L_y*length_y;
-			y_size = y_size2;
-
-			// So redefine: y_size = y_size2, file = fft_file
-			// and define: x_L = L_x*length, y_L = L_y*length
-
-			fout << o1 << " " << o2 << " " << x_L << " " << y_L << " 0" << std::endl;
-
-			// save real data to file in plain-text matrix format
-			for (int i = 0; i < 2*x_L; i++) {
-				for (int j = 0; j < y_L; j++) {
-					if (i < x_L)
-						fout << out[j+(x_size - x_L+i)*y_size][0] << " ";
-					else
-						fout << out[j+(i-x_L)*y_size][0] << " ";
-					}
-
-				fout << std::endl;
-			}
-
-			fout << "\n";
-
-			fout << o1 << " " << o2 << " " << x_L << " " << y_L << " 1" << std::endl;
-
-			// save complex data to file in plain-text matrix format
-			for (int i = 0; i < 2*x_L; i++) {
-				for (int j = 0; j < y_L; j++) {
-					if (i < x_L)
-						fout << out[j+(x_size-x_L+i)*y_size][1] << " ";
-					else
-						fout << out[j+(i-x_L)*y_size][1] << " ";
-					}
-
-				fout << std::endl;
-			}
-
-			fout << "\n";
-
-			fftw_destroy_plan(p);
-			fftw_free(out);
-
-			delete in;
-
-		}
-	}
+  } // end of sheet (s) loop
 
 	fout.close();
 }

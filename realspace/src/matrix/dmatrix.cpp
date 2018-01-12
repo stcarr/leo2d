@@ -34,7 +34,7 @@ DMatrix::DMatrix() {
 
 
 DMatrix::DMatrix(const DMatrix& orig){
-
+	type = orig.getType();
 	nrows = orig.getNumRows();
 	ncols = orig.getNumCols();
 	nval = (size_t)nrows*(size_t)ncols;
@@ -56,7 +56,6 @@ DMatrix::DMatrix(int nr, int nc) {
 DMatrix::DMatrix(int nr, int nc, double *val0) {
 
 	type = 0;
-
 
 	// set dimensions
 	nrows = nr;
@@ -83,7 +82,6 @@ DMatrix::DMatrix(int nr, int nc, std::complex<double> *val_c0) {
 
 // a destructor
 DMatrix::~DMatrix(){
-
 	if (type == 0){
 		delete [] val;
 	}
@@ -96,7 +94,7 @@ DMatrix::~DMatrix(){
 
 void DMatrix::debugPrint(){
 
-
+	printf("ncols = %d, nrows = %d, type = %d \n", ncols, nrows, type);
 	for (int r = 0; r < nrows; ++r){
 		printf("         ");
 		for (int c = 0; c < ncols; ++c){
@@ -109,7 +107,6 @@ void DMatrix::debugPrint(){
 		printf("\n");
 	}
 	printf("\n");
-
 }
 
 void DMatrix::setup(int nr, int nc){
