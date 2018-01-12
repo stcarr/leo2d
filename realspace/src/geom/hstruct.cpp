@@ -1025,7 +1025,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     						y_pos = -dy*j + dy*(y_size-1);
 
     					//printf("[%lf, %lf, %lf, %lf, %lf, %lf, %d, %d, 0, %lf, %d, %d] \n", o1_shift_x, o1_shift_y, z1, x_pos+o2_shift_x, y_pos+o2_shift_y, z2, o1, o2, theta, mat1, mat2);
-    					std::array<double, 3> disp = {{ x_pos - o1_shift_x + o2_shift_x, y_pos - o1_shift_y + o2_shift_y, z2-z1 }};
+    					std::array<double, 3> disp = {{ x_pos, y_pos, z2-z1 }};
     					in[j + i*y_size] = Materials::interlayer_term(o1, o2, disp, angle1, angle2, mat1, mat2)/(sqrt(A1*A2));
 
     				}
@@ -1089,7 +1089,9 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     			// So redefine: y_size = y_size2, file = fft_file
     			// and define: x_L = L_x*length, y_L = L_y*length
 
-    			fout << s1 << " " << s2 << " " << o1 << " " << o2 << " " << x_L << " " << y_L << " 0" << std::endl;
+    			fout  << s1 << " " << s2 << " " << o1 << " " << o2 << " "
+                << o2_shift_x - o1_shift_x << " " << o2_shift_y - o1_shift_y << " "
+                << x_L << " " << y_L << " 0" << std::endl;
 
     			// save real data to file in plain-text matrix format
     			for (int i = 0; i < 2*x_L; i++) {
@@ -1103,10 +1105,12 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     				fout << std::endl;
     			}
 
-    			fout << "\n";
+    			fout << std::endl;
 
-          fout << s1 << " " << s2 << " " << o1 << " " << o2 << " " << x_L << " " << y_L << " 1" << std::endl;
-
+          fout  << s1 << " " << s2 << " " << o1 << " " << o2 << " "
+                << o2_shift_x - o1_shift_x << " " << o2_shift_y - o1_shift_y << " "
+                << x_L << " " << y_L << " 1" << std::endl;
+                
     			// save complex data to file in plain-text matrix format
     			for (int i = 0; i < 2*x_L; i++) {
     				for (int j = 0; j < y_L; j++) {
@@ -1119,7 +1123,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     				fout << std::endl;
     			}
 
-    			fout << "\n";
+    			fout << std::endl;
 
     			fftw_destroy_plan(p);
     			fftw_free(out);

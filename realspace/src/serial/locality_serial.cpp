@@ -3591,6 +3591,10 @@ void Locality_serial::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
 
+				//and sheet
+				int s1 = index_to_grid[k_i*4 + 3];
+				int s2 = index_to_grid[new_k*4 + 3];
+
 				// and the orbit tag in their respective unit-cell
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
@@ -3604,19 +3608,32 @@ void Locality_serial::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_
 				// FFT file is based on sheet1 -> sheet2, so we need to keep track of which sheet k_i and new_k are on (i.e. k_i < new_k -> k_i on 1st sheet, k_i > new_k -> k_i on 2nd sheet)
 				// Not checking for this is the equivalent of twisting the layer "theta" for 1->2 coupling and "-theta" for 2->1 coupling, which makes H non-Hermitian.
 
+				double orb_disp_x = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,0);
+				double orb_disp_y = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,1);
 
+				std::complex<double> phase_here;
+				phase_here = std::polar(1.0, dx*orb_disp_x + dy*orb_disp_y);
+
+				std::complex<double> t_prephase;
+				t_prephase = std::complex<double>(fftw_inter.interp_fft(dx,dy,s1,s2,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,s1,s2,orbit1,orbit2,1));
+
+				t = phase_here*t_prephase;
+
+				/*
 				if (k_i <= new_k){
-					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
+					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,s1,s2,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				} else if (k_i > new_k) {
 					t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit2,orbit1,0),-fftw_inter.interp_fft(dx,dy,orbit2,orbit1,1));
 					//t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				}
+				*/
 
+				/*
 				if ((new_k == 120  && k_i == 243) || (new_k == 243 && k_i == 120)){
 					printf("[%d, %d]: t = [%lf, %lf] \n",k_i, new_k, t.real(),t.imag());
 					printf("dx = %lf, dy = %lf, o1 = %d, o2 = %d \n",dx,dy,orbit1,orbit2);
-
 				}
+				*/
 
 				// following used for debugging specific elements of H
 				/*

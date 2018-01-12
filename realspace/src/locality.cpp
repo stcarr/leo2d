@@ -3718,6 +3718,10 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double y2 = i2pos[new_k*3 + 1];
 				double z2 = i2pos[new_k*3 + 2];
 
+				// get the sheet indices
+				int s1 = index_to_grid[k_i*4 + 3];
+				int s2 = index_to_grid[new_k*4 + 3];
+
 				// and the orbit tag in their respective unit-cell
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
@@ -3728,18 +3732,84 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 				// The graphene interlayer functions are always 2pi/3 symmetric
 				// we will impose this by averaging over rotated momentum values
+				/*
 				double rot_param = (sqrt(3.0)/2.0);
 				double rot_dx = (-0.5)*dx - (rot_param)*dy;
 				double rot_dy = (rot_param)*dx + (-0.5)*dy;
 				double rot2_dx = (-0.5)*rot_dx - (rot_param)*rot_dy;
 				double rot2_dy = (rot_param)*rot_dx + (-0.5)*rot_dy;
+				*/
 
 				std::complex<double> t;
 
 				// FFT file is based on sheet1 -> sheet2, so we need to keep track of which sheet k_i and new_k are on (i.e. k_i < new_k -> k_i on 1st sheet, k_i > new_k -> k_i on 2nd sheet)
 				// Not checking for this is the equivalent of twisting the layer "theta" for 1->2 coupling and "-theta" for 2->1 coupling, which makes H non-Hermitian.
 
+				double orb_disp_x = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,0);
+				double orb_disp_y = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,1);
 
+				std::complex<double> phase_here;
+				phase_here = -std::polar(1.0, dx*orb_disp_x + dy*orb_disp_y);
+
+				std::complex<double> t_prephase = std::complex<double>(0.0,0.0);
+
+				// impose rotation and mirror symm on the FFT of the interlayer Coupling
+				// our graphene model has 3-fold rotational symm and a mirror-plane symmetry
+				int rot_max = 1;
+				int mirror_max = 1;
+				for (int rot_index = 0; rot_index < rot_max; ++rot_index){
+					for (int mirror_index = 0; mirror_index < mirror_max; ++mirror_index){
+
+						double new_dx, new_dy;
+						double rot_dx, rot_dy;
+
+						double theta = (2.0*M_PI/3.0)*((double)rot_index);
+
+						rot_dx = cos(theta)*dx - sin(theta)*dy;
+						rot_dy = sin(theta)*dx + cos(theta)*dy;
+
+						double mirror_theta = M_PI/2.0 + (angles[s1] + angles[s2])/2.0;
+						double mirror_plane_x = cos(mirror_theta);
+						double mirror_plane_y = sin(mirror_theta);
+
+						// when mirroring, new_vec = -rot_vec + 2*v*(v dot rot_vec)
+						// where v is the vector [mirror_plane_x mirror_plane_y]
+
+						if (mirror_index == 0){
+							new_dx = rot_dx;
+							new_dy = rot_dy;
+						} else {
+							double mirror_dot_prod = mirror_plane_x*rot_dx + mirror_plane_y*rot_dy;
+							new_dx = -rot_dx + 2*mirror_plane_x*mirror_dot_prod;
+							new_dy = -rot_dy + 2*mirror_plane_x*mirror_dot_prod;
+						}
+
+						if (k_i <= new_k){
+							// factor of 1/6 for the 3*2=6 symmetric points
+							t_prephase += (1.0 / ((double)(rot_max*mirror_max)) )*
+														(std::complex<double>(fftw_inter.interp_fft(new_dx,new_dy,s1,s2,orbit1,orbit2,0),
+																									fftw_inter.interp_fft(new_dx,new_dy,s1,s2,orbit1,orbit2,1))
+																								);
+						} else if (k_i > new_k) {
+
+						// factor of 1/6 for the 3*2=6 symmetric points
+						t_prephase += (1.0 / ((double)(rot_max*mirror_max)) )*
+													(std::complex<double>(fftw_inter.interp_fft(new_dx,new_dy,s2,s1,orbit2,orbit1,0),
+																								-fftw_inter.interp_fft(new_dx,new_dy,s2,s1,orbit2,orbit1,1))
+																							);
+
+						}
+					}
+				}
+
+				//printf("phase_here = [%lf,%lf] \n",phase_here.real(), phase_here.imag());
+				//printf("t_prephase = [%lf,%lf] \n",t_prephase.real(), t_prephase.imag());
+
+
+				t = phase_here*t_prephase;
+				//printf("[%d, %d] = [%lf, %lf] \n",k_i,new_k,t.real(),t.imag());
+
+				/*
 				if (k_i <= new_k){
 					t = (1.0/3.0)*(  std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1))
 													+std::complex<double>(fftw_inter.interp_fft(rot_dx,rot_dy,orbit1,orbit2,0),fftw_inter.interp_fft(rot_dx,rot_dy,orbit1,orbit2,1))
@@ -3752,6 +3822,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 												);
 					//t = std::complex<double>(fftw_inter.interp_fft(dx,dy,orbit1,orbit2,0),fftw_inter.interp_fft(dx,dy,orbit1,orbit2,1));
 				}
+				*/
 
 				// following used for debugging specific elements of H
 

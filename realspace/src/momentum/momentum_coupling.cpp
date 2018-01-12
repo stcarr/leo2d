@@ -21,102 +21,187 @@ Momentum_coupling::Momentum_coupling() {
 Momentum_coupling::~Momentum_coupling() {
 }
 
-void load_fftw_complex(std::vector< std::vector<fftw_complex*> > &out, std::string file) {
+void load_fftw_complex(std::vector< std::vector< std::vector< std::vector< fftw_complex* > > > >&out,
+											 std::vector< std::vector< std::vector< std::vector< std::vector<double> > > > >&disps,
+											 std::string file){
 
 	std::ifstream fin(file.c_str());
-	int num_orb_1;
-	int num_orb_2;
-
-	fin >> num_orb_1;
-	fin >> num_orb_2;
-
-	for (int o1 = 0; o1 < num_orb_1; ++o1){
-
-		std::vector<fftw_complex*> temp_vec;
-
-		for (int o2 = 0; o2 < num_orb_2; ++o2){
-
-			int x_size;
-			int y_size;
-
-			int file_o1;
-			int file_o2;
-
-			int file_type;
-
-			fin >> file_o1;
-			fin >> file_o2;
-			fin >> x_size;
-			fin >> y_size;
-			fin >> file_type;
-
-			if (file_o1 != o1){
-				printf("Warning! orbit mismatch in *fft.dat file \n");
-				break;
-			}
-			if (file_o2 != o2){
-				printf("Warning! orbit mismatch in *fft.dat file \n");
-				break;
-			}
-			if (file_type != 0){
-				printf("Warning! orbit mismatch in *fft.dat file \n");
-				break;
-			}
-
-			// debugging print statement
-			//printf("load: [x_size, y_size] = [%d, %d] \n",x_size, y_size);
 
 
-			fftw_complex* temp_out;
-			temp_out = (fftw_complex*) fftw_malloc(x_size*y_size*2*sizeof(fftw_complex));
+	int num_sheets;
+	std::vector<int> num_orbs;
+	fin >> num_sheets;
 
-			for (int i = 0; i < 2*x_size; i++)
-				for (int j = 0; j < y_size; j++)
-					fin >> temp_out[j + i*y_size][0];
-
-			// following prints loaded matrix to terminal, for debugging
-			/*
-			for (int i = 0; i < 2*x_size; i++){
-				for (int j = 0; j < y_size; j++){
-					printf("%lf, ",temp_out[j + i*y_size][0]);
-				}
-				printf(" \n");
-			}
-			*/
-
-			// Now get complex data for this orbit pairing
-
-			fin >> file_o1;
-			fin >> file_o2;
-			fin >> x_size;
-			fin >> y_size;
-			fin >> file_type;
-
-			if (file_o1 != o1){
-				printf("Warning! orbit mismatch in *fft.dat file \n");
-				break;
-			}
-			if (file_o2 != o2){
-				printf("Warning! orbit mismatch in *fft.dat file \n");
-				break;
-			}
-			if (file_type != 1){
-				printf("Warning! orbit mismatch in *fft.dat file \n");
-				break;
-			}
-
-			for (int i = 0; i < 2*x_size; i++)
-				for (int j = 0; j < y_size; j++)
-					fin >> temp_out[j + i*y_size][1];
-
-			temp_vec.push_back(temp_out);
+	out.resize(num_sheets);
+	disps.resize(num_sheets);
+	num_orbs.resize(num_sheets);
 
 
-		}
-
-		out.push_back(temp_vec);
-
+	for (int s = 0; s < num_sheets; ++s){
+		out[s].resize(num_sheets);
+		disps[s].resize(num_sheets);
+		fin >> num_orbs[s];
 	}
+
+	for (int s = 0; s < num_sheets-1; ++s){
+		for (int direction = 0; direction < 2; ++direction){
+			// direction = 0 -> lower sheet coupling to upper sheet
+			// direction = 1 -> upper sheet coupling to lower sheet
+			int s1, s2;
+			if (direction == 0){
+				s1 = s;
+				s2 = s+1;
+			} else {
+				s1 = s+1;
+				s2 = s;
+			}
+
+			int num_orb_1 = num_orbs[s1];
+			int num_orb_2 = num_orbs[s2];
+
+			disps[s1][s2].resize(num_orb_1);
+
+			std::vector< std::vector<fftw_complex*> > temp_o1_data;
+
+			for (int o1 = 0; o1 < num_orb_1; ++o1){
+
+				disps[s1][s2][o1].resize(num_orb_2);
+				std::vector<fftw_complex*> temp_o2_data;
+
+				for (int o2 = 0; o2 < num_orb_2; ++o2){
+
+					int file_s1;
+					int file_s2;
+
+					int file_o1;
+					int file_o2;
+
+					double orb_disp_x;
+					double orb_disp_y;
+
+					int x_size;
+					int y_size;
+
+					int file_type;
+
+					fin >> file_s1;
+					fin >> file_s2;
+					fin >> file_o1;
+					fin >> file_o2;
+					fin >> orb_disp_x;
+					fin >> orb_disp_y;
+					fin >> x_size;
+					fin >> y_size;
+					fin >> file_type;
+
+					/*
+					printf("expect: [%d, %d, %d, %d, ?, ?, ?, ?, 0] \n",s1,s2,o1,o2);
+					printf("file: [%d, %d, %d, %d, %lf, %lf, %d, %d, %d] \n",
+									file_s1,file_s2,file_o1,file_o2, orb_disp_x, orb_disp_y, x_size, y_size, file_type);
+					*/
+
+					if (file_s1 != s1){
+						printf("Warning! sheet1 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_s2 != s2){
+						printf("Warning! sheet2 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_o1 != o1){
+						printf("Warning! orbit1 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_o2 != o2){
+						printf("Warning! orbit2 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_type != 0){
+						printf("Warning! value type mismatch in *fft.dat file \n");
+						break;
+					}
+
+					disps[s1][s2][o1][o2].resize(2);
+					disps[s1][s2][o1][o2][0] = orb_disp_x;
+					disps[s1][s2][o1][o2][1] = orb_disp_y;
+
+					// debugging print statement
+					// printf("load: [x_size, y_size] = [%d, %d] \n",x_size, y_size);
+
+
+					fftw_complex* temp_out;
+					temp_out = (fftw_complex*) fftw_malloc(x_size*y_size*2*sizeof(fftw_complex));
+
+					for (int i = 0; i < 2*x_size; i++)
+						for (int j = 0; j < y_size; j++)
+							fin >> temp_out[j + i*y_size][0];
+
+					// following prints loaded matrix to terminal, for debugging
+					/*
+					for (int i = 0; i < 2*x_size; i++){
+						for (int j = 0; j < y_size; j++){
+							printf("%lf, ",temp_out[j + i*y_size][0]);
+						}
+						printf(" \n");
+					}
+					*/
+
+					// Now get complex data for this orbit pairing
+
+					fin >> file_s1;
+					fin >> file_s2;
+					fin >> file_o1;
+					fin >> file_o2;
+					fin >> orb_disp_x;
+					fin >> orb_disp_y;
+					fin >> x_size;
+					fin >> y_size;
+					fin >> file_type;
+
+					/*
+					printf("expect: [%d, %d, %d, %d, ?, ?, ?, ?, 1] \n",s1,s2,o1,o2);
+					printf("file: [%d, %d, %d, %d, %lf, %lf, %d, %d, %d] \n",
+									file_s1,file_s2,file_o1,file_o2, orb_disp_x, orb_disp_y, x_size, y_size, file_type);
+					*/
+
+					if (file_s1 != s1){
+						printf("Warning! sheet1 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_s2 != s2){
+						printf("Warning! sheet2 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_o1 != o1){
+						printf("Warning! orbit1 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_o2 != o2){
+						printf("Warning! orbit2 mismatch in *fft.dat file \n");
+						break;
+					}
+					if (file_type != 1){
+						printf("Warning! value type mismatch in *fft.dat file \n");
+						break;
+					}
+
+					for (int i = 0; i < 2*x_size; i++)
+						for (int j = 0; j < y_size; j++)
+							fin >> temp_out[j + i*y_size][1];
+
+					temp_o2_data.push_back(temp_out);
+
+
+				} // end of o2 loop
+
+				temp_o1_data.push_back(temp_o2_data);
+
+			} // end of o1 loop
+
+			out[s1][s2] = temp_o1_data;
+
+		} // end of direction loop
+	} // end of sheet loop
 
 	fin.close();
 }
@@ -126,7 +211,7 @@ double interp_4point(double x, double y, double v1, double v2, double v3, double
    return value;
 }
 
-double Momentum_coupling::interp_fft(double x_input, double y_input, int o1, int o2, int entry) {
+double Momentum_coupling::interp_fft(double x_input, double y_input, int s1, int s2, int o1, int o2, int entry) {
 
 	// (x_input, y_input) is location at which you want to know the (interpolated) value of the fftw_complex data
 	// o1, o2 are two two orbitals whose interlayer coupling you are computing
@@ -171,7 +256,13 @@ double Momentum_coupling::interp_fft(double x_input, double y_input, int o1, int
 		int x_int = int(x);
 		int y_int = int(y);
 
-		double value = interp_4point(x-x_int,y-y_int, fftw_data[o1][o2][y_int + x_int*y_s][entry], fftw_data[o1][o2][y_int + (x_int+1)*y_s][entry], fftw_data[o1][o2][y_int+1 + x_int*y_s][entry],fftw_data[o1][o2][y_int+1+(x_int+1)*y_s][entry]);
+		double value = interp_4point(	x-x_int,
+																	y-y_int,
+																	fftw_data[s1][s2][o1][o2][y_int + x_int*y_s][entry],
+																	fftw_data[s1][s2][o1][o2][y_int + (x_int+1)*y_s][entry],
+																	fftw_data[s1][s2][o1][o2][y_int+1 + x_int*y_s][entry],
+																	fftw_data[s1][s2][o1][o2][y_int+1+(x_int+1)*y_s][entry]
+																	);
 
 		if (r_sq < momentum_inner_cutoff*momentum_inner_cutoff){
 			return sign*value;
@@ -184,14 +275,14 @@ double Momentum_coupling::interp_fft(double x_input, double y_input, int o1, int
 }
 
 // verbose version of above call, for debugging purposes
-double Momentum_coupling::interp_fft_v(double x_input, double y_input, int o1, int o2, int entry) {
+double Momentum_coupling::interp_fft_v(double x_input, double y_input, int s1, int s2, int o1, int o2, int entry) {
 
 	// (x_input, y_input) is location at which you want to know the (interpolated) value of the fftw_complex data
 	// o1, o2 are two two orbitals whose interlayer coupling you are computing
 	// entry is 0 for real and 1 for imaginary part
 
 	fftw_complex* data;
-	data = fftw_data[o1][o2];
+	data = fftw_data[s1][s2][o1][o2];
 
 	int x_s = length_x*L_x;
 	int y_s = length_y*L_y;
@@ -219,12 +310,16 @@ double Momentum_coupling::interp_fft_v(double x_input, double y_input, int o1, i
 
 }
 
+double Momentum_coupling::get_fft_orb_disps(int s1, int s2, int o1, int o2, int dir){
+	return fftw_disps[s1][s2][o1][o2][dir];
+}
+
+
 void Momentum_coupling::fft_setup(int L_x_in, int L_y_in, int length_x_in, int length_y_in, std::string fftw_file_in){
 
 	L_x = L_x_in;
 	L_y = L_y_in;
 	length_x = length_x_in;
 	length_y = length_y_in;
-
-	load_fftw_complex(fftw_data, fftw_file_in);
+	load_fftw_complex(fftw_data, fftw_disps, fftw_file_in);
 }
