@@ -454,10 +454,10 @@ void Locality::constructGeom(){
 				// Generate FFT of interlayer coupling for Momentum space
 				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 					int fft_scaling = 1;
-					int n_x = 40;
-					int n_y = 40;
-					int L_x = 40*fft_scaling;
-					int L_y = 40*fft_scaling;
+					int n_x = 60;
+					int n_y = 60;
+					int L_x = 20*fft_scaling;
+					int L_y = 20*fft_scaling;
 					int length_x = 2;
 					int length_y = 2;
 					std::string fft_file = "interlayer_fft.dat";
@@ -1336,6 +1336,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			double gamma[2];
 			double m[2];
 
+			double gamma_2[2];
+
 			k[0] = k_1[0];
 			k[1] = k_1[1];
 
@@ -1351,6 +1353,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
 			gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
 
+			gamma_2[0] = k[0] + d*y_dir[0] - sqrt(3)*d*x_dir[0];
+			gamma_2[1] = k[1] + d*y_dir[1] - sqrt(3)*d*x_dir[1];
+
 			m[0] = k[0] + d*y_dir[0];
 			m[1] = k[1] + d*y_dir[1];
 
@@ -1360,11 +1365,16 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				//double x = (1.0/((double) maxJobs))*i;
 				//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
 				//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
-				double c = (3.0/((double) maxJobs))*i;
+
+
+				//double c = (3.0/((double) maxJobs))*i;
+
+				double c = (6.0/((double) maxJobs))*i;
 
 				double shift_x = 0;
 				double shift_y = 0;
 
+				/*
 				if (c <= 1) {
 					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
 					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
@@ -1375,10 +1385,32 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
 					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
 				}
+				*/
 
+				if (c <= 1) {
+					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+				} else if (c <= 2) {
+					shift_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+					shift_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+				} else if (c <= 3) {
+					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+				} else if (c <= 4) {
+					shift_x = (4.0-c)*k[0] + (c-3.0)*gamma_2[0];
+					shift_y = (4.0-c)*k[1] + (c-3.0)*gamma_2[1];
+				} else if (c <= 5) {
+					shift_x = (5.0-c)*gamma_2[0] + (c-4.0)*m[0];
+					shift_y = (5.0-c)*gamma_2[1] + (c-4.0)*m[1];
+				} else {
+					shift_x = (6.0-c)*m[0] + (c-5.0)*k[0];
+					shift_y = (6.0-c)*m[1] + (c-5.0)*k[1];
+				}
 
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
+
+				printf("%lf %lf \n",shift_x, shift_y);
 
 
 
@@ -1404,7 +1436,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				tempJob.setParam("max_jobs",maxJobs);
 				tempJob.setParam("num_targets",n_targets);
 				tempJob.setParam("target_list",targets);
+
 				jobArray.push_back(tempJob);
+
+
 
 			}
 		}
@@ -1534,10 +1569,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 		// They define the settings used to generate the interlayer_fft.dat file
 			int fft_scaling = 1;
-			int n_x = 40;
-			int n_y = 40;
-			int L_x = 40*fft_scaling;
-			int L_y = 40*fft_scaling;
+			int n_x = 60;
+			int n_y = 60;
+			int L_x = 20*fft_scaling;
+			int L_y = 20*fft_scaling;
 			int length_x = 2;
 			int length_y = 2;
 			std::string fft_file = "interlayer_fft.dat";
