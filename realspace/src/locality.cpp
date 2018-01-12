@@ -452,17 +452,6 @@ void Locality::constructGeom(){
 		if (solver_space == 1){
 			if (fft_from_file == 0){
 				// Generate FFT of interlayer coupling for Momentum space
-<<<<<<< HEAD
-				// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
-					int fft_scaling = 1;
-					int n_x = 60;
-					int n_y = 60;
-					int L_x = 20*fft_scaling;
-					int L_y = 20*fft_scaling;
-					int length_x = 2;
-					int length_y = 2;
-					std::string fft_file = "interlayer_fft.dat";
-=======
 					int n_x = opts.getInt("fft_n_x");
 					int n_y = opts.getInt("fft_n_y");
 					int L_x = opts.getInt("fft_L_x");
@@ -470,7 +459,6 @@ void Locality::constructGeom(){
 					int length_x = opts.getInt("fft_length_x");
 					int length_y = opts.getInt("fft_length_y");
 					std::string fft_file = opts.getString("fft_file");
->>>>>>> 2e670e8df38a4d150ffb14f293635a5189532f36
 				//
 
 				printf("Making *fft.dat file. \n");
@@ -1576,16 +1564,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		// The following 7 variables should eventually be taken as input parameters in Loc_params.cpp from hstruct.in
 		// They define the settings used to generate the interlayer_fft.dat file
-<<<<<<< HEAD
-			int fft_scaling = 1;
-			int n_x = 60;
-			int n_y = 60;
-			int L_x = 20*fft_scaling;
-			int L_y = 20*fft_scaling;
-			int length_x = 2;
-			int length_y = 2;
-			std::string fft_file = "interlayer_fft.dat";
-=======
+
 			int n_x = opts.getInt("fft_n_x");
 			int n_y = opts.getInt("fft_n_y");
 			int L_x = opts.getInt("fft_L_x");
@@ -1593,7 +1572,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			int length_x = opts.getInt("fft_length_x");
 			int length_y = opts.getInt("fft_length_y");
 			std::string fft_file = opts.getString("fft_file");
->>>>>>> 2e670e8df38a4d150ffb14f293635a5189532f36
 		//
 
 		fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
