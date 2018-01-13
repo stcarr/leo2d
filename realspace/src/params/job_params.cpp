@@ -72,10 +72,10 @@ Job_params::Job_params() {
 
 	// settings for the FFT for momentum-space interlayer coupling
 	setParam("fft_from_file",i_zero);
-	setParam("fft_n_x",20*i_one);
-	setParam("fft_n_y",20*i_one);
-	setParam("fft_L_x",10*i_one);
-	setParam("fft_L_y",10*i_one);
+	setParam("fft_n_x",40*i_one);
+	setParam("fft_n_y",40*i_one);
+	setParam("fft_L_x",30*i_one);
+	setParam("fft_L_y",30*i_one);
 	setParam("fft_length_x",2*i_one);
 	setParam("fft_length_y",2*i_one);
 	setParam("fft_file","interlayer_fft.dat");

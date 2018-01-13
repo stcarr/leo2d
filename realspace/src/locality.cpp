@@ -1337,6 +1337,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			k[0] = k_1[0];
 			k[1] = k_1[1];
 
+			// d is the distance between k_1 and k_2
 			double d = (1.0/2.0)*sqrt((k_2[0] - k_1[0])*(k_2[0] - k_1[0]) + (k_2[1] - k_1[1])*(k_2[1] - k_1[1]));
 			double x_dir[2];
 			double y_dir[2];
@@ -3785,14 +3786,14 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				double orb_disp_y = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,1);
 
 				std::complex<double> phase_here;
-				phase_here = -std::polar(1.0, dx*orb_disp_x + dy*orb_disp_y);
+				phase_here = std::polar(1.0, -dx*orb_disp_x - dy*orb_disp_y);
 
 				std::complex<double> t_prephase = std::complex<double>(0.0,0.0);
 
 				// impose rotation and mirror symm on the FFT of the interlayer Coupling
 				// our graphene model has 3-fold rotational symm and a mirror-plane symmetry
-				int rot_max = 1;
-				int mirror_max = 1;
+				int rot_max = 3;
+				int mirror_max = 2;
 				for (int rot_index = 0; rot_index < rot_max; ++rot_index){
 					for (int mirror_index = 0; mirror_index < mirror_max; ++mirror_index){
 
@@ -3804,10 +3805,6 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 						rot_dx = cos(theta)*dx - sin(theta)*dy;
 						rot_dy = sin(theta)*dx + cos(theta)*dy;
 
-						double mirror_theta = M_PI/2.0 + (angles[s1] + angles[s2])/2.0;
-						double mirror_plane_x = cos(mirror_theta);
-						double mirror_plane_y = sin(mirror_theta);
-
 						// when mirroring, new_vec = -rot_vec + 2*v*(v dot rot_vec)
 						// where v is the vector [mirror_plane_x mirror_plane_y]
 
@@ -3815,12 +3812,16 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 							new_dx = rot_dx;
 							new_dy = rot_dy;
 						} else {
+							double mirror_theta = M_PI/2.0 + (angles[s1] + angles[s2])/2.0;
+							double mirror_plane_x = cos(mirror_theta);
+							double mirror_plane_y = sin(mirror_theta);
 							double mirror_dot_prod = mirror_plane_x*rot_dx + mirror_plane_y*rot_dy;
 							new_dx = -rot_dx + 2*mirror_plane_x*mirror_dot_prod;
 							new_dy = -rot_dy + 2*mirror_plane_x*mirror_dot_prod;
 						}
 
-						if (k_i <= new_k){
+						if (1){
+						//if (k_i <= new_k){
 							// factor of 1/6 for the 3*2=6 symmetric points
 							t_prephase += (1.0 / ((double)(rot_max*mirror_max)) )*
 														(std::complex<double>(fftw_inter.interp_fft(new_dx,new_dy,s1,s2,orbit1,orbit2,0),
