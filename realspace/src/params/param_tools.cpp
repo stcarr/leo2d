@@ -39,12 +39,10 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 		saveHeader(job, outFile);
 	}
 
-	if (verbose_save != 0){
+	if (verbose_save == 1){
 
 		if (diagonalize == 0){
 			if (observable_type == 0){
-
-				if (diagonalize == 0){
 
 				std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
 
@@ -74,7 +72,6 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					}
 
 					outFile << "\n";
-				}
 
 			} else if (observable_type == 1){
 
@@ -226,6 +223,8 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 		}
 	} else { // non-verbose save
 		if (diagonalize == 0){
+
+			// KPM DOS
 			if (observable_type == 0){
 
 				std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
@@ -250,7 +249,41 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					}
 					outFile << cheb_coeffs[t][poly_order-1] << "\n";
 				}
+
+				// KPM Conductivity
+			} else if (observable_type == 1){
+
+				std::vector< std::vector<double> > kpm_M_xx = job.getDoubleMat("kpm_M_xx");
+
+				if (jobID == 1){
+					//print E vals:
+					double g[poly_order];
+					double E[poly_order];
+
+					for (int i = 0; i < poly_order; ++i){
+						// Jackson coefficients
+						g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
+						E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+						outFile << E[i] << " ";
+					}
+					// seperate E values from the conductivity matrices
+					outFile << "\n";
+					outFile << "\n";
+				}
+
+				for(int t = 0; t < num_targets; ++t){
+					for (int i = 0; i < poly_order; ++i){
+						for(int j = 0; j < poly_order; ++j){
+							outFile << kpm_M_xx[t][j + i*poly_order] << " ";
+						}
+						outFile << "\n";
+					}
+					outFile << "\n";
+				}
+
 			}
+
+		// now for diagonalization runs
 		} else if (diagonalize == 1){
 
 			if (d_kpm_dos == 1){
@@ -607,26 +640,66 @@ void Param_tools::densityTransform(Job_params& job) {
 
 void Param_tools::conductivityTransform(Job_params& job){
 
+	int diagonalize = job.getInt("diagonalize");
+	int observable_type = job.getInt("observable_type");
 	int chiral_on = job.getInt("chiral_on");
 	int d_cond = job.getInt("d_cond");
 
-	if (d_cond > 0){
+	if (diagonalize == 0 && observable_type == 1){
 
-		Param_tools::matrixResponseTransform(job,"M_xx");
+		int num_targets = job.getInt("num_targets");
+		int poly_order = job.getInt("poly_order");
+		std::vector< std::vector<double> > kpm_M_xx_here = job.getDoubleMat("kpm_M_xx");
+		std::vector< std::vector<double> > new_kpm_M_xx;
+		new_kpm_M_xx.resize(num_targets);
 
-		if (d_cond > 1){
-			Param_tools::matrixResponseTransform(job,"M_yy");
-			Param_tools::matrixResponseTransform(job,"M_xy");
+		for (int t = 0; t < num_targets; ++t){
+			new_kpm_M_xx[t].resize(poly_order*poly_order);
+
+			Job_params temp_job(job);
+			std::vector< std::vector<double> > temp_kpm_M_xx;
+			temp_kpm_M_xx.resize(poly_order);
+
+			for (int p1 = 0; p1 < poly_order; ++p1){
+				temp_kpm_M_xx[p1].resize(poly_order);
+				for (int p2 = 0; p2 < poly_order; ++p2){
+					temp_kpm_M_xx[p1][p2] = kpm_M_xx_here[t][p2 + p1*poly_order];
+				}
+			}
+
+			temp_job.setParam("temp_kpm_M_xx",temp_kpm_M_xx);
+			Param_tools::matrixResponseTransform(temp_job,"temp_kpm_M_xx");
+			temp_kpm_M_xx = temp_job.getDoubleMat("temp_kpm_M_xx");
+
+			for (int p1 = 0; p1 < poly_order; ++p1){
+				for (int p2 = 0; p2 < poly_order; ++p2){
+					new_kpm_M_xx[t][p2 + p1*poly_order] = temp_kpm_M_xx[p1][p2];
+				}
+			}
+
+			job.setParam("kpm_M_xx",new_kpm_M_xx);
+
+		} // end t loop
+
+	} else {
+		if (d_cond > 0){
+
+			Param_tools::matrixResponseTransform(job,"M_xx");
+
+			if (d_cond > 1){
+				Param_tools::matrixResponseTransform(job,"M_yy");
+				Param_tools::matrixResponseTransform(job,"M_xy");
+			}
 		}
-	}
 
-	if (chiral_on == 1){
+		if (chiral_on == 1){
 
-		Param_tools::matrixResponseTransform(job,"chiral_dichrosim_minus");
-		Param_tools::matrixResponseTransform(job,"chiral_dichrosim_plus");
-		Param_tools::matrixResponseTransform(job,"chiral_dH0_minus");
-		Param_tools::matrixResponseTransform(job,"chiral_dH0_plus");
+			Param_tools::matrixResponseTransform(job,"chiral_dichrosim_minus");
+			Param_tools::matrixResponseTransform(job,"chiral_dichrosim_plus");
+			Param_tools::matrixResponseTransform(job,"chiral_dH0_minus");
+			Param_tools::matrixResponseTransform(job,"chiral_dH0_plus");
 
+		}
 	}
 
 }
