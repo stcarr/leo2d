@@ -301,6 +301,18 @@ int main(int argc, char** argv) {
 				        opts.setParam("cond_transform",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "COND_POLY_PAR"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("cond_poly_par",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "COND_POLY_PAR_SCALE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("cond_poly_par_scale",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "SOLVER_SPACE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

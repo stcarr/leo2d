@@ -4311,6 +4311,99 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 
 void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
 
+	// The current-current correlation can be calculated with Chebyshev polynomials
+	// via a 2-Dimensional sampling:
+	// for the C_nm corresponding to sigma_xx:
+	// C_nm = <0| dxH * T_n * dxH * T_m |0>
+	// We define:
+	//						<0| * dxH = <alpha_0| (computed during matrix construction)
+	//					 	<alpha_0| * T_n = <alpha|
+	// 					  T_m * |0> = |beta>
+	// With these definitions, we get:
+	// 						C_nm = <alpha|dxH|beta>
+	//
+	// To speed up calculations, we pre-compute beta for all relavant m
+	// Then we loop over n to compute the relavant <alpha|
+	// and save the matrix elements C_nm into cheb_coeffs.
+	//
+	// How much calculations are we actually doing? Assume the polynomial order = p
+	//
+	// Well, we need to compute each |beta> : 	thats p sparse matrix-vector products (SpMV)
+	// We also need to compute each <alpha|dxH: thats 2*p SpMV
+	// Finally, we need to take their inner products: thats p^2 vector-vector products
+	// So the total time seems to scale like:
+	//													3*p SpMV + p^2 vector-vector
+	// since p SpMV is just the DOS time, the total time can be thought of as:
+	// 													3*Time_DoS + p^2 vector-vector
+	//
+	// This is not too bad if the p^2 vector-vector products are on the same order of time as
+	// the DOS time, and we know that the DOS calculation for that size has succedded in the past.
+	// But in the case that the vec-vec calculations dominate we will see that this method becomes
+	// much much slower than DOS calculations!
+	//
+	// Also, since we are probably interested in really large polynomial order (C_nm with n,m ~ 1000s)
+	// we probably cannot do the most efficient calculation (compute all beta and save) becaues of memory limitations.
+	//
+	// Therefore we try to parallize over the vector-vector products:
+	// 					the tag "cond_poly_par" allows for parallelization over beta.
+	//
+	// This allows for us to only compute a few columns of the large C_nm at a time, and use MPI to parallelize
+	// over the sets of columns
+	//
+	// This is much faster at large p due to the number of vector-vector products but alows us to parallelize
+	// in memory at least. Assuming we have we choose to paralellize the polynomial order by N:
+	// 										 1) Calculate (at worst) 3*p SpMV products (alpha and beta)
+	//										 2) Calculate p*(p/N) vector-vector products
+	// Now assume we have M workers, and that the SpMV takes time T_sp and V-V takes time T_vv, with S samples
+	//				Old Serial Time:
+	//								S serial calculations of time 3*p SpMV + p^2 V-V 		= S*(3*p*T_sp  + p^2 T_vv)
+	//
+	//				New Serial Time (where we round up S*N/M to an integer > 0):
+	//								(S*N)/M serial calculations of time 3*p SpMV + (p^2)/N V-V	= (S/M)*(N*3*p*T_sp + p^2 T_vv)
+	//
+	// So we see that the best choice is always a larger M, and the biggest allowed M is S*N.
+	// If one does a test run to try and calculate T_sp and T_vv for the problem at hand, we can find an optimal
+	// choice of N and M to minimize the total serial run time for a given p.
+	//
+	// A guess of how to pick N would be to note that if 3*p*T_sp < p^2 T_vv => T_sp < p/3 * T_vv
+	// If T_sp is much smaller than p/3 * T_vv, we can get free embarrasing parallelization  as long as
+	// we keep N*T_sp much smaller than p/3 * T_vv. Since this relation is linear in p, we can always keep the
+	// total compute time roughly equal across multiple runs as long as we scale the number of workers with p!
+	//
+	//
+	// !!! THE FOLLOWING IS NOT IMPLEMENTED, BUT NOTES ON A DIFFERENT APPROACH FOR PARALELLIZATION !!!
+	//
+	// There is also a more involed way to parrellelize the calculation time and memory however:
+	//
+	// 1) Have one MPI rank compute all <alpha| in "chunks for a single target
+	// 2) Have (maybe a different) MPI rank compute all dxH|beta> in "chunks" for a single target
+	// 3) Then send out to pure compute-node ranks (i.e. ranks which do not need to know
+	// anything about the physical system), or "calculators", a specific sub-block of C_nm = <alpha|dxH|beta>
+	//
+	// This would mean that compute time would scale roughly like p (as in the DoS case)
+	// given that you are also scaling the number of cores like p
+	//
+	// For example:
+	// A single worker-core does a p=p0 DoS-like problem in time T
+	// now we want to do p=p0*N with M "calculator" cores:
+	//
+	// 1) 1 worker-core does a "chunk" of dxH|beta> up to p/N = p0 ~ time would take T (DoS scaling)
+	// 2) the same worker-core does <alpha| up to p in N chunks	~ time would take T*N (DoS scaling)
+	// 3) as each <alpha| "chunk" finishes, the worker core sends out the <beta| "chunk" and
+	//    the "alpha" chunk to a "calculator" core
+	// 4) the worker-core continues this until all "calculator" cores are actively working,
+	//    then it gets the next pair of chunks ready in memory and spools for the next finished calculator
+	// 5) as a calculator-core finishes, it sends the C_nm data to the worker-core and waits for a new job
+	//
+	// So then the problem is to optimize the number of calculator cores to the size of the chunks
+	// i.e. if setting up a chunk-job takes time T_chunk, we want to pick the number of calculators M
+	// such that the time to complete a chunk-job of matrix-vector products on the calculator
+	// takes T_chunk*M long.
+	//
+	// In principle this could be determined by timing by the user or by a small utility job in the code
+	//
+	// This is a HUGE amount of extra programming, and would require siginificant additions to the MPI part of the code
+	// but in principle this option is available given someone has the time (and energy) to program and test it properly
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
@@ -4320,6 +4413,19 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 	// 0 for Real, 1 for Complex
 	int complex_matrix = H.getType();
+
+	// p1 represents the poly indices that beta will run over
+	// that is to say, we always do  the "full" C_nm matrix during the <alpha| loop
+
+	int start_p1 = 0;
+	int cond_poly_par_scale = 1;
+
+	int cond_poly_par = jobIn.getInt("cond_poly_par");
+
+	if (cond_poly_par == 1){
+		cond_poly_par_scale = jobIn.getInt("cond_poly_par_scale");
+		start_p1 = jobIn.getInt("cond_poly_par_start_p1");
+	}
 
 	if (complex_matrix == 0){
 
@@ -4333,15 +4439,13 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 			double T_prev[local_max_index];
 
+			// Temporary vector for algoirthm ("previous" vector T_{j-1})
 			for (int i = 0; i < local_max_index; ++i){
 				T_prev[i] = 0.0;
 			}
 
+			// Here T_0 = T_prev
 			T_prev[target_index] = 1.0;
-
-			for (int i = 0; i < local_max_index; ++i){
-				beta_array[i] = T_prev[i];
-			}
 
 			// Temporary vector for algorithm ("current" vector T_j)
 			double T_j[local_max_index];
@@ -4349,58 +4453,143 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 				T_j[i] = 0.0;
 			}
 
-			H.vectorMultiply(T_prev, T_j, 1, 0);
-
-			for (int i = 0; i < local_max_index; ++i){
-				beta_array[local_max_index + i] = T_j[i];
-			}
-
-			// Temporary vector for algorithm ("next" vector T_j+1)
+			// Temporary vector for algorithm ("next" vector T_{j+1})
 			double T_next[local_max_index];
 			for (int i = 0; i < local_max_index; ++i){
 				T_next[i] = 0.0;
 			}
 
-			// Now loop algorithm along T_m*|beta>, up to poly_order
-			// double alpha2 = 2;
-
-			// want to do: T_next = 2*H*T_j - T_prev;
-			H.vectorMultiply(T_j, T_next, 2, 0);
-			for (int c = 0; c < local_max_index; ++c){
-				T_next[c] = T_next[c] - T_prev[c];
+			// we need to save T_0 = T_prev into beta_array if we are starting from zero
+			if (start_p1 == 0){
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[i] = T_prev[i];
+				}
 			}
 
-			for (int j = 2; j < poly_order; ++j){
+			// Now we compute T_1 = H*T_0 = H*T_prev
 
-				// reassign values from previous iteration
-				for (int c = 0; c < local_max_index; ++c){
-					T_prev[c] = T_j[c];	//T_prev = T_j;
-					T_j[c] = T_next[c];	//T_j = T_next;
-				}
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+
+			// we need to save T_1 into beta_array if we are starting from zero
+			if (start_p1 == 0){
 
 				for (int i = 0; i < local_max_index; ++i){
-					beta_array[j*local_max_index + i] = T_j[i];
+					beta_array[local_max_index + i] = T_j[i];
+				}
+			}
+
+			// we need to save T_1 into beta_array if we are starting from one
+			// starting from one is stupid... but good to have this work correctly just in case!
+			if (start_p1 == 1){
+
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[i] = T_j[i];
+				}
+			}
+
+			// right now:
+			//					T_prev[] 	= T_0
+			// 					T_j[] 		= T_1
+			//					T_next[]  = 0
+
+			// if we are not starting at j = 0 (or 1)
+			// we need to do a loop of the Cheb. algorithm here	to get up to j = start_p1
+			for (int skip_p1 = 2; skip_p1 < start_p1; ++skip_p1){
+
+				// right now:
+				//				T_prev[] = T_{ skip_p1 - 2 }
+				//				T_j[]    = T_{ skip_p1 - 1 }
+
+				// compute T_{skip_p1}:
+				//				T_j = 2*H*T_{j-1} - T_{j-2}
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
 				}
 
-				// compute the next vector
+				// right now:
+				//				T_prev[] = T_{ skip_p1 - 2 }
+				//				T_j[]    = T_{ skip_p1 - 1 }
+				//				T_next[] = T_{ skip_p1 }
+
+
+				// now we set-up for the next loop
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c]; //T_j = T_next;
+				}
+
+				// right now:
+				//				T_prev[] = T_{ skip_p1 - 1 }
+				//				T_j[]    = T_{ skip_p1 }
+				//				T_next[] = T_{ skip_p1 }
+
+			}
+
+			for (int j = 0; j < poly_order-1; ++j){
+
+				// A quick reindexing of j in case we had start_p1 = 0 or 1
+				if (j == 0){
+					// already on the T_2 value if start_p1 = 0
+					if (start_p1 == 0){
+						j = 2;
+					}
+
+					// already on the T_1 value if start_p1 = 1
+				  if (start_p1 == 1){
+						j = 1;
+					}
+				}
+
+				// right now:
+				//				T_prev[] = T_{ j + start_p1 - 2 }
+				//				T_j[]    = T_{ j + start_p1 - 1 }
+
+				// compute T_{j + start_p1}:
+				//				T_j = 2*H*T_{j-1} - T_{j-2}
 				H.vectorMultiply(T_j, T_next, 2, 0);
 				for (int c = 0; c < local_max_index; ++c){
 					T_next[c] = T_next[c] - T_prev[c];
+				}
+
+				// right now:
+				//				T_prev[] = T_{ j + start_p1 - 2 }
+				//				T_j[]    = T_{ j + start_p1 - 1 }
+				//				T_next[] = T_{ j + start_p1 }
+
+				// saves T_{j} into beta_array
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[j*local_max_index + i] = T_next[i];
+				}
+
+				// now we set-up for the next loop and
+				// reassign values from previous iteration:
+				// before:
+				//				T_prev[] = T_{ j + start_p1 -2 }
+				//				T_j[]    = T_{ j + start_p1 -1 }
+				//				T_next[] = T_{ j + start_p1 }
+				// after:
+				//				T_prev[] = T_{ j + start_p1 - 1 }
+				//				T_j[]    = T_{ j + start_p1 }
+				//				T_next[] = T_{ j + start_p1 }
+
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
 				}
 
 				// print every 100 steps on print rank
 				//if (rank == print_rank)
 					//if (j%100 == 0)
 						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+
 			}	// end beta_array construction
 
 			// start loop over <alpha|*T_n for C_nm construction
-
 			for (int i = 0; i < local_max_index; ++i){
 				T_prev[i] = alpha_0[t_count*local_max_index + i];
 			}
 
-			for (int p = 0; p < poly_order; ++p){
+			for (int p1 = 0; p1 < poly_order; ++p1){
 
 				// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
 				double temp_vec[local_max_index];
@@ -4408,10 +4597,10 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 				double temp_sum = 0;
 				for (int i = 0; i < local_max_index; ++i){
-					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+					temp_sum = temp_sum + temp_vec[i]*beta_array[p1*local_max_index + i];
 				}
 
-				cheb_coeffs[t_count][p + 0*poly_order] = temp_sum;
+				cheb_coeffs[t_count][p1 + 0*poly_order*cond_poly_par_scale] = temp_sum;
 
 			}
 
@@ -4422,7 +4611,7 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 			// This is OK because H is Hermitian, Transpose(H) = H, so <alpha|H can be computed with H|alpha>
 			H.vectorMultiply(T_prev, T_j, 1, 0);
-			for (int p = 0; p < poly_order; ++p){
+			for (int p1 = 0; p1 < poly_order; ++p1){
 
 				// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
 				double temp_vec[local_max_index];
@@ -4430,10 +4619,10 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 				double temp_sum = 0;
 				for (int i = 0; i < local_max_index; ++i){
-					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+					temp_sum = temp_sum + temp_vec[i]*beta_array[p1*local_max_index + i];
 				}
 
-				cheb_coeffs[t_count][p + 1*poly_order] = temp_sum;
+				cheb_coeffs[t_count][p1 + 1*poly_order*cond_poly_par_scale] = temp_sum;
 
 			}
 
@@ -4451,7 +4640,7 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 				T_next[c] = T_next[c] - T_prev[c];
 			}
 
-			for (int j = 2; j < poly_order; ++j){
+			for (int j = 2; j < poly_order*cond_poly_par_scale; ++j){
 
 				// reassign values from previous iteration
 				for (int c = 0; c < local_max_index; ++c){
@@ -4460,7 +4649,7 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 				}
 
 
-				for (int p = 0; p < poly_order; ++p){
+				for (int p1 = 0; p1 < poly_order; ++p1){
 
 					// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
 					double temp_vec[local_max_index];
@@ -4471,9 +4660,9 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 					// and   |beta > = T_m(H)|0>
 					double temp_sum = 0;
 					for (int i = 0; i < local_max_index; ++i){
-						temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+						temp_sum = temp_sum + temp_vec[i]*beta_array[p1*local_max_index + i];
 					}
-					cheb_coeffs[t_count][p + j*poly_order] = temp_sum;
+					cheb_coeffs[t_count][p1 + j*poly_order*cond_poly_par_scale] = temp_sum;
 
 				}
 
