@@ -305,6 +305,12 @@ int main(int argc, char** argv) {
 					}
 				}
 
+				if (in_string == "MOM_VF_ONLY"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("mom_vf_only",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "FFT_FROM_FILE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

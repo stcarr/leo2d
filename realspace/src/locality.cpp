@@ -1211,11 +1211,124 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		}
 
 	} else if (solver_space == 1) {
-	// !! MOMENTUM SPACE TO DO !!
-	// "high-symm LC" which does Gamma->M->K->Gamma
-
 		// Square sampling
-		if (solver_type == 1){
+
+		int mom_vf_only = opts.getInt("mom_vf_only");
+
+		if (mom_vf_only == 1){
+			//maxJobs = 2;
+			maxJobs = 1;
+			std::vector< std::vector<double> > b1 = getReciprocal(0);
+			std::vector< std::vector<double> > b2 = getReciprocal(1);
+
+			double k_1[2];
+			double k_2[2];
+
+			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+			k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
+
+			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
+			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
+
+			double k[2];
+			double gamma[2];
+			double m[2];
+
+			double gamma_2[2];
+
+			k[0] = k_1[0];
+			k[1] = k_1[1];
+
+			// d is the distance between k_1 and k_2
+			double d = (1.0/2.0)*sqrt((k_2[0] - k_1[0])*(k_2[0] - k_1[0]) + (k_2[1] - k_1[1])*(k_2[1] - k_1[1]));
+			double x_dir[2];
+			double y_dir[2];
+
+			y_dir[0] = (k_2[0] - k_1[0])/(2.0*d);
+			y_dir[1] = (k_2[1] - k_1[1])/(2.0*d);
+			x_dir[0] = cos(-M_PI/2)*y_dir[0] - sin(-M_PI/2)*y_dir[1];
+			x_dir[1] = sin(-M_PI/2)*y_dir[0] + cos(-M_PI/2)*y_dir[0];
+
+			gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
+			gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
+
+			gamma_2[0] = k[0] + d*y_dir[0] - sqrt(3)*d*x_dir[0];
+			gamma_2[1] = k[1] + d*y_dir[1] - sqrt(3)*d*x_dir[1];
+
+			m[0] = k[0] + d*y_dir[0];
+			m[1] = k[1] + d*y_dir[1];
+
+			//printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+
+			for (int i = 0; i < maxJobs; ++i){
+
+
+				//double c = (3.0/((double) maxJobs))*i;
+
+				//double c = (6.0/((double) maxJobs))*i;
+
+				double c = 1.0;
+				/*
+				if (i == 1){
+					// only go a little along K-Gamma line to compute the fermi-velocity
+					c = 0.06;
+				}
+				*/
+				double shift_x = 0;
+				double shift_y = 0;
+
+				if (c <= 1) {
+					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+				} else if (c <= 2) {
+					shift_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+					shift_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+				} else if (c <= 3) {
+					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+				} else if (c <= 4) {
+					shift_x = (4.0-c)*k[0] + (c-3.0)*gamma_2[0];
+					shift_y = (4.0-c)*k[1] + (c-3.0)*gamma_2[1];
+				} else if (c <= 5) {
+					shift_x = (5.0-c)*gamma_2[0] + (c-4.0)*m[0];
+					shift_y = (5.0-c)*gamma_2[1] + (c-4.0)*m[1];
+				} else {
+					shift_x = (6.0-c)*m[0] + (c-5.0)*k[0];
+					shift_y = (6.0-c)*m[1] + (c-5.0)*k[1];
+				}
+
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
+
+
+				for(int s = 0; s < num_sheets; ++s){
+					shifts[s].resize(3);
+					shifts[s][0] = shift_x;
+					shifts[s][1] = shift_y;
+					shifts[s][2] = 0;
+				}
+
+				int n_targets = (int)target_indices[0].size();
+				std::vector<int> targets;
+				targets.resize(n_targets);
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = target_indices[0][t];
+				}
+
+				Job_params tempJob(opts);
+				tempJob.setParam("shifts",shifts);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				tempJob.setParam("num_targets",n_targets);
+				tempJob.setParam("target_list",targets);
+
+				jobArray.push_back(tempJob);
+
+
+			}
+		}
+
+		else if (solver_type == 1){
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts*nShifts;
 
@@ -1226,8 +1339,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			//b1[1][0] = -b1[1][0];
 			//b2[1][0] = -b2[1][0];
 
-			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
-			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+			//printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			//printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
 
 			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
@@ -1242,7 +1355,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			d_vec2[0] = b2[1][0] - b1[1][0];
 			d_vec2[1] = b2[1][1] - b1[1][1];
 
-			printf("d_vec1 = [%lf, %lf], d_vec2 = [%lf, %lf] \n",d_vec1[0],d_vec1[1],d_vec2[0],d_vec2[1]);
+			//printf("d_vec1 = [%lf, %lf], d_vec2 = [%lf, %lf] \n",d_vec1[0],d_vec1[1],d_vec2[0],d_vec2[1]);
 
 			// p1 and p2 are the K points of layer 1 and 2, respectively
 
@@ -1255,7 +1368,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
 			p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
 
-			printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+			//printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
 
 			for (int i = 0; i < nShifts; ++i){
 				double x = (1.0/((double) nShifts))*i;
@@ -1294,7 +1407,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		}
 
 		// Linecut sampling
-		if (solver_type == 2){
+		else if (solver_type == 2){
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts;
 
@@ -1304,8 +1417,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 			// cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 
-			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
-			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+			//printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			//printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
 
 			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
@@ -1356,7 +1469,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			m[0] = k[0] + d*y_dir[0];
 			m[1] = k[1] + d*y_dir[1];
 
-			printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+			//printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
 
 			for (int i = 0; i < maxJobs; ++i){
 				//double x = (1.0/((double) maxJobs))*i;
@@ -1407,7 +1520,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
 
-				printf("%lf %lf \n",shift_x, shift_y);
+				//printf("%lf %lf \n",shift_x, shift_y);
 
 
 
@@ -1441,7 +1554,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			}
 		}
 
-		if (solver_type == 3 || solver_type == 4 || solver_type == 5){
+		else if (solver_type == 3 || solver_type == 4 || solver_type == 5){
 			printf("!!WARNING!!: Momentum-space mode (solver_space = M) is NOT compatible with vacancy/strain solvers. \n");
 		}
 

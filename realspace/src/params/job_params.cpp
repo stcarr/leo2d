@@ -45,6 +45,9 @@ Job_params::Job_params() {
 	setParam("num_lc_points",i_one*2);
 	setParam("lc_points",lc_points);
 
+	// Momentum-space settings
+	setParam("mom_vf_only",i_zero);
+
 	// Geometery settings
 	setParam("num_sheets",i_one);
 	setParam("boundary_condition",i_zero);
