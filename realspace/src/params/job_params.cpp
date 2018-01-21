@@ -94,6 +94,7 @@ Job_params::Job_params() {
 	setParam("num_targets",i_zero);
 	setParam("poly_order",20*i_one);
 	setParam("dos_transform",i_one);
+	setParam("cond_transform",i_one);
 
 	// E&B Field settings
 	setParam("magOn",i_zero);

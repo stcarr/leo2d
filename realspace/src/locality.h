@@ -102,18 +102,18 @@ class Locality {
 
   		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Job_params);
 
-		
+
 		double getLocalTheta(int k_i, int* index_to_grid, double* index_to_pos, int max);
 		int isNearestNeighbor(int i1, int j1, int o1, int s1, int i2, int j2, int o2, int s2);
-		
-		
+
+
 	    std::vector< std::vector<double> > getReciprocal(std::vector< std::vector<double> >);
   		std::vector< std::vector<double> > getReciprocal(int);
   		double crossProd(std::vector<double> x, std::vector<double> y, int dim);
   		// void writeBufferToFile(double*, int, std::string);
 
   		// MPI Communication flags
-  		static const int WORKTAG = 1;	
+  		static const int WORKTAG = 1;
   		static const int STOPTAG = 0;
 
     public:
@@ -163,7 +163,7 @@ class Locality {
   		void computeDosKPM(std::vector< std::vector<double> >&,SpMatrix&, Job_params,std::vector<int>,int);
 
   		// Computes Local Electron-Electron Correlation using 2D Chebyshev KPM methods
-  		void computeCondKPM(double*, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int, double*);
+  		void computeCondKPM(std::vector< std::vector<double> >&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int, double*);
 
   		// Direct solver using Eigen package
   		void computeEigen(std::vector<double>&, DMatrix&, DMatrix &kpm_dos, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);

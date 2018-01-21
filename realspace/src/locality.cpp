@@ -1865,7 +1865,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 					results_out.setParam("cheb_coeffs",cheb_coeffs);
 					if (opts.getInt("dos_transform") == 1){
-						Param_tools::densityTransform(results_out);					}
+						Param_tools::densityTransform(results_out);
+					}
 
 			} else if (observable_type == 1){
 
@@ -1873,10 +1874,15 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					cheb_coeffs.resize(num_targets);
 
 					for (int t = 0; t < num_targets; ++t){
-						cheb_coeffs[t].resize(poly_order);
+						cheb_coeffs[t].resize(poly_order*poly_order);
 					}
 
-				computeCondKPM(&cheb_coeffs[0][0], H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_x_arr);
+				computeCondKPM(cheb_coeffs, H, dxH, jobIn, current_index_reduction, local_max_index, alpha_0_x_arr);
+
+				results_out.setParam("kpm_M_xx",cheb_coeffs);
+				if (opts.getInt("cond_transform") == 1){
+					Param_tools::conductivityTransform(results_out);
+				}
 
 			}
 
@@ -4303,7 +4309,7 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 	} // end complex matrix block
 }
 
-void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
+void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
 
 
 	int magOn = jobIn.getInt("magOn");
@@ -4312,7 +4318,10 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 	int num_targets = jobIn.getInt("num_targets");
 	std::vector<int> target_list = jobIn.getIntVec("target_list");
 
-	if (magOn == 0){
+	// 0 for Real, 1 for Complex
+	int complex_matrix = H.getType();
+
+	if (complex_matrix == 0){
 
 		// Starting vector for Chebyshev method is a unit-vector at the target orbital
 		for (int t_count = 0; t_count < num_targets; ++t_count){
@@ -4402,7 +4411,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
 				}
 
-				T_array[p + 0*poly_order + t_count*poly_order*poly_order] = temp_sum;
+				cheb_coeffs[t_count][p + 0*poly_order] = temp_sum;
 
 			}
 
@@ -4424,7 +4433,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
 				}
 
-				T_array[p + 1*poly_order + t_count*poly_order*poly_order] = temp_sum;
+				cheb_coeffs[t_count][p + 1*poly_order] = temp_sum;
 
 			}
 
@@ -4464,7 +4473,7 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 					for (int i = 0; i < local_max_index; ++i){
 						temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
 					}
-					T_array[p + j*poly_order + t_count*poly_order*poly_order] = temp_sum;
+					cheb_coeffs[t_count][p + j*poly_order] = temp_sum;
 
 				}
 
@@ -4474,7 +4483,6 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 					T_next[c] = T_next[c] - T_prev[c];
 				}
 
-
 				// print every 100 steps on print rank
 				//if (rank == print_rank)
 					//if (j%100 == 0)
@@ -4483,11 +4491,11 @@ void Locality::computeCondKPM(double* T_array, SpMatrix &H, SpMatrix &dxH, Job_p
 
 			delete beta_array;
 
-		}
+		} // end of t_count for loop
 
 
 
-	}	// end magOn == 0 block
+	}	// end complex_matrix == 0 block
 
 
 

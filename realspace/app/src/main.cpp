@@ -295,6 +295,12 @@ int main(int argc, char** argv) {
 				        opts.setParam("dos_transform",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "COND_TRANSFORM"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("cond_transform",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "SOLVER_SPACE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
