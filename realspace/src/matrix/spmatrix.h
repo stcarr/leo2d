@@ -100,7 +100,7 @@ class SpMatrix {
 		//void denseConvert(Eigen::MatrixXcd&);
 
 		// Eigensolvers
-		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs);
+		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs, char jobz, char diag_type, int il, int iu);
 
 		// Real or Complex check
 		int getType();

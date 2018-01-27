@@ -4152,6 +4152,7 @@ void Locality_serial::computeEigen(std::vector<double> &eigvals, DMatrix &eigvec
 	int d_cond = jobIn.getInt("d_cond");
 	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int p = jobIn.getInt("poly_order");
+	int d_type = jobIn.getInt("d_type");
 
 	int debugPrint = 0;
 
@@ -4170,8 +4171,13 @@ void Locality_serial::computeEigen(std::vector<double> &eigvals, DMatrix &eigvec
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 		*/
 	} else {
-		H.eigenSolve(eigvals, eigvecs);
 
+		if (d_type == 0){ // full solve
+			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
+			int center_index = (int) (local_max_index/2);
+			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
+		}
 		if (debugPrint == 1)
 			eigvecs.debugPrint();
 
@@ -4334,6 +4340,7 @@ void Locality_serial::computeEigenComplex(std::vector<double> &eigvals, DMatrix 
 	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int chiral_on = jobIn.getInt("chiral_on");
 	int p = jobIn.getInt("poly_order");
+	int d_type = jobIn.getInt("d_type");
 
 	int debugPrint = 0;
 
@@ -4351,7 +4358,12 @@ void Locality_serial::computeEigenComplex(std::vector<double> &eigvals, DMatrix 
 		*/
 	} else {
 
-		H.eigenSolve(eigvals, eigvecs);
+		if (d_type == 0){ // full solve
+			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
+			int center_index = (int) (local_max_index/2);
+			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
+		}
 
 		if (debugPrint == 1)
 			eigvecs.debugPrint();

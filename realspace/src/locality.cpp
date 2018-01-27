@@ -871,6 +871,11 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				shifts[num_sheets-1][1] = lc_points[lc_index][1] + eff_x*(lc_points[lc_index+1][1] - lc_points[lc_index][1]);
 				shifts[num_sheets-1][2] = 0;
 
+				// Custom shifts for making "perfect" 2H aligned bilayers in TMDCs
+				// Assumes the top layer has 180 rotation, and bottom layer has 0 rotation
+				//shifts[1][0] = 2.0/3.0;
+				//shifts[1][1] = 1.0/3.0;
+
 				printf("shifts[%d] = [%lf %lf] \n",num_sheets-1,shifts[num_sheets-1][0],shifts[num_sheets-1][1]);
 
 				// for debugging: check the linecutting algorithm
@@ -1109,6 +1114,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				}
 				jobArray = k_jobArray;
 
+			// Sample around twisted supercell BZ
 			} else if (k_type == 1){
 
 				double num_k1 = opts.getInt("num_k1");
@@ -1206,7 +1212,90 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				jobArray = k_jobArray;
 
-			}
+			// Sample around Monolayer BZ
+			} else if (k_type == 2){
+
+					double num_k1 = opts.getInt("num_k1");
+					maxJobs = num_k1;
+
+					std::vector< std::vector<double> > b1 = getReciprocal(0);
+
+					printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+
+					//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+
+					double k[2];
+					double k_prime[2];
+
+					k[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+					k[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
+
+					k_prime[0] = cos(M_PI/3)*k[0] - sin(M_PI/3)*k[1];
+					k_prime[1] = sin(M_PI/3)*k[0] + cos(M_PI/3)*k[1];
+
+					double gamma[2];
+					double m[2];
+
+					double d = (1.0/2.0)*sqrt((k_prime[0] - k[0])*(k_prime[0] - k[0]) + (k_prime[1] - k[1])*(k_prime[1] - k[1]));
+					double x_dir[2];
+					double y_dir[2];
+
+					y_dir[0] = (k_prime[0] - k[0])/(2.0*d);
+					y_dir[1] = (k_prime[1] - k[1])/(2.0*d);
+					x_dir[0] = cos(-M_PI/2)*y_dir[0] - sin(-M_PI/2)*y_dir[1];
+					x_dir[1] = sin(-M_PI/2)*y_dir[0] + cos(-M_PI/2)*y_dir[0];
+
+					gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
+					gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
+
+					m[0] = k[0] + d*y_dir[0];
+					m[1] = k[1] + d*y_dir[1];
+
+					printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+
+					int k_jobID = 1;
+					std::vector<Job_params> k_jobArray;
+					for (int j = 0; j < (int) jobArray.size(); ++j){
+						for (int i = 0; i < maxJobs; ++i){
+							//double x = (1.0/((double) maxJobs))*i;
+							//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+							//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+							double c = (3.0/((double) maxJobs))*i;
+
+							double k_x = 0;
+							double k_y = 0;
+
+							if (c <= 1) {
+								k_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+								k_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+							} else if (c <= 2) {
+								k_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+								k_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+							} else {
+								k_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+								k_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+							}
+
+							Job_params tempJob(jobArray[j]);
+							//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+							tempJob.setParam("jobID",k_jobID);
+
+							std::vector<double> k_vec;
+							k_vec.resize(2);
+							k_vec[0] = k_x;
+							k_vec[1] = k_y;
+							printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+							tempJob.setParam("k_vec",k_vec);
+
+							k_jobArray.push_back(tempJob);
+							++k_jobID;
+
+						}
+					}
+
+					jobArray = k_jobArray;
+
+				}
 
 		}
 
@@ -1887,11 +1976,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			}
 
 		} else if (diagonalize == 1) {
+			int d_type = opts.getInt("d_type");
 
 			if (complex_matrix == 0){
 
 				std::vector<double> eigenvalue_array;
-				eigenvalue_array.resize(local_max_index);
+				if (d_type == 2){
+					eigenvalue_array.resize(8);
+				} else {
+					eigenvalue_array.resize(local_max_index);
+				}
 
 				DMatrix eigvecs;
 
@@ -2036,8 +2130,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			} else if (complex_matrix == 1){
 
 				std::vector<double> eigenvalue_array;
-				eigenvalue_array.resize(local_max_index);
-
+				if (d_type == 2){
+					eigenvalue_array.resize(8);
+				} else {
+					eigenvalue_array.resize(local_max_index);
+				}
 				DMatrix eigvecs;
 
 				DMatrix kpm_dos;
@@ -2054,9 +2151,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > cond_xy;
 
 				std::vector<double> eigenvalue_real_array;
-				eigenvalue_real_array.resize(local_max_index);
+				eigenvalue_real_array.resize(eigenvalue_array.size());
 
-				for (int i = 0; i < local_max_index; ++i){
+				for (int i = 0; i < eigenvalue_array.size(); ++i){
 					eigenvalue_real_array[i] = eigenvalue_array[i];
 				}
 
@@ -4698,6 +4795,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int p = jobIn.getInt("poly_order");
 
+	int d_type = jobIn.getInt("d_type");
 	int debugPrint = 0;
 
 	// H.eigenSolve should always be used now
@@ -4715,7 +4813,12 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 		*/
 	} else {
-		H.eigenSolve(eigvals, eigvecs);
+		if (d_type == 0){ // full solve
+			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
+			int center_index = (int) (local_max_index/2);
+			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
+		}
 
 		if (debugPrint == 1)
 			eigvecs.debugPrint();
@@ -4879,6 +4982,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int chiral_on = jobIn.getInt("chiral_on");
 	int p = jobIn.getInt("poly_order");
+	int d_type = jobIn.getInt("d_type");
 
 	int debugPrint = 0;
 
@@ -4896,7 +5000,12 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 		*/
 	} else {
 
-		H.eigenSolve(eigvals, eigvecs);
+		if (d_type == 0){ // full solve
+			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
+			int center_index = (int) (local_max_index/2);
+			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
+		}
 
 		if (debugPrint == 1)
 			eigvecs.debugPrint();

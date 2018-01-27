@@ -885,7 +885,7 @@ void DMatrix::eleMatrixMultiply(DMatrix &C, DMatrix &B, double alpha, double bet
 
 }
 
-void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
+void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs, char jobz, char diag_type, int il, int iu){
 
 	if (nrows != ncols){
 		printf("!! LEO2D Error !!: Trying to diagonalize non-square matrix in DMatrix.eigenSolve() \n");
@@ -897,8 +897,9 @@ void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 		eigvecs.setup(nrows, nrows);
 		double* eigvecs_ptr;
 		eigvecs_ptr = eigvecs.allocRealVal();
-
+		printf("entering eigensolver \n");
 		#ifdef USE_MKL
+			//printf("jobz = %c, diag_type = %c, il = %d, iu = %d \n",jobz,diag_type,il,iu);
 
 			MKL_INT info;
 			MKL_INT isuppz[2*nrows];
@@ -906,11 +907,11 @@ void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 			double abstol = -1;
 			double vl = 0.0;
 			double vu = 1.0;
-			int il = 0;
-			int iu = nrows;
+			//int il = 0;
+			//int iu = nrows;
 			info = LAPACKE_dsyevr(		LAPACK_COL_MAJOR,
-																'V',    			// jobz, 'N' For just vals, 'V' for vecs too
-																'A',					// range, 'A' for all vals, 'V' val between  vl and vu, 'I' val indices il to iu
+																jobz,    			// jobz,  'N' For just vals, 'V' for vecs too
+																diag_type,	  // range, 'A' for all vals, 'V' val between  vl and vu, 'I' val indices il to iu
 																'U',					// uplo, 'U' for upper triangular, 'L' for lower triangular
 																nrows,				// n, order of the matrix a
 																val,					// a, ptr to the matrix. Overwritten on output
@@ -956,6 +957,7 @@ void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 		eigvecs_ptr = eigvecs.allocCpxVal();
 
 		#ifdef USE_MKL
+			//printf("jobz = %c, diag_type = %c, il = %d, iu = %d \n",jobz,diag_type,il,iu);
 
 			MKL_INT info;
 			MKL_INT isuppz[2*nrows];
@@ -963,11 +965,11 @@ void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
 			double abstol = -1;
 			double vl = 0.0;
 			double vu = 1.0;
-			int il = 0;
-			int iu = nrows;
+			//int il = 0;
+			//int iu = nrows;
 			info = LAPACKE_zheevr(		LAPACK_COL_MAJOR,
-																'V',    			// jobz, 'N' For just vals, 'V' for vecs too
-																'A',					// range, 'A' for all vals, 'V' val between  vl and vu, 'I' val indices il to iu
+																jobz,    			// jobz, 'N' For just vals, 'V' for vecs too
+																diag_type,		// range, 'A' for all vals, 'V' val between  vl and vu, 'I' val indices il to iu
 																'U',					// uplo, 'U' for upper triangular, 'L' for lower triangular
 																nrows,				// n, order of the matrix a
 																val_c,				// a, ptr to the matrix. Overwritten on output

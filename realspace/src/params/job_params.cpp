@@ -64,6 +64,7 @@ Job_params::Job_params() {
 
 	// Diagonalization settings
 	setParam("diagonalize",i_zero);
+	setParam("d_type",i_zero);
 	setParam("chiral_on",i_zero);
 	setParam("d_kpm_dos",i_zero);
 	setParam("d_weights",i_zero);

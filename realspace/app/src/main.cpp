@@ -430,6 +430,13 @@ int main(int argc, char** argv) {
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "D_TYPE"){ // 0-> full eigenvalue and eigenvec solve. || 2-> only the 8 eigenvalues near center
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("d_type",atoi(in_string.c_str()));
+
+				}
+
 				if (in_string == "D_KPM_DOS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

@@ -104,7 +104,7 @@ class DMatrix {
 		void eleMatrixMultiply(DMatrix&, DMatrix&, double, double, char A_type, char B_type);
 
 		// Eigensolvers
-		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs);
+		void eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs, char jobz, char diag_type, int il, int iu);
 
 		// Diagnostic functions
 		int getNumRows() const;
