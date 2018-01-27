@@ -4009,7 +4009,8 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				// impose rotation and mirror symm on the FFT of the interlayer Coupling
 				// our graphene model has 3-fold rotational symm and a mirror-plane symmetry
 				int rot_max = 3;
-				int mirror_max = 2;
+				// Dont mirror, seems to break electron-hole assymmetry (i.e. angular dependence of interaction)
+				int mirror_max = 1;
 				for (int rot_index = 0; rot_index < rot_max; ++rot_index){
 					for (int mirror_index = 0; mirror_index < mirror_max; ++mirror_index){
 
