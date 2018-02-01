@@ -55,7 +55,7 @@ void StrainCalc::loadConfigFile(std::string config_filename){
       |
   */
 
-  printf ("entering loadConfigFile ('%s')\n",config_filename.c_str());
+  //printf ("entering loadConfigFile ('%s')\n",config_filename.c_str());
   std::ifstream fin(config_filename.c_str());
 
   // First read the number of sheets
@@ -139,7 +139,7 @@ void StrainCalc::loadConfigFile(std::string config_filename){
   }
   */
 
-  printf ("exiting loadConfigFile\n");
+  //printf ("exiting loadConfigFile\n");
 
 }
 
@@ -177,6 +177,22 @@ std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, 
   if (orb > num_orb[sheet]-1){
     throw std::runtime_error("Variable 'orb' > num_orb-1 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
   }
+
+  int sign = 1;
+
+  // Possible rework to force symmetry between layers
+  /*
+  if (sheet == 1){
+    sheet == 0;
+    if (config_in[0] != 0) {
+      config_in[0] = 1.0 - config_in[0];
+    }
+    if (config_in[1] != 0){
+        config_in[1] = 1.0 - config_in[1];
+    }
+    sign = -1;
+  }
+  */
 
   // output vector
   std::vector<double> disp_out;
@@ -216,7 +232,7 @@ std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, 
 
   //printf("config_in = [%lf,%lf] => [%d,%d] (& [%d,%d]) + [%lf,%lf]\n",config_in[0],config_in[1],scaled_beg[0],scaled_beg[1],scaled_end[0],scaled_end[1],scaled_res[0],scaled_res[1]);
   //printf("vi_x = [%lf,%lf,%lf,%lf]\n",v1_x,v2_x,v3_x,v4_x);
-  disp_out[0] = interp_4point(scaled_res[0],scaled_res[1],v1_x,v2_x,v3_x,v4_x);
+  disp_out[0] = sign*interp_4point(scaled_res[0],scaled_res[1],v1_x,v2_x,v3_x,v4_x);
 
   // set up the interpolation in y
   double v1_y = disp_y[sheet][orb][scaled_beg[0]][scaled_beg[1]];
@@ -224,7 +240,7 @@ std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, 
   double v3_y = disp_y[sheet][orb][scaled_beg[0]][scaled_end[1]];
   double v4_y = disp_y[sheet][orb][scaled_end[0]][scaled_end[1]];
 
-  disp_out[1] = interp_4point(scaled_res[0],scaled_res[1],v1_y,v2_y,v3_y,v4_y);
+  disp_out[1] = sign*interp_4point(scaled_res[0],scaled_res[1],v1_y,v2_y,v3_y,v4_y);
 
   // set up the interpolation in z
   double v1_z = disp_z[sheet][orb][scaled_beg[0]][scaled_beg[1]];
@@ -233,7 +249,7 @@ std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, 
   double v4_z = disp_z[sheet][orb][scaled_end[0]][scaled_end[1]];
   //printf("vi_z = [%lf,%lf,%lf,%lf]\n",v1_z,v2_z,v3_z,v4_z);
 
-  disp_out[2] = interp_4point(scaled_res[0],scaled_res[1],v1_z,v2_z,v3_z,v4_z);
+  disp_out[2] = sign*interp_4point(scaled_res[0],scaled_res[1],v1_z,v2_z,v3_z,v4_z);
 
   //printf("disp_out = [%lf,%lf,%lf]\n",disp_out[0],disp_out[1],disp_out[2]);
   return disp_out;

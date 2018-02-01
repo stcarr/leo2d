@@ -3929,9 +3929,24 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 					t = t + std::polar(t_here,phase);
 				}
 
+				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
+				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+				if (new_k == k_i){
+					if (elecOn == 1){
+						double q1 = i2pos[k_i*3 + 0];
+						double q2 = i2pos[k_i*3 + 1];
+						double q3 = i2pos[k_i*3 + 2];
+						t = t + energy_shift + onSiteE(q1,q2,q3,E);
+					} else if (elecOn == 0)
+						t = t + energy_shift;
+				// Otherwise we enter the value just with rescaling
+				}
+
 				v_c[input_counter] = t/energy_rescale;
+
 				++input_counter;
 			}
+
 			++intra_counter;
 
 		}
