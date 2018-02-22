@@ -141,7 +141,7 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
     		double z_eps = (3.40 - fabs(vector[2]))/3.40;
 
         // New coefficients (with compression dependence fitting)
-        ///*
+        /*
     		double lambda_0 =  0.310 + 1.882*z_eps + 7.741*z_eps*z_eps;
     		double xi_0     =  1.750 + 1.618*z_eps + 1.848*z_eps*z_eps;
     		double kappa_0  =  1.989 + 1.006*z_eps +  2.426*z_eps*z_eps;
@@ -154,9 +154,24 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
     		double xi_6     =  2.272 + 0.719*z_eps - 4.415*z_eps*z_eps;
     		double x_6      =  1.217 + 0.027*z_eps - 0.658*z_eps*z_eps;
     		double kappa_6  =  1.561 + 0.371*z_eps - 0.134*z_eps*z_eps;
-        //*/
-        // Old coefficients (From: S. Fang, Phys. Rev. B 93, 235153 – Published 27 June 2016)
+        */
+        // Debugging the new coefficients (with compression dependence fitting)
         /*
+    		double lambda_0 =  0.310 + 1.882*z_eps + 7.741*z_eps*z_eps;
+    		double xi_0     =  1.750 + 1.618*z_eps + 1.848*z_eps*z_eps;
+    		double kappa_0  =  1.989 + 1.006*z_eps +  2.426*z_eps*z_eps;
+
+    		double lambda_3 = -0.068 + 0.399*z_eps + 1.739*z_eps*z_eps;
+    		double xi_3     =  3.286 - 0.916*z_eps + 11.996*z_eps*z_eps;
+    		double x_3      =  0.500 + 0.322*z_eps + 0.906*z_eps*z_eps;
+
+    		double lambda_6 = -0.008 + 0.046*z_eps - 0.183*z_eps*z_eps;
+    		double xi_6     =  2.272 + 0.719*z_eps - 4.415*z_eps*z_eps;
+    		double x_6      =  1.5206 + 0.027*z_eps - 0.658*z_eps*z_eps;
+    		double kappa_6  =  1.561 + 0.371*z_eps - 0.134*z_eps*z_eps;
+        */
+        // Old coefficients (From: S. Fang, Phys. Rev. B 93, 235153 – Published 27 June 2016)
+        ///*
         double lambda_0 =  0.3155;
     		double xi_0     =  1.7543;
     		double kappa_0  =  2.0010;
@@ -169,7 +184,7 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
     		double xi_6     =  2.8764;
     		double x_6      =  1.5206;
     		double kappa_6  =  1.5731;
-        */
+        //*/
 
         double V0 = lambda_0 *         std::exp(-xi_0*(rs    )*(rs    )) * std::cos(kappa_0*rs);
         double V3 = lambda_3 * rs*rs * std::exp(-xi_3*(rs-x_3)*(rs-x_3))                       ;

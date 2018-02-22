@@ -674,14 +674,14 @@ void SpMatrix::denseConvert(Eigen::MatrixXcd &H_in){
 }
 */
 
-void SpMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs){
+void SpMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs, char jobz, char diag_type, int il, int iu){
 
 	DMatrix dense_mat;
-	printf("doing denseConvert() \n");
+	//printf("doing denseConvert() \n");
 	denseConvert(dense_mat);
-	printf("entering dense_mat.eigenSolve() \n");
-	dense_mat.eigenSolve(eigvals, eigvecs);
-	printf("done with dense_mat.eigenSolve() \n");
+	//printf("entering dense_mat.eigenSolve() \n");
+	dense_mat.eigenSolve(eigvals, eigvecs, jobz, diag_type, il, iu);
+	//printf("done with dense_mat.eigenSolve() \n");
 
 }
 

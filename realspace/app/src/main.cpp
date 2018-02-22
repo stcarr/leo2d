@@ -301,6 +301,18 @@ int main(int argc, char** argv) {
 				        opts.setParam("cond_transform",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "COND_POLY_PAR"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("cond_poly_par",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "COND_POLY_PAR_SCALE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("cond_poly_par_scale",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "SOLVER_SPACE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -309,6 +321,12 @@ int main(int argc, char** argv) {
 					} else if (in_string[0] == 'M'){
 						opts.setParam("solver_space",1);
 					}
+				}
+
+				if (in_string == "MOM_VF_ONLY"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+				        opts.setParam("mom_vf_only",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "FFT_FROM_FILE"){
@@ -410,6 +428,13 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "D_TYPE"){ // 0-> full eigenvalue and eigenvec solve. || 2-> only the 8 eigenvalues near center
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("d_type",atoi(in_string.c_str()));
+
 				}
 
 				if (in_string == "D_KPM_DOS"){
@@ -639,14 +664,12 @@ int main(int argc, char** argv) {
 					int A2_num_a1;
 					int A2_num_a2;
 					if (i == 0){
-						printf("i = 0\n");
 						angles[0] = 0;
 						A1_num_a1 = N;
 						A1_num_a2 = M;
 						A2_num_a1 = -M;
 						A2_num_a2 = (M+N);
 					} else if (i == 1){
-						printf("i = 1\n");
 						angles[1] = theta;
 						A1_num_a1 = M;
 						A1_num_a2 = N;

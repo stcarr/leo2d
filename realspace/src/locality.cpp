@@ -871,6 +871,11 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				shifts[num_sheets-1][1] = lc_points[lc_index][1] + eff_x*(lc_points[lc_index+1][1] - lc_points[lc_index][1]);
 				shifts[num_sheets-1][2] = 0;
 
+				// Custom shifts for making "perfect" 2H aligned bilayers in TMDCs
+				// Assumes the top layer has 180 rotation, and bottom layer has 0 rotation
+				//shifts[1][0] = 2.0/3.0;
+				//shifts[1][1] = 1.0/3.0;
+
 				printf("shifts[%d] = [%lf %lf] \n",num_sheets-1,shifts[num_sheets-1][0],shifts[num_sheets-1][1]);
 
 				// for debugging: check the linecutting algorithm
@@ -1109,6 +1114,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				}
 				jobArray = k_jobArray;
 
+			// Sample around twisted supercell BZ
 			} else if (k_type == 1){
 
 				double num_k1 = opts.getInt("num_k1");
@@ -1206,16 +1212,212 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				jobArray = k_jobArray;
 
-			}
+			// Sample around Monolayer BZ
+			} else if (k_type == 2){
+
+					double num_k1 = opts.getInt("num_k1");
+					maxJobs = num_k1;
+
+					std::vector< std::vector<double> > b1 = getReciprocal(0);
+
+					printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+
+					//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
+
+					double k[2];
+					double k_prime[2];
+
+					k[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+					k[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
+
+					k_prime[0] = cos(M_PI/3)*k[0] - sin(M_PI/3)*k[1];
+					k_prime[1] = sin(M_PI/3)*k[0] + cos(M_PI/3)*k[1];
+
+					double gamma[2];
+					double m[2];
+
+					double d = (1.0/2.0)*sqrt((k_prime[0] - k[0])*(k_prime[0] - k[0]) + (k_prime[1] - k[1])*(k_prime[1] - k[1]));
+					double x_dir[2];
+					double y_dir[2];
+
+					y_dir[0] = (k_prime[0] - k[0])/(2.0*d);
+					y_dir[1] = (k_prime[1] - k[1])/(2.0*d);
+					x_dir[0] = cos(-M_PI/2)*y_dir[0] - sin(-M_PI/2)*y_dir[1];
+					x_dir[1] = sin(-M_PI/2)*y_dir[0] + cos(-M_PI/2)*y_dir[0];
+
+					gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
+					gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
+
+					m[0] = k[0] + d*y_dir[0];
+					m[1] = k[1] + d*y_dir[1];
+
+					printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+
+					int k_jobID = 1;
+					std::vector<Job_params> k_jobArray;
+					for (int j = 0; j < (int) jobArray.size(); ++j){
+						for (int i = 0; i < maxJobs; ++i){
+							//double x = (1.0/((double) maxJobs))*i;
+							//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+							//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+							double c = (3.0/((double) maxJobs))*i;
+
+							double k_x = 0;
+							double k_y = 0;
+
+							if (c <= 1) {
+								k_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+								k_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+							} else if (c <= 2) {
+								k_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+								k_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+							} else {
+								k_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+								k_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+							}
+
+							Job_params tempJob(jobArray[j]);
+							//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+							tempJob.setParam("jobID",k_jobID);
+
+							std::vector<double> k_vec;
+							k_vec.resize(2);
+							k_vec[0] = k_x;
+							k_vec[1] = k_y;
+							printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+							tempJob.setParam("k_vec",k_vec);
+
+							k_jobArray.push_back(tempJob);
+							++k_jobID;
+
+						}
+					}
+
+					jobArray = k_jobArray;
+
+				}
 
 		}
 
 	} else if (solver_space == 1) {
-	// !! MOMENTUM SPACE TO DO !!
-	// "high-symm LC" which does Gamma->M->K->Gamma
-
 		// Square sampling
-		if (solver_type == 1){
+
+		int mom_vf_only = opts.getInt("mom_vf_only");
+
+		if (mom_vf_only == 1){
+			//maxJobs = 2;
+			maxJobs = 1;
+			std::vector< std::vector<double> > b1 = getReciprocal(0);
+			std::vector< std::vector<double> > b2 = getReciprocal(1);
+
+			double k_1[2];
+			double k_2[2];
+
+			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+			k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
+
+			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
+			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
+
+			double k[2];
+			double gamma[2];
+			double m[2];
+
+			double gamma_2[2];
+
+			k[0] = k_1[0];
+			k[1] = k_1[1];
+
+			// d is the distance between k_1 and k_2
+			double d = (1.0/2.0)*sqrt((k_2[0] - k_1[0])*(k_2[0] - k_1[0]) + (k_2[1] - k_1[1])*(k_2[1] - k_1[1]));
+			double x_dir[2];
+			double y_dir[2];
+
+			y_dir[0] = (k_2[0] - k_1[0])/(2.0*d);
+			y_dir[1] = (k_2[1] - k_1[1])/(2.0*d);
+			x_dir[0] = cos(-M_PI/2)*y_dir[0] - sin(-M_PI/2)*y_dir[1];
+			x_dir[1] = sin(-M_PI/2)*y_dir[0] + cos(-M_PI/2)*y_dir[0];
+
+			gamma[0] = k[0] + d*y_dir[0] + sqrt(3)*d*x_dir[0];
+			gamma[1] = k[1] + d*y_dir[1] + sqrt(3)*d*x_dir[1];
+
+			gamma_2[0] = k[0] + d*y_dir[0] - sqrt(3)*d*x_dir[0];
+			gamma_2[1] = k[1] + d*y_dir[1] - sqrt(3)*d*x_dir[1];
+
+			m[0] = k[0] + d*y_dir[0];
+			m[1] = k[1] + d*y_dir[1];
+
+			//printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+
+			for (int i = 0; i < maxJobs; ++i){
+
+
+				//double c = (3.0/((double) maxJobs))*i;
+
+				//double c = (6.0/((double) maxJobs))*i;
+
+				double c = 1.0;
+				/*
+				if (i == 1){
+					// only go a little along K-Gamma line to compute the fermi-velocity
+					c = 0.06;
+				}
+				*/
+				double shift_x = 0;
+				double shift_y = 0;
+
+				if (c <= 1) {
+					shift_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
+					shift_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
+				} else if (c <= 2) {
+					shift_x = (2.0-c)*gamma[0] + (c-1.0)*m[0];
+					shift_y = (2.0-c)*gamma[1] + (c-1.0)*m[1];
+				} else if (c <= 3) {
+					shift_x = (3.0-c)*m[0] + (c-2.0)*k[0];
+					shift_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+				} else if (c <= 4) {
+					shift_x = (4.0-c)*k[0] + (c-3.0)*gamma_2[0];
+					shift_y = (4.0-c)*k[1] + (c-3.0)*gamma_2[1];
+				} else if (c <= 5) {
+					shift_x = (5.0-c)*gamma_2[0] + (c-4.0)*m[0];
+					shift_y = (5.0-c)*gamma_2[1] + (c-4.0)*m[1];
+				} else {
+					shift_x = (6.0-c)*m[0] + (c-5.0)*k[0];
+					shift_y = (6.0-c)*m[1] + (c-5.0)*k[1];
+				}
+
+				std::vector< std::vector<double> > shifts;
+				shifts.resize(num_sheets);
+
+
+				for(int s = 0; s < num_sheets; ++s){
+					shifts[s].resize(3);
+					shifts[s][0] = shift_x;
+					shifts[s][1] = shift_y;
+					shifts[s][2] = 0;
+				}
+
+				int n_targets = (int)target_indices[0].size();
+				std::vector<int> targets;
+				targets.resize(n_targets);
+				for (int t = 0; t < n_targets; ++t){
+					targets[t] = target_indices[0][t];
+				}
+
+				Job_params tempJob(opts);
+				tempJob.setParam("shifts",shifts);
+				tempJob.setParam("jobID",i+1);
+				tempJob.setParam("max_jobs",maxJobs);
+				tempJob.setParam("num_targets",n_targets);
+				tempJob.setParam("target_list",targets);
+
+				jobArray.push_back(tempJob);
+
+
+			}
+		}
+
+		else if (solver_type == 1){
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts*nShifts;
 
@@ -1226,8 +1428,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			//b1[1][0] = -b1[1][0];
 			//b2[1][0] = -b2[1][0];
 
-			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
-			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+			//printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			//printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
 
 			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
@@ -1242,7 +1444,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			d_vec2[0] = b2[1][0] - b1[1][0];
 			d_vec2[1] = b2[1][1] - b1[1][1];
 
-			printf("d_vec1 = [%lf, %lf], d_vec2 = [%lf, %lf] \n",d_vec1[0],d_vec1[1],d_vec2[0],d_vec2[1]);
+			//printf("d_vec1 = [%lf, %lf], d_vec2 = [%lf, %lf] \n",d_vec1[0],d_vec1[1],d_vec2[0],d_vec2[1]);
 
 			// p1 and p2 are the K points of layer 1 and 2, respectively
 
@@ -1255,7 +1457,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
 			p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
 
-			printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
+			//printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
 
 			for (int i = 0; i < nShifts; ++i){
 				double x = (1.0/((double) nShifts))*i;
@@ -1294,7 +1496,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		}
 
 		// Linecut sampling
-		if (solver_type == 2){
+		else if (solver_type == 2){
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts;
 
@@ -1304,8 +1506,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 			// cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 
-			printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
-			printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+			//printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+			//printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
 
 			//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
@@ -1356,7 +1558,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			m[0] = k[0] + d*y_dir[0];
 			m[1] = k[1] + d*y_dir[1];
 
-			printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+			//printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
 
 			for (int i = 0; i < maxJobs; ++i){
 				//double x = (1.0/((double) maxJobs))*i;
@@ -1407,7 +1609,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
 
-				printf("%lf %lf \n",shift_x, shift_y);
+				//printf("%lf %lf \n",shift_x, shift_y);
 
 
 
@@ -1441,7 +1643,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			}
 		}
 
-		if (solver_type == 3 || solver_type == 4 || solver_type == 5){
+		else if (solver_type == 3 || solver_type == 4 || solver_type == 5){
 			printf("!!WARNING!!: Momentum-space mode (solver_space = M) is NOT compatible with vacancy/strain solvers. \n");
 		}
 
@@ -1774,11 +1976,16 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			}
 
 		} else if (diagonalize == 1) {
+			int d_type = opts.getInt("d_type");
 
 			if (complex_matrix == 0){
 
 				std::vector<double> eigenvalue_array;
-				eigenvalue_array.resize(local_max_index);
+				if (d_type == 2){
+					eigenvalue_array.resize(8);
+				} else {
+					eigenvalue_array.resize(local_max_index);
+				}
 
 				DMatrix eigvecs;
 
@@ -1923,8 +2130,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			} else if (complex_matrix == 1){
 
 				std::vector<double> eigenvalue_array;
-				eigenvalue_array.resize(local_max_index);
-
+				if (d_type == 2){
+					eigenvalue_array.resize(8);
+				} else {
+					eigenvalue_array.resize(local_max_index);
+				}
 				DMatrix eigvecs;
 
 				DMatrix kpm_dos;
@@ -1941,9 +2151,9 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > cond_xy;
 
 				std::vector<double> eigenvalue_real_array;
-				eigenvalue_real_array.resize(local_max_index);
+				eigenvalue_real_array.resize(eigenvalue_array.size());
 
-				for (int i = 0; i < local_max_index; ++i){
+				for (int i = 0; i < eigenvalue_array.size(); ++i){
 					eigenvalue_real_array[i] = eigenvalue_array[i];
 				}
 
@@ -3719,9 +3929,24 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 					t = t + std::polar(t_here,phase);
 				}
 
+				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
+				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+				if (new_k == k_i){
+					if (elecOn == 1){
+						double q1 = i2pos[k_i*3 + 0];
+						double q2 = i2pos[k_i*3 + 1];
+						double q3 = i2pos[k_i*3 + 2];
+						t = t + energy_shift + onSiteE(q1,q2,q3,E);
+					} else if (elecOn == 0)
+						t = t + energy_shift;
+				// Otherwise we enter the value just with rescaling
+				}
+
 				v_c[input_counter] = t/energy_rescale;
+
 				++input_counter;
 			}
+
 			++intra_counter;
 
 		}
@@ -3799,7 +4024,8 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				// impose rotation and mirror symm on the FFT of the interlayer Coupling
 				// our graphene model has 3-fold rotational symm and a mirror-plane symmetry
 				int rot_max = 3;
-				int mirror_max = 2;
+				// Dont mirror, seems to break electron-hole assymmetry (i.e. angular dependence of interaction)
+				int mirror_max = 1;
 				for (int rot_index = 0; rot_index < rot_max; ++rot_index){
 					for (int mirror_index = 0; mirror_index < mirror_max; ++mirror_index){
 
@@ -4198,6 +4424,99 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 
 void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, SpMatrix &dxH, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index, double* alpha_0){
 
+	// The current-current correlation can be calculated with Chebyshev polynomials
+	// via a 2-Dimensional sampling:
+	// for the C_nm corresponding to sigma_xx:
+	// C_nm = <0| dxH * T_n * dxH * T_m |0>
+	// We define:
+	//						<0| * dxH = <alpha_0| (computed during matrix construction)
+	//					 	<alpha_0| * T_n = <alpha|
+	// 					  T_m * |0> = |beta>
+	// With these definitions, we get:
+	// 						C_nm = <alpha|dxH|beta>
+	//
+	// To speed up calculations, we pre-compute beta for all relavant m
+	// Then we loop over n to compute the relavant <alpha|
+	// and save the matrix elements C_nm into cheb_coeffs.
+	//
+	// How much calculations are we actually doing? Assume the polynomial order = p
+	//
+	// Well, we need to compute each |beta> : 	thats p sparse matrix-vector products (SpMV)
+	// We also need to compute each <alpha|dxH: thats 2*p SpMV
+	// Finally, we need to take their inner products: thats p^2 vector-vector products
+	// So the total time seems to scale like:
+	//													3*p SpMV + p^2 vector-vector
+	// since p SpMV is just the DOS time, the total time can be thought of as:
+	// 													3*Time_DoS + p^2 vector-vector
+	//
+	// This is not too bad if the p^2 vector-vector products are on the same order of time as
+	// the DOS time, and we know that the DOS calculation for that size has succedded in the past.
+	// But in the case that the vec-vec calculations dominate we will see that this method becomes
+	// much much slower than DOS calculations!
+	//
+	// Also, since we are probably interested in really large polynomial order (C_nm with n,m ~ 1000s)
+	// we probably cannot do the most efficient calculation (compute all beta and save) becaues of memory limitations.
+	//
+	// Therefore we try to parallize over the vector-vector products:
+	// 					the tag "cond_poly_par" allows for parallelization over beta.
+	//
+	// This allows for us to only compute a few columns of the large C_nm at a time, and use MPI to parallelize
+	// over the sets of columns
+	//
+	// This is much faster at large p due to the number of vector-vector products but alows us to parallelize
+	// in memory at least. Assuming we have we choose to paralellize the polynomial order by N:
+	// 										 1) Calculate (at worst) 3*p SpMV products (alpha and beta)
+	//										 2) Calculate p*(p/N) vector-vector products
+	// Now assume we have M workers, and that the SpMV takes time T_sp and V-V takes time T_vv, with S samples
+	//				Old Serial Time:
+	//								S serial calculations of time 3*p SpMV + p^2 V-V 		= S*(3*p*T_sp  + p^2 T_vv)
+	//
+	//				New Serial Time (where we round up S*N/M to an integer > 0):
+	//								(S*N)/M serial calculations of time 3*p SpMV + (p^2)/N V-V	= (S/M)*(N*3*p*T_sp + p^2 T_vv)
+	//
+	// So we see that the best choice is always a larger M, and the biggest allowed M is S*N.
+	// If one does a test run to try and calculate T_sp and T_vv for the problem at hand, we can find an optimal
+	// choice of N and M to minimize the total serial run time for a given p.
+	//
+	// A guess of how to pick N would be to note that if 3*p*T_sp < p^2 T_vv => T_sp < p/3 * T_vv
+	// If T_sp is much smaller than p/3 * T_vv, we can get free embarrasing parallelization  as long as
+	// we keep N*T_sp much smaller than p/3 * T_vv. Since this relation is linear in p, we can always keep the
+	// total compute time roughly equal across multiple runs as long as we scale the number of workers with p!
+	//
+	//
+	// !!! THE FOLLOWING IS NOT IMPLEMENTED, BUT NOTES ON A DIFFERENT APPROACH FOR PARALELLIZATION !!!
+	//
+	// There is also a more involed way to parrellelize the calculation time and memory however:
+	//
+	// 1) Have one MPI rank compute all <alpha| in "chunks for a single target
+	// 2) Have (maybe a different) MPI rank compute all dxH|beta> in "chunks" for a single target
+	// 3) Then send out to pure compute-node ranks (i.e. ranks which do not need to know
+	// anything about the physical system), or "calculators", a specific sub-block of C_nm = <alpha|dxH|beta>
+	//
+	// This would mean that compute time would scale roughly like p (as in the DoS case)
+	// given that you are also scaling the number of cores like p
+	//
+	// For example:
+	// A single worker-core does a p=p0 DoS-like problem in time T
+	// now we want to do p=p0*N with M "calculator" cores:
+	//
+	// 1) 1 worker-core does a "chunk" of dxH|beta> up to p/N = p0 ~ time would take T (DoS scaling)
+	// 2) the same worker-core does <alpha| up to p in N chunks	~ time would take T*N (DoS scaling)
+	// 3) as each <alpha| "chunk" finishes, the worker core sends out the <beta| "chunk" and
+	//    the "alpha" chunk to a "calculator" core
+	// 4) the worker-core continues this until all "calculator" cores are actively working,
+	//    then it gets the next pair of chunks ready in memory and spools for the next finished calculator
+	// 5) as a calculator-core finishes, it sends the C_nm data to the worker-core and waits for a new job
+	//
+	// So then the problem is to optimize the number of calculator cores to the size of the chunks
+	// i.e. if setting up a chunk-job takes time T_chunk, we want to pick the number of calculators M
+	// such that the time to complete a chunk-job of matrix-vector products on the calculator
+	// takes T_chunk*M long.
+	//
+	// In principle this could be determined by timing by the user or by a small utility job in the code
+	//
+	// This is a HUGE amount of extra programming, and would require siginificant additions to the MPI part of the code
+	// but in principle this option is available given someone has the time (and energy) to program and test it properly
 
 	int magOn = jobIn.getInt("magOn");
 	int poly_order = jobIn.getInt("poly_order");
@@ -4207,6 +4526,19 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 	// 0 for Real, 1 for Complex
 	int complex_matrix = H.getType();
+
+	// p1 represents the poly indices that beta will run over
+	// that is to say, we always do  the "full" C_nm matrix during the <alpha| loop
+
+	int start_p1 = 0;
+	int cond_poly_par_scale = 1;
+
+	int cond_poly_par = jobIn.getInt("cond_poly_par");
+
+	if (cond_poly_par == 1){
+		cond_poly_par_scale = jobIn.getInt("cond_poly_par_scale");
+		start_p1 = jobIn.getInt("cond_poly_par_start_p1");
+	}
 
 	if (complex_matrix == 0){
 
@@ -4220,15 +4552,13 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 			double T_prev[local_max_index];
 
+			// Temporary vector for algoirthm ("previous" vector T_{j-1})
 			for (int i = 0; i < local_max_index; ++i){
 				T_prev[i] = 0.0;
 			}
 
+			// Here T_0 = T_prev
 			T_prev[target_index] = 1.0;
-
-			for (int i = 0; i < local_max_index; ++i){
-				beta_array[i] = T_prev[i];
-			}
 
 			// Temporary vector for algorithm ("current" vector T_j)
 			double T_j[local_max_index];
@@ -4236,58 +4566,143 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 				T_j[i] = 0.0;
 			}
 
-			H.vectorMultiply(T_prev, T_j, 1, 0);
-
-			for (int i = 0; i < local_max_index; ++i){
-				beta_array[local_max_index + i] = T_j[i];
-			}
-
-			// Temporary vector for algorithm ("next" vector T_j+1)
+			// Temporary vector for algorithm ("next" vector T_{j+1})
 			double T_next[local_max_index];
 			for (int i = 0; i < local_max_index; ++i){
 				T_next[i] = 0.0;
 			}
 
-			// Now loop algorithm along T_m*|beta>, up to poly_order
-			// double alpha2 = 2;
-
-			// want to do: T_next = 2*H*T_j - T_prev;
-			H.vectorMultiply(T_j, T_next, 2, 0);
-			for (int c = 0; c < local_max_index; ++c){
-				T_next[c] = T_next[c] - T_prev[c];
+			// we need to save T_0 = T_prev into beta_array if we are starting from zero
+			if (start_p1 == 0){
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[i] = T_prev[i];
+				}
 			}
 
-			for (int j = 2; j < poly_order; ++j){
+			// Now we compute T_1 = H*T_0 = H*T_prev
 
-				// reassign values from previous iteration
-				for (int c = 0; c < local_max_index; ++c){
-					T_prev[c] = T_j[c];	//T_prev = T_j;
-					T_j[c] = T_next[c];	//T_j = T_next;
-				}
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+
+			// we need to save T_1 into beta_array if we are starting from zero
+			if (start_p1 == 0){
 
 				for (int i = 0; i < local_max_index; ++i){
-					beta_array[j*local_max_index + i] = T_j[i];
+					beta_array[local_max_index + i] = T_j[i];
+				}
+			}
+
+			// we need to save T_1 into beta_array if we are starting from one
+			// starting from one is stupid... but good to have this work correctly just in case!
+			if (start_p1 == 1){
+
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[i] = T_j[i];
+				}
+			}
+
+			// right now:
+			//					T_prev[] 	= T_0
+			// 					T_j[] 		= T_1
+			//					T_next[]  = 0
+
+			// if we are not starting at j = 0 (or 1)
+			// we need to do a loop of the Cheb. algorithm here	to get up to j = start_p1
+			for (int skip_p1 = 2; skip_p1 < start_p1; ++skip_p1){
+
+				// right now:
+				//				T_prev[] = T_{ skip_p1 - 2 }
+				//				T_j[]    = T_{ skip_p1 - 1 }
+
+				// compute T_{skip_p1}:
+				//				T_j = 2*H*T_{j-1} - T_{j-2}
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
 				}
 
-				// compute the next vector
+				// right now:
+				//				T_prev[] = T_{ skip_p1 - 2 }
+				//				T_j[]    = T_{ skip_p1 - 1 }
+				//				T_next[] = T_{ skip_p1 }
+
+
+				// now we set-up for the next loop
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c]; //T_j = T_next;
+				}
+
+				// right now:
+				//				T_prev[] = T_{ skip_p1 - 1 }
+				//				T_j[]    = T_{ skip_p1 }
+				//				T_next[] = T_{ skip_p1 }
+
+			}
+
+			for (int j = 0; j < poly_order-1; ++j){
+
+				// A quick reindexing of j in case we had start_p1 = 0 or 1
+				if (j == 0){
+					// already on the T_2 value if start_p1 = 0
+					if (start_p1 == 0){
+						j = 2;
+					}
+
+					// already on the T_1 value if start_p1 = 1
+				  if (start_p1 == 1){
+						j = 1;
+					}
+				}
+
+				// right now:
+				//				T_prev[] = T_{ j + start_p1 - 2 }
+				//				T_j[]    = T_{ j + start_p1 - 1 }
+
+				// compute T_{j + start_p1}:
+				//				T_j = 2*H*T_{j-1} - T_{j-2}
 				H.vectorMultiply(T_j, T_next, 2, 0);
 				for (int c = 0; c < local_max_index; ++c){
 					T_next[c] = T_next[c] - T_prev[c];
+				}
+
+				// right now:
+				//				T_prev[] = T_{ j + start_p1 - 2 }
+				//				T_j[]    = T_{ j + start_p1 - 1 }
+				//				T_next[] = T_{ j + start_p1 }
+
+				// saves T_{j} into beta_array
+				for (int i = 0; i < local_max_index; ++i){
+					beta_array[j*local_max_index + i] = T_next[i];
+				}
+
+				// now we set-up for the next loop and
+				// reassign values from previous iteration:
+				// before:
+				//				T_prev[] = T_{ j + start_p1 -2 }
+				//				T_j[]    = T_{ j + start_p1 -1 }
+				//				T_next[] = T_{ j + start_p1 }
+				// after:
+				//				T_prev[] = T_{ j + start_p1 - 1 }
+				//				T_j[]    = T_{ j + start_p1 }
+				//				T_next[] = T_{ j + start_p1 }
+
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
 				}
 
 				// print every 100 steps on print rank
 				//if (rank == print_rank)
 					//if (j%100 == 0)
 						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+
 			}	// end beta_array construction
 
 			// start loop over <alpha|*T_n for C_nm construction
-
 			for (int i = 0; i < local_max_index; ++i){
 				T_prev[i] = alpha_0[t_count*local_max_index + i];
 			}
 
-			for (int p = 0; p < poly_order; ++p){
+			for (int p1 = 0; p1 < poly_order; ++p1){
 
 				// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
 				double temp_vec[local_max_index];
@@ -4295,10 +4710,10 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 				double temp_sum = 0;
 				for (int i = 0; i < local_max_index; ++i){
-					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+					temp_sum = temp_sum + temp_vec[i]*beta_array[p1*local_max_index + i];
 				}
 
-				cheb_coeffs[t_count][p + 0*poly_order] = temp_sum;
+				cheb_coeffs[t_count][p1 + 0*poly_order*cond_poly_par_scale] = temp_sum;
 
 			}
 
@@ -4309,7 +4724,7 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 			// This is OK because H is Hermitian, Transpose(H) = H, so <alpha|H can be computed with H|alpha>
 			H.vectorMultiply(T_prev, T_j, 1, 0);
-			for (int p = 0; p < poly_order; ++p){
+			for (int p1 = 0; p1 < poly_order; ++p1){
 
 				// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
 				double temp_vec[local_max_index];
@@ -4317,10 +4732,10 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 
 				double temp_sum = 0;
 				for (int i = 0; i < local_max_index; ++i){
-					temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+					temp_sum = temp_sum + temp_vec[i]*beta_array[p1*local_max_index + i];
 				}
 
-				cheb_coeffs[t_count][p + 1*poly_order] = temp_sum;
+				cheb_coeffs[t_count][p1 + 1*poly_order*cond_poly_par_scale] = temp_sum;
 
 			}
 
@@ -4338,7 +4753,7 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 				T_next[c] = T_next[c] - T_prev[c];
 			}
 
-			for (int j = 2; j < poly_order; ++j){
+			for (int j = 2; j < poly_order*cond_poly_par_scale; ++j){
 
 				// reassign values from previous iteration
 				for (int c = 0; c < local_max_index; ++c){
@@ -4347,7 +4762,7 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 				}
 
 
-				for (int p = 0; p < poly_order; ++p){
+				for (int p1 = 0; p1 < poly_order; ++p1){
 
 					// temp_vec is = - <alpha|dxH ... because dxH.vectorMultiply defines dxH|alpha> and Transpose(dxH) = -dxH
 					double temp_vec[local_max_index];
@@ -4358,9 +4773,9 @@ void Locality::computeCondKPM(std::vector< std::vector<double> > &cheb_coeffs, S
 					// and   |beta > = T_m(H)|0>
 					double temp_sum = 0;
 					for (int i = 0; i < local_max_index; ++i){
-						temp_sum = temp_sum + temp_vec[i]*beta_array[p*local_max_index + i];
+						temp_sum = temp_sum + temp_vec[i]*beta_array[p1*local_max_index + i];
 					}
-					cheb_coeffs[t_count][p + j*poly_order] = temp_sum;
+					cheb_coeffs[t_count][p1 + j*poly_order*cond_poly_par_scale] = temp_sum;
 
 				}
 
@@ -4396,6 +4811,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int p = jobIn.getInt("poly_order");
 
+	int d_type = jobIn.getInt("d_type");
 	int debugPrint = 0;
 
 	// H.eigenSolve should always be used now
@@ -4413,7 +4829,12 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 		Eigen::VectorXd::Map(&eigvals[0], local_max_index) = es.eigenvalues();
 		*/
 	} else {
-		H.eigenSolve(eigvals, eigvecs);
+		if (d_type == 0){ // full solve
+			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
+			int center_index = (int) (local_max_index/2);
+			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
+		}
 
 		if (debugPrint == 1)
 			eigvecs.debugPrint();
@@ -4577,6 +4998,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 	int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 	int chiral_on = jobIn.getInt("chiral_on");
 	int p = jobIn.getInt("poly_order");
+	int d_type = jobIn.getInt("d_type");
 
 	int debugPrint = 0;
 
@@ -4594,7 +5016,12 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 		*/
 	} else {
 
-		H.eigenSolve(eigvals, eigvecs);
+		if (d_type == 0){ // full solve
+			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
+			int center_index = (int) (local_max_index/2);
+			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
+		}
 
 		if (debugPrint == 1)
 			eigvecs.debugPrint();

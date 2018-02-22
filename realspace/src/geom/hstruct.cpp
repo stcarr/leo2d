@@ -201,6 +201,7 @@ int Hstruct::findNearest(double (&pos)[3],int s, int dim){
 
 	double theta = 0;
 
+  // sheet s is rotated by angles[s], so we need to rotate the position by -angles[s] to compare
 	if (solver_space == 0) {
 		theta = -angles[s];
 	} else if (solver_space == 1) {
@@ -228,7 +229,8 @@ int Hstruct::findNearest(double (&pos)[3],int s, int dim){
 
 	if (dim == 0){
 		double x_new = x*cos(theta) - y*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,0) + shifts[s][1]*sheets[s].getUnit(1,0);
-		double y_new = y*cos(theta) + x*sin(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1);
+		double y_new = x*sin(theta) + y*cos(theta) + shifts[s][0]*sheets[s].getUnit(0,1) + shifts[s][1]*sheets[s].getUnit(1,1);
+    //printf("x_new, y_new = [%lf, %lf] \n",x_new,y_new);
 		double i_new = a_inv[0][0]*x_new + a_inv[0][1]*y_new;
 		int i = std::min(std::max(int(floor(i_new)),sheets[s].getShape(0,0)),sheets[s].getShape(1,0)) - sheets[s].getShape(0,0);
 		return i;
@@ -566,13 +568,14 @@ void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, J
     for (int k = 0; k < max_index; ++k){
 
       std::vector<int> grid_here_vector = indexToGrid(k);
-      // always set orbital to 0
+
+      //printf("k = %d, [%d,%d,%d,%d]\n",k,grid_here_vector[0],grid_here_vector[1],grid_here_vector[2],grid_here_vector[3]);
 
       int grid_here[3];
       grid_here[0] = grid_here_vector[0];
       grid_here[1] = grid_here_vector[1];
+      // always set orbital to 0
       grid_here[2] = 0;
-      //printf("k = %d, [%d,%d,%d,%d]\n",k,grid_here[0],grid_here[1],grid_here_vector[2],grid_here_vector[3]);
 
       int s_here = grid_here_vector[3];
       int s = -1;
@@ -585,8 +588,8 @@ void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, J
       config_array[k].resize(2);
 
       double orig_pos[2];
-      orig_pos[0] = sheets[grid_here_vector[3]].posAtomGrid(grid_here,0);
-      orig_pos[1] = sheets[grid_here_vector[3]].posAtomGrid(grid_here,1);
+      orig_pos[0] = sheets[s_here].posAtomGrid(grid_here,0);
+      orig_pos[1] = sheets[s_here].posAtomGrid(grid_here,1);
 
       double pos_here[3];
       pos_here[0] = cos(angles[s_here])*orig_pos[0] - sin(angles[s_here])*orig_pos[1];
@@ -595,47 +598,71 @@ void Hstruct::getShiftConfigs(std::vector<std::vector<double> > &config_array, J
 
       int new_i = findNearest(pos_here,s,0);
       int new_j = findNearest(pos_here,s,1);
+      //printf("orig_pos = [%lf, %lf] \n",orig_pos[0],orig_pos[1]);
+      //printf("pos_here = [%lf, %lf] \n",pos_here[0],pos_here[1]);
+      //printf("new [i,j] = [%d,%d] \n",new_i,new_j);
 
       int found = 0;
+
+      // Following is messy since we changed method to a better one
+      // but haven't done careful testing so old code reamins just in case
+
       // now we try to find where atom k is in relation to the other sheet
-      for (int i = new_i-2; i < new_i + 3; ++i){
-        for (int j = new_j-2; j < new_j + 3; ++j){
+      //for (int i = new_i-3; i < new_i + 4; ++i){
+        //for (int j = new_j-3; j < new_j + 4; ++j){
 
-          if (found == 0){
+          //if (found == 0){
 
-            int new_grid[3];
-            new_grid[0] = i;
-            new_grid[1] = j;
-            new_grid[2] = 0;
+      int i = new_i;
+      int j = new_j;
+      int new_grid[3];
+      new_grid[0] = i;
+      new_grid[1] = j;
+      new_grid[2] = 0;
 
-            double sheet_pos[2];
-            sheet_pos[0] = sheets[s].posAtomGrid(new_grid,0);
-            sheet_pos[1] = sheets[s].posAtomGrid(new_grid,1);
+      double sheet_pos[2];
+      sheet_pos[0] = sheets[s].posAtomGrid(new_grid,0);
+      sheet_pos[1] = sheets[s].posAtomGrid(new_grid,1);
+      //printf("[%d, %d], sheet_pos = [%lf, %lf] \n",i,j,sheet_pos[0],sheet_pos[1]);
 
-            double new_pos[2];
-            new_pos[0] = cos(angles[s])*sheet_pos[0] - sin(angles[s])*sheet_pos[1];
-            new_pos[1] = sin(angles[s])*sheet_pos[0] + cos(angles[s])*sheet_pos[1];
+      double new_pos[2];
+      new_pos[0] = cos(angles[s])*sheet_pos[0] - sin(angles[s])*sheet_pos[1];
+      new_pos[1] = sin(angles[s])*sheet_pos[0] + cos(angles[s])*sheet_pos[1];
+      //printf("[%d, %d], new_pos = [%lf, %lf] \n",i,j,new_pos[0],new_pos[1]);
+      double config_real[2];
+      config_real[0] = pos_here[0] - new_pos[0];
+      config_real[1] = pos_here[1] - new_pos[1];
 
-            double config_real[2];
-            config_real[0] = pos_here[0] - new_pos[0];
-            config_real[1] = pos_here[1] - new_pos[1];
+      double config[2];
+      config[0] = config_real[0]*inv_unit_cells[s][0][0] + config_real[1]*inv_unit_cells[s][0][1];
+      config[1] = config_real[0]*inv_unit_cells[s][1][0] + config_real[1]*inv_unit_cells[s][1][1];
 
-            double config[2];
-            config[0] = config_real[0]*inv_unit_cells[s][0][0] + config_real[1]*inv_unit_cells[s][0][1];
-            config[1] = config_real[0]*inv_unit_cells[s][1][0] + config_real[1]*inv_unit_cells[s][1][1];
+      while(config[0] >= 1){
+        config[0] += -1;
+      }
+      while(config[0] < 0){
+        config[0] += 1;
+      }
 
-            if (config[0] >= 0 && config[0] < 1 && config[1] >= 0 && config[1] < 1){
-              config_array[k][0] = config[0];
-              config_array[k][1] = config[1];
+      while(config[1] >= 1){
+        config[1] += -1;
+      }
+      while(config[1] < 0){
+        config[1] += 1;
+      }
+
+              //if (config[0] >= 0 && config[0] < 1 && config[1] >= 0 && config[1] < 1){
+      config_array[k][0] = config[0];
+      config_array[k][1] = config[1];
               //printf("config k=%d (%d -> %d), [%lf,%lf]... [%lf,%lf] -> [%lf,%lf]\n",k,s_here,s,config[0],config[1],pos_here[0],pos_here[1],new_pos[0],new_pos[1]);
 
-              found = 1;
-            }
+      found = 1;
+            //}
 
-          }
+          //}
 
-        }
-      }
+        //}
+      // }
 
       if(found == 0){
         throw std::runtime_error("Hstruct::getShiftConfigs failed to find an atoms shift configuration!!");
@@ -1110,7 +1137,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
           fout  << s1 << " " << s2 << " " << o1 << " " << o2 << " "
                 << o2_shift_x - o1_shift_x << " " << o2_shift_y - o1_shift_y << " "
                 << x_L << " " << y_L << " 1" << std::endl;
-                
+
     			// save complex data to file in plain-text matrix format
     			for (int i = 0; i < 2*x_L; i++) {
     				for (int j = 0; j < y_L; j++) {

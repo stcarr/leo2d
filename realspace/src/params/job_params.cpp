@@ -44,6 +44,10 @@ Job_params::Job_params() {
 	setParam("num_shift_sheets",i_one);
 	setParam("num_lc_points",i_one*2);
 	setParam("lc_points",lc_points);
+	setParam("cond_poly_par",0);
+
+	// Momentum-space settings
+	setParam("mom_vf_only",i_zero);
 
 	// Geometery settings
 	setParam("num_sheets",i_one);
@@ -60,6 +64,7 @@ Job_params::Job_params() {
 
 	// Diagonalization settings
 	setParam("diagonalize",i_zero);
+	setParam("d_type",i_zero);
 	setParam("chiral_on",i_zero);
 	setParam("d_kpm_dos",i_zero);
 	setParam("d_weights",i_zero);
