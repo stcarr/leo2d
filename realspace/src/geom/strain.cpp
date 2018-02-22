@@ -55,7 +55,7 @@ void StrainCalc::loadConfigFile(std::string config_filename){
       |
   */
 
-  printf ("entering loadConfigFile ('%s')\n",config_filename.c_str());
+  //printf ("entering loadConfigFile ('%s')\n",config_filename.c_str());
   std::ifstream fin(config_filename.c_str());
 
   // First read the number of sheets
@@ -139,7 +139,7 @@ void StrainCalc::loadConfigFile(std::string config_filename){
   }
   */
 
-  printf ("exiting loadConfigFile\n");
+  //printf ("exiting loadConfigFile\n");
 
 }
 
