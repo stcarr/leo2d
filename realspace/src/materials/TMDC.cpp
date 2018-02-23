@@ -1314,7 +1314,7 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
         }
     }
     */
-    
+
     // Corrected method for unrotating the system:
     // Assume the layer from the row has 0 twist:
     double rot_vector[3];
@@ -1342,8 +1342,6 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
     }
 
 
-
-
     double r_sq = rot_vector[0]*rot_vector[0] + rot_vector[1]*rot_vector[1] + rot_vector[2]*rot_vector[2];
     if ( (r_sq < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
                         && (std::abs(std::abs(vector[2]) - XX_sep) < 0.05) )
@@ -1358,7 +1356,7 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
         double V_sigma = nu_sigma*std::exp(-std::pow(r/R_sigma, eta_sigma));
         double V_pi    =    nu_pi*std::exp(-std::pow(r/R_pi,    eta_pi   ));
         double sum_t = 0.0;
-        for (int idx = 0; idx < 2; ++idx){
+        for (int idx = 0; idx < 3; ++idx){
           sum_t = sum_t + p_col[idx]*((V_sigma - V_pi)*(rot_vector[p_row] * rot_vector[idx] / r_sq) + (p_row == idx ? V_pi : 0));
         }
         return sum_t;
