@@ -142,6 +142,12 @@ int main(int argc, char** argv) {
 					opts.setParam("supercell_type",two);
 				}
 
+				if (in_string == "SUPERCELL_SEARCH_SIZE") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("sc_search_size",atoi(in_string.c_str()));
+				}
+
 				if (in_string == "K_SAMPLING") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -149,6 +155,9 @@ int main(int argc, char** argv) {
 				}
 
 				if (in_string == "K_TYPE") {
+					// 0 -> Grid sampling of layer 1's Hexagonal BZ
+					// 1 -> LC sampling of twisted supercell Hexagonal BZ
+					// 2 -> LC sampling of layer 1's Hexagonal BZ ()
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("k_type",atoi(in_string.c_str()));
@@ -254,6 +263,8 @@ int main(int argc, char** argv) {
 						opts.setParam("solver_type",4);
 					} else if (in_string == "STRAIN"){
 						opts.setParam("solver_type",5);
+					} else if (in_string == "FIXED_SHIFT"){
+						opts.setParam("solver_type",6);
 					}
 				}
 

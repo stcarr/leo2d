@@ -368,7 +368,7 @@ void Locality::constructGeom(){
 		max_index = h.getMaxIndex();
 
 		// These are Twist or Strain solver types, so we only need to get targets
-		if (solver_type == 1 || solver_type == 2 || solver_type == 5){
+		if (solver_type == 1 || solver_type == 2 || solver_type == 5 || solver_type == 6){
 			target_indices = h.getTargetList(opts);
 		}
 
@@ -713,7 +713,7 @@ void Locality::constructMatrix(int* index_to_grid,double* index_to_pos, int* int
 		//printf("rank %d entering constructMatrix(). \n", rank);
 
 	// 1: Chebyshev polynomial sampling of eigenvalue spectrum (DOS)
-	if(solver_type < 6){
+	if(solver_type < 7){
 		if (rank == root) {
 			rootChebSolve(index_to_grid, index_to_pos,
 						inter_pairs, inter_sc_vecs,
@@ -873,8 +873,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				// Custom shifts for making "perfect" 2H aligned bilayers in TMDCs
 				// Assumes the top layer has 180 rotation, and bottom layer has 0 rotation
-				//shifts[1][0] = 2.0/3.0;
-				//shifts[1][1] = 1.0/3.0;
+				// shifts[1][0] = 2.0/3.0;
+				// shifts[1][1] = 1.0/3.0;
 
 				printf("shifts[%d] = [%lf %lf] \n",num_sheets-1,shifts[num_sheets-1][0],shifts[num_sheets-1][1]);
 
@@ -1081,11 +1081,48 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			}
 		}
 
+		// runs one job with a fixed shift
+
+		if (solver_type == 6){
+			maxJobs = 1;
+			std::vector< std::vector<double> > shifts;
+			shifts.resize(num_sheets);
+			for(int s = 0; s < num_sheets ; ++s){
+				shifts[s].resize(3);
+				if (s == 0){
+					shifts[s][0] = 0;
+					shifts[s][1] = 0;
+					shifts[s][2] = 0;
+				} else {
+					shifts[s][0] = 1.0/3.0;
+					shifts[s][1] = 1.0/3.0;
+					shifts[s][2] = 0;
+				}
+			}
+
+			int n_targets = (int)target_indices[0].size();
+			std::vector<int> targets;
+			targets.resize(n_targets);
+			for (int t = 0; t < n_targets; ++ t){
+				targets[t] = target_indices[0][t];
+			}
+
+			Job_params tempJob(opts);
+			tempJob.setParam("shifts",shifts);
+			tempJob.setParam("target_list",targets);
+			tempJob.setParam("jobID",1);
+			tempJob.setParam("max_jobs",maxJobs);
+			tempJob.setParam("num_targets",n_targets);
+			tempJob.setParam("target_list",targets);
+			jobArray.push_back(tempJob);
+
+		}
+
 		if (k_sampling == 1){
 
 			int k_type = opts.getInt("k_type");
 
-			if (k_type == 0){
+			if (k_type == 0){ // grid sampling
 				int num_k1 = opts.getInt("num_k1");
 				int num_k2 = opts.getInt("num_k2");
 				std::vector< std::vector<double> > a = opts.getDoubleMat("supercell");
@@ -3022,7 +3059,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	// Following saves positions and pairings to file
 
 	int matrix_pos_save = opts.getInt("matrix_pos_save");
-	if (matrix_pos_save == 1){
+	if (matrix_pos_save > 0){
 
 		std::ofstream outFile3;
 		const char* extension3 = "_pos.dat";
@@ -3037,7 +3074,10 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 		}
 
 		outFile3.close();
+	}
 		// ---------------
+	if (matrix_pos_save > 1){
+
 		std::ofstream outFile4;
 		const char* extension4 = "_intra_pos.dat";
 		outFile4.open ((job_name + extension4).c_str());

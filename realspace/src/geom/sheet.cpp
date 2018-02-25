@@ -546,8 +546,8 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
       int sc_y_stride = 0;
 
       if (boundary_condition == 1){
-        sc_x_stride = 1;
-        sc_y_stride = 1;
+        sc_x_stride = opts.getInt("sc_search_size");
+        sc_y_stride = opts.getInt("sc_search_size");
       }
 
       // We check all nearby supercells

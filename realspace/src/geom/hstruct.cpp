@@ -305,8 +305,8 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     int sc_y_stride = 0;
 
     if (boundary_condition == 1){
-      sc_x_stride = 2;
-      sc_y_stride = 2;
+      sc_x_stride = opts.getInt("sc_search_size");
+      sc_y_stride = opts.getInt("sc_search_size");
     }
 
     // We check all nearby supercells
@@ -405,7 +405,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     								pair_here.push_back(kh);
     								pair_here.push_back(k2 + base_index);
     								kh_pair_array.push_back(pair_here);
-									kh_supercell_vecs.push_back(sc_vec);
+									  kh_supercell_vecs.push_back(sc_vec);
     							}
     						}
     					}
@@ -465,7 +465,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     								pair_here.push_back(kh);
     								pair_here.push_back(k2 + base_index);
     								kh_pair_array.push_back(pair_here);
-									kh_supercell_vecs.push_back(sc_vec);
+									  kh_supercell_vecs.push_back(sc_vec);
 
     							}
     						}
@@ -848,7 +848,7 @@ std::vector< std::vector<int> > Hstruct::getTargetList(Job_params opts){
 	int solver_type = opts.getInt("solver_type");
 	int strain_type = opts.getInt("strain_type");
 
-	if (solver_type == 1 || solver_type == 2 || (solver_type == 5 && strain_type == 3) ) {
+	if (solver_type == 1 || solver_type == 2 || (solver_type == 5 && strain_type == 3) || solver_type == 6 ) {
 
 		std::vector<int> temp_list;
 
