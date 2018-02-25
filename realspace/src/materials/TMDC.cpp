@@ -1410,11 +1410,7 @@ double Coupling::Interlayer::S_to_S(const Orbital orbit_row,    const Orbital or
         double V_sigma = nu_sigma*std::exp(-std::pow(r/R_sigma, eta_sigma));
         double V_pi    =    nu_pi*std::exp(-std::pow(r/R_pi,    eta_pi   ));
         double sum_t = 0.0;
-<<<<<<< HEAD
         for (int idx = 0; idx < 3; ++idx){
-=======
-        for (int idx = 0; idx < 2; ++idx){
->>>>>>> ffbaa8be0cbad5b422bcc57e48835b9cf63f0316
           sum_t = sum_t + p_col[idx]*((V_sigma - V_pi)*(rot_vector[p_row] * rot_vector[idx] / r_sq) + (p_row == idx ? V_pi : 0));
         }
         return sum_t;
@@ -1514,7 +1510,6 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
     rot_vector[0] = cos(-theta_row)*vector[0] - sin(-theta_row)*vector[1];
     rot_vector[1] = sin(-theta_row)*vector[0] + cos(-theta_row)*vector[1];
     rot_vector[2] = vector[2];
-<<<<<<< HEAD
 
     double tot_theta = theta_col - theta_row;
     int p_col_start = (index(orbit_col) - 5) % 3;
@@ -1533,30 +1528,6 @@ double Coupling::Interlayer::Se_to_Se(const Orbital orbit_row,  const Orbital or
       p_col[1] = 0.0;
       p_col[2] = 1.0;
     }
-
-
-
-=======
-
-    double tot_theta = theta_col - theta_row;
-    int p_col_start = (index(orbit_col) - 5) % 3;
-    double p_col[3];
-
-    if (p_col_start == 0){ // if p_col is the x orbital
-      p_col[0] = 1.0*cos(tot_theta) - 0.0*sin(tot_theta);
-      p_col[1] = 1.0*sin(tot_theta) + 0.0*cos(tot_theta);
-      p_col[2] = 0.0;
-    } else if (p_col_start == 1){ // if p_col is the y orbital
-      p_col[0] = 0.0*cos(tot_theta) - 1.0*sin(tot_theta);
-      p_col[1] = 0.0*sin(tot_theta) + 1.0*cos(tot_theta);
-      p_col[2] = 0.0;
-    } else if (p_col_start == 2){ // if p_col is the z orbital
-      p_col[0] = 0.0;
-      p_col[1] = 0.0;
-      p_col[2] = 1.0;
-    }
-
->>>>>>> ffbaa8be0cbad5b422bcc57e48835b9cf63f0316
 
     double r_sq = rot_vector[0]*rot_vector[0] + rot_vector[1]*rot_vector[1] + rot_vector[2]*rot_vector[2];
     if ( (r_sq < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
