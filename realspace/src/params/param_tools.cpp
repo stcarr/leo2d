@@ -315,6 +315,35 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 						outFile << eigenvalues[j] << ", ";
 					}
 					outFile << eigenvalues[local_max_index - 1] << "\n";
+					if (d_weights == 1){
+
+						std::vector< std::vector<double> > eigenweights = job.getDoubleMat("eigenweights");
+
+						for(int t = 0; t < num_targets; ++t){
+							for(int j = 0; j < local_max_index - 1; ++j){
+								outFile << eigenweights[t][j] << ", ";
+							}
+							outFile << eigenweights[t][local_max_index - 1] << "\n";
+						}
+
+						outFile << "\n";
+
+					}
+
+					if (d_vecs == 1){
+							std::vector< std::vector<double> > eigenvectors = job.getDoubleMat("eigenvectors");
+
+							for(int j = 0; j < local_max_index; ++j){
+								for (int m = 0; m < local_max_index - 1; ++m){
+									outFile << eigenvectors[j][m] << ", ";
+								}
+								outFile << eigenvectors[j][local_max_index - 1] << "\n";
+							}
+
+							outFile << "\n";
+
+					}
+
 				} else if (d_cond > 0){
 
 					std::vector< std::vector<double> > M_xx = job.getDoubleMat("M_xx");
