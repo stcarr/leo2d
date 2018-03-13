@@ -184,6 +184,10 @@ int main(int argc, char** argv) {
 				if (in_string == "START_SHEET") {
 					getline(in_line,in_string,' ');
 					current_sheet = atoi(in_string.c_str()) - 1;
+					if (current_sheet+1 > num_sheets){
+						printf("ERROR: Cannot take in sheet %d if NUM_SHEETS = %d ! Quitting... \n",current_sheet+1,num_sheets);
+						return -1;
+					}
 				}
 
 				if (in_string == "END_SHEET") {
@@ -337,8 +341,39 @@ int main(int argc, char** argv) {
 				if (in_string == "MOM_VF_ONLY"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-				        opts.setParam("mom_vf_only",atoi(in_string.c_str()));
+	        opts.setParam("mom_vf_only",atoi(in_string.c_str()));
 				}
+
+				if (in_string == "NUM_MOM_GROUPS"){
+						getline(in_line,in_string,' ');
+						getline(in_line,in_string,' ');
+						opts.setParam("num_mom_groups",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "MOM_GROUPS"){
+						std::vector< std::vector<int> > mom_groups;
+						int num_mom_groups = opts.getInt("num_mom_groups");
+						mom_groups.resize(num_mom_groups);
+						getline(in_line,in_string,' ');
+						for (int mom_count = 0; mom_count < num_mom_groups; ++mom_count){
+							std::vector<int> curr_mom_group;
+							int same_group = 1;
+							while (same_group){
+								getline(in_line,in_string,' ');
+								std::string temp_string = in_string;
+								if (in_string == "/"){
+									same_group = 0;
+								} else {
+								curr_mom_group.push_back(stoi(temp_string));
+								}
+							}
+
+							mom_groups[mom_count] = curr_mom_group;
+
+						}
+				}
+
+
 
 				if (in_string == "FFT_FROM_FILE"){
 					getline(in_line,in_string,' ');

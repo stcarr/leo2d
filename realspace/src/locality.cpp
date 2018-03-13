@@ -3854,6 +3854,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
+	// Here we assume every layer has the same k-shift
 	double shift_x = shifts[0][0];
 	double shift_y = shifts[0][1];
 
@@ -3877,6 +3878,11 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	std::vector< std::vector< std::vector< std::vector<double> > > > bloch_t_array; // (num_sheets) x (N_R) x (num_orbitals) x (num_orbitals) of real-space t_ij coupling values
 
 	// Start loop over sheets to create bloch-theory monolayer bands
+	// For now, we need each layer to never have an orbital outside the unit-cell!
+	// Will eventually want to add some controls for when the fixed-shift methods
+	// push the individual layer atoms out of the original unit-cell (need to make
+	// sure all orbitals are in the unit-cell when doing Bloch theory!)
+
 	for (int s = 0; s < num_sheets; ++s){
 
 		int N_R = 0;
