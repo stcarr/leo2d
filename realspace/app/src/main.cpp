@@ -803,12 +803,36 @@ int main(int argc, char** argv) {
 				sc_stride_here[1][0] = 0;
 				sc_stride_here[1][1] = Y;
 
-				printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
-				printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
-				printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
-
 				for (int i = 0; i < (int)s_data.size(); ++i){
-					s_data[i].supercell = sc_here;
+
+					double theta = angles[i];
+					std::vector< std::vector<double> > sc_rot;
+					sc_rot.resize(2);
+					sc_rot[0].resize(2);
+					sc_rot[1].resize(2);
+
+					sc_rot[0][0] =  sc_here[0][0]*cos(theta) + sc_here[0][1]*sin(theta);
+					sc_rot[0][1] = -sc_here[0][0]*sin(theta) + sc_here[0][1]*cos(theta);
+					sc_rot[1][0] =  sc_here[1][0]*cos(theta) + sc_here[1][1]*sin(theta);
+					sc_rot[1][1] = -sc_here[1][0]*sin(theta) + sc_here[1][1]*cos(theta);
+
+					std::vector< std::vector<int> > sc_stride_rot;
+					sc_stride_rot.resize(2);
+					sc_stride_rot[0].resize(2);
+					sc_stride_rot[1].resize(2);
+
+					sc_stride_rot[0][0] =  sc_stride_here[0][0]*cos(theta) + sc_stride_here[0][1]*sin(theta);
+					sc_stride_rot[0][1] = -sc_stride_here[0][0]*sin(theta) + sc_stride_here[0][1]*cos(theta);
+					sc_stride_rot[1][0] =  sc_stride_here[1][0]*cos(theta) + sc_stride_here[1][1]*sin(theta);
+					sc_stride_rot[1][1] = -sc_stride_here[1][0]*sin(theta) + sc_stride_here[1][1]*cos(theta);
+
+
+					//printf("unitCell  %d = [%lf %lf; %lf %lf]\n",i, unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+					printf("supercell %d = [%lf %lf; %lf %lf]\n", i, sc_rot[0][0], sc_rot[0][1], sc_rot[1][0], sc_rot[1][1]);
+					printf("sc_stride %d = [%d %d; %d %d]\n", i, sc_stride_rot[0][0], sc_stride_rot[0][1], sc_stride_rot[1][0], sc_stride_rot[1][1]);
+
+					s_data[i].supercell = sc_rot;
+					s_data[i].supercell = sc_rot;
 					s_data[i].supercell_stride = sc_stride_here;
 				}
 

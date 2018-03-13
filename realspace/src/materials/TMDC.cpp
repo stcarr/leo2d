@@ -15,7 +15,7 @@ double Coupling::Intralayer::MoS2(const Orbital orbit_row,  const Orbital orbit_
 {
     /* Lookup table of coefficients */
     // GW corrected Terms
-    // /*
+    /*
     const double onsite[11][11] =
        {
             { 1.429200, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000},
@@ -198,9 +198,9 @@ double Coupling::Intralayer::MoS2(const Orbital orbit_row,  const Orbital orbit_
             { 0.000000, 0.000000, 0.062872, 0.089087,-0.051435, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000},
             { 0.000000, 0.000000, 0.057583, 0.160292,-0.092545, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000}
        };
-    // */
+    */
     // NON-GW Corrected Terms:
-    /*
+    // /*
     const double onsite[11][11] =
        {
             {1.066800, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000},
@@ -383,7 +383,7 @@ double Coupling::Intralayer::MoS2(const Orbital orbit_row,  const Orbital orbit_
             {0.000000, 0.000000, 0.052962, 0.075046, -0.043328, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000},
             {0.000000, 0.000000, 0.048508, 0.135028, -0.077959, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000}
        };
-       */
+    // */
     /**
      * Compute hexagonal homogeneous coordinates from grid coordinates.
      * We use the following system:
@@ -1294,6 +1294,20 @@ double Coupling::Interlayer::S_to_S(const Orbital orbit_row,    const Orbital or
 
     const double XX_sep     = (12.29/2.0) - 3.130;
 
+    // Small correction for periodic case of MoS2, fixes bands near Gamma point slightly
+    /*
+    if( (abs(vector[2] - 4.58) < 0.05) && (index(orbit_row) == 2|| index(orbit_col) == 2) ) {
+      if (index(orbit_row) == 7 || index(orbit_row) == 10 || index(orbit_col) == 7 || index(orbit_col) == 10){
+        if (vector[0]*vector[0] + vector[1]*vector[1] < 0.05){
+          return 0.060; // 60 meV
+        } else if (abs(vector[0]*vector[0] + vector[1]*vector[1] - 3.18*3.18) < 0.05){
+          return 0.026; // 26 meV
+        }
+      }
+
+    }
+    */
+    
     /*                          Shift the arrow vector by the orbital coordinates                               */
     /* Simplification: we assume that Atom M is at the origin, and X_A / X_B have the same in-plane coordinates */
     /*

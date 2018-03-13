@@ -873,8 +873,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				// Custom shifts for making "perfect" 2H aligned bilayers in TMDCs
 				// Assumes the top layer has 180 rotation, and bottom layer has 0 rotation
-				// shifts[1][0] = 2.0/3.0;
-				// shifts[1][1] = 1.0/3.0;
+				shifts[1][0] = 2.0/3.0;
+				shifts[1][1] = 1.0/3.0;
 
 				printf("shifts[%d] = [%lf %lf] \n",num_sheets-1,shifts[num_sheets-1][0],shifts[num_sheets-1][1]);
 
@@ -1261,6 +1261,21 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 					//printf("shift = [%lf, %lf] \n",shifts[0],shifts[1]);
 
+					double gamma[2];
+					double m[2];
+					double k[2];
+
+					double dot = b1[0][0]*b1[1][0] + b1[0][1]*b1[1][1];	//dot product
+					double det = b1[0][0]*b1[1][1] - b1[1][0]*b1[0][1];	//determinant
+					double phi = atan2(det, dot);   										// angle between the two
+
+					gamma[0] = 0.0;
+					gamma[1] = 0.0;
+					m[0] = b1[0][0]/2.0;
+					m[1] = b1[0][1]/2.0;
+					k[0] = (m[0]*cos(phi/2.0) - m[1]*sin(phi/2.0))/cos(phi/2.0);
+					k[1] = (m[0]*sin(phi/2.0) + m[1]*cos(phi/2.0))/cos(phi/2.0);
+					/*
 					double k[2];
 					double k_prime[2];
 
@@ -1287,6 +1302,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 					m[0] = k[0] + d*y_dir[0];
 					m[1] = k[1] + d*y_dir[1];
+					*/
 
 					printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
 
@@ -1302,6 +1318,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 							double k_x = 0;
 							double k_y = 0;
 
+							/*
 							if (c <= 1) {
 								k_x = (1.0-c)*k[0] + (c-0.0)*gamma[0];
 								k_y = (1.0-c)*k[1] + (c-0.0)*gamma[1];
@@ -1311,6 +1328,18 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 							} else {
 								k_x = (3.0-c)*m[0] + (c-2.0)*k[0];
 								k_y = (3.0-c)*m[1] + (c-2.0)*k[1];
+							}
+							*/
+
+							if (c <= 1) {
+								k_x = (1.0-c)*gamma[0] + (c-0.0)*m[0];
+								k_y = (1.0-c)*gamma[1] + (c-0.0)*m[1];
+							} else if (c <= 2) {
+								k_x = (2.0-c)*m[0] + (c-1.0)*k[0];
+								k_y = (2.0-c)*m[1] + (c-1.0)*k[1];
+							} else {
+								k_x = (3.0-c)*k[0] + (c-2.0)*gamma[0];
+								k_y = (3.0-c)*k[1] + (c-2.0)*gamma[1];
 							}
 
 							Job_params tempJob(jobArray[j]);
@@ -3145,6 +3174,46 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 		//printf("k_vec [%lf, %lf]\n",k_vec[0],k_vec[1]);
 	}
 
+	//
+	/*
+	double phi = 0.0;
+	double r = 2.2;
+
+	while(phi < 2*PI){
+		Materials::Mat mat1 = sdata[0].mat;
+	 	std::array<double, 3> disp;
+		disp[0] = r*cos(phi);
+		disp[1] = r*sin(phi);
+		disp[2] = 3.015;
+		int orbit1 = 5;
+		int orbit2 = 9;
+		double theta1 = 0.0;
+		double theta2 = 0.0;
+	 	double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat1);
+		printf("phi = %lf, t = %lf \n",phi*180.0/PI,t);
+		phi = phi + PI/12;
+
+	}
+	*/
+	/*
+	std::array<double, 3> disp;
+	disp[0] = 0.0000;
+	disp[1] = 1.8373;
+	disp[2] = 3.0128;
+	for (int o1 = 8; o1 < 11; ++o1){
+		printf("[");
+		for (int o2 = 5; o2 < 8; ++o2){
+			Materials::Mat mat1 = sdata[0].mat;
+			double theta1 = 0.0;
+			double theta2 = 0.0;
+			double t = Materials::interlayer_term(o1, o2, disp, theta1, theta2, mat1, mat1);
+			printf("%lf ,",t);
+		}
+		printf("]\n");
+	}
+	*/
+	//
+
 	//jobIn.printParams();
 
 
@@ -3519,7 +3588,6 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 						sc_i = inter_sc_vecs[inter_counter][0];
 						sc_j = inter_sc_vecs[inter_counter][1];
-
 						new_pos_shift_x = sc_i*supercell[0][0] + sc_j*supercell[1][0];
 						new_pos_shift_y = sc_i*supercell[0][1] + sc_j*supercell[1][1];
 				}
@@ -3562,6 +3630,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 				double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
 
+				//double t = Materials::interlayer_term(orbit1, orbit2, disp, 0.0, 0.0, mat1, mat2)/energy_rescale;
+				//if(abs(t) > 1e-4){
+				//if ((orbit1 == 7 && orbit2 == 10) || (orbit1 == 10 && orbit2 == 7)){
+					//printf("sheet %d to %d, orbit %d to %d, [%lf, %lf, %lf]: %lf \n",index_to_grid[k_i*4 + 3],index_to_grid[new_k*4 + 3],orbit1, orbit2, disp[0],disp[1],disp[2],t);
+					//printf("%lf, %lf, %lf, %d, %d, %d, %d, %lf \n",disp[0],disp[1],disp[2],orbit1,orbit2,sc_i,sc_j,t);
+				//}
 				//if (t != 0 ){
 
 				// First get Magnetic field phase
