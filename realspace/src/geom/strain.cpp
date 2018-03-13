@@ -357,12 +357,14 @@ std::vector<double> StrainCalc::realspaceDisp(std::vector<double> pos_in, int sh
 
 
 	double x = pos_in[0] - shift;
+  double y = pos_in[1];
 
 	double disp_vec[2];
 
 	disp_vec[0] = 0.5*a;
 	disp_vec[1] = SQRT3_6*a;
 
+  /*
 	if (sheet == 0){
 		// u_x:
 		disp[0] = disp_vec[0]*atan(x/lambda)/(PI_2);; // = a/PI * atan(x/lambda)
@@ -375,6 +377,32 @@ std::vector<double> StrainCalc::realspaceDisp(std::vector<double> pos_in, int sh
 		disp[1] = 0.0;
 		disp[2] = 0.0;
 	}
+  */
+
+  // Make two AB-BA solitons
+  int disp_sign = 1;
+  if (sheet == 1){
+    disp_sign = -1;
+  }
+
+  if (y <= 25){
+    disp[0] = disp_sign*0.5*disp_vec[0];
+    disp[1] = disp_sign*0.5*disp_vec[1];
+  } else if (y <= 75){
+    double d = (y-25.0)/50.0;
+    disp[0] = disp_sign*(0.5-d)*disp_vec[0];
+    disp[1] = disp_sign*(0.5-d)*disp_vec[1];
+  } else if (y <= 125){
+    disp[0] = -disp_sign*0.5*disp_vec[0];
+    disp[1] = -disp_sign*0.5*disp_vec[1];
+  } else  if (y <= 175){
+    double d = (y-125.0)/50.0;
+    disp[0] = -disp_sign*(0.5-d)*disp_vec[0];
+    disp[1] = -disp_sign*(0.5-d)*disp_vec[1];
+  } else {
+    disp[0] = disp_sign*0.5*disp_vec[0];
+    disp[1] = disp_sign*0.5*disp_vec[1];
+  }
 
 	//printf("disp = [%lf, %lf] \n",disp[0],disp[1]);
 	return disp;
@@ -394,6 +422,7 @@ std::vector< std::vector<double> > StrainCalc::realspaceStrain(std::vector<doubl
 	strain_here[1].resize(2);
 
 	double x = pos_in[0] - shift;
+  double y = pos_in[0] - shift;
 
 	if (sheet == 0){
 		// u_xx:
@@ -404,6 +433,7 @@ std::vector< std::vector<double> > StrainCalc::realspaceStrain(std::vector<doubl
 		strain_here[1][0] =  strain_here[0][1] ;
 		// u_yy:
 		strain_here[1][1] =  0.0;
+
 	} else {
 		// u_xx:
 		strain_here[0][0] =  0.0;

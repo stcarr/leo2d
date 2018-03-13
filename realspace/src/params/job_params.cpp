@@ -52,6 +52,7 @@ Job_params::Job_params() {
 	// Geometery settings
 	setParam("num_sheets",i_one);
 	setParam("boundary_condition",i_zero);
+	setParam("sc_search_size", i_one);
 
 	// Strain settings
 	setParam("strain_type",i_zero);
