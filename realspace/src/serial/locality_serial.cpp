@@ -343,7 +343,7 @@ void Locality_serial::constructGeom(){
 		}
 
 		printf("Building Hstruct. \n");
-		Hstruct h(sheets,angles,heights,solver_space);
+		Hstruct h(sheets,angles,heights,solver_space,opts);
 
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();

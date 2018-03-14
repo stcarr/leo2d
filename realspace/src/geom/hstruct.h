@@ -24,11 +24,12 @@ class Hstruct {
       std::vector<double> heights;
       std::vector<std::vector<double> > shifts;
       std::vector<std::vector<int> > index_array;
+      Job_params opts_base;
 
       void setIndex();
 
     public:
-      Hstruct(std::vector<Sheet>,std::vector<double>,std::vector<double>,int);
+      Hstruct(std::vector<Sheet>,std::vector<double>,std::vector<double>,int,Job_params);
       Hstruct(const Hstruct& orig);
       ~Hstruct();
 

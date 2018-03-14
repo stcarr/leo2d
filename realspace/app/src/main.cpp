@@ -351,6 +351,7 @@ int main(int argc, char** argv) {
 				}
 
 				if (in_string == "MOM_GROUPS"){
+						int sheet_count = 0;
 						std::vector< std::vector<int> > mom_groups;
 						int num_mom_groups = opts.getInt("num_mom_groups");
 						mom_groups.resize(num_mom_groups);
@@ -358,19 +359,23 @@ int main(int argc, char** argv) {
 						for (int mom_count = 0; mom_count < num_mom_groups; ++mom_count){
 							std::vector<int> curr_mom_group;
 							int same_group = 1;
-							while (same_group){
+							while (same_group && (sheet_count < num_sheets) ){
 								getline(in_line,in_string,' ');
 								std::string temp_string = in_string;
 								if (in_string == "/"){
 									same_group = 0;
 								} else {
-								curr_mom_group.push_back(stoi(temp_string));
+									// subtract one to put sheets into 0-based indexing for rest of code
+									printf("adding sheet %d to group %d \n",stoi(temp_string),mom_count+1);
+									curr_mom_group.push_back(stoi(temp_string) - 1);
+									sheet_count = sheet_count + 1;
 								}
 							}
 
 							mom_groups[mom_count] = curr_mom_group;
 
 						}
+						opts.setParam("mom_groups",mom_groups);
 				}
 
 

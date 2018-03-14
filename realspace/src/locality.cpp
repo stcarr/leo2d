@@ -362,7 +362,7 @@ void Locality::constructGeom(){
 		}
 
 		printf("rank %d building Hstruct. \n", rank);
-		Hstruct h(sheets,angles,heights,solver_space);
+		Hstruct h(sheets,angles,heights,solver_space,opts);
 
 		// Broadcast "index to grid" mapping information
 		max_index = h.getMaxIndex();
@@ -1366,15 +1366,24 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		}
 
 	} else if (solver_space == 1) {
-		// Square sampling
 
 		int mom_vf_only = opts.getInt("mom_vf_only");
+		int num_mom_groups = opts.getInt("num_mom_groups");
+		if (num_mom_groups != 2){
+			printf("!!LEO2D ERROR!! Momentum-space only supported for NUM_MOM_GROUPS = 2 \n");
+			throw std::runtime_error("Locality::rootChevSolve Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
+		}
+		std::vector< std::vector<int> > mom_groups = opts.getIntMat("mom_groups");
 
+		printf("comparing sheet %d to sheet %d \n",mom_groups[0][0]+1,mom_groups[1][0]+1);
+
+		std::vector< std::vector<double> > b1 = getReciprocal(mom_groups[0][0]);
+		std::vector< std::vector<double> > b2 = getReciprocal(mom_groups[1][0]);
+
+		// jobs that try to compute fermi-velocity only
 		if (mom_vf_only == 1){
 			//maxJobs = 2;
 			maxJobs = 1;
-			std::vector< std::vector<double> > b1 = getReciprocal(0);
-			std::vector< std::vector<double> > b2 = getReciprocal(1);
 
 			double k_1[2];
 			double k_2[2];
@@ -1483,12 +1492,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			}
 		}
 
+		// Square sampling
 		else if (solver_type == 1){
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts*nShifts;
-
-			std::vector< std::vector<double> > b1 = getReciprocal(0);
-			std::vector< std::vector<double> > b2 = getReciprocal(1);
 
 			// Changes to make us cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 			//b1[1][0] = -b1[1][0];
@@ -1565,10 +1572,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		else if (solver_type == 2){
 			nShifts = opts.getInt("nShifts");
 			maxJobs = nShifts;
-
-			std::vector< std::vector<double> > b1 = getReciprocal(0);
-			std::vector< std::vector<double> > b2 = getReciprocal(1);
-
 
 			// cut through K and K' points (i.e. Gamma -> K -> K' -> Gamma)
 
@@ -2595,6 +2598,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s][0];
 				i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s][1];
 				i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
+
 				//printf("pos[%d] = [%lf, %lf, %lf] \n",i,i2pos[i*3 + 0],i2pos[i*3 + 1],i2pos[i*3 + 2]);
 			/**} if (s == 1){
 				i2pos[i*3 + 0] = -index_to_pos[i*3 + 0] + shifts[s*3 + 0]*b1[0][0] + shifts[s*3 + 1]*b1[0][1];
@@ -4115,6 +4119,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				int orbit2 = index_to_grid[new_k*4 + 2];
 
 				// Momentum-space Interlayer coupling is evaluated at k = k2 + k1 - q
+				//printf("[x1,y1] = [%lf, %lf], [x2,y2] = [%lf, %lf] \n",x1,y1,x2,y2);
 				double dx = x2 + x1 - shift_x;
 				double dy = y2 + y1 - shift_y;
 
@@ -4135,6 +4140,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 				double orb_disp_x = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,0);
 				double orb_disp_y = fftw_inter.get_fft_orb_disps(s1,s2,orbit1,orbit2,1);
+				//printf("[dx, dy] = [%lf, %lf], orb_disp_x = %lf, orb_disp_y = %lf \n",dx,dy, orb_disp_x, orb_disp_y);
 
 				std::complex<double> phase_here;
 				phase_here = std::polar(1.0, -dx*orb_disp_x - dy*orb_disp_y);

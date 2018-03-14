@@ -213,7 +213,7 @@ double interp_4point(double x, double y, double v1, double v2, double v3, double
 
 double Momentum_coupling::interp_fft(double x_input, double y_input, int s1, int s2, int o1, int o2, int entry) {
 
-	printf("x_input = %lf, y_input = %lf, s1 = %d, s2 = %d, o1 = %d, o2 = %d, entry = %d \n",x_input, y_input,s1,s2,o1,o2,entry);
+	//printf("x_input = %lf, y_input = %lf, s1 = %d, s2 = %d, o1 = %d, o2 = %d, entry = %d \n",x_input, y_input,s1,s2,o1,o2,entry);
 	// (x_input, y_input) is location at which you want to know the (interpolated) value of the fftw_complex data
 	// o1, o2 are two two orbitals whose interlayer coupling you are computing
 	// entry is 0 for real and 1 for imaginary part

@@ -19,7 +19,7 @@
 // ---------------------
 // Use this constructor!
 // ---------------------
-Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std::vector<double> heights_in, int solver_space_in) {
+Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std::vector<double> heights_in, int solver_space_in, Job_params opts_in) {
 
   std::vector<double> blank_shift;
 	// Create a shift corresponding to 0 so we can initialize
@@ -36,13 +36,14 @@ Hstruct::Hstruct(std::vector<Sheet> sheets_in,std::vector<double> angles_in,std:
 
   max_sheets = sheets.size();
 	solver_space = solver_space_in;
+  opts_base = opts_in;
 
 	// For Momentum space:
 	// Need to have sheet 0 get sheet 1's reciprocal lattice before sheet 0 constructs its geometry (and vice-versa)
 	// Currently we assume that sheet 0 and sheet 1 are identical (up to a twist), so we do not "swap" their reciprocal lattices.
 
 	if (solver_space == 1) {
-		printf("!!NOTE!!: Momentum-space only implemented for bilayers (check constructor in hstruct.cpp for more info) \n");
+		printf("!!NOTE!!: Momentum-space only implemented for one moire angle! (check constructor in hstruct.cpp for more info) \n");
 	}
 
 	// Call to generate index information
@@ -168,15 +169,33 @@ double Hstruct::posAtomIndex(int k, int dim){
 
     double theta;
 
-	// If we are in Momentum-space, we need sheet 0 to have the geometry of sheet 1, so we swap the angles
+	// If we are in Momentum-space, we need group 0 to have the geometry of group 1, so we swap the angles between groups
 	if (solver_space == 0) {
 		theta = angles[s];
 	} else if (solver_space == 1) {
-		if (s == 0) {
-			theta = angles[1];
-		} else if (s == 1) {
-			theta = angles[0];
+
+    int num_mom_groups = opts_base.getInt("num_mom_groups");
+    if (num_mom_groups != 2){
+      throw std::runtime_error("Hstruct::posAtomIndex Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
+    }
+
+    std::vector< std::vector<int> > mom_groups = opts_base.getIntMat("mom_groups");
+
+    int tar_group = -1;
+    for (int i = 0; i < (int)mom_groups.size(); ++i){
+      for (int j = 0; j < (int)mom_groups[i].size(); ++j){
+        if (mom_groups[i][j] == s){
+          tar_group = i;
+        }
+      }
+    }
+
+		if (tar_group == 0) {
+			theta = angles[mom_groups[1][0]];
+		} else if (tar_group == 1) {
+      theta = angles[mom_groups[0][0]];
 		}
+
 	}
 
     if (dim == 0){
@@ -205,11 +224,28 @@ int Hstruct::findNearest(double (&pos)[3],int s, int dim){
 	if (solver_space == 0) {
 		theta = -angles[s];
 	} else if (solver_space == 1) {
-		if (s == 0) {
-			theta = -angles[1];
-		} else if (s == 1) {
-			theta = -angles[0];
-		}
+
+        int num_mom_groups = opts_base.getInt("num_mom_groups");
+        if (num_mom_groups != 2){
+          throw std::runtime_error("Hstruct::findNearest Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
+        }
+
+        std::vector< std::vector<int> > mom_groups = opts_base.getIntMat("mom_groups");
+
+        int tar_group = -1;
+        for (int i = 0; i < (int)mom_groups.size(); ++i){
+          for (int j = 0; j < (int)mom_groups[i].size(); ++j){
+            if (mom_groups[i][j] == s){
+              tar_group = i;
+            }
+          }
+        }
+
+    		if (tar_group == 0) {
+    			theta = angles[mom_groups[1][0]];
+    		} else if (tar_group == 1) {
+          theta = angles[mom_groups[0][0]];
+    		}
 	}
 
 	double x = pos[0];
