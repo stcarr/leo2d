@@ -1382,8 +1382,15 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 		// jobs that try to compute fermi-velocity only
 		if (mom_vf_only == 1){
-			//maxJobs = 2;
-			maxJobs = 1;
+
+			// hard-coded control of slope method (type = 0) and gamme-point gap method (type = 1)
+			int mom_vf_type = 0;
+
+			if (mom_vf_type == 0){
+				maxJobs = 2;
+			}else{
+				maxJobs = 1;
+			}
 
 			double k_1[2];
 			double k_2[2];
@@ -1430,14 +1437,18 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				//double c = (3.0/((double) maxJobs))*i;
 
 				//double c = (6.0/((double) maxJobs))*i;
+				double c = 0.0;
+				if(mom_vf_type == 0){
+					c = 0.0;
+				} else{
+					c = 1.0;
+				}
 
-				double c = 1.0;
-				/*
 				if (i == 1){
 					// only go a little along K-Gamma line to compute the fermi-velocity
 					c = 0.06;
 				}
-				*/
+
 				double shift_x = 0;
 				double shift_y = 0;
 

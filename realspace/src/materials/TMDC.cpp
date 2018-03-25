@@ -1307,7 +1307,7 @@ double Coupling::Interlayer::S_to_S(const Orbital orbit_row,    const Orbital or
 
     }
     */
-    
+
     /*                          Shift the arrow vector by the orbital coordinates                               */
     /* Simplification: we assume that Atom M is at the origin, and X_A / X_B have the same in-plane coordinates */
     /*
