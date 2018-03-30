@@ -1552,10 +1552,11 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					shifts.resize(num_sheets);
 					for(int s = 0; s < num_sheets; ++s){
 						shifts[s].resize(3);
-						shifts[s][0] = p1[0] + x*d_vec1[0] + y*d_vec2[0];
-						shifts[s][1] = p1[1] + x*d_vec1[1] + y*d_vec2[1];
+						shifts[s][0] = x*d_vec1[0] + y*d_vec2[0] + p1[0];
+						shifts[s][1] = x*d_vec1[1] + y*d_vec2[1] + p1[1];
 						shifts[s][2] = 0;
 					}
+					//printf("k = [%lf, %lf] \n",shifts[0][0],shifts[0][1]);
 
 					int n_targets = (int)target_indices[0].size();
 					std::vector<int> targets;
@@ -1563,8 +1564,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					for (int t = 0; t < n_targets; ++t){
 						targets[t] = target_indices[0][t];
 					}
-
-
 
 					Job_params tempJob(opts);
 					tempJob.setParam("shifts",shifts);
@@ -3557,6 +3556,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 					col_index[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
 					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
+					if (chiral_on == 1){
+						col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
+					}
 					++input_counter;
 				}
 			}
@@ -3696,6 +3701,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 					col_index[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
+					if (chiral_on == 1){
+						col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
+					}
 					++input_counter;
 				}
 
