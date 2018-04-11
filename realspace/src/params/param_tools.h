@@ -58,6 +58,16 @@ namespace Param_tools{
 	// average the change in the variance between two MLMC levels (orig vs cluster) into the total
 	void mlmc_cluster_variance(Job_params& total, Job_params samp_orig, Job_params samp_cluster);
 
+	// save results array to a *.win file for supercell wannierization
+	void wannier_win_save(std::vector<Job_params>& results, std::ofstream& outFile);
+
+	// save results array to a *.eig file for supercell wannierization
+	void wannier_eig_save(std::vector<Job_params>& results, std::ofstream& outFile);
+
+	// save results array's overlap integrals to .mmn file for supercell wannierization
+	void wannier_mmn_save(std::vector<Job_params>& results, std::ofstream& outFile);
+
+
 }
 
 #endif /* PARAM_TOOLS_H */

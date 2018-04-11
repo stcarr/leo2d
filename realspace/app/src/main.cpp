@@ -567,6 +567,20 @@ int main(int argc, char** argv) {
 					opts.setParam("vacancy_file", in_string);
 					}
 
+				// Wannierzation parameters
+
+				if (in_string == "WAN_SAVE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("wan_save",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "WAN_NUM_BANDS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("wan_num_bands",atoi(in_string.c_str()));					
+				}
+
 				// E,B field parameters
 
 				if (in_string == "USE_B_FIELD"){

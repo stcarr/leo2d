@@ -1142,7 +1142,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 							k_vec.resize(2);
 							k_vec[0] = (k1/(double)num_k1)*b[0][0] + (k2/(double)num_k2)*b[1][0];
 							k_vec[1] = (k1/(double)num_k1)*b[0][1] + (k2/(double)num_k2)*b[1][1];
+							std::vector<double> k_vec_grid;
+							k_vec_grid.resize(2);
+							k_vec_grid[0] = (k1/(double)num_k1);
+							k_vec_grid[1] = (k2/(double)num_k2);
 							tempJob.setParam("k_vec",k_vec);
+							tempJob.setParam("k_vec_grid",k_vec_grid);
+							tempJob.setParam("unit_cell",a);
 
 							k_jobArray.push_back(tempJob);
 							++k_jobID;
@@ -1814,13 +1820,36 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		std::cout << "Saving " << job_name << ".cheb to disk. \n";
 		std::ofstream outFile;
 		const char* extension =".cheb";
-		outFile.open ((job_name + extension).c_str());
+		outFile.open( (job_name + extension).c_str() );
 
 		for (int job = 0; job < maxJobs; ++job){
 			Param_tools::save(result_array[job], outFile);
 		}
-
 		outFile.close();
+
+		int wan_save = opts.getInt("wan_save");
+		if (wan_save == 1){
+
+			std::ofstream winOutFile;
+			const char* extension_win =".win";
+			winOutFile.open( (job_name + extension_win).c_str() );
+			Param_tools::wannier_win_save(result_array, winOutFile);
+			winOutFile.close();
+
+			std::ofstream eigOutFile;
+			const char* extension_eig =".eig";
+			eigOutFile.open( (job_name + extension_eig).c_str() );
+			Param_tools::wannier_eig_save(result_array, eigOutFile);
+			eigOutFile.close();
+
+			std::ofstream mmnOutFile;
+			const char* extension_mmn =".mmn";
+			mmnOutFile.open( (job_name + extension_mmn).c_str() );
+			Param_tools::wannier_mmn_save(result_array, mmnOutFile);
+			mmnOutFile.close();
+
+		}
+
 		printTiming(result_array);
 
 	} else if (mlmc == 1){
@@ -1859,6 +1888,30 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
 	}
 
+	// For testing how LAPACK returns eigenvectors...
+	/*
+	double vals[9];
+	vals[0] = 1.0;
+	vals[1] = 6.0;
+	vals[2] = 3.0;
+	vals[3] = 6.0;
+	vals[4] = 2.0;
+	vals[5] = 1.0;
+	vals[6] = 3.0;
+	vals[7] = 1.0;
+	vals[8] = 3.0;
+	DMatrix test_mat;
+	test_mat.setup(3,3,vals);
+	test_mat.debugPrint();
+
+	std::vector<double> vls;
+	vls.resize(3);
+	DMatrix vcs;
+
+	test_mat.eigenSolve(vls, vcs, 'V', 'A', 0, 3);
+	vcs.debugPrint();
+	*/
+
 	while (1) {
 
 		Job_params jobIn;
@@ -1892,6 +1945,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		if (magOn == 1 || solver_space == 1 || k_sampling == 1 || chiral_on == 1){
 			complex_matrix = 1;
 		}
+
+		results_out.setParam("complex_matrix",complex_matrix);
 
 		// If not STOPTAG, start timing the solver
 		time_t tempStart;
@@ -1987,10 +2042,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		SpMatrix dxH;
 		SpMatrix dyH;
 
-		SpMatrix cd_minus;
-		SpMatrix cd_plus;
-		SpMatrix dH_0_minus;
-		SpMatrix dH_0_plus;
+		SpMatrix J_B_x;
+		SpMatrix J_B_y;
+		SpMatrix J_T_x;
+		SpMatrix J_T_y;
+		SpMatrix J_TB_x;
+		SpMatrix J_TB_y;
 
 		double* alpha_0_x_arr = new double[num_targets*local_max_index];
 		double* alpha_0_y_arr = new double[num_targets*local_max_index];
@@ -2001,7 +2058,8 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t,
 						intra_sc_vecs, strain, current_index_reduction, local_max_index);
 			} else if (complex_matrix == 1) {
-				generateCpxH(H, dxH, dyH, cd_minus, cd_plus, dH_0_minus, dH_0_plus,
+				generateCpxH(H, dxH, dyH,
+						J_B_x, J_B_y,J_T_x, J_T_y, J_TB_x, J_TB_y,
 						alpha_0_x_arr, alpha_0_y_arr, jobIn, index_to_grid, i2pos,
 						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t,
 						intra_sc_vecs, strain, current_index_reduction, local_max_index);
@@ -2208,9 +2266,23 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 			} else if (complex_matrix == 1){
 
+
+				int band_start_idx = 0;
+				int band_end_idx = local_max_index;
+				int wan_num_bands = opts.getInt("wan_num_bands");
+
 				std::vector<double> eigenvalue_array;
 				if (d_type == 2){
+					band_start_idx = 0;
+					band_end_idx = 8;
 					eigenvalue_array.resize(8);
+				} else if (wan_num_bands > 0){
+					// select wan_num_bands around the center band value
+					int mid_idx = local_max_index/2.0;
+					int width = wan_num_bands/2.0;
+					band_start_idx = mid_idx - (width - 1);
+					band_end_idx = mid_idx + (width + 1);
+					eigenvalue_array.resize(local_max_index);
 				} else {
 					eigenvalue_array.resize(local_max_index);
 				}
@@ -2224,16 +2296,17 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 				computeEigenComplex(eigenvalue_array, eigvecs, kpm_dos, M_xx, M_yy, M_xy, H, dxH, dyH, jobIn, current_index_reduction, local_max_index);
 
 				std::vector< std::vector<double> > eigenweights;
-				std::vector< std::vector<double> > eigenvectors;
+				std::vector< std::vector<double> > eigenvectors_r;
+				std::vector< std::vector<double> > eigenvectors_c;
 				std::vector< std::vector<double> > cond_xx;
 				std::vector< std::vector<double> > cond_yy;
 				std::vector< std::vector<double> > cond_xy;
 
 				std::vector<double> eigenvalue_real_array;
-				eigenvalue_real_array.resize(eigenvalue_array.size());
+				eigenvalue_real_array.resize(band_end_idx - band_start_idx);
 
-				for (int i = 0; i < eigenvalue_array.size(); ++i){
-					eigenvalue_real_array[i] = eigenvalue_array[i];
+				for (int i = band_start_idx; i < band_end_idx; ++i){
+					eigenvalue_real_array[i - band_start_idx] = eigenvalue_array[i];
 				}
 
 				results_out.setParam("eigenvalues",eigenvalue_real_array);
@@ -2279,7 +2352,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						int tar_here = target_list[t];
 						std::vector<double> temp_vec;
 
-						for (int i = 0; i < local_max_index; ++i){
+						for (int i = band_start_idx; i < band_end_idx; ++i){
 							std::complex<double> w1 = eigenvector_array[i*local_max_index + tar_here];
 							std::complex<double> w2 = w1*std::conj(w1);
 							temp_vec.push_back(w2.real());
@@ -2294,19 +2367,24 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				if (d_vecs == 1){
 
-					for (int j = 0; j < local_max_index; ++j){
+						for (int j = band_start_idx; j < band_end_idx; ++j){
 
-						std::vector<double> temp_vec;
+							std::vector<double> temp_vec_r;
+							std::vector<double> temp_vec_c;
 
-						for (int i = 0; i < local_max_index; ++i){
-							double w = eigenvector_array[i + j*local_max_index].real();
-							temp_vec.push_back(w);
+							for (int i = 0; i < local_max_index; ++i){
+								double w = eigenvector_array[i + j*local_max_index].real();
+								temp_vec_r.push_back(w);
+								double v = eigenvector_array[i + j*local_max_index].imag();
+								temp_vec_c.push_back(v);
+							}
+
+							eigenvectors_r.push_back(temp_vec_r);
+							eigenvectors_c.push_back(temp_vec_c);
 						}
 
-						eigenvectors.push_back(temp_vec);
-					}
-
-					results_out.setParam("eigenvectors",eigenvectors);
+					results_out.setParam("eigenvectors_r",eigenvectors_r);
+					results_out.setParam("eigenvectors_c",eigenvectors_c);
 
 				}
 
@@ -2368,33 +2446,45 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				if (chiral_on == 1){
 
-					DMatrix cdm_cheb;
-					DMatrix cdp_cheb;
-					DMatrix dH0m_cheb;
-					DMatrix dH0p_cheb;
+					DMatrix J_B_x_cheb;
+					DMatrix J_B_y_cheb;
+					DMatrix J_T_x_cheb;
+					DMatrix J_T_y_cheb;
+					DMatrix J_TB_x_cheb;
+					DMatrix J_TB_y_cheb;
 
 					// Project results onto chebyshev basis
-					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, cd_minus, cdm_cheb);
-					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, cd_plus, cdp_cheb);
-					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, dH_0_minus, dH0m_cheb);
-					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, dH_0_plus, dH0p_cheb);
+					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, J_B_x, J_B_x_cheb);
+					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, J_B_y, J_B_y_cheb);
+					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, J_T_x, J_T_x_cheb);
+					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, J_T_y, J_T_y_cheb);
+					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, J_TB_x, J_TB_x_cheb);
+					computeMatrixResponse(jobIn, eigenvalue_array, eigvecs, J_TB_y, J_TB_y_cheb);
 
-					std::vector< std::vector< std::complex<double> > > chiral_dichrosim_minus;
-					std::vector< std::vector< std::complex<double> > > chiral_dichrosim_plus;
-					std::vector< std::vector< std::complex<double> > > chiral_dH0_minus;
-					std::vector< std::vector< std::complex<double> > > chiral_dH0_plus;
+					std::vector< std::vector< std::complex<double> > > J_B_x_mat;
+					std::vector< std::vector< std::complex<double> > > J_B_y_mat;
+					std::vector< std::vector< std::complex<double> > > J_T_x_mat;
+					std::vector< std::vector< std::complex<double> > > J_T_y_mat;
+					std::vector< std::vector< std::complex<double> > > J_TB_x_mat;
+					std::vector< std::vector< std::complex<double> > > J_TB_y_mat;
 
 					// get chebyshev results as CPP nested vector matrices
-					cdm_cheb.getCPPValCopy(chiral_dichrosim_minus);
-					cdp_cheb.getCPPValCopy(chiral_dichrosim_plus);
-					dH0m_cheb.getCPPValCopy(chiral_dH0_minus);
-					dH0p_cheb.getCPPValCopy(chiral_dH0_plus);
+					J_B_x_cheb.getCPPValCopy(J_B_x_mat);
+					J_B_y_cheb.getCPPValCopy(J_B_y_mat);
+					J_T_x_cheb.getCPPValCopy(J_T_x_mat);
+					J_T_y_cheb.getCPPValCopy(J_T_y_mat);
+					J_TB_x_cheb.getCPPValCopy(J_TB_x_mat);
+					J_TB_y_cheb.getCPPValCopy(J_TB_y_mat);
+
 
 					// save results
-					results_out.setParam("chiral_dichrosim_minus", chiral_dichrosim_minus);
-					results_out.setParam("chiral_dichrosim_plus", chiral_dichrosim_plus);
-					results_out.setParam("chiral_dH0_minus", chiral_dH0_minus);
-					results_out.setParam("chiral_dH0_plus", chiral_dH0_plus);
+					results_out.setParam("J_B_x", J_B_x_mat);
+					results_out.setParam("J_B_y", J_B_y_mat);
+					results_out.setParam("J_T_x", J_T_x_mat);
+					results_out.setParam("J_T_y", J_T_y_mat);
+					results_out.setParam("J_TB_x", J_TB_x_mat);
+					results_out.setParam("J_TB_y", J_TB_y_mat);
+
 
 					Param_tools::conductivityTransform(results_out);
 				}
@@ -3154,7 +3244,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 }
 
-void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix &cd_plus, SpMatrix &cd_minus, SpMatrix &dH_0_minus, SpMatrix &dH_0_plus,
+void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
+			SpMatrix &J_B_x, SpMatrix &J_B_y, SpMatrix &J_T_x, SpMatrix &J_T_y, SpMatrix &J_TB_x, SpMatrix &J_TB_y,
 			double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
 			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
 			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index){
@@ -3251,10 +3342,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	dyH.setup(max_nnz, local_max_index, local_max_index);
 
 	if (chiral_on == 1){
-		cd_minus.setup(max_nnz, local_max_index, local_max_index);
-		cd_plus.setup(max_nnz, local_max_index, local_max_index);
-		dH_0_minus.setup(max_nnz, local_max_index, local_max_index);
-		dH_0_plus.setup(max_nnz, local_max_index, local_max_index);
+		J_B_x.setup(max_nnz, local_max_index, local_max_index);
+		J_B_y.setup(max_nnz, local_max_index, local_max_index);
+		J_T_x.setup(max_nnz, local_max_index, local_max_index);
+		J_T_y.setup(max_nnz, local_max_index, local_max_index);
+		J_TB_x.setup(max_nnz, local_max_index, local_max_index);
+		J_TB_y.setup(max_nnz, local_max_index, local_max_index);
 	}
 
 	int* col_index = H.allocColIndx();
@@ -3266,23 +3359,29 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	int* col_index_dy = dyH.allocColIndx();
 	int* row_pointer_dy = dyH.allocRowPtr();
 
-	int* col_index_cd_minus;
-	int* col_index_cd_plus;
-	int* col_index_dH_0_minus;
-	int* col_index_dH_0_plus;
+	int* col_index_J_B_x;
+	int* col_index_J_B_y;
+	int* col_index_J_T_x;
+	int* col_index_J_T_y;
+	int* col_index_J_TB_x;
+	int* col_index_J_TB_y;
 
-	int* row_pointer_cd_minus;
-	int* row_pointer_cd_plus;
-	int* row_pointer_dH_0_minus;
-	int* row_pointer_dH_0_plus;
+	int* row_pointer_J_B_x;
+	int* row_pointer_J_B_y;
+	int* row_pointer_J_T_x;
+	int* row_pointer_J_T_y;
+	int* row_pointer_J_TB_x;
+	int* row_pointer_J_TB_y;
 
 	std::complex<double>* v_c;
 	std::complex<double>* v_c_dx;
 	std::complex<double>* v_c_dy;
-	std::complex<double>* v_c_cd_minus;
-	std::complex<double>* v_c_cd_plus;
-	std::complex<double>* v_c_dH_0_minus;
-	std::complex<double>* v_c_dH_0_plus;
+	std::complex<double>* v_c_J_B_x;
+	std::complex<double>* v_c_J_B_y;
+	std::complex<double>* v_c_J_T_x;
+	std::complex<double>* v_c_J_T_y;
+	std::complex<double>* v_c_J_TB_x;
+	std::complex<double>* v_c_J_TB_y;
 
 
 	v_c = H.allocCpxVal();
@@ -3291,22 +3390,26 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 	if (chiral_on == 1){
 
-		col_index_cd_minus = cd_minus.allocColIndx();
-		row_pointer_cd_minus = cd_minus.allocRowPtr();
+		col_index_J_B_x = J_B_x.allocColIndx();
+		col_index_J_B_y = J_B_y.allocColIndx();
+		col_index_J_T_x = J_T_x.allocColIndx();
+		col_index_J_T_y = J_T_y.allocColIndx();
+		col_index_J_TB_x = J_TB_x.allocColIndx();
+		col_index_J_TB_y = J_TB_y.allocColIndx();
 
-		col_index_cd_plus = cd_plus.allocColIndx();
-		row_pointer_cd_plus = cd_plus.allocRowPtr();
+		row_pointer_J_B_x = J_B_x.allocRowPtr();
+		row_pointer_J_B_y = J_B_y.allocRowPtr();
+		row_pointer_J_T_x = J_T_x.allocRowPtr();
+		row_pointer_J_T_y = J_T_y.allocRowPtr();
+		row_pointer_J_TB_x = J_TB_x.allocRowPtr();
+		row_pointer_J_TB_y = J_TB_y.allocRowPtr();
 
-		col_index_dH_0_minus = dH_0_minus.allocColIndx();
-		row_pointer_dH_0_minus = dH_0_minus.allocRowPtr();
-
-		col_index_dH_0_plus = dH_0_plus.allocColIndx();
-		row_pointer_dH_0_plus = dH_0_plus.allocRowPtr();
-
-		v_c_cd_minus = cd_minus.allocCpxVal();
-		v_c_cd_plus = cd_plus.allocCpxVal();
-		v_c_dH_0_minus = dH_0_minus.allocCpxVal();
-		v_c_dH_0_plus = dH_0_plus.allocCpxVal();
+		v_c_J_B_x = J_B_x.allocCpxVal();
+		v_c_J_B_y = J_B_y.allocCpxVal();
+		v_c_J_T_x = J_T_x.allocCpxVal();
+		v_c_J_T_y = J_T_y.allocCpxVal();
+		v_c_J_TB_x = J_TB_x.allocCpxVal();
+		v_c_J_TB_y = J_TB_y.allocCpxVal();
 	}
 
 	// Count the current element, i.e. "i = input_counter"
@@ -3333,10 +3436,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 		row_pointer_dy[k] = input_counter;
 
 		if (chiral_on == 1){
-			row_pointer_cd_minus[k] = input_counter;
-			row_pointer_cd_plus[k] = input_counter;
-			row_pointer_dH_0_minus[k] = input_counter;
-			row_pointer_dH_0_plus[k] = input_counter;
+			row_pointer_J_B_x[k] = input_counter;
+			row_pointer_J_B_y[k] = input_counter;
+			row_pointer_J_T_x[k] = input_counter;
+			row_pointer_J_T_y[k] = input_counter;
+			row_pointer_J_TB_x[k] = input_counter;
+			row_pointer_J_TB_y[k] = input_counter;
 		}
 
 		// While we are still at the correct index in our intra_pairs list:
@@ -3535,20 +3640,21 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 					if (chiral_on == 1){
 
-						col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_y[input_counter] = new_k - current_index_reduction[new_k];
+
 
 						if (index_to_grid[k_i*4 + 3] == 0){
-							v_c_cd_minus[input_counter]   += std::complex<double>( (y1 - y2), (x1 - x2))*t_cpx;
-							v_c_cd_plus[input_counter]    += std::complex<double>(-(y1 - y2), (x1 - x2))*t_cpx;
+							v_c_J_B_x[input_counter] += (x2 - x1)*t_cpx;
+							v_c_J_B_y[input_counter] += (y2 - y1)*t_cpx;
 						} else if (index_to_grid[k_i*4 + 3] == 1) {
-							v_c_cd_minus[input_counter]   += std::complex<double>( (y1 - y2), (x1 - x2))*-t_cpx;
-							v_c_cd_plus[input_counter]    += std::complex<double>(-(y1 - y2), (x1 - x2))*-t_cpx;
+							v_c_J_T_x[input_counter] += (x2 - x1)*t_cpx;
+							v_c_J_T_y[input_counter] += (y2 - y1)*t_cpx;
 						}
-						v_c_dH_0_minus[input_counter] += std::complex<double>( (x1 - x2),-(y1 - y2))*t_cpx;
-						v_c_dH_0_plus[input_counter]  += std::complex<double>( (x1 - x2), (y1 - y2))*t_cpx;
 					}
 				}
 				// check if next pair is identical (possible with periodic wrapping), or if we are at last element, to decide whether to save or not
@@ -3557,10 +3663,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 					col_index_dx[input_counter] =  new_k - current_index_reduction[new_k];
 					col_index_dy[input_counter] =  new_k - current_index_reduction[new_k];
 					if (chiral_on == 1){
-						col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_y[input_counter] = new_k - current_index_reduction[new_k];
 					}
 					++input_counter;
 				}
@@ -3683,15 +3791,15 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 
 					if (chiral_on == 1){
 
-						col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_y[input_counter] = new_k - current_index_reduction[new_k];
 
-						v_c_cd_minus[input_counter]   += std::complex<double>(0.0);
-						v_c_cd_plus[input_counter]    += std::complex<double>(0.0);
-						v_c_dH_0_minus[input_counter] += std::complex<double>( (x1 - x2),-(y1 - y2))*t_cpx;
-						v_c_dH_0_plus[input_counter]  += std::complex<double>( (x1 - x2), (y1 - y2))*t_cpx;
+						v_c_J_TB_x[input_counter] += (x2 - x1)*t_cpx;
+						v_c_J_TB_y[input_counter] += (y2 - y1)*t_cpx;
 					}
 
 				}
@@ -3702,10 +3810,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 					col_index_dx[input_counter] = new_k - current_index_reduction[new_k];
 					col_index_dy[input_counter] = new_k - current_index_reduction[new_k];
 					if (chiral_on == 1){
-						col_index_cd_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_cd_plus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_minus[input_counter] = new_k - current_index_reduction[new_k];
-						col_index_dH_0_plus[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_B_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_T_y[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_x[input_counter] = new_k - current_index_reduction[new_k];
+						col_index_J_TB_y[input_counter] = new_k - current_index_reduction[new_k];
 					}
 					++input_counter;
 				}
@@ -3724,10 +3834,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix 
 	row_pointer_dy[local_max_index] = input_counter;
 
 	if (chiral_on == 1){
-		row_pointer_cd_minus[local_max_index] = input_counter;
-		row_pointer_cd_plus[local_max_index] = input_counter;
-		row_pointer_dH_0_minus[local_max_index] = input_counter;
-		row_pointer_dH_0_plus[local_max_index] = input_counter;
+		row_pointer_J_B_x[local_max_index] = input_counter;
+		row_pointer_J_B_y[local_max_index] = input_counter;
+		row_pointer_J_T_x[local_max_index] = input_counter;
+		row_pointer_J_T_y[local_max_index] = input_counter;
+		row_pointer_J_TB_x[local_max_index] = input_counter;
+		row_pointer_J_TB_y[local_max_index] = input_counter;
 	}
 
 	int num_targets = jobIn.getInt("num_targets");

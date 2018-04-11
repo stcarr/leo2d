@@ -18,6 +18,8 @@
 
 void Param_tools::save(Job_params job, std::ofstream& outFile) {
 
+	outFile << fixed;
+
 	int jobID = job.getInt("jobID");
 	int verbose_save = job.getInt("verbose_save");
 	int diagonalize = job.getInt("diagonalize");
@@ -331,16 +333,25 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					}
 
 					if (d_vecs == 1){
-							std::vector< std::vector<double> > eigenvectors = job.getDoubleMat("eigenvectors");
 
-							for(int j = 0; j < local_max_index; ++j){
-								for (int m = 0; m < local_max_index - 1; ++m){
-									outFile << eigenvectors[j][m] << ", ";
+							int cpx_mat = job.getInt("complex_matrix");
+							if (cpx_mat == 0){
+								std::vector< std::vector<double> > eigenvectors = job.getDoubleMat("eigenvectors");
+								for(int j = 0; j < local_max_index; ++j){
+									for (int m = 0; m < local_max_index; ++m){
+										outFile << j+1 << " " << m+1 << " " << eigenvectors[j][m] << " \n";
+									}
 								}
-								outFile << eigenvectors[j][local_max_index - 1] << "\n";
-							}
+							} else if (cpx_mat == 1){
+								std::vector< std::vector<double> > eigenvectors_r = job.getDoubleMat("eigenvectors_r");
+								std::vector< std::vector<double> > eigenvectors_c = job.getDoubleMat("eigenvectors_c");
 
-							outFile << "\n";
+								for(int j = 0; j < local_max_index; ++j){
+									for (int m = 0; m < local_max_index; ++m){
+										outFile << j+1 << " " << m+1 << " " << eigenvectors_r[j][m] << " " << eigenvectors_c[j][m] << " \n";
+									}
+								}
+							}
 
 					}
 
@@ -374,76 +385,45 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					outFile << "\n";
 				}
 
-				std::vector< std::vector< std::complex<double> > > chiral_dichrosim_minus = job.getCpxDoubleMat("chiral_dichrosim_minus");
-				std::vector< std::vector< std::complex<double> > > chiral_dichrosim_plus = job.getCpxDoubleMat("chiral_dichrosim_plus");
-				std::vector< std::vector< std::complex<double> > > chiral_dH0_minus = job.getCpxDoubleMat("chiral_dH0_minus");
-				std::vector< std::vector< std::complex<double> > > chiral_dH0_plus = job.getCpxDoubleMat("chiral_dH0_plus");
+				for (int matrix_count = 0; matrix_count < 6; ++matrix_count){
 
-				int local_max_index = chiral_dichrosim_minus.size();
-
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dichrosim_minus[i][j].real() << ", ";
+					std::string matrix_name;
+					switch (matrix_count){
+						case 0:
+							matrix_name = "J_B_x";
+						case 1:
+							matrix_name = "J_B_y";
+						case 2:
+							matrix_name = "J_T_x";
+						case 3:
+							matrix_name = "J_T_y";
+						case 4:
+							matrix_name = "J_TB_x";
+						case 5:
+							matrix_name = "J_TB_y";
 					}
-					outFile << chiral_dichrosim_minus[i][local_max_index - 1].real() << "\n";
-				}
-				outFile << "\n";
 
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dichrosim_minus[i][j].imag() << ", ";
-					}
-					outFile << chiral_dichrosim_minus[i][local_max_index - 1].imag() << "\n";
-				}
-				outFile << "\n";
+					std::vector< std::vector< std::complex<double> > > tar_matrix = job.getCpxDoubleMat(matrix_name);
 
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dichrosim_plus[i][j].real() << ", ";
-					}
-					outFile << chiral_dichrosim_plus[i][local_max_index - 1].real() << "\n";
-				}
-				outFile << "\n";
+					int local_max_index = tar_matrix.size();
 
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dichrosim_plus[i][j].imag() << ", ";
+					for(int i = 0; i < local_max_index; ++i){
+						for(int j = 0; j < local_max_index - 1; ++j){
+							outFile << tar_matrix[i][j].real() << ", ";
+						}
+						outFile << tar_matrix[i][local_max_index - 1].real() << "\n";
 					}
-					outFile << chiral_dichrosim_plus[i][local_max_index - 1].imag() << "\n";
-				}
-				outFile << "\n";
+					outFile << "\n";
 
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dH0_minus[i][j].real() << ", ";
+					for(int i = 0; i < local_max_index; ++i){
+						for(int j = 0; j < local_max_index - 1; ++j){
+							outFile << tar_matrix[i][j].imag() << ", ";
+						}
+						outFile << tar_matrix[i][local_max_index - 1].imag() << "\n";
 					}
-					outFile << chiral_dH0_minus[i][local_max_index - 1].real() << "\n";
-				}
-				outFile << "\n";
+					outFile << "\n";
 
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dH0_minus[i][j].imag() << ", ";
-					}
-					outFile << chiral_dH0_minus[i][local_max_index - 1].imag() << "\n";
 				}
-				outFile << "\n";
-
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dH0_plus[i][j].real() << ", ";
-					}
-					outFile << chiral_dH0_plus[i][local_max_index - 1].real() << "\n";
-				}
-				outFile << "\n";
-
-				for(int i = 0; i < local_max_index; ++i){
-					for(int j = 0; j < local_max_index - 1; ++j){
-						outFile << chiral_dH0_plus[i][j].imag() << ", ";
-					}
-					outFile << chiral_dH0_plus[i][local_max_index - 1].imag() << "\n";
-				}
-				outFile << "\n";
 
 			}
 
@@ -723,10 +703,12 @@ void Param_tools::conductivityTransform(Job_params& job){
 
 		if (chiral_on == 1){
 
-			Param_tools::matrixResponseTransform(job,"chiral_dichrosim_minus");
-			Param_tools::matrixResponseTransform(job,"chiral_dichrosim_plus");
-			Param_tools::matrixResponseTransform(job,"chiral_dH0_minus");
-			Param_tools::matrixResponseTransform(job,"chiral_dH0_plus");
+			Param_tools::matrixResponseTransform(job,"J_B_x");
+			Param_tools::matrixResponseTransform(job,"J_B_y");
+			Param_tools::matrixResponseTransform(job,"J_T_x");
+			Param_tools::matrixResponseTransform(job,"J_T_y");
+			Param_tools::matrixResponseTransform(job,"J_TB_x");
+			Param_tools::matrixResponseTransform(job,"J_TB_y");
 
 		}
 	}
@@ -1447,4 +1429,151 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 	}
 
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
+}
+
+void Param_tools::wannier_win_save(std::vector<Job_params>& results, std::ofstream& outFile){
+
+	outFile << fixed;
+
+	int num_k1 = results[0].getInt("num_k1");
+	int num_k2 = results[0].getInt("num_k2");
+	int num_k = num_k1*num_k2;
+	std::vector<double> eigenvalues = results[0].getDoubleVec("eigenvalues");
+	int num_bands = eigenvalues.size();
+	int num_wan = 4;
+	std::vector< std::vector<double> > unitcell = results[0].getDoubleMat("unit_cell");
+
+	outFile << "# *.win file generated by LEO2D \n";
+	outFile << "mp_grid " << num_k1 << " " << num_k2 << " 1 \n";
+	outFile << "num_bands " << num_bands << " \n";
+	outFile << "num_wan " << num_wan << " \n";
+	outFile << "\n";
+
+	outFile << "begin unit_cell_cart \n";
+		for (int d = 0; d < 2; ++d){
+			outFile << "   " << (unitcell[d][0]  >= 0 ? " ":"") << unitcell[d][0] << " " << (unitcell[d][1]  >= 0 ? " ":"") << unitcell[d][1] << " " << 0.0 << " \n";
+		}
+	outFile << "    " << 0.0 << "  " << 0.0 << "  " << 100.0 << " \n";
+	outFile << "end unit_cell_cart \n";
+	outFile << "\n";
+
+	outFile << "begin kpoints \n";
+	for (int k = 0; k < num_k ; ++k){
+			std::vector<double> k_vec = results[k].getDoubleVec("k_vec_grid");
+			outFile << "   " << (k_vec[0]  >= 0 ? " ":"") << k_vec[0] << " " << (k_vec[1]  >= 0 ? " ":"") << k_vec[1] << "  " << 0.0 << " \n";
+	}
+	outFile << "end kpoints \n";
+
+}
+
+void Param_tools::wannier_eig_save(std::vector<Job_params>& results, std::ofstream& outFile){
+
+	outFile << fixed;
+
+	int num_k1 = results[0].getInt("num_k1");
+	int num_k2 = results[0].getInt("num_k2");
+	int num_k = num_k1*num_k2;
+	std::vector<double> eigenvalues = results[0].getDoubleVec("eigenvalues");
+	int num_bands = eigenvalues.size();
+
+	for (int k = 0; k < num_k; ++k){
+		eigenvalues = results[k].getDoubleVec("eigenvalues");
+		for (int b = 0; b < num_bands; ++b){
+			outFile << b+1 << " " << k+1 << " " << (eigenvalues[b] >= 0 ? " ":"") << eigenvalues[b] << " \n";
+		}
+	}
+
+}
+
+void Param_tools::wannier_mmn_save(std::vector<Job_params>& results, std::ofstream& outFile){
+
+	outFile << fixed;
+
+	int num_k1 = results[0].getInt("num_k1");
+	int num_k2 = results[0].getInt("num_k2");
+	int num_k = num_k1*num_k2;
+	std::vector< std::vector<double> > vecs = results[0].getDoubleMat("eigenvectors_r");
+	int num_bands = vecs.size();
+	int num_orbs = vecs[0].size();
+
+	int nntot = 6; // number of nearest neighbors for a point in the k-grid
+
+	outFile << "# *.mmn file generated by LEO2D \n";
+	outFile << "   " << num_bands << " " << num_k << " " << nntot << " \n";
+	// generate k grid
+	int k_idx = 0;
+	std::vector< std::vector<int> > ij_to_k;
+	std::vector< std::vector<int> > k_to_ij;
+	ij_to_k.resize(num_k1);
+	k_to_ij.resize(num_k);
+	for (int i = 0; i < num_k1; ++i){
+		ij_to_k[i].resize(num_k2);
+		for (int j = 0; j < num_k2; ++j){
+			ij_to_k[i][j] = k_idx;
+			k_to_ij[k_idx].resize(2);
+			k_to_ij[k_idx][0] = i;
+			k_to_ij[k_idx][1] = j;
+			k_idx++;
+		}
+	}
+
+	// generate list of neighbors
+	std::vector< std::vector<int> > neighbors;
+	neighbors.resize(num_k);
+
+	for (int k = 0; k < num_k; ++k){
+
+		int i0 = k_to_ij[k][0];
+		int j0 = k_to_ij[k][1];
+
+		int iplus = i0 + 1;
+		int iminus = i0 - 1;
+		int jplus = j0 + 1;
+		int jminus = j0 - 1;
+
+		if (iplus >= num_k1)
+			iplus = iplus - num_k1;
+		if (iminus < 0)
+			iminus = iminus + num_k1;
+		if (jplus >= num_k2)
+			jplus = jplus - num_k2;
+		if (jminus < 0)
+			jminus = jminus + num_k2;
+
+		neighbors[k].resize(6);
+		neighbors[k][0] = ij_to_k[iminus][j0];
+		neighbors[k][1] = ij_to_k[iplus][j0];
+		neighbors[k][2] = ij_to_k[i0][jminus];
+		neighbors[k][3] = ij_to_k[i0][jplus];
+		neighbors[k][4] = ij_to_k[iminus][jminus];
+		neighbors[k][5] = ij_to_k[iplus][jplus];
+
+	}
+
+	for (int k = 0; k < num_k; ++k){
+		std::vector< std::vector<double> > vecs_kr = results[k].getDoubleMat("eigenvectors_r");
+		std::vector< std::vector<double> > vecs_kc = results[k].getDoubleMat("eigenvectors_c");
+		printf("k = %d \n",k);
+		for (int nn = 0; nn < nntot; ++nn){
+			int new_k = neighbors[k][nn];
+			std::vector< std::vector<double> > vecs_newkr = results[new_k].getDoubleMat("eigenvectors_r");
+			std::vector< std::vector<double> > vecs_newkc = results[new_k].getDoubleMat("eigenvectors_c");
+			outFile << "   " << k+1 << " " << new_k+1 << " 0 0 0 \n";
+
+			for (int i = 0; i < num_bands; ++i){
+				for (int j = 0; j < num_bands; ++j){
+					std::complex<double> temp_sum (0.,0.);
+					for (int o = 0; o < num_orbs; ++o){
+						temp_sum = temp_sum + std::conj(
+																		std::complex<double>(vecs_kr[i][o],vecs_kc[i][o])
+																	)*std::complex<double>(vecs_newkr[j][o],vecs_newkc[j][o]);
+					}
+					outFile << "      " << (temp_sum.real()  >= 0 ? " ":"") << temp_sum.real() << " " << (temp_sum.imag()  >= 0 ? " ":"") << temp_sum.imag() << " \n";
+				}
+			}
+
+		}
+
+	}
+
 }

@@ -147,14 +147,15 @@ class Locality {
 
   		// Creates and returns real SpMatrix objects and an array of target vectors for Electron-Electron Correlation
   		void generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
-			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
-			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
+			     int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
+           std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
 
   		// Creates and returns complex SpMatrix objects and an array of target vectors for Electron-Electron Correlation
-  		void generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, SpMatrix &cd_plus, SpMatrix &cd_minus, SpMatrix &dH_0_minus, SpMatrix &dH_0_plus,
-			double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
-			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
-			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
+  		void generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
+      			SpMatrix &J_B_x, SpMatrix &J_B_y, SpMatrix &J_T_x, SpMatrix &J_T_y, SpMatrix &J_TB_x, SpMatrix &J_TB_y,
+      			double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
+      			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
+      			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
 
   		// Creates and returns SpMatrix object representing H for a specific Momentum-space job
   		void generateMomH(SpMatrix&, Job_params, int*, double*, int*, int*, double*, std::vector<int>, int);
@@ -169,9 +170,9 @@ class Locality {
   		void computeEigen(std::vector<double>&, DMatrix&, DMatrix &kpm_dos, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
   		void computeEigenComplex(std::vector<double>&, DMatrix&, DMatrix &kpm_dos, DMatrix&, DMatrix&, DMatrix&, SpMatrix&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int);
 
-		// Computes the material's response to matIn saved via <Cheb_1|matOut|Cheb_2>
-		// Use param_tools conductivityTransform method to transform to <E_1|matOut|E_2>
-		void computeMatrixResponse(Job_params jobIn, std::vector<double> eigvecs, DMatrix& eigvals, SpMatrix& matIn, DMatrix& matOut);
+      // Computes the material's response to matIn saved via <Cheb_1|matOut|Cheb_2>
+      // Use param_tools conductivityTransform method to transform to <E_1|matOut|E_2>
+      void computeMatrixResponse(Job_params jobIn, std::vector<double> eigvecs, DMatrix& eigvals, SpMatrix& matIn, DMatrix& matOut);
 
   		// Calculates Peierls phase between two hopping sites;
   		double peierlsPhase(double, double, double, double, double);

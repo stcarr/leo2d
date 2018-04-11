@@ -116,6 +116,10 @@ Job_params::Job_params() {
 	setParam("mlmc_jobID",-1*i_one);
 	setParam("mlmc_clusterID",-1*i_one);
 
+	// Wannier settings
+	setParam("wan_save",i_zero);
+	setParam("wan_num_bands",-1*i_one);
+
 	// Vacancy settings
 	setParam("vacancy_file","vacancies.dat");
 	setParam("num_vacancies",i_zero);
