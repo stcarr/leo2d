@@ -33,6 +33,7 @@ DMatrix::DMatrix() {
 }
 
 
+// Copy constructor
 DMatrix::DMatrix(const DMatrix& orig){
 	type = orig.getType();
 	nrows = orig.getNumRows();
@@ -42,8 +43,19 @@ DMatrix::DMatrix(const DMatrix& orig){
 	orig.getValCopy(val);
 
 }
+// copy assignment
+DMatrix& DMatrix::operator=(DMatrix& other)
+	 {
+		type = other.getType();
+	 	nrows = other.getNumRows();
+	 	ncols = other.getNumCols();
+	 	nval = (size_t)nrows*(size_t)ncols;
+	 	val = new double[nval];
+	 	other.getValCopy(val);
+		return *this;
+	 }
 
-// a constructor for an nr-by-nc (sparse) matrix of zeros
+// a constructor for an nr-by-nc matrix
 DMatrix::DMatrix(int nr, int nc) {
     nrows = nr;
     ncols = nc;
@@ -140,6 +152,45 @@ void DMatrix::setup(int nr, int nc, double *val0){
 	nval = nr*nc;
 }
 
+void DMatrix::setupAsIdentity(int nr, int nc, int t){
+	nrows = nr;
+	ncols = nr; // Number of rows should be equal to number of columns...
+	nval  = nr*nc;
+	type  = t;
+
+	int idx = 0;
+
+	if (type == 0){
+		double* val = allocRealVal();
+		for (int i = 0; i < nrows; ++i){
+			for (int j = 0; j < nrows; ++j){
+
+				if (i == j)
+					val[idx] = 1.0;
+				else
+					val[idx] = 0.0;
+
+					idx++;
+			}
+		}
+
+	}	else if (type == 1){
+		std::complex<double>* val_c = allocCpxVal();
+		for (int i = 0; i < nrows; ++i){
+			for (int j = 0; j < nrows; ++j){
+
+				if (i == j)
+					val_c[idx] = std::complex<double>(1.0, 0.0);
+				else
+					val_c[idx] = std::complex<double>(0.0, 0.0);
+
+					idx++;
+			}
+		}
+	}
+
+}
+
 double* DMatrix::allocRealVal(){
 	val = new double[nval];
 	for (size_t i = 0; i < nval; ++i){
@@ -163,7 +214,6 @@ void DMatrix::setup(int nr, int nc, std::complex<double> *val_c0) {
 }
 
 std::complex<double>* DMatrix::allocCpxVal(){
-	std::vector<double> v;
 
 	val_c = new std::complex<double>[nval];
 
@@ -185,16 +235,20 @@ std::complex<double>* DMatrix::getCpxValPtr(){
 
 void DMatrix::getValCopy(double* val_copy) const{
 
-	for (int i = 0; i < nval; ++i){
-		val_copy[i] = val[i];
+	if (val != NULL){
+		for (int i = 0; i < nval; ++i){
+			val_copy[i] = val[i];
+		}
 	}
 
 }
 
 void DMatrix::getValCopy(std::complex<double>* val_copy) const{
 
-	for (int i = 0; i < nval; ++i){
-		val_copy[i] = val_c[i];
+	if (val_c != NULL){
+		for (int i = 0; i < nval; ++i){
+			val_copy[i] = val_c[i];
+		}
 	}
 
 }
@@ -277,6 +331,61 @@ void DMatrix::squareAllVals(){
 		for (int i = 0; i < nval; ++i){
 			val_c[i] = val_c[i]*(std::conj(val_c[i]));
 		}
+	}
+}
+
+
+void DMatrix::scalarMultiply(double scalar){
+	if (type == 0){
+		for (int i = 0; i < nval; ++i){
+			val[i] = scalar*val[i];
+		}
+	} else if (type == 1){
+		for (int i = 0; i < nval; ++i){
+			val_c[i] = scalar*val_c[i];
+		}
+	}
+}
+
+void DMatrix::scalarMultiply(std::complex<double> scalar){
+	if (type == 0){
+		// Do nothing... not defined!
+		printf("!!!LEO2D Warning!!! DMatrix::scalarMutiply(std::complex<double>) is not defined for a real DMatrix! \n");
+	} else if (type == 1){
+		for (int i = 0; i < nval; ++i){
+			val_c[i] = scalar*val_c[i];
+		}
+	}
+}
+
+// Add a matrix to this matrix!
+void DMatrix::matrixAdd(DMatrix& B){
+
+	int type_B = B.getType();
+
+	if (type_B == 0){
+
+		double* val_B = B.getValPtr();
+		for (int i = 0; i < nval; ++i){
+			if (type == 0){
+				val[i] = val[i]*val_B[i];
+			} else if (type == 1){
+				val_c[i] = val_c[i]*val_B[i];
+			}
+		}
+
+	} else if (type_B == 1){
+
+		std::complex<double>* val_B_c = B.getCpxValPtr();
+		for (int i = 0; i < nval; ++i){
+			if (type == 0){
+				// Do nothing... not defined!
+				printf("!!!LEO2D Warning!!!DMatrix::matrixAdd(DMatrix& B) is not defined for a real DMatrix! \n");
+			} else if (type == 1){
+				val_c[i] = val_c[i] + val_B_c[i];
+			}
+		}
+
 	}
 }
 
@@ -476,6 +585,7 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
 			}
+			k_internal = ncols_A;
 		} else if (A_type == 'T'){
 			if (B_type == 'N'){
 				if (ncols_A != nrows_C || ncols_B != ncols_C){
@@ -486,6 +596,8 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, double alpha, double beta, 
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
 			}
+			k_internal = nrows_A;
+
 		}
 
 		nval_C = ncols_C*nrows_C;
@@ -647,6 +759,8 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
 			}
+			k_internal = ncols_A;
+
 		} else if (A_type == 'T' || A_type == 'C'){
 			if (B_type == 'N'){
 				if (ncols_A != nrows_C || ncols_B != ncols_C){
@@ -657,6 +771,8 @@ void DMatrix::matrixMultiply(DMatrix &C, DMatrix &B, std::complex<double> alpha,
 					throw std::invalid_argument("Matrix Size Mismatch for C in C = A*B \n");
 				}
 			}
+			k_internal = nrows_A;
+
 		}
 
 		nval_C = ncols_C*nrows_C;

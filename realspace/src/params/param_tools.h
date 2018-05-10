@@ -58,6 +58,9 @@ namespace Param_tools{
 	// average the change in the variance between two MLMC levels (orig vs cluster) into the total
 	void mlmc_cluster_variance(Job_params& total, Job_params samp_orig, Job_params samp_cluster);
 
+	// save results array to a two raw data files for easy post-processing
+	void wannier_raw_eig_save(std::vector<Job_params>& results, std::ofstream& outFile_vals, std::ofstream& outFile_vecs);
+
 	// save results array to a *.win file for supercell wannierization
 	void wannier_win_save(std::vector<Job_params>& results, std::ofstream& outFile);
 

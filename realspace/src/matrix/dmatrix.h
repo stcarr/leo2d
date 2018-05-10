@@ -45,6 +45,9 @@ class DMatrix {
 		// Copy Constructor
 		DMatrix(const DMatrix&);
 
+		// Copy assignment
+		DMatrix& operator=(DMatrix& other);
+
 		// Zero constructor
 		DMatrix(int,int);
 
@@ -69,6 +72,9 @@ class DMatrix {
 		// and for complex
 		void setup(int,int,std::complex<double>*);
 
+		// make this an identity matrix
+		void setupAsIdentity(int nr, int nc, int t);
+
 		// Destructor
 		~DMatrix();
 
@@ -89,6 +95,11 @@ class DMatrix {
 		void setVal(std::complex<double>* ptr);
 
 		void squareAllVals();
+		void scalarMultiply(double);
+		void scalarMultiply(std::complex<double>);
+
+		// add a Matirx to current value
+		void matrixAdd(DMatrix&);
 
 		// Matrix-vector Multiplication
 		void vectorMultiply(double*, double*, double, double);
@@ -99,6 +110,7 @@ class DMatrix {
 		void matrixMultiply(DMatrix&, DMatrix&, double, double, char, char);
 		void matrixMultiply(DMatrix&, DMatrix&, std::complex<double>, std::complex<double>);
 		void matrixMultiply(DMatrix&, DMatrix&, std::complex<double>, std::complex<double>, char, char);
+
 
 		//
 		void eleMatrixMultiply(DMatrix&, DMatrix&, double, double, char A_type, char B_type);

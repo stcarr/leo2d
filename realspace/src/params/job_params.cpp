@@ -120,6 +120,12 @@ Job_params::Job_params() {
 	setParam("wan_save",i_zero);
 	setParam("wan_num_bands",-1*i_one);
 
+	// Ballistic Transport
+	setParam("ballistic_transport",i_zero);
+	setParam("ballistic_sigma",10.0);
+	setParam("ballistic_time_step",1.0);
+	setParam("ballistic_max_steps",10*i_one);
+
 	// Vacancy settings
 	setParam("vacancy_file","vacancies.dat");
 	setParam("num_vacancies",i_zero);

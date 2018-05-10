@@ -364,6 +364,14 @@ void SpMatrix::vectorMultiply(double *vec_in, double *vec_out, double alpha, dou
 // For real matrices
 void SpMatrix::vectorMultiply(std::complex<double> *vec_in, std::complex<double> *vec_out, std::complex<double> alpha, std::complex<double> beta) {
 
+	if (vec_out == NULL) {
+		// allocate memory
+		vec_out = new std::complex<double>[ncols];
+		for (int i = 0; i < ncols; ++i){
+			vec_out[i] = std::complex<double>(0.0);
+			}
+	}
+
 	#ifdef USE_MKL
 	char mv_type = 'N';
 	char matdescra[6] = {'G',' ',' ','C',' ',' '};

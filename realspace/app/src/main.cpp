@@ -578,7 +578,33 @@ int main(int argc, char** argv) {
 				if (in_string == "WAN_NUM_BANDS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					opts.setParam("wan_num_bands",atoi(in_string.c_str()));					
+					opts.setParam("wan_num_bands",atoi(in_string.c_str()));
+				}
+
+				// Ballsitic Transport parameters
+
+				if (in_string == "BALLISTIC_TRANSPORT"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("ballistic_transport",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "BALLISTIC_SIGMA"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("ballistic_sigma",atof(in_string.c_str()));
+				}
+
+				if (in_string == "BALLISTIC_TIME_STEP"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("ballistic_time_step",atof(in_string.c_str()));
+				}
+
+				if (in_string == "BALLISTIC_MAX_STEPS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("ballistic_max_steps",atoi(in_string.c_str()));
 				}
 
 				// E,B field parameters

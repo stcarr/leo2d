@@ -8,6 +8,7 @@
 #include "locality.h"
 #include "tools/numbers.h"
 #include "params/param_tools.h"
+#include "transport/ballistic.h"
 
 #include <math.h>
 #include <mpi.h>
@@ -1830,6 +1831,18 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		int wan_save = opts.getInt("wan_save");
 		if (wan_save == 1){
 
+			std::ofstream valsOutFile;
+			const char* extension_vals = ".vals";
+			valsOutFile.open( (job_name + extension_vals).c_str() );
+
+			std::ofstream vecsOutFile;
+			const char* extension_vecs = ".vecs";
+			vecsOutFile.open( (job_name + extension_vecs).c_str() );
+
+			Param_tools::wannier_raw_eig_save(result_array, valsOutFile, vecsOutFile);
+			valsOutFile.close();
+			vecsOutFile.close();
+
 			std::ofstream winOutFile;
 			const char* extension_win =".win";
 			winOutFile.open( (job_name + extension_win).c_str() );
@@ -1939,10 +1952,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		int d_cond =  jobIn.getInt("d_cond");
 		int d_weights = jobIn.getInt("d_weights");
 		int k_sampling = jobIn.getInt("k_sampling");
+		int ballistic_transport = jobIn.getInt("ballistic_transport");
 
 		int complex_matrix = 0;
 
-		if (magOn == 1 || solver_space == 1 || k_sampling == 1 || chiral_on == 1){
+		if (magOn == 1 || solver_space == 1 || k_sampling == 1 || chiral_on == 1 || ballistic_transport == 1){
 			complex_matrix = 1;
 		}
 
@@ -2076,7 +2090,21 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		// Chebyshev Computation
 		// ---------------------
 
-		if (diagonalize == 0){
+		if (ballistic_transport == 1){
+			Ballistic::runBallisticTransport(results_out, index_to_grid,i2pos, H);
+
+			// !!!!
+			// Have to hack in a file save here as sending large data over MPI crashes on local machine...
+			std::cout << "Saving " << results_out.getString("job_name") << ".cheb to disk. \n";
+			std::ofstream outFile;
+			const char* extension =".cheb";
+			outFile.open( (results_out.getString("job_name") + extension).c_str() );
+			Param_tools::save(results_out, outFile);
+			outFile.close();
+			// end hackiness
+			// !!!!
+
+		} else if (diagonalize == 0){
 			if (observable_type == 0){
 
 					std::vector< std::vector<double> > cheb_coeffs;
@@ -2512,7 +2540,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			0);					// MPI label
 
 		results_out.sendParams(root);
-
 		//if (rank == print_rank)
 			//printf("rank %d finished 1 job! \n", rank);
 
@@ -3931,7 +3958,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 	// Following saves positions and pairings to file
 
 	int matrix_pos_save = opts.getInt("matrix_pos_save");
-	if (matrix_pos_save == 1){
+	if (matrix_pos_save > 0){
 
 		std::ofstream outFile3;
 		const char* extension3 = "_pos.dat";
@@ -3946,7 +3973,9 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 		}
 
 		outFile3.close();
-		// ---------------
+	}
+
+	if (matrix_pos_save > 1){
 		std::ofstream outFile4;
 		const char* extension4 = "_intra_pos.dat";
 		outFile4.open ((job_name + extension4).c_str());
