@@ -9,7 +9,7 @@
  #include <vector>
 
 
-Sdata::Sdata(Materials::Mat _mat, std::vector<int> _min, std::vector<int> _max, int _boundary_condition, int _solver_space, int _strain_type, std::string _strain_file) {
+Sdata::Sdata(Materials::Mat _mat, std::vector<int> _min, std::vector<int> _max, double _max_R, int _boundary_condition, int _solver_space, int _strain_type, std::string _strain_file) {
   mat = _mat;
   a.resize(2);
 
@@ -23,6 +23,7 @@ Sdata::Sdata(Materials::Mat _mat, std::vector<int> _min, std::vector<int> _max, 
 
   min_shape = _min;
   max_shape = _max;
+  max_R = _max_R;
   boundary_condition = _boundary_condition;
   solver_space = _solver_space;
   strain_type = _strain_type;
@@ -38,6 +39,7 @@ Sdata::Sdata(const Sdata& orig) {
   a = orig.a;
   max_shape = orig.max_shape;
   min_shape = orig.min_shape;
+  max_R = orig.max_R;
   boundary_condition = orig.boundary_condition;
   solver_space = orig.solver_space;
   strain_type = orig.strain_type;

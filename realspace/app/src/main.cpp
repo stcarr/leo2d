@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
 	int boundary_condition = 0;
 	std::vector<int> min;
 	std::vector<int> max;
+	double max_R;
 
 	// Number of sheets in simulation, s_data,heights,angles determines their properties
 	int num_sheets = 0;
@@ -99,6 +100,7 @@ int main(int argc, char** argv) {
 					max.push_back(max_size);
 					max.push_back(max_size);
 					max.push_back(max_size);
+					max_R = (double) max_size;
 					}
 
 				if (in_string == "MINSIZE"){
@@ -110,6 +112,13 @@ int main(int argc, char** argv) {
 					min.push_back(min_size);
 					min.push_back(min_size);
 					}
+
+					if (in_string == "MAX_R"){
+						getline(in_line,in_string,' ');
+						getline(in_line,in_string,' ');
+						max_R = atof(in_string.c_str());
+						}
+
 
 				if (in_string == "BOUNDARY_CONDITION"){
 					getline(in_line,in_string,' ');
@@ -204,7 +213,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					Materials::Mat mat = Materials::string_to_mat(in_string);
-					s_data[current_sheet] = Sdata(mat,min,max,boundary_condition,0,0,strain_file);
+					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file);
 				}
 
 				if (in_string == "HEIGHT"){
@@ -342,6 +351,12 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 	        opts.setParam("mom_vf_only",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "MOM_VF_TYPE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+	        opts.setParam("mom_vf_type",atoi(in_string.c_str()));
 				}
 
 				if (in_string == "NUM_MOM_GROUPS"){
@@ -675,6 +690,26 @@ int main(int argc, char** argv) {
 					opts.setParam("shift_sheets",temp_sheets);
 				}
 
+				if (in_string == "GLOBAL_SHIFTS_ON"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("global_shifts_on",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "GLOBAL_SHIFTS"){
+					std::vector< std::vector<double> > temp_shifts;
+          temp_shifts.resize(opts.getInt("num_sheets"));
+					getline(in_line,in_string,' ');
+					for (int i = 0; i < opts.getInt("num_sheets"); ++i){
+						temp_shifts[i].resize(3);
+						for (int d = 0; d < 3; ++d){
+							getline(in_line,in_string,' ');
+							double var = atof(in_string.c_str());
+							temp_shifts[i][d] = var;
+						}
+					}
+					opts.setParam("global_shifts",temp_shifts);
+				}
 
 			}
 		}

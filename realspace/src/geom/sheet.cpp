@@ -29,6 +29,7 @@ Sheet::Sheet(Sdata input){
 
 	min_shape = input.min_shape;
 	max_shape = input.max_shape;
+  max_R = input.max_R;
 	boundary_condition = input.boundary_condition;
 
 	// "atoms" <--> "orbitals"
@@ -88,6 +89,7 @@ Sheet::Sheet(const Sheet& orig) {
   a = orig.a;
   max_shape = orig.max_shape;
   min_shape = orig.min_shape;
+  max_R = orig.max_R;
   boundary_condition = orig.boundary_condition;
   n_orbitals = orig.n_orbitals;
   atom_pos = orig.atom_pos;
@@ -448,7 +450,7 @@ bool Sheet::checkShape(double (&pos)[3]){
     }
 	}
 
-  if (pow(pos[0],2) + pow(pos[1],2) < pow(max_shape[0],2)){
+  if (pow(pos[0],2) + pow(pos[1],2) < pow(max_R,2)){
     return true;
 	} else {
     return false;

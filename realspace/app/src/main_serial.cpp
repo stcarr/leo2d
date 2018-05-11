@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
 	int boundary_condition = 0;
 	std::vector<int> min;
 	std::vector<int> max;
+	double max_R;
 
 	// Number of sheets in simulation, s_data,heights,angles determines their properties
 	int num_sheets = 0;
@@ -133,6 +134,7 @@ int main(int argc, char** argv) {
 					max.push_back(max_size);
 					max.push_back(max_size);
 					max.push_back(max_size);
+					max_R = (double) max_size;
 					}
 
 				if (in_string == "MINSIZE"){
@@ -143,6 +145,12 @@ int main(int argc, char** argv) {
 					min.push_back(min_size);
 					min.push_back(min_size);
 					min.push_back(min_size);
+					}
+
+				if (in_string == "MAX_R"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					max_R = atof(in_string.c_str());
 					}
 
 				if (in_string == "BOUNDARY_CONDITION"){
@@ -253,7 +261,7 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					Materials::Mat mat = Materials::string_to_mat(in_string);
-					s_data[current_sheet] = Sdata(mat,min,max,boundary_condition,0,0,strain_file);
+					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file);
 				}
 
 				if (in_string == "HEIGHT"){

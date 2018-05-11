@@ -17,13 +17,14 @@ class Sdata {
 
   public:
 
-    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, int, int, int, std::string);
+    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, double, int, int, int, std::string);
     Sdata(const Sdata& orig);
 		Sdata();
     ~Sdata();
     Materials::Mat mat;
     std::vector<std::vector<double> > a;
     std::vector<int> max_shape, min_shape;
+    double max_R;
 		int boundary_condition;
     std::vector< std::vector<double> > supercell;
     std::vector< std::vector<int> > supercell_stride;

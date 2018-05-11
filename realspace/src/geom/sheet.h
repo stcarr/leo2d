@@ -23,6 +23,7 @@ class Sheet {
       std::vector<std::vector<double> > a;
   	  std::vector<std::vector<double> > b;
       std::vector<int> max_shape, min_shape;
+      double max_R;
       int max_index;
   	  Materials::Mat mat;
       int n_orbitals;

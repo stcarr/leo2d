@@ -1391,7 +1391,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		if (mom_vf_only == 1){
 
 			// hard-coded control of slope method (type = 0) and gamme-point gap method (type = 1)
-			int mom_vf_type = 0;
+			//int mom_vf_type = 0;
+
+			int mom_vf_type = opts.getInt("mom_vf_type");
+			printf("mom_vf_type = %d \n",mom_vf_type);
 
 			if (mom_vf_type == 0){
 				maxJobs = 2;
@@ -1407,6 +1410,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
 			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
+
+			printf("k_1 = [%lf, %lf], k_2 = [%lf, %lf] \n",k_1[0], k_1[1], k_2[0], k_2[1]);
 
 			double k[2];
 			double gamma[2];
@@ -4019,6 +4024,9 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	double energy_rescale = jobIn.getDouble("energy_rescale");
 	double energy_shift = jobIn.getDouble("energy_shift");
 
+	int num_mom_groups = opts.getInt("num_mom_groups");
+	std::vector< std::vector<int> > mom_groups = opts.getIntMat("mom_groups");
+
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
 	// Here we assume every layer has the same k-shift
@@ -4040,17 +4048,72 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 	int L = 5; // L is the half-side length of a 2L+1 x 2L+1 search grid for the monolayer bloch terms
 
-	std::vector<int> N_R_array; // num_sheets vector of the number of real-space positions in each sheet
-	std::vector< std::vector< std::vector<double> > > R_array; // (num_sheets) x (N_R) x (3) array of real-space positions
-	std::vector< std::vector< std::vector< std::vector<double> > > > bloch_t_array; // (num_sheets) x (N_R) x (num_orbitals) x (num_orbitals) of real-space t_ij coupling values
+	std::vector<int> N_R_array; // num_mom_groups vector of the number of real-space positions in each group
+	std::vector< std::vector< std::vector<double> > > R_array; // (num_mom_groups) x (N_R) x (3) array of real-space positions
+	std::vector< std::vector< std::vector< std::vector<double> > > > bloch_t_array; // (num_mom_groups) x (N_R) x (num_orbitals) x (num_orbitals) of real-space t_ij coupling values
+	std::vector< std::vector<int> > orb_sheet_array; // (num_mom_groups) x (num_orbitals) of sheet indices of orbitals
+	std::vector< std::vector<int> > orb_index_array; // (num_mom_groups) x (num_orbitals) of local indices of orbitals
 
-	// Start loop over sheets to create bloch-theory monolayer bands
+	// Start loop over groups to create bloch-theory monolayer bands
 	// For now, we need each layer to never have an orbital outside the unit-cell!
 	// Will eventually want to add some controls for when the fixed-shift methods
 	// push the individual layer atoms out of the original unit-cell (need to make
 	// sure all orbitals are in the unit-cell when doing Bloch theory!)
 
-	for (int s = 0; s < num_sheets; ++s){
+	for (int g = 0; g < num_mom_groups; ++g){
+
+		std::vector<int> sheets_here = mom_groups[g];
+		int num_sheets_here = sheets_here.size();
+		int total_num_orbs = 0;
+		std::vector<std::vector<double> > orb_pos;
+		double theta = angles[sheets_here[0]]; // we assume the lowest sheet has the angle info
+
+		for (int s = 0; s < num_sheets_here; ++s){
+
+			Materials::Mat local_mat = sdata[sheets_here[s]].mat;
+			total_num_orbs += Materials::n_orbitals(sdata[s].mat);
+
+		}
+
+
+		orb_pos.resize(total_num_orbs);
+
+		// Keeps track of if this is an intra or interlayer coupling
+		std::vector<int> orb_sheet_indices;
+		std::vector<int> orb_indices;
+		std::vector<Materials::Mat> orb_materials;
+
+		orb_sheet_indices.resize(total_num_orbs);
+		orb_indices.resize(total_num_orbs);
+		orb_materials.resize(total_num_orbs);
+		int total_orb_index = 0;
+
+		// Now again for orb positions
+		for (int s = 0; s < num_sheets_here; ++s){
+
+			Materials::Mat local_mat = sdata[sheets_here[s]].mat;
+			int local_num_orbs = Materials::n_orbitals(local_mat);
+
+			for (int o = 0; o < local_num_orbs; ++o){
+
+				orb_pos[o].resize(3);
+				for (int d = 0; d < 3; ++d){
+					orb_pos[o][d] = Materials::orbital_pos(local_mat, o, d);
+					if (d == 3){
+						orb_pos[o][d] += heights[sheets_here[s]];
+					}
+				}
+
+				orb_sheet_indices[total_orb_index] = sheets_here[s];
+				orb_indices[total_orb_index] = o;
+				orb_materials[total_orb_index] = local_mat;
+				total_orb_index++;
+			}
+		}
+		orb_sheet_array.push_back(orb_sheet_indices);
+		orb_index_array.push_back(orb_indices);
+
+		// compute bloch terms, we assume all sheets in the same group have a single unit-cell
 
 		int N_R = 0;
 
@@ -4059,20 +4122,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 		// Array of bloch hopping parameters t (i.e. 2x2 blocks for 2 band graphene model)
 		std::vector< std::vector< std::vector<double> > > temp_bloch_t_array;
 
-		std::vector<std::vector<double> > a = sdata[s].a;
-		double theta = angles[s];
-		int num_orbs = Materials::n_orbitals(sdata[s].mat);
-		Materials::Mat mat = sdata[s].mat;
-
-		std::vector<std::vector<double> > orb_pos;
-		orb_pos.resize(num_orbs);
-
-		for (int o = 0; o < num_orbs; ++o){
-			orb_pos[o].resize(3);
-			for (int d = 0; d < 3; ++d){
-				orb_pos[o][d] = Materials::orbital_pos(mat, o, d);
-			}
-		}
+		std::vector<std::vector<double> > a = sdata[sheets_here[0]].a;
 
 		for (int i = -L; i < L+1; ++i){
 			for (int j = -L; j < L+1; ++j){
@@ -4092,19 +4142,52 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				std::array<int,2> grid_disp = {{ i, j }};
 
 				std::vector< std::vector<double> > temp_o1_bloch_t_array;
-				for (int o1 = 0; o1 < num_orbs; ++o1){
+				for (int o1 = 0; o1 < total_num_orbs; ++o1){
 					std::vector<double> temp_o2_bloch_t_array;
-					for (int o2 = 0; o2 < num_orbs; ++o2){
+					for (int o2 = 0; o2 < total_num_orbs; ++o2){
 
 						// compute R(i,j) based on <a> and <theta>
 						// find monolayer t_ij(R(i,j),o1,o2)
 						// if t_ij != 0, add R and t_ij to respective vectors, and ++N_R;
+						double t;
 
-						double t = Materials::intralayer_term(o1, o2, grid_disp, mat);
+						// same layer
+						if (orb_sheet_indices[o1] == orb_sheet_indices[o2]){
+							t = Materials::intralayer_term(orb_indices[o1], orb_indices[o2], grid_disp, orb_materials[o1]);
+						} else { // different layers
+
+							int global_shifts_on = jobIn.getInt("global_shifts_on");
+
+							std::vector<double> o1_offset;
+							std::vector<double> o2_offset;
+							o1_offset.resize(3);
+							o2_offset.resize(3);
+
+							for (int d = 0; d < 3; ++d){
+								o1_offset[d] = Materials::orbital_pos(orb_materials[o1], orb_indices[o1], d);
+								o2_offset[d] = Materials::orbital_pos(orb_materials[o2], orb_indices[o2], d);
+								if (global_shifts_on == 1){
+									std::vector< std::vector<double> > g_shifts = jobIn.getDoubleMat("global_shifts");
+									int s1 = orb_sheet_indices[o1];
+									int s2 = orb_sheet_indices[o1];
+									o1_offset[d] = o1_offset[d] + g_shifts[s1][d];
+									o2_offset[d] = o2_offset[d] + g_shifts[s2][d];
+								}
+							}
+
+							double dx = temp_x + o2_offset[0] - o1_offset[0];
+							double dy = temp_y + o2_offset[1] - o1_offset[1];
+							double dz = (o2_offset[2] + heights[orb_sheet_indices[o2]]) - ( o1_offset[2] + heights[orb_sheet_indices[o1]]);
+
+							std::array<double,3> pos_disp = {{dx, dy, dz}};
+							t = Materials::interlayer_term(orb_indices[o1], orb_indices[o2], pos_disp, theta, theta, orb_materials[o1], orb_materials[o2]);
+						}
+
 						temp_o2_bloch_t_array.push_back(t);
-					}
+
+					} // end of o2 loop
 					temp_o1_bloch_t_array.push_back(temp_o2_bloch_t_array);
-				}
+				} // end of o1 loop
 
 				std::vector<double> temp_r_vec;
 				temp_r_vec.push_back(x);
@@ -4113,14 +4196,14 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 
 				temp_R_array.push_back(temp_r_vec);
 				temp_bloch_t_array.push_back(temp_o1_bloch_t_array);
-			}
-		}
+			} // end of j loop
+		} // end of i loop
 
 		R_array.push_back(temp_R_array);
 		bloch_t_array.push_back(temp_bloch_t_array);
 		N_R_array.push_back( (int) temp_R_array.size());
-	}
 
+	} // end of g loop
 
 
 	// Sparse matrix format is 2 arrays with length = nnz, and 1 array with length = max_index + 1
@@ -4194,9 +4277,43 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 				// and the orbit tag in their respective unit-cell
 				int orbit1 = index_to_grid[k_i*4 + 2];
 				int orbit2 = index_to_grid[new_k*4 + 2];
-				int s = index_to_grid[k_i*4 + 3];
+				int s1 = index_to_grid[k_i*4 + 3];
+				int s2 = index_to_grid[new_k*4 + 3];
 
-				int N_R = N_R_array[s];
+				// Find which group we are in
+				int group_idx = -1;
+
+				for (int g = 0; g < num_mom_groups; ++g){
+					std::vector<int> sheets_here = mom_groups[g];
+					int num_sheets_here = sheets_here.size();
+
+					for (int s = 0; s < num_sheets_here; ++s){
+						if (sheets_here[s] == s1){
+							group_idx = g;
+						}
+					}
+
+				}
+
+				int N_R = N_R_array[group_idx];
+
+				// Now find what global orb index we want for this specific orb and sheet choice
+
+				std::vector<int> local_sheet_indices = orb_sheet_array[group_idx];
+				std::vector<int> local_orb_indices = orb_index_array[group_idx];
+				int local_num_orbs = local_orb_indices.size();
+
+				int local_o1 = -1;
+				int local_o2 = -1;
+
+				for (int o_search = 0; o_search < local_num_orbs; ++o_search){
+					if (s1 == local_sheet_indices[o_search] && orbit1 == local_orb_indices[o_search]){
+						local_o1 = o_search;
+					}
+					if (s2 == local_sheet_indices[o_search] && orbit2 == local_orb_indices[o_search]){
+						local_o2 = o_search;
+					}
+				}
 
 				for (int n = 0; n < N_R; ++n){
 
@@ -4204,13 +4321,13 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 					double q2 = i2pos[k_i*3 + 1];
 					double q3 = i2pos[k_i*3 + 2];
 
-					double r1 = R_array[s][n][0];
-					double r2 = R_array[s][n][1];
-					double r3 = R_array[s][n][2];
+					double r1 = R_array[group_idx][n][0];
+					double r2 = R_array[group_idx][n][1];
+					double r3 = R_array[group_idx][n][2];
 
 					double phase = q1*r1 + q2*r2 + q3*r3;
 
-					double t_here = bloch_t_array[s][n][orbit1][orbit2];
+					double t_here = bloch_t_array[group_idx][n][local_o1][local_o2];
 
 
 					t = t + std::polar(t_here,phase);

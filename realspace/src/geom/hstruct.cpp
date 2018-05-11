@@ -382,6 +382,50 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     			int j0 = findNearest(pos_here, sh - 1, 1);
     			int s0 = sh - 1;
 
+          // Momentum-space check
+          int same_group = 0;
+          if (solver_space == 1){
+
+            // For momentum-space, we do not continue if we are in the same group!
+            int num_mom_groups = opts_base.getInt("num_mom_groups");
+            if (num_mom_groups != 2){
+              throw std::runtime_error("Hstruct::getInterPairs Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
+            }
+            std::vector< std::vector<int> > mom_groups = opts_base.getIntMat("mom_groups");
+
+            // Find which group we are in
+            int group_idx = -1;
+
+            for (int g = 0; g < num_mom_groups; ++g){
+              std::vector<int> sheets_here = mom_groups[g];
+              int num_sheets_here = sheets_here.size();
+
+              for (int s = 0; s < num_sheets_here; ++s){
+                if (sheets_here[s] == sh){
+                  group_idx = g;
+                }
+              }
+
+            }
+
+            if (group_idx == -1){
+              throw std::runtime_error("Hstruct::getIntraPairs Momentum-space could not find a group_index for a sheet!!");
+            }
+
+            std::vector<int> local_sheets_here = mom_groups[group_idx];
+            int local_num_sheets = local_sheets_here.size();
+            for (int s = 0; s < local_num_sheets; ++s){
+              if (s0 == local_sheets_here[s]){
+                same_group = 1;
+              }
+            }
+
+          }
+
+          // if momentum-space has found the two sheets in same group, we skip
+          if (same_group == 1){
+            break;
+          }
 
     			/*
     			// For debugging/checking findNearest()
@@ -455,6 +499,51 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     			int i0 = findNearest(pos_here, sh + 1, 0);
     			int j0 = findNearest(pos_here, sh + 1, 1);
     			int s0 = sh + 1;
+
+          // Momentum-space check
+          int same_group = 0;
+          if (solver_space == 1){
+
+            // For momentum-space, we do not continue if we are in the same group!
+            int num_mom_groups = opts_base.getInt("num_mom_groups");
+            if (num_mom_groups != 2){
+              throw std::runtime_error("Hstruct::getInterPairs Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
+            }
+            std::vector< std::vector<int> > mom_groups = opts_base.getIntMat("mom_groups");
+
+            // Find which group we are in
+            int group_idx = -1;
+
+            for (int g = 0; g < num_mom_groups; ++g){
+              std::vector<int> sheets_here = mom_groups[g];
+              int num_sheets_here = sheets_here.size();
+
+              for (int s = 0; s < num_sheets_here; ++s){
+                if (sheets_here[s] == sh){
+                  group_idx = g;
+                }
+              }
+
+            }
+
+            if (group_idx == -1){
+              throw std::runtime_error("Hstruct::getIntraPairs Momentum-space could not find a group_index for a sheet!!");
+            }
+
+            std::vector<int> local_sheets_here = mom_groups[group_idx];
+            int local_num_sheets = local_sheets_here.size();
+            for (int s = 0; s < local_num_sheets; ++s){
+              if (s0 == local_sheets_here[s]){
+                same_group = 1;
+              }
+            }
+
+          }
+
+          // if momentum-space has found the two sheets in same group, we skip
+          if (same_group == 1){
+            break;
+          }
 
     			//printf("nearest = [%d, %d, %d] \n", i0, j0, s0);
 
@@ -780,13 +869,79 @@ std::vector<int> Hstruct::indexToGrid(int k){
 }
 
 
-void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<int> > &sc_vecs, Job_params opts) {
+void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_couplings, std::vector< std::vector<int> > &sc_vecs, Job_params opts) {
 
 	int current_index = 0;
-	for (int s = 0; s < max_sheets; ++s){
-		sheets[s].getIntraPairs(array_i,array_j,array_t,sc_vecs,opts,current_index);
-		current_index += sheets[s].getMaxIndex();
-	}
+  if (solver_space == 0){
+  	for (int s = 0; s < max_sheets; ++s){
+  		sheets[s].getIntraPairs(array_i,array_j,array_couplings,sc_vecs,opts,current_index);
+  		current_index += sheets[s].getMaxIndex();
+    }
+  } else if (solver_space == 1){
+    // For momentum-space, we add from other sheets that are at the same k-point if they are in the same mom-group
+    int num_mom_groups = opts_base.getInt("num_mom_groups");
+    if (num_mom_groups != 2){
+      throw std::runtime_error("Hstruct::getIntraPairs Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
+    }
+    std::vector< std::vector<int> > mom_groups = opts_base.getIntMat("mom_groups");
+
+    for (int kh = 0; kh < max_index; ++kh){
+
+  		//printf("kh = %d \n",kh);
+
+  		// Get the current grid information (ih = i "here")
+  		int ih = index_array[kh][0];
+  		int jh = index_array[kh][1];
+  		int lh = index_array[kh][2];
+  		int sh = index_array[kh][3];
+
+      // Find which group we are in
+      int group_idx = -1;
+
+      for (int g = 0; g < num_mom_groups; ++g){
+        std::vector<int> sheets_here = mom_groups[g];
+        int num_sheets_here = sheets_here.size();
+
+        for (int s = 0; s < num_sheets_here; ++s){
+          if (sheets_here[s] == sh){
+            group_idx = g;
+          }
+        }
+
+      }
+
+      if (group_idx == -1){
+        throw std::runtime_error("Hstruct::getIntraPairs Momentum-space could not find a group_index for a sheet!!");
+      }
+
+      std::vector<int> tar_sheets = mom_groups[group_idx];
+      int max_s = tar_sheets.size();
+
+      // For every sheet in this group, we add all orbs at the same grid point from all the sheets in that group
+      for (int s_idx = 0; s_idx < max_s; ++s_idx){
+        int s_new = tar_sheets[s_idx];
+        int num_orbs = Materials::n_orbitals(sheets[s_new].getMat());
+        for (int o = 0; o < num_orbs; ++o){
+
+          int k_new;
+          int temp_grid[4];
+					temp_grid[0] = ih;
+					temp_grid[1] = jh;
+					temp_grid[2] = o;
+					temp_grid[3] = s_new;
+					k_new = gridToIndex(temp_grid);
+
+          array_i.push_back(kh);
+          array_j.push_back(k_new);
+          array_couplings.push_back(0.0);
+
+        }
+      }
+
+
+    }
+
+  }
 
 }
 
@@ -1006,6 +1161,9 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 
   // if we assume that sheets only couple to their immediate neighbors
   // then the total number of internal FFT loops should be (num_sheets - 1)*2
+
+  fout << fixed;
+  fout.precision(15);
 
   fout << max_sheets << std::endl;
 
