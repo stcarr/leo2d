@@ -374,7 +374,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
         pos_here[1] = kh_pos_here[1] + sc_disp[1];
         pos_here[2] = kh_pos_here[2];
 
-    		// if we are not on the "lowest" sheet, we look for pairs from the sheet above
+    		// if we are not on the "lowest" sheet, we look for pairs from the sheet below
     		if (sh > 0) {
 
     			// "0" determines the center of our search range on sheet s0
@@ -493,7 +493,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
     			}
     		}
 
-    		// if we are not on the "highest" sheet, we look for pairs from the sheet below
+    		// if we are not on the "highest" sheet, we look for pairs from the sheet above
     		if (sh < max_sheets - 1) {
     			// "0" determines the center of our search range on sheet s0
     			int i0 = findNearest(pos_here, sh + 1, 0);

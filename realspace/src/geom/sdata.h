@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include "materials/materials.h"
+#include "params/job_params.h"
 
 
 class Sdata {
@@ -31,6 +32,7 @@ class Sdata {
 		int solver_space;
 		int strain_type;
 		std::string strain_file;
+    Job_params opts;
 
 };
 

@@ -45,6 +45,7 @@ class Sheet {
       std::vector< std::vector<double> > supercell;
       std::vector< std::vector<double> > supercell_inv;
       std::vector< std::vector<int> > supercell_stride;
+      Job_params opts;
 
 
     public:

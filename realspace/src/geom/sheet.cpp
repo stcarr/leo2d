@@ -14,6 +14,7 @@
 // ---------------------
 Sheet::Sheet(Sdata input){
 
+  opts = input.opts;
   mat = input.mat;
   a.resize(2);
   a[0].resize(2);
@@ -86,6 +87,7 @@ Sheet::Sheet(Sdata input){
 // ----------------
 Sheet::Sheet(const Sheet& orig) {
 
+  opts = orig.opts;
   a = orig.a;
   max_shape = orig.max_shape;
   min_shape = orig.min_shape;
@@ -420,6 +422,16 @@ double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
 			y = i*b[0][1] + j*b[1][1];
 			z = 0;
 		}
+
+    int global_shifts_on = opts.getInt("global_shifts_on");
+    if (global_shifts_on == 1){
+      std::vector< std::vector<double> > global_shifts = opts.getDoubleMat("global_shifts");
+      int sheet_index = opts.getInt("sheet_index");
+      std::vector<double> gs = global_shifts[sheet_index];
+      x = x + gs[0]*a[0][0] + gs[1]*a[1][0];
+      y = y + gs[0]*a[0][1] + gs[1]*a[1][1];
+      // z = z + gs[2]; // z update turned off for now
+    }
 
 		//printf("x,y,z = [%lf, %lf, %lf] \n",x,y,z);
 
@@ -808,7 +820,6 @@ void Sheet::setSupercell(std::vector< std::vector<double> > sc_in){
 
 
 }
-
 
 void Sheet::setReciprocal(){
 

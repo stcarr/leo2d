@@ -8,7 +8,7 @@
 #include "locality.h"
 #include "tools/numbers.h"
 #include "params/param_tools.h"
-#include "transport/ballistic.h"
+//#include "transport/ballistic.h"
 
 #include <math.h>
 #include <mpi.h>
@@ -874,8 +874,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				// Custom shifts for making "perfect" 2H aligned bilayers in TMDCs
 				// Assumes the top layer has 180 rotation, and bottom layer has 0 rotation
-				shifts[1][0] = 2.0/3.0;
-				shifts[1][1] = 1.0/3.0;
+				//shifts[1][0] = 2.0/3.0;
+				//shifts[1][1] = 1.0/3.0;
 
 				printf("shifts[%d] = [%lf %lf] \n",num_sheets-1,shifts[num_sheets-1][0],shifts[num_sheets-1][1]);
 
@@ -1164,8 +1164,22 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				double num_k1 = opts.getInt("num_k1");
 				maxJobs = num_k1;
 
-				std::vector< std::vector<double> > b1 = getReciprocal(0);
-				std::vector< std::vector<double> > b2 = getReciprocal(1);
+				int type = opts.getInt("supercell_type");
+				int base_s1 = 0;
+				int base_s2 = 1;
+				if (type == 1){
+					std::vector<int> sc_groups = opts.getIntVec("sc_groups");
+					int first_type = sc_groups[0];
+					for (int idx = 1; idx < sc_groups.size(); ++idx){
+						if (sc_groups[idx] != first_type){
+							base_s2 = idx;
+							break;
+						}
+					}
+				}
+
+				std::vector< std::vector<double> > b1 = getReciprocal(base_s1);
+				std::vector< std::vector<double> > b2 = getReciprocal(base_s2);
 
 				printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
 				printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
@@ -2096,7 +2110,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		// ---------------------
 
 		if (ballistic_transport == 1){
-			Ballistic::runBallisticTransport(results_out, index_to_grid,i2pos, H);
+			//Ballistic::runBallisticTransport(results_out, index_to_grid,i2pos, H);
 
 			// !!!!
 			// Have to hack in a file save here as sending large data over MPI crashes on local machine...
@@ -2563,6 +2577,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	int solver_space = jobIn.getInt("solver_space");
 	int strain_type = jobIn.getInt("strain_type");
 	int gsfe_z_on = jobIn.getInt("gsfe_z_on");
+	int global_shifts_on = jobIn.getInt("global_shifts_on");
 
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
@@ -2589,18 +2604,39 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 			int orbit = index_to_grid[i*4 + 2];
 			int s = index_to_grid[i*4 + 3];
 
+			double s1_a_base[2][2];
 			double s1_a[2][2];
 
 			for (int m = 0; m < 2; ++m){
 				for (int n = 0; n < 2; ++n){
-					s1_a[m][n] = sdata[s].a[m][n];
+					s1_a_base[m][n] = sdata[s].a[m][n];
 				}
+			}
+
+			double theta = angles[s];
+			for (int d = 0; d < 2; ++d){
+				// d tells us which unit-cell vec we are rotating by theta
+				s1_a[d][0] = cos(theta)*s1_a_base[d][0] - sin(theta)*s1_a_base[d][1];
+				s1_a[d][1] = sin(theta)*s1_a_base[d][0] + cos(theta)*s1_a_base[d][1];
 			}
 
 			i2pos[i*3 + 0] = index_to_pos[i*3 + 0] + shifts[s][0]*s1_a[0][0] + shifts[s][1]*s1_a[1][0];
 			i2pos[i*3 + 1] = index_to_pos[i*3 + 1] + shifts[s][0]*s1_a[0][1] + shifts[s][1]*s1_a[1][1];
 			i2pos[i*3 + 2] = index_to_pos[i*3 + 2];
 
+			// The global shift routine has been moved to sheet.cpp
+			/*
+			if (global_shifts_on == 1){
+				std::vector< std::vector<double> > g_shifts = jobIn.getDoubleMat("global_shifts");
+				for (int d = 0; d < 3; ++d){
+					if (d < 2){
+						i2pos[i*3 + d] = i2pos[i*3 + d] + g_shifts[s][0]*s1_a[0][d] + g_shifts[s][1]*s1_a[1][d];
+					} else {
+						// no z-update here
+					}
+				}
+			}
+			*/
 			if (strain_type == 1){
 
 				// sample strain from a supercell grid
@@ -2667,7 +2703,53 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 
 				//printf("on k=%d, sheet=%d, orbit=%d\n",i,s,orbit);
-				std::vector<double> disp_here = strainInfo.interpStrainDisp(new_shift_configs[i], s, orbit);
+				std::vector<double> temp_disp = strainInfo.fourierStrainDisp(new_shift_configs[i], s, orbit);
+				double ang = angles[s];
+				ang = 0.0;
+				std::vector<double> disp_here;
+				disp_here.resize(3);
+				disp_here[0] = cos(ang)*temp_disp[0] - sin(ang)*temp_disp[1];
+				disp_here[1] = sin(ang)*temp_disp[0] + cos(ang)*temp_disp[1];
+				disp_here[2] = 0.0;
+
+				// Tries to force rotational symm for numerical data
+				/*
+				int rot_max = 2;
+				for (int r = 1; r < rot_max; ++r){
+					double x_config = new_shift_configs[i][0] + new_shift_configs[i][1]*0.5;
+					double y_config = new_shift_configs[i][1]*sqrt(3)/2.0;
+
+					double ang = ((double) r)*2.0*PI/3.0 ;
+
+					double rot_x = x_config*cos(ang) - y_config*sin(ang);
+					double rot_y = x_config*sin(ang) + y_config*cos(ang);
+
+					double new_config_x = rot_x - rot_y/sqrt(3);
+					double new_config_y = rot_x*2.0/sqrt(3);
+
+					while (new_config_x >= 1)
+						new_config_x = new_config_x - 1.0;
+					while (new_config_x < 0)
+						new_config_x = new_config_x + 1.0;
+					while (new_config_y >= 1)
+						new_config_y = new_config_y - 1.0;
+					while (new_config_y < 0)
+						new_config_y = new_config_y + 1.0;
+
+					std::vector<double> rot_config;
+					rot_config.resize(2);
+					rot_config[0] = new_config_x;
+					rot_config[1] = new_config_y;
+					std::vector<double> new_disp = strainInfo.interpStrainDisp(rot_config, s, orbit);
+					double rot_disp_x = new_disp[0]*cos(-ang) - new_disp[1]*sin(-ang);
+					double rot_disp_y = new_disp[0]*sin(-ang) + new_disp[1]*cos(-ang);
+
+					disp_here[0] = disp_here[0] + rot_disp_x;
+					disp_here[1] = disp_here[1] + rot_disp_y;
+				}
+				disp_here[0] = disp_here[0]/3.0;
+				disp_here[1] = disp_here[1]/3.0;
+				*/
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
@@ -4169,9 +4251,13 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 								if (global_shifts_on == 1){
 									std::vector< std::vector<double> > g_shifts = jobIn.getDoubleMat("global_shifts");
 									int s1 = orb_sheet_indices[o1];
-									int s2 = orb_sheet_indices[o1];
-									o1_offset[d] = o1_offset[d] + g_shifts[s1][d];
-									o2_offset[d] = o2_offset[d] + g_shifts[s2][d];
+									int s2 = orb_sheet_indices[o2];
+									if (d < 2){
+										o1_offset[d] = o1_offset[d] + g_shifts[s1][0]*a[0][d] + g_shifts[s1][1]*a[1][d];
+										o2_offset[d] = o2_offset[d] + g_shifts[s2][0]*a[0][d] + g_shifts[s2][1]*a[1][d];
+									} else {
+										// no z-update here
+									}
 								}
 							}
 

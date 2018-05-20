@@ -139,6 +139,32 @@ int main(int argc, char** argv) {
 					opts.setParam("supercell_type",o);
 				}
 
+				if (in_string == "SUPERCELL_GROUPS"){
+						int sheet_count = 0;
+						std::vector<int> sc_groups;
+						//int num_mom_groups = opts.getInt("num_mom_groups");
+						int num_sc_groups = 2;
+						sc_groups.resize(num_sheets);
+						getline(in_line,in_string,' ');
+						for (int g_count = 0; g_count < num_sc_groups; ++g_count){
+							int same_group = 1;
+							while (same_group && (sheet_count < num_sheets) ){
+								getline(in_line,in_string,' ');
+								std::string temp_string = in_string;
+								if (in_string == "/"){
+									same_group = 0;
+								} else {
+									// subtract one to put sheets into 0-based indexing for rest of code
+									printf("adding sheet %d to group %d \n",stoi(temp_string),g_count+1);
+									sc_groups[(stoi(temp_string) - 1)] = g_count;
+									sheet_count = sheet_count + 1;
+								}
+							}
+
+						}
+						opts.setParam("sc_groups",sc_groups);
+				}
+
 				if (in_string == "SUPERCELL_GRID"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -736,6 +762,8 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < num_sheets; ++i){
 			s_data[i].solver_space = opts.getInt("solver_space");
 			s_data[i].strain_type = opts.getInt("strain_type");
+			opts.setParam("sheet_index",i);
+			s_data[i].opts = opts;
 		}
 
 		// update supercell if BC
@@ -761,10 +789,23 @@ int main(int argc, char** argv) {
 
 				}
 			} else if (type == 1) { // (M,N) Supercell type
-				if ((int)s_data.size() > 2){
-					printf("!!WARNING!!: (M,N) Supercell method not defined for more than 2 sheets \nLEO2D Quiting... \n");
-					return -1;
+				std::vector<int> sc_groups;
+
+				if ((int)s_data.size() < 3){
+					sc_groups.resize(2);
+					sc_groups[0] = 0;
+					sc_groups[1] = 1;
+					opts.setParam("sc_groups",sc_groups);
+				} else {
+					sc_groups = opts.getIntVec("sc_groups");
+
+					printf("sc_groups = ");
+					for (int i = 0; i < sc_groups.size(); ++i){
+						printf("%d , ",sc_groups[i]);
+					}
+					printf("\n");
 				}
+
 				int M = opts.getInt("m_supercell");
 				int N = opts.getInt("n_supercell");
 
@@ -789,14 +830,17 @@ int main(int argc, char** argv) {
 					int A1_num_a2;
 					int A2_num_a1;
 					int A2_num_a2;
-					if (i == 0){
-						angles[0] = 0;
+
+					int sc_group_here = sc_groups[i];
+
+					if (sc_group_here == 0){
+						angles[i] = 0;
 						A1_num_a1 = N;
 						A1_num_a2 = M;
 						A2_num_a1 = -M;
 						A2_num_a2 = (M+N);
-					} else if (i == 1){
-						angles[1] = theta;
+					} else if (sc_group_here == 1){
+						angles[i] = theta;
 						A1_num_a1 = M;
 						A1_num_a2 = N;
 						A2_num_a1 = -N;
