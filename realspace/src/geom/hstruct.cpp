@@ -6,6 +6,7 @@
  */
 
 #include "hstruct.h"
+#include "materials/read_mat.h"
 
 #include <fftw3.h>
 
@@ -56,6 +57,10 @@ Hstruct::Hstruct(const Hstruct& orig) {
 }
 
 Hstruct::~Hstruct() {
+}
+
+void Hstruct::setLoadedMatData(LoadedMat data_in){
+	loadedMatData = data_in;
 }
 
 // ---------------------------------------------------------------
@@ -292,9 +297,16 @@ std::vector<std::vector<int> > Hstruct::getIndexArray(){
 // -----------------------------------------
 void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vector<std::vector<int> > &supercell_vecs, Job_params opts){
 
+	int mat_from_file = opts.getInt("mat_from_file");
+
   // We search over a searchsize x searchsize sized grid of unitcells
-  int searchsize = Materials::inter_search_radius(sheets[0].getMat());
-  // We do not save pairs that are farther apart than this (in Angstroms)
+	int searchsize;
+	if (mat_from_file = 0){
+  	searchsize = Materials::inter_search_radius(sheets[0].getMat());
+	} else {
+		searchsize = ReadMat::inter_search_radius(loadedMatData);
+	}
+	// We do not save pairs that are farther apart than this (in Angstroms)
   double inter_cutoff = 12.5;
 
   int boundary_condition = opts.getInt("boundary_condition");
@@ -409,7 +421,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
             }
 
             if (group_idx == -1){
-              throw std::runtime_error("Hstruct::getIntraPairs Momentum-space could not find a group_index for a sheet!!");
+              throw std::runtime_error("Hstruct::getInterPairs Momentum-space could not find a group_index for a sheet!!");
             }
 
             std::vector<int> local_sheets_here = mom_groups[group_idx];
@@ -527,7 +539,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
             }
 
             if (group_idx == -1){
-              throw std::runtime_error("Hstruct::getIntraPairs Momentum-space could not find a group_index for a sheet!!");
+              throw std::runtime_error("Hstruct::getInterPairs Momentum-space could not find a group_index for a sheet!!");
             }
 
             std::vector<int> local_sheets_here = mom_groups[group_idx];
@@ -920,7 +932,7 @@ void Hstruct::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j
       // For every sheet in this group, we add all orbs at the same grid point from all the sheets in that group
       for (int s_idx = 0; s_idx < max_s; ++s_idx){
         int s_new = tar_sheets[s_idx];
-        int num_orbs = Materials::n_orbitals(sheets[s_new].getMat());
+        int num_orbs = sheets[s_new].getNumAtoms();
         for (int o = 0; o < num_orbs; ++o){
 
           int k_new;

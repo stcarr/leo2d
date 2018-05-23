@@ -54,6 +54,7 @@ Job_params::Job_params() {
 	setParam("boundary_condition",i_zero);
 	setParam("sc_search_size", i_one);
 	setParam("global_shifts_on",i_zero);
+	setParam("mat_from_file",i_zero);
 
 	// Strain settings
 	setParam("strain_type",i_zero);

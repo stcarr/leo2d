@@ -97,7 +97,7 @@ namespace Materials {
     intralayer_term(const int orbital_row, const int orbital_col,
                     const std::array<int, 2>& vector,
                     const Mat mat);
-	
+
 	// overloaded strain method
 	double
 	intralayer_term(const int orbital_row, const int orbital_col,

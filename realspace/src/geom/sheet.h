@@ -15,7 +15,7 @@
 #include "params/job_params.h"
 #include "geom/sdata.h"
 #include "materials/materials.h"
-
+#include "materials/loaded_mat.h"
 
 
 class Sheet {
@@ -24,6 +24,7 @@ class Sheet {
   	  std::vector<std::vector<double> > b;
       std::vector<int> max_shape, min_shape;
       double max_R;
+      int intra_search_size;
       int max_index;
   	  Materials::Mat mat;
       int n_orbitals;
@@ -45,11 +46,15 @@ class Sheet {
       std::vector< std::vector<double> > supercell;
       std::vector< std::vector<double> > supercell_inv;
       std::vector< std::vector<int> > supercell_stride;
+      int sheet_index;
+      
+      LoadedMat loadedMatData;
       Job_params opts;
 
 
     public:
       Sheet(Sdata);
+      Sheet(Sdata input, LoadedMat matData_in, int s);
       Sheet(const Sheet& orig);
       ~Sheet();
       bool checkShape(double (&pos)[3]);

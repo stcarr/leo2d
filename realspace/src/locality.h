@@ -16,6 +16,8 @@
 #include "matrix/dmatrix.h"
 #include "params/job_params.h"
 #include "mlmc/mlmc_handler.h"
+#include "materials/loaded_mat.h"
+
 
 #include "fftw3.h"
 
@@ -40,6 +42,8 @@ class Locality {
   		int* center_index;
   		int max_inter_pairs;
   		int max_intra_pairs;
+
+        LoadedMat loadedMatData;
 
   		/*
   		int intra_searchsize;
@@ -99,6 +103,8 @@ class Locality {
 							int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs,
 							int* intra_pairs, double* intra_pairs_t, std::vector< std::vector<int> > intra_sc_vecs,
 							std::vector< std::vector<double> > shift_configs);
+
+        void setupSupercell();
 
   		void getVacanciesFromFile(std::vector<std::vector<int> >&, std::vector<std::vector<int> >&, Job_params);
 

@@ -12,7 +12,7 @@
 #include "geom/sheet.h"
 #include "momentum/momentum_coupling.h"
 #include "params/job_params.h"
-
+#include "materials/loaded_mat.h"
 class Hstruct {
     private:
       int max_index;
@@ -24,6 +24,8 @@ class Hstruct {
       std::vector<double> heights;
       std::vector<std::vector<double> > shifts;
       std::vector<std::vector<int> > index_array;
+
+      LoadedMat loadedMatData;
       Job_params opts_base;
 
       void setIndex();
@@ -33,6 +35,7 @@ class Hstruct {
       Hstruct(const Hstruct& orig);
       ~Hstruct();
 
+      void setLoadedMatData(LoadedMat data_in);
       void setShift(int, std::vector<double>);
       int indexToSheet(int);
 

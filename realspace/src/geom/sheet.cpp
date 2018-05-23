@@ -6,6 +6,8 @@
  */
 
 #include "sheet.h"
+#include "materials/read_mat.h"
+
 #include <math.h>
 #include <stdio.h>
 
@@ -32,6 +34,7 @@ Sheet::Sheet(Sdata input){
 	max_shape = input.max_shape;
   max_R = input.max_R;
 	boundary_condition = input.boundary_condition;
+  intra_search_size = Materials::intra_search_radius(mat);
 
 	// "atoms" <--> "orbitals"
   n_orbitals = Materials::n_orbitals(mat);
@@ -40,6 +43,83 @@ Sheet::Sheet(Sdata input){
     atom_pos[i].resize(3);
     for (int j = 0; j < 3; ++j){
       atom_pos[i][j] = Materials::orbital_pos(mat, i, j);
+    }
+  }
+
+	solver_space = input.solver_space;
+	strain_type = input.strain_type;
+	strain_file = input.strain_file;
+
+	// If momentum space, compute reciprocal lattice
+	if (solver_space == 1){
+		setReciprocal();
+	}
+
+  // If periodic BCs, get supercell information
+  if (boundary_condition == 1){
+    setSupercell(input.supercell);
+    supercell_stride = input.supercell_stride;
+  }
+
+	// Set indexing
+
+	// no strain, position strain, or basic supercell strain
+	if (strain_type == 0 || strain_type == 1 || strain_type == 3) {
+		setIndex();
+
+	}
+
+	// strain from a configuration space basis of form b_x,b_y,o
+	if (strain_type == 2) {
+		loadIndexConfiguration();
+	}
+
+	// strain from a realspace basis of form x,y,z,i,j,o
+	if (strain_type == 4) {
+		loadIndexRealspace();
+	}
+
+	// Determine inverse of the grid -> position matrix
+	// (i.e. get the position -> grid matrix)
+	setInverse();
+
+}
+
+Sheet::Sheet(Sdata input, LoadedMat matData, int s){
+
+  sheet_index = s;
+  loadedMatData = matData;
+  opts = input.opts;
+
+  a.resize(2);
+  a[0].resize(2);
+  a[1].resize(2);
+
+  std::array<std::array<double, 2>, 2> lattice = ReadMat::getLattice(matData, sheet_index);
+
+  for (int i = 0; i < 2; ++i){
+    for (int j = 0; j < 2; ++j){
+      a[i][j] = lattice[i][j];
+    }
+  }
+
+
+	min_shape = input.min_shape;
+	max_shape = input.max_shape;
+  max_R = input.max_R;
+	boundary_condition = input.boundary_condition;
+  intra_search_size = ReadMat::intra_search_radius(matData);
+
+	// "atoms" <--> "orbitals"
+  n_orbitals = ReadMat::n_orbitals(matData, sheet_index);
+  atom_pos.resize(n_orbitals);
+
+
+
+  for (int i = 0; i < n_orbitals; ++i){
+    atom_pos[i].resize(3);
+    for (int j = 0; j < 3; ++j){
+      atom_pos[i][j] = ReadMat::orbital_pos(matData, i, j, sheet_index);
     }
   }
 
@@ -104,6 +184,10 @@ Sheet::Sheet(const Sheet& orig) {
   grid_array = orig.grid_array;
   index_array = orig.index_array;
   pos_array = orig.pos_array;
+  sheet_index = orig.sheet_index;
+  intra_search_size = orig.intra_search_size;
+
+  loadedMatData = orig.loadedMatData;
 
   a_inverse = orig.a_inverse;
 
@@ -537,12 +621,11 @@ Materials::Mat Sheet::getMat(){
 
 void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, std::vector<double> &array_t, std::vector< std::vector<int> > &sc_vecs, Job_params opts, int start_index){
 
-  int searchsize = Materials::intra_search_radius(mat);
+  int searchsize = intra_search_size;
   // boundary_condition = opts.getInt("boundary_condition");
-
+  int mat_from_file = opts.getInt("mat_from_file");
 	if (solver_space == 0) {
 		for (int kh = 0; kh < max_index; ++kh){
-
       std::vector<int> kh_array_i;
       std::vector<int> kh_array_j;
       std::vector<double> kh_array_t;
@@ -626,7 +709,13 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 								grid_disp[1] = grid_disp[1] - dx*supercell_stride[0][1] - dy*supercell_stride[1][1];
 							  }
 
-    							double t = Materials::intralayer_term(l0, l, grid_disp, mat);
+    							double t;
+                  if (mat_from_file == 0){
+        						t = Materials::intralayer_term(l0, l, grid_disp, mat);
+        					} else {
+        						t = ReadMat::intralayer_term(l0, l, grid_disp, loadedMatData, sheet_index);
+                  }
+
     							if (t != 0 || (kh == k2 && dx == 0 && dy == 0)){
 
     								 //if (kh == 0 || k2 == 0)
