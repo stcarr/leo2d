@@ -3229,13 +3229,15 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 		std::ofstream outFile3;
 		const char* extension3 = "_pos.dat";
 		outFile3.open ((job_name + extension3).c_str());
+		outFile3 << fixed;
+		outFile3.precision(12);
 
 		for(int i = 0; i < local_max_index; ++i){
 
 			double x = i2pos[i*3 + 0];
 			double y = i2pos[i*3 + 1];
 			double z = i2pos[i*3 + 2];
-			outFile3 << i << ", " << x << ", " << y << ", " << z << "\n";
+			outFile3 << x << "    " << y << "    " << z << "\n";
 		}
 
 		outFile3.close();
@@ -3968,13 +3970,15 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 		std::ofstream outFile3;
 		const char* extension3 = "_pos.dat";
 		outFile3.open ((job_name + extension3).c_str());
+		outFile3 << fixed;
+		outFile3.precision(12);
 
 		for(int i = 0; i < local_max_index; ++i){
 
 			double x = i2pos[i*3 + 0];
 			double y = i2pos[i*3 + 1];
 			double z = i2pos[i*3 + 2];
-			outFile3 << i << ", " << x << ", " << y << ", " << z << "\n";
+			outFile3 << x << "    " << y << "    " << z << "\n";
 		}
 
 		outFile3.close();
@@ -4591,13 +4595,15 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 		std::ofstream outFile3;
 		const char* extension3 = "_pos.dat";
 		outFile3.open ((job_name + extension3).c_str());
+		outFile3 << fixed;
+		outFile3.precision(12);
 
 		for(int i = 0; i < local_max_index; ++i){
 
 			double x = i2pos[i*3 + 0];
 			double y = i2pos[i*3 + 1];
 			double z = i2pos[i*3 + 2];
-			outFile3 << i << ", " << x << ", " << y << ", " << z << "\n";
+			outFile3 << x << "    " << y << "    " << z << "\n";
 		}
 
 		outFile3.close();
