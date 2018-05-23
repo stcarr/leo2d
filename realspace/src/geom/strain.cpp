@@ -147,6 +147,81 @@ void StrainCalc::setOpts(Job_params opts_in){
 	opts = opts_in;
 }
 
+std::vector<double> StrainCalc::fourierStrainDisp(std::vector<double> config_in, int sheet, int orb){
+
+
+    // First we check inputs
+    if (config_in.size() < 2){
+      throw std::runtime_error("Variable 'config_in' has size less than 2 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (config_in[0] < 0){
+      throw std::runtime_error("Variable 'config_in[0]' < 0 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (config_in[0] >= 1){
+      throw std::runtime_error("Variable 'config_in[0]' >= 1 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (config_in[1] < 0){
+      throw std::runtime_error("Variable 'config_in[1]' < 0 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (config_in[1] >= 1){
+      throw std::runtime_error("Variable 'config_in[1]' >= 1 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (sheet < 0){
+      throw std::runtime_error("Variable 'sheet' < 0 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (sheet > num_sheets-1){
+      throw std::runtime_error("Variable 'sheet' > num_sheets-1 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (orb < 0){
+      throw std::runtime_error("Variable 'orb' < 0 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+    if (orb > num_orb[sheet]-1){
+      throw std::runtime_error("Variable 'orb' > num_orb-1 on entry to StrainCalc::interpStrainDisp! (in src/geom/strain.cpp) \n");
+    }
+
+    double sign = 1.0;
+
+    // Rework to force symmetry between layers
+    // /*
+    if (sheet == 1){
+      sheet == 0;
+      if (config_in[0] != 0) {
+        config_in[0] = 1.0 - config_in[0];
+      }
+      if (config_in[1] != 0){
+          config_in[1] = 1.0 - config_in[1];
+      }
+      sign = -1.0;
+    }
+    // */
+
+    // output vector
+    std::vector<double> disp_out;
+    disp_out.resize(3);
+
+    //double r_scale = 0.1072;
+    double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+    //double r_scale = 0.2;
+
+    double x_c01 =  0.0;
+    double x_c10 =  r_scale*sqrt(3.0)/2.0;;
+    double x_c11 =  r_scale*sqrt(3.0)/2.0;;
+
+    double y_c01 =  r_scale;
+    double y_c10 = -r_scale/2.0;
+    double y_c11 =  r_scale/2.0;
+
+    double trig_x = config_in[0]*2.0*PI;
+    double trig_y = config_in[1]*2.0*PI;
+
+    disp_out[0] = sign*(x_c10*sin(trig_x) + x_c01*sin(trig_y) + x_c11*sin(trig_x + trig_y) );
+    disp_out[1] = sign*(y_c10*sin(trig_x) + y_c01*sin(trig_y) + y_c11*sin(trig_x + trig_y) );
+    disp_out[2] = 0.0;
+    //printf("disp_out = [%lf,%lf,%lf]\n",disp_out[0],disp_out[1],disp_out[2]);
+    return disp_out;
+
+}
+
 std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, int sheet, int orb){
 
   // First we check inputs
@@ -180,8 +255,8 @@ std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, 
 
   int sign = 1;
 
-  // Possible rework to force symmetry between layers
-  /*
+  // Rework to force symmetry between layers
+  // /*
   if (sheet == 1){
     sheet == 0;
     if (config_in[0] != 0) {
@@ -192,7 +267,10 @@ std::vector<double> StrainCalc::interpStrainDisp(std::vector<double> config_in, 
     }
     sign = -1;
   }
-  */
+  // */
+
+  // Force symmetry between orbitals
+  orb = 0;
 
   // output vector
   std::vector<double> disp_out;
@@ -450,18 +528,17 @@ std::vector< std::vector<double> > StrainCalc::realspaceStrain(std::vector<doubl
 
 double StrainCalc::gsfeHeight(std::vector<double> config_in){
 
-  // hard coded for graphene
-  double a0 = 2.4768;
+  // Direct form by Srolovitz paper
+  /*
+  double x = config_in[0]  + config_in[1]/2.0;
+  double y = config_in[0]*0.0 + config_in[1]*SQRT3_2;
 
-  double x = config_in[0]*a0  + config_in[1]*a0/2.0;
-  double y = config_in[0]*0.0 + config_in[1]*a0/SQRT3_2;
-
-  double psi = y + a0/SQRT3;
+  double psi = y + 1.0/SQRT3;
   double phi = x;
 
-  double pre = 2*PI/a0;
-  // GSFE d = 3.39, our d = 3.34
-  double c0 =     3.47889 - 0.05;
+  double pre = 2*PI;
+  // GSFE d = 3.39, our d = 3.35
+  double c0 =     3.47889 - 0.04;
   double c1 =    -0.02648;
   double c2 =    -0.00352;
   double c3 =     0.00037;
@@ -475,6 +552,32 @@ double StrainCalc::gsfeHeight(std::vector<double> config_in){
               c3*(cos(pre*(2*phi + 2*psi/SQRT3)) + cos(pre*(2*phi - 2*psi/SQRT3)) + cos(pre*4*psi/SQRT3) ) +
               c4*(sin(pre*(phi - psi/SQRT3)) - sin(pre*(phi + psi/SQRT3)) + sin(pre*2*psi/SQRT3) ) +
               c5*(sin(pre*(2*phi - 2*psi/SQRT3)) - sin(pre*(2*phi + 2*psi/SQRT3)) + sin(pre*4*psi/SQRT3) );
-  return F - 3.34;
+  return F - 3.35;
+  */
+
+  // Better form for config. space
+  // GSFE d = 3.39, our d = 3.35
+  double c0 =     3.47889 - 0.04;
+  double c1 =    -0.02648;
+  double c2 =    -0.00352;
+  double c3 =     0.00037;
+  double c4 =     SQRT3*c1;
+  double c5 =    -SQRT3*c3;
+
+  double b0 = c0;
+  double b1 = -2.0*c1;
+  double b2 = c2;
+  double b3 = -2.0*c3;
+
+  double x = 2.0*PI*config_in[0];
+  double y = 2.0*PI*config_in[1];
+
+  double F =  b0 +
+              b1*(cos(x)          + cos(y)      + cos(x + y)) +
+              b2*(cos(x + 2.0*y)  + cos(x - y)  + cos(2.0*x + y)) +
+              b3*(cos(2.0*x)      + cos(2.0*y)  + cos(2.0*x + 2.0*y));
+
+  return F - 3.35;
+
 
 }

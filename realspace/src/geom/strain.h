@@ -35,6 +35,7 @@ class StrainCalc {
       void loadConfigFile(std::string config_filename);
 	     void setOpts(Job_params opts_in);
 
+      std::vector<double> fourierStrainDisp(std::vector<double> config_in, int sheet, int orb);
       std::vector<double> interpStrainDisp(std::vector<double> config_in, int sheet, int orb);
 
       double interp_4point(double x, double y, double v1, double v2, double v3, double v4);

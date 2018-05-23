@@ -137,8 +137,8 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
             theta12 -= numbers::PI_6;
 
         double rs = r/Graphene::a;
-
-    		double z_eps = (3.40 - fabs(vector[2]))/3.40;
+        double z_eq = 3.35; // Equilbrium AB height from our DFT Calculations
+    		double z_eps = (z_eq - fabs(vector[2]))/z_eq;
 
         // New coefficients (with compression dependence fitting)
         // /*

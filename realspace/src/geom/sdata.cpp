@@ -49,6 +49,7 @@ Sdata::Sdata(const Sdata& orig) {
     supercell = orig.supercell;
     supercell_stride = orig.supercell_stride;
   }
+  opts = orig.opts;
 }
 
 Sdata::~Sdata() {
