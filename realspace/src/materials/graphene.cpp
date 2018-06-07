@@ -138,22 +138,22 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
 
         double rs = r/Graphene::a;
         double z_eq = 3.35; // Equilbrium AB height from our DFT Calculations
-    		double z_eps = (z_eq - fabs(vector[2]))/z_eq;
+    		double z_eps = (fabs(vector[2]) - z_eq)/z_eq;
 
         // New coefficients (with compression dependence fitting)
         // /*
-    		double lambda_0 =  0.310 + 1.882*z_eps + 7.741*z_eps*z_eps;
-    		double xi_0     =  1.750 + 1.618*z_eps + 1.848*z_eps*z_eps;
-    		double kappa_0  =  1.989 + 1.006*z_eps +  2.426*z_eps*z_eps;
+    		double lambda_0 =  0.310 - 1.882*z_eps + 7.741*z_eps*z_eps;
+    		double xi_0     =  1.750 - 1.618*z_eps + 1.848*z_eps*z_eps;
+    		double kappa_0  =  1.990 + 1.007*z_eps + 2.427*z_eps*z_eps;
 
-    		double lambda_3 = -0.068 + 0.399*z_eps + 1.739*z_eps*z_eps;
-    		double xi_3     =  3.286 - 0.916*z_eps + 11.996*z_eps*z_eps;
-    		double x_3      =  0.500 + 0.322*z_eps + 0.906*z_eps*z_eps;
+    		double lambda_3 = -0.068 + 0.399*z_eps - 1.739*z_eps*z_eps;
+    		double xi_3     =  3.286 - 0.914*z_eps + 12.011*z_eps*z_eps;
+    		double x_3      =  0.500 + 0.322*z_eps + 0.908*z_eps*z_eps;
 
     		double lambda_6 = -0.008 + 0.046*z_eps - 0.183*z_eps*z_eps;
-    		double xi_6     =  2.272 + 0.719*z_eps - 4.415*z_eps*z_eps;
+    		double xi_6     =  2.272 - 0.721*z_eps - 4.414*z_eps*z_eps;
     		double x_6      =  1.217 + 0.027*z_eps - 0.658*z_eps*z_eps;
-    		double kappa_6  =  1.561 + 0.371*z_eps - 0.134*z_eps*z_eps;
+    		double kappa_6  =  1.562 - 0.371*z_eps - 0.134*z_eps*z_eps;
         // */
         // Debugging the new coefficients (with compression dependence fitting)
         /*
