@@ -200,8 +200,13 @@ std::vector<double> StrainCalc::fourierStrainDisp(std::vector<double> config_in,
     disp_out.resize(3);
 
     //double r_scale = 0.1072;
-    double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+    //double r_scale = 0.0524;  // value for 26_25 super cell (~1.30 degrees)
+    //double r_scale = 0.0666;    // value for ~1.12 degrees
+    //double r_scale = 0.04237;   // value for ~1.47 degrees
+    //double r_scale = 0.02404;   // value for ~2.00 degrees
     //double r_scale = 0.2;
+
+    double r_scale = opts.getDouble("gsfe_r_scale");
 
     double x_c01 =  0.0;
     double x_c10 =  r_scale*sqrt(3.0)/2.0;;

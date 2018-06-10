@@ -1836,17 +1836,26 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 			// p1 and p2 are the K points of layer 1 and 2, respectively
 
-			double p1[2];
-			double p2[2];
+			double k_1[2];
+			double k_2[2];
 
+
+			k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
+			k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
+
+			k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
+			k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
+
+			/*
 			p1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
 			p1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
 
 			p2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
 			p2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+			*/
 
-			//printf("p1 = [%lf, %lf], p2 = [%lf, %lf] \n",p1[0],p1[1],p2[0],p2[1]);
-
+			printf("k1 = [%lf, %lf], k2 = [%lf, %lf] \n",k_1[0],k_1[1],k_2[0],k_2[1]);
+			printf("d_vec1 = [%lf, %lf], d_vec2 =[%lf, %lf] \n",d_vec1[0],d_vec1[1],d_vec2[0],d_vec2[1]);
 			for (int i = 0; i < nShifts; ++i){
 				double x = (1.0/((double) nShifts))*i;
 				for (int j = 0; j < nShifts; ++j){
@@ -1856,8 +1865,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					shifts.resize(num_sheets);
 					for(int s = 0; s < num_sheets; ++s){
 						shifts[s].resize(3);
-						shifts[s][0] = x*d_vec1[0] + y*d_vec2[0] + p1[0];
-						shifts[s][1] = x*d_vec1[1] + y*d_vec2[1] + p1[1];
+						shifts[s][0] = x*d_vec1[0] + y*d_vec2[0] + k_1[0];
+						shifts[s][1] = x*d_vec1[1] + y*d_vec2[1] + k_1[1];
 						shifts[s][2] = 0;
 					}
 					//printf("k = [%lf, %lf] \n",shifts[0][0],shifts[0][1]);
@@ -1941,7 +1950,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			m[0] = k[0] + d*y_dir[0];
 			m[1] = k[1] + d*y_dir[1];
 
-			//printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+			printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf], gamma_2 = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1],gamma_2[0],gamma_2[1]);
 
 			for (int i = 0; i < maxJobs; ++i){
 				//double x = (1.0/((double) maxJobs))*i;
@@ -1992,7 +2001,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				std::vector< std::vector<double> > shifts;
 				shifts.resize(num_sheets);
 
-				//printf("%lf %lf \n",shift_x, shift_y);
+				//printf("k[%d] = [%lf, %lf] \n",i,shift_x, shift_y);
 
 
 
