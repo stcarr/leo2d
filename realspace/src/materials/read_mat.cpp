@@ -48,7 +48,63 @@ double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int
 }
 
 double ReadMat::interlayer_term(int orbital_row, int orbital_col, std::array<double, 3>& vector, double angle_row, double angle_col, LoadedMat mat_row, LoadedMat mat_col){
-  return -1.0;
+
+    /*
+      const double nu_sigma   =  2.627;   const double nu_pi      = -0.708;
+      const double R_sigma    =  3.128;   const double R_pi       =  2.923;
+      const double eta_sigma  =  3.859;   const double eta_pi     =  5.724;
+
+      const double XX_sep     = (12.29/2.0) - 3.130;
+
+      // Corrected method for unrotating the system:
+      // Assume the layer from the row has 0 twist:
+      double rot_vector[3];
+      // Rotate the displacement vector "backwards" so that is now defined in row_layer's coordinate system
+      rot_vector[0] = cos(-theta_row)*vector[0] - sin(-theta_row)*vector[1];
+      rot_vector[1] = sin(-theta_row)*vector[0] + cos(-theta_row)*vector[1];
+      rot_vector[2] = vector[2];
+
+      double tot_theta = theta_col - theta_row;
+      int p_col_start = (index(orbit_col) - 5) % 3;
+      double p_col[3];
+
+      if (p_col_start == 0){ // if p_col is the x orbital
+        p_col[0] = 1.0*cos(tot_theta) - 0.0*sin(tot_theta);
+        p_col[1] = 1.0*sin(tot_theta) + 0.0*cos(tot_theta);
+        p_col[2] = 0.0;
+      } else if (p_col_start == 1){ // if p_col is the y orbital
+        p_col[0] = 0.0*cos(tot_theta) - 1.0*sin(tot_theta);
+        p_col[1] = 0.0*sin(tot_theta) + 1.0*cos(tot_theta);
+        p_col[2] = 0.0;
+      } else if (p_col_start == 2){ // if p_col is the z orbital
+        p_col[0] = 0.0;
+        p_col[1] = 0.0;
+        p_col[2] = 1.0;
+      }
+
+      double r_sq = rot_vector[0]*rot_vector[0] + rot_vector[1]*rot_vector[1] + rot_vector[2]*rot_vector[2];
+      if ( (r_sq < TMDC::inter_cutoff_radius * TMDC::inter_cutoff_radius)
+                          && (std::abs(std::abs(vector[2]) - XX_sep) < 0.05) )
+      {
+          assert( (atom(orbit_row) == Atom::X_A && atom(orbit_col) == Atom::X_B)
+                  || (atom(orbit_row) == Atom::X_B && atom(orbit_col) == Atom::X_A) ); // This assures that the inner layers only ever couple
+
+          double r = std::sqrt(r_sq);
+          // Determine character of row p orbit /
+          int p_row = (index(orbit_row) - 5) % 3;
+
+          double V_sigma = nu_sigma*std::exp(-std::pow(r/R_sigma, eta_sigma));
+          double V_pi    =    nu_pi*std::exp(-std::pow(r/R_pi,    eta_pi   ));
+          double sum_t = 0.0;
+          for (int idx = 0; idx < 3; ++idx){
+            sum_t = sum_t + p_col[idx]*((V_sigma - V_pi)*(rot_vector[p_row] * rot_vector[idx] / r_sq) + (p_row == idx ? V_pi : 0));
+          }
+          return sum_t;
+      }
+      else
+          return 0;
+  }
+  */
 }
 
 LoadedMat ReadMat::loadMat(std::string filename){
