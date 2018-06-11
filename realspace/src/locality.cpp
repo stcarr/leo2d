@@ -3946,7 +3946,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 					for (int i = 0; i < 2; ++i){
 						strain_here[i].resize(2);
 						for (int j = 0; j < 2; ++j){
-							strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
+							//strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
+							strain_here[i][j] = (strain[k_i][i][j])/2.0;
 						}
 					}
 
@@ -3997,9 +3998,11 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 					strain_rot[1][0] = strain_rot[0][1];
 
 					Materials::Mat mat = sdata[s0].mat;
-					double raw_t;
+
 					if (mat_from_file == 0){
 						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+						//raw_t = intra_pairs_t[intra_counter];
+
 					} else {
 						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0)/energy_rescale;
 					}
@@ -4012,6 +4015,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
+
 				if (new_k == k_i){
 					if (elecOn == 1){
 						t = (raw_t + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;

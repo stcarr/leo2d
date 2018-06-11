@@ -395,8 +395,9 @@ std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sh
   // */
 
   //double r_scale = 0.1072;
-  double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+  //double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
   //double r_scale = 0.2;
+  double r_scale = opts.getDouble("gsfe_r_scale");
 
   double x_c01 =  0.0;
   double x_c10 =  r_scale*sqrt(3.0)/2.0;;
@@ -411,7 +412,25 @@ std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sh
 
   disp[0] = sign*(x_c10*sin(trig_x) + x_c01*sin(trig_y) + x_c11*sin(trig_x + trig_y) );
   disp[1] = sign*(y_c10*sin(trig_x) + y_c01*sin(trig_y) + y_c11*sin(trig_x + trig_y) );
-  disp[2] = 0.0;
+
+  double c0 =     3.47889 - 0.04;
+  double c1 =    -0.02648;
+  double c2 =    -0.00352;
+  double c3 =     0.00037;
+  double c4 =     SQRT3*c1;
+  double c5 =    -SQRT3*c3;
+
+  double b0 = c0;
+  double b1 = -2.0*c1;
+  double b2 = c2;
+  double b3 = -2.0*c3;
+
+  double F =  b0 +
+              b1*(cos(trig_x)               + cos(trig_y)           + cos(trig_x + trig_y)) +
+              b2*(cos(trig_x + 2.0*trig_y)  + cos(trig_x - trig_y)  + cos(2.0*trig_x + trig_y)) +
+              b3*(cos(2.0*trig_x)           + cos(2.0*trig_y)       + cos(2.0*trig_x + 2.0*trig_y));
+
+  disp[2] = sign*(3.35 - F)/2.0;
 
 	return disp;
 
@@ -424,6 +443,13 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
 	strain_here.resize(2);
 	strain_here[0].resize(2);
 	strain_here[1].resize(2);
+  /*
+  strain_here[0][0] = 0.0;
+  strain_here[0][1] = 0.0;
+  strain_here[1][0] = 0.0;
+  strain_here[1][1] = 0.0;
+  return strain_here;
+  */
 
   /*
 	double amp = 20.0;
@@ -456,8 +482,9 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
   // */
 
   //double r_scale = 0.1072;
-  double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+  //double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
   //double r_scale = 0.2;
+  double r_scale = opts.getDouble("gsfe_r_scale");
 
   double x_c01 =  0.0;
   double x_c10 =  r_scale*sqrt(3.0)/2.0;;
