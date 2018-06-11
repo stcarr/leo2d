@@ -504,6 +504,12 @@ int main(int argc, char** argv) {
 					opts.setParam("gsfe_z_on",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "GSFE_R_SCALE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("gsfe_r_scale",atof(in_string.c_str()));
+				}
+
 				if (in_string == "MATRIX_SAVE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

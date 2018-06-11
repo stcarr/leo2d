@@ -200,8 +200,13 @@ std::vector<double> StrainCalc::fourierStrainDisp(std::vector<double> config_in,
     disp_out.resize(3);
 
     //double r_scale = 0.1072;
-    double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+    //double r_scale = 0.0524;  // value for 26_25 super cell (~1.30 degrees)
+    //double r_scale = 0.0666;    // value for ~1.12 degrees
+    //double r_scale = 0.04237;   // value for ~1.47 degrees
+    //double r_scale = 0.02404;   // value for ~2.00 degrees
     //double r_scale = 0.2;
+
+    double r_scale = opts.getDouble("gsfe_r_scale");
 
     double x_c01 =  0.0;
     double x_c10 =  r_scale*sqrt(3.0)/2.0;;
@@ -361,6 +366,7 @@ std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sh
 	std::vector<double> disp;
 	disp.resize(3);
 
+  /*
 	double amp = 20.0;
 	double freq = 1.0;
 
@@ -370,6 +376,61 @@ std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sh
 	disp[1] = amp*cos(2.0*PI*freq*pos_in[1]);
 	// u_z:
 	disp[2] = 0.0;
+  */
+
+  double sign = 1.0;
+
+  // Rework to force symmetry between layers
+  // /*
+  if (sheet == 1){
+    sheet == 0;
+    if (pos_in[0] != 0) {
+      pos_in[0] = 1.0 - pos_in[0];
+    }
+    if (pos_in[1] != 0){
+        pos_in[1] = 1.0 - pos_in[1];
+    }
+    sign = -1.0;
+  }
+  // */
+
+  //double r_scale = 0.1072;
+  //double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+  //double r_scale = 0.2;
+  double r_scale = opts.getDouble("gsfe_r_scale");
+
+  double x_c01 =  0.0;
+  double x_c10 =  r_scale*sqrt(3.0)/2.0;;
+  double x_c11 =  r_scale*sqrt(3.0)/2.0;;
+
+  double y_c01 =  r_scale;
+  double y_c10 = -r_scale/2.0;
+  double y_c11 =  r_scale/2.0;
+
+  double trig_x = pos_in[0]*2.0*PI;
+  double trig_y = pos_in[1]*2.0*PI;
+
+  disp[0] = sign*(x_c10*sin(trig_x) + x_c01*sin(trig_y) + x_c11*sin(trig_x + trig_y) );
+  disp[1] = sign*(y_c10*sin(trig_x) + y_c01*sin(trig_y) + y_c11*sin(trig_x + trig_y) );
+
+  double c0 =     3.47889 - 0.04;
+  double c1 =    -0.02648;
+  double c2 =    -0.00352;
+  double c3 =     0.00037;
+  double c4 =     SQRT3*c1;
+  double c5 =    -SQRT3*c3;
+
+  double b0 = c0;
+  double b1 = -2.0*c1;
+  double b2 = c2;
+  double b3 = -2.0*c3;
+
+  double F =  b0 +
+              b1*(cos(trig_x)               + cos(trig_y)           + cos(trig_x + trig_y)) +
+              b2*(cos(trig_x + 2.0*trig_y)  + cos(trig_x - trig_y)  + cos(2.0*trig_x + trig_y)) +
+              b3*(cos(2.0*trig_x)           + cos(2.0*trig_y)       + cos(2.0*trig_x + 2.0*trig_y));
+
+  disp[2] = sign*(3.35 - F)/2.0;
 
 	return disp;
 
@@ -382,7 +443,15 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
 	strain_here.resize(2);
 	strain_here[0].resize(2);
 	strain_here[1].resize(2);
+  /*
+  strain_here[0][0] = 0.0;
+  strain_here[0][1] = 0.0;
+  strain_here[1][0] = 0.0;
+  strain_here[1][1] = 0.0;
+  return strain_here;
+  */
 
+  /*
 	double amp = 20.0;
 	double freq = 1.0;
 
@@ -394,6 +463,52 @@ std::vector< std::vector<double> > StrainCalc::supercellStrain(std::vector<doubl
 	strain_here[1][0] =  0.0;
 	// u_yy:
 	strain_here[1][1] =  2.0*PI*freq*amp*sin(2.0*PI*freq*pos_in[1]);
+  */
+
+  double sign = 1.0;
+
+  // Rework to force symmetry between layers
+  // /*
+  if (sheet == 1){
+    sheet == 0;
+    if (pos_in[0] != 0) {
+      pos_in[0] = 1.0 - pos_in[0];
+    }
+    if (pos_in[1] != 0){
+        pos_in[1] = 1.0 - pos_in[1];
+    }
+    sign = -1.0;
+  }
+  // */
+
+  //double r_scale = 0.1072;
+  //double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
+  //double r_scale = 0.2;
+  double r_scale = opts.getDouble("gsfe_r_scale");
+
+  double x_c01 =  0.0;
+  double x_c10 =  r_scale*sqrt(3.0)/2.0;;
+  double x_c11 =  r_scale*sqrt(3.0)/2.0;;
+
+  double y_c01 =  r_scale;
+  double y_c10 = -r_scale/2.0;
+  double y_c11 =  r_scale/2.0;
+
+  double trig_x = pos_in[0]*2.0*PI;
+  double trig_y = pos_in[1]*2.0*PI;
+
+  //disp[0] = sign*(x_c10*sin(trig_x) + x_c01*sin(trig_y) + x_c11*sin(trig_x + trig_y) );
+  //disp[1] = sign*(y_c10*sin(trig_x) + y_c01*sin(trig_y) + y_c11*sin(trig_x + trig_y) );
+  //disp[2] = 0.0;
+
+  // u_xx:
+	strain_here[0][0] = 2.0*PI*sign*(x_c10*cos(trig_x) + x_c11*cos(trig_x + trig_y) );
+	// u_xy:
+	strain_here[0][1] = 2.0*PI*sign*(x_c01*cos(trig_y) + x_c11*cos(trig_x + trig_y) );
+	// u_yx:
+	strain_here[1][0] = 2.0*PI*sign*(y_c10*cos(trig_x) + y_c11*cos(trig_x + trig_y) );
+	// u_yy:
+	strain_here[1][1] = 2.0*PI*sign*(y_c01*cos(trig_y) + y_c11*cos(trig_x + trig_y) );
 
 	// Now we rescale for the supercell:
 
