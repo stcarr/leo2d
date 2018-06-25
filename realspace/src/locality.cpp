@@ -2990,7 +2990,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 
 				//printf("on k=%d, sheet=%d, orbit=%d\n",i,s,orbit);
-				std::vector<double> temp_disp = strainInfo.fourierStrainDisp(new_shift_configs[i], s, orbit);
+				std::vector<double> temp_disp = strainInfo.fourierStrainDisp_old(new_shift_configs[i], s, orbit);
 				double ang = angles[s];
 				ang = 0.0;
 				std::vector<double> disp_here;

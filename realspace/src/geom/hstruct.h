@@ -13,6 +13,8 @@
 #include "momentum/momentum_coupling.h"
 #include "params/job_params.h"
 #include "materials/loaded_mat.h"
+#include "geom/strain.h"
+
 class Hstruct {
     private:
       int max_index;

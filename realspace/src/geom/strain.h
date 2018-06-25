@@ -23,6 +23,11 @@ class StrainCalc {
       std::vector< std::vector< std::vector< std::vector<double> > > > disp_x;
       std::vector< std::vector< std::vector< std::vector<double> > > > disp_y;
       std::vector< std::vector< std::vector< std::vector<double> > > > disp_z;
+
+      // terms for Fourier expanded config. relaxation
+      int max_k;
+      std::vector< std::vector<double> > coeffs;
+
       Job_params opts;
 
 
@@ -33,9 +38,12 @@ class StrainCalc {
       ~StrainCalc();
 
       void loadConfigFile(std::string config_filename);
-	     void setOpts(Job_params opts_in);
+      void loadFourierConfigFile(std::string config_filename);
+	    void setOpts(Job_params opts_in);
 
-      std::vector<double> fourierStrainDisp(std::vector<double> config_in, int sheet, int orb);
+      std::vector<double> fourierStrainDisp(double* r, double* b1, double* b2);
+      std::vector< std::vector<double> > fourierStrainDisp_vectorized(std::vector< std::vector<double> > r, double* b1, double* b2);
+      std::vector<double> fourierStrainDisp_old(std::vector<double> config_in, int sheet, int orb);
       std::vector<double> interpStrainDisp(std::vector<double> config_in, int sheet, int orb);
 
       double interp_4point(double x, double y, double v1, double v2, double v3, double v4);

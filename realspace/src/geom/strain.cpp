@@ -143,11 +143,192 @@ void StrainCalc::loadConfigFile(std::string config_filename){
 
 }
 
+void StrainCalc::loadFourierConfigFile(std::string config_filename){
+
+  // File should look like:
+  /*
+      \ MAX_K
+      \ U_X COEFFS
+      \ U_Y COEFFS
+      \ U_Z COEFFS
+  */
+
+  //printf ("entering loadConfigFile ('%s')\n",config_filename.c_str());
+  std::ifstream fin(config_filename.c_str());
+
+  // First read the number of sheets
+  fin >> max_k;
+  int num_coeffs = max_k*(max_k+1)/2 + 1;
+
+  // Allocate memory accordingly
+  coeffs.resize(3);
+  for (int i = 0; i < 3; ++i){
+    coeffs[i].resize(num_coeffs);
+    for (int j = 0; j < num_coeffs; ++j){
+      fin >> coeffs[i][j];
+    }
+  }
+
+}
+
 void StrainCalc::setOpts(Job_params opts_in){
 	opts = opts_in;
 }
 
-std::vector<double> StrainCalc::fourierStrainDisp(std::vector<double> config_in, int sheet, int orb){
+
+std::vector<double> StrainCalc::fourierStrainDisp(double* r, double* b1, double* b2){
+
+    // output vector
+    std::vector<double> disp_out;
+    disp_out.resize(3);
+
+    double disp_x = 0.0;
+    double disp_y = 0.0;
+    double disp_z = 0.0;
+
+    double k[2];
+    double c[3];
+    double k_base[2];
+    double c_base[3];
+
+    int idx = 0;
+
+    // loop over [i,j] Fourier components
+    for (int i = 0; i < max_k+1; ++i){
+        for (int j = 0; j < max(i,1); ++j){
+            //printf("[%d, %d] \n",i,j);
+            // fixing factor, to account for exp(ikr) vs const term
+            double ff = 2.0;
+            int rot_max = 3;
+            if (i == 0) {
+               rot_max = 1;
+               ff = 1.0;
+            }
+
+            // define Fourier component direction
+            k_base[0] =  i*b1[0] + j*b2[0];
+            k_base[1] =  i*b1[1] + j*b2[1];
+
+            // define Fourier coefficients for this direction
+            c_base[0] =  coeffs[0][idx]; // coeffs are in SUPERCELL basis
+            c_base[1] =  coeffs[1][idx]; // later we put them in CONFIG basis
+            c_base[2] =  coeffs[2][idx];
+
+            for (int r_idx = 0; r_idx < rot_max; ++r_idx){
+                double r_theta = r_idx*PI/3.0;
+                k[0] = cos(r_theta)*k_base[0] - sin(r_theta)*k_base[1];
+                k[1] = sin(r_theta)*k_base[0] + cos(r_theta)*k_base[1];
+
+                //c = rot^(r_idx)*[coeffs[idx,]];
+                c[0] = cos(r_theta)*c_base[0] - sin(r_theta)*c_base[1];
+                c[1] = sin(r_theta)*c_base[0] + cos(r_theta)*c_base[1];
+                c[2] = c_base[2];
+
+                // the coeffs are for exp(i*k*r), so we mulitply by 2 for sin/cos
+                disp_x = disp_x + ff*c[0]*sin(k[0]*r[0] + k[1]*r[1]);
+                disp_y = disp_y + ff*c[1]*sin(k[0]*r[0] + k[1]*r[1]);
+                disp_z = disp_z + ff*c[2]*cos(k[0]*r[0] + k[1]*r[1]);
+            }
+
+            idx++;
+
+        }
+    }
+
+
+    double basis_rot = atan2(b1[1],b1[0]); // above data assumes b1 is along x axis
+    double rot_disp_x = cos(basis_rot)*disp_x - sin(basis_rot)*disp_y;
+    double rot_disp_y = sin(basis_rot)*disp_x + cos(basis_rot)*disp_y;
+    // rotate by ~pi/2 to put into CONFIG basis
+    disp_out[0] = -rot_disp_y;
+    disp_out[1] = rot_disp_x;
+    disp_out[2] = disp_z; // for now turn off disp_z, can add later
+    //printf("disp_out = [%lf,%lf,%lf]\n",disp_out[0],disp_out[1],disp_out[2]);
+    return disp_out;
+
+}
+
+std::vector< std::vector<double> > StrainCalc::fourierStrainDisp_vectorized(std::vector< std::vector<double> > r, double* b1, double* b2){
+
+    // length of input
+    int num_atoms = r.size();
+
+    // output vector
+    std::vector< std::vector<double> > disp_out;
+    disp_out.resize(num_atoms);
+    for (int n = 0; n < num_atoms; ++n){
+      disp_out[n].resize(3);
+      for (int d = 0; d < 3; ++d){
+        disp_out[n][d] = 0.0;
+      }
+    }
+
+    double k[2];
+    double c[3];
+    double k_base[2];
+    double c_base[3];
+
+    int idx = 0;
+
+    // loop over [i,j] Fourier components
+    for (int i = 0; i < max_k+1; ++i){
+        for (int j = 0; j < max(i,1); ++j){
+            //printf("[%d, %d] fourier comp. \n",i,j);
+
+            // fixing factor, to account for exp(ikr) vs const term
+            double ff = 2.0;
+            int rot_max = 3;
+            if (i == 0) {
+               rot_max = 1;
+               ff = 1.0;
+            }
+
+            // define Fourier component direction
+            k_base[0] =  i*b1[0] + j*b2[0];
+            k_base[1] =  i*b1[1] + j*b2[1];
+
+            // define Fourier coefficients for this direction
+            c_base[0] =  coeffs[0][idx]; // coeffs are in SUPERCELL basis
+            c_base[1] =  coeffs[1][idx]; // later we put them in CONFIG basis
+            c_base[2] =  coeffs[2][idx];
+
+            for (int r_idx = 0; r_idx < rot_max; ++r_idx){
+                double r_theta = r_idx*PI/3.0;
+                k[0] = cos(r_theta)*k_base[0] - sin(r_theta)*k_base[1];
+                k[1] = sin(r_theta)*k_base[0] + cos(r_theta)*k_base[1];
+
+                //c = rot^(r_idx)*[coeffs[idx,]];
+                c[0] = cos(r_theta)*c_base[0] - sin(r_theta)*c_base[1];
+                c[1] = sin(r_theta)*c_base[0] + cos(r_theta)*c_base[1];
+                c[2] = c_base[2];
+                for (int n = 0; n < num_atoms; ++n){
+                  // the coeffs are for exp(i*k*r), so we mulitply by 2 for sin/cos
+                  disp_out[n][0] = disp_out[n][0] + ff*c[0]*sin(k[0]*r[n][0] + k[1]*r[n][1]);
+                  disp_out[n][1] = disp_out[n][1] + ff*c[1]*sin(k[0]*r[n][0] + k[1]*r[n][1]);
+                  disp_out[n][2] = disp_out[n][2] + ff*c[2]*cos(k[0]*r[n][0] + k[1]*r[n][1]);
+                }
+            }
+
+            idx++;
+
+        }
+    }
+
+
+    double basis_rot = atan2(b1[1],b1[0]); // above data assumes b1 is along x axis
+    for (int n = 0; n < num_atoms; ++n){
+      double rot_disp_x = cos(basis_rot)*disp_out[n][0] - sin(basis_rot)*disp_out[n][1];
+      double rot_disp_y = sin(basis_rot)*disp_out[n][0] + cos(basis_rot)*disp_out[n][1];
+      // rotate by ~pi/2 to put into CONFIG basis
+      disp_out[n][0] = -rot_disp_y;
+      disp_out[n][1] = rot_disp_x;
+    }
+
+    return disp_out;
+
+}
+
+std::vector<double> StrainCalc::fourierStrainDisp_old(std::vector<double> config_in, int sheet, int orb){
 
 
     // First we check inputs

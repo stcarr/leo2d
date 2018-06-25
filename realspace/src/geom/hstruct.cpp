@@ -342,6 +342,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 		kh_pos_here[2] = posAtomIndex(kh,2);
 		// If in momentum space, take reciprocal, i.e. K couples to -K (NOT K couples to K)
 		if (solver_space == 1){
+      inter_cutoff = 30.0;
 			kh_pos_here[0] = -kh_pos_here[0];
 			kh_pos_here[1] = -kh_pos_here[1];
 			kh_pos_here[2] = -kh_pos_here[2];
@@ -1169,6 +1170,16 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
 	// area_list  are real-space areas of each layer's unit cell
 	// fft_file is the desired file name for the output
 
+
+  StrainCalc strainInfo;
+
+  int strain_type = opts_base.getInt("strain_type");
+
+  // If config strain_type, load fourier data
+  if (strain_type == 2){
+    strainInfo.loadFourierConfigFile(opts_base.getString("strain_file"));
+  }
+
   std::ofstream fout(fft_file.c_str());
 
   // if we assume that sheets only couple to their immediate neighbors
@@ -1239,6 +1250,61 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     			int y_size2 = y_size/2+1; // r2c y-direction size
     			double* in = new double[x_size*y_size];
 
+          // For strain disp method
+          double b1[2];
+          double b2[2];
+
+          b1[0] = sheets[s].getReciprocal(0,0);
+          b1[1] = sheets[s].getReciprocal(0,1);
+          b2[0] = sheets[s].getReciprocal(1,0);
+          b2[1] = sheets[s].getReciprocal(1,1);
+          // Debugging strain
+          /*
+          double a1[2];
+          double a2[2];
+          a1[0] = sheets[s].getUnit(0,0);
+          a1[1] = sheets[s].getUnit(0,1);
+          a2[0] = sheets[s].getUnit(1,0);
+          a2[1] = sheets[s].getUnit(1,1);
+
+          double x_shifts[400];
+          double y_shifts[400];
+          std::vector<double> strain_shift;
+          double r[2];
+
+          for (int i = 0; i < 20; ++i){
+            for (int j = 0; j < 20; ++j){
+              double d1 = ((double) j)/20.0;
+              double d2 = ((double) i)/20.0;
+
+              r[0] = d1*a1[0] + d2*a2[0];
+              r[1] = d1*a1[1] + d2*a2[1];
+
+              strain_shift = strainInfo.fourierStrainDisp(r,b1,b2);
+              x_shifts[20*i+j] = strain_shift[0];
+              y_shifts[20*i+j] = strain_shift[1];
+
+            }
+          }
+
+          std::ofstream fout_debug1("x_shifts.dat");
+          std::ofstream fout_debug2("y_shifts.dat");
+
+          for (int i = 0; i < 20; i++){
+            for (int j = 0; j < 20; j++){
+              fout_debug1 << x_shifts[j + i*20] << " ";
+              fout_debug2 << y_shifts[j + i*20] << " ";
+
+            }
+            fout_debug1 << std::endl;
+            fout_debug2 << std::endl;
+
+          }
+          fout_debug1.close();
+          fout_debug2.close();
+          */
+          //
+
     			double dx = 1.0/n_x;
     			double dy = 1.0/n_y;
     			fftw_complex *out;
@@ -1247,8 +1313,19 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     			fftw_plan p;
     			p = fftw_plan_dft_r2c_2d(x_size,y_size,in,out,FFTW_MEASURE);
 
+          std::vector< std::vector<double> > disps;
+          std::vector< std::vector<double> > r;
+
+          // first generate list of sampling points
+          int idx = 0;
+          int max_idx = (x_size)*(y_size);
+          disps.resize(max_idx);
+          r.resize(max_idx);
+
     			for (int i = 0; i < x_size; i++){
     				for (int j = 0; j < y_size; j++){
+              disps[idx].resize(3);
+              r[idx].resize(2);
 
     					if (i < x_size/2)
     						x_pos = -dx*i;
@@ -1260,15 +1337,54 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     					else
     						y_pos = -dy*j + dy*(y_size-1);
 
-    					std::array<double, 3> disp = {{ x_pos, y_pos, z_pos}};
-    					in[j + i*y_size] = Materials::interlayer_term(o1, o2, disp, angle1, angle2, mat1, mat2)/(sqrt(A1*A2));
-
+              disps[idx][0] = x_pos;
+              disps[idx][1] = y_pos;
+              disps[idx][2] = z_pos;
+              r[idx][0] =  (x_pos - (o2_shift_x - o1_shift_x) );
+              r[idx][1] =  (y_pos - (o2_shift_y - o1_shift_y) );
+              idx++;
     				}
     			}
+          //printf("done with r construction \n");
+          std::vector< std::vector<double> > strain_shifts;
+          if (strain_type == 2){
+
+            strain_shifts = strainInfo.fourierStrainDisp_vectorized(r,b1,b2);
+
+          }
+          //printf("got strain_shifts \n");
+
+          int idx2 = 0;
+          for (int i = 0; i < x_size; i++){
+    				for (int j = 0; j < y_size; j++){
+
+              std::array<double, 3> disp = {{ disps[idx2][0], disps[idx2][1], disps[idx2][2]}};
+              if (strain_type == 2){
+
+                // strain_shift is single-layer strain, so multiply by 2 for this form: h( b + 2u(b) )
+                double disp_sign = 1.0; // sign is 1 if s1 == 0 -> disp_z should more positive
+                if (s1 == 1){
+                  disp_sign = -1.0; // change sign if s1 == 1 -> disp_z should get more negative
+                  // If this was a supercell method (where u_1(r) = -u_2(r)) we would change sign
+                  // but in config space, u_1(b) = -u_2(-b) is the proper relationship
+                }
+                //printf("disp = [%lf, %lf, %lf] \n",r[0],r[1],disp[2]);
+                disp[0] = disp[0] +           2.0*strain_shifts[idx2][0];
+                disp[1] = disp[1] +           2.0*strain_shifts[idx2][1];
+                disp[2] = disp[2] - disp_sign*2.0*strain_shifts[idx2][2];
+                //printf("strain = [%lf, %lf, %lf] \n",-2.0*strain_shift[0],-2.0*strain_shift[1],-disp_sign*2.0*strain_shift[2]);
+                //printf("disp_z  = %lf \n",disp[2]);
+
+              }
+
+    					in[j + i*y_size] = Materials::interlayer_term(o1, o2, disp, angle1, angle2, mat1, mat2)/(sqrt(A1*A2));
+              idx2++;
+            }
+          }
 
     			// !!! START DEBUG !!!
     			// Debug on the "in" matrix
-    			/*
+    			// /*
 
     			// consider [0,1] off-diagonal term (was causing issues).
 
@@ -1294,7 +1410,7 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     				fout_debug.close();
     			}
 
-    			*/
+    			// */
     			// !!! END DEBUG !!!
 
     			fftw_execute(p);
