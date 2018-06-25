@@ -5628,6 +5628,8 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 	} else {
 		if (d_type == 0){ // full solve
 			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 1){ // only eigenvalues
+			H.eigenSolve(eigvals, eigvecs,'N','A', 0, local_max_index);
 		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
 			int center_index = (int) (local_max_index/2);
 			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
@@ -5815,6 +5817,8 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 
 		if (d_type == 0){ // full solve
 			H.eigenSolve(eigvals, eigvecs,'V','A', 0, local_max_index);
+		} else if (d_type == 1){ // only eigenvalues
+			H.eigenSolve(eigvals, eigvecs,'N','A', 0, local_max_index);
 		} else if (d_type == 2){ // only solve for eigenvalues within 4 indices of center of matrix
 			int center_index = (int) (local_max_index/2);
 			H.eigenSolve(eigvals, eigvecs,'N','I', center_index-3, center_index+4);
