@@ -2869,6 +2869,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
 	if (strain_type == 1){
+		strainInfo.loadFourierConfigFile(jobIn.getString("strain_file"));
 		strainInfo.setOpts(jobIn);
 		strain.resize(max_index);
 	}
@@ -2949,8 +2950,28 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				sc_pos[0] = sc_inv[0][0]*x + sc_inv[0][1]*y;
 				sc_pos[1] = sc_inv[1][0]*x + sc_inv[1][1]*y;
 
-				std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
-				strain[i] = strainInfo.supercellStrain(sc_pos, s, orbit);
+        // For fourier strain relaxation method
+        double b1[2];
+        double b2[2];
+
+				std::vector< std::vector<double> > a_sc = opts.getDoubleMat("supercell");
+				std::vector< std::vector<double> > b_vec = getReciprocal(a_sc);
+
+        b1[0] = b_vec[0][0];
+        b1[1] = b_vec[0][1];
+        b2[0] = b_vec[1][0];
+        b2[1] = b_vec[1][1];
+
+				double r[2];
+				r[0] = x;
+				r[1] = y;
+
+				std::vector<double> disp_here = strainInfo.fourierStrainDisp_sc(r, b1, b2, s);
+				//printf("disp_here = [%lf, %lf, %lf] \n",disp_here[0], disp_here[1], disp_here[2]);
+
+				// old Supercell methods...
+				//std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
+				//strain[i] = strainInfo.supercellStrain(sc_pos, s, orbit);
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
@@ -3300,7 +3321,9 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					for (int i = 0; i < 2; ++i){
 						strain_here[i].resize(2);
 						for (int j = 0; j < 2; ++j){
-							strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
+							// for now we turn off the strain term... it is not implemented for Fourier samp yet.
+							//strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
+							strain_here[i][j] = 0.0;
 						}
 					}
 

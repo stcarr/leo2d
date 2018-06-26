@@ -143,6 +143,33 @@ void StrainCalc::loadConfigFile(std::string config_filename){
 
 }
 
+
+
+void StrainCalc::loadFourierConfigFile_interp(std::string config_filename){
+
+  // MATLAB code, for later implementation
+  /*
+  d_theta = theta_list(2) - theta_list(1);
+  %theta_list(tar_theta);
+  [interp_diff, nearest_theta] = min(abs(tar_theta - theta_list));
+  if (tar_theta - theta_list(nearest_theta) < 0 )
+    nearest_theta = nearest_theta - 1;
+    interp_diff = -interp_diff+d_theta;
+  end
+  interp_diff = interp_diff/d_theta;
+  if (tar_theta - theta_list(nearest_theta) < 0 )
+    nearest_theta = nearest_theta - 1;
+    interp_diff = -interp_diff+d_theta;
+  end
+  interp_diff = interp_diff/d_theta;
+  fprintf("theta = %f \n",theta_list(nearest_theta))
+  coeffs_1 = [coeffs_x(:,nearest_theta) coeffs_y(:,nearest_theta) coeffs_z(:,nearest_theta)];
+  coeffs_2 = [coeffs_x(:,nearest_theta+1) coeffs_y(:,nearest_theta+1) coeffs_z(:,nearest_theta+1)];
+  coeffs = coeffs_1*(1-interp_diff) + coeffs_2*interp_diff;
+  */
+
+}
+
 void StrainCalc::loadFourierConfigFile(std::string config_filename){
 
   // File should look like:
@@ -173,6 +200,28 @@ void StrainCalc::loadFourierConfigFile(std::string config_filename){
 
 void StrainCalc::setOpts(Job_params opts_in){
 	opts = opts_in;
+}
+
+std::vector<double> StrainCalc::fourierStrainDisp_sc(double* r, double* b1, double* b2, int s){
+
+  std::vector<double> temp_disp = fourierStrainDisp(r,b1,b2);
+
+  std::vector<double> disp_out;
+  disp_out.resize(3);
+
+  // strain_shift is single-layer strain, so multiply by 2 for this form: h( b + 2u(b) )
+  double disp_sign = 1.0; // sign is 1 if s == 0
+  if (s == 1){
+    disp_sign = -1.0; // change sign if s == 1
+  }
+
+  // un-rotate the relaxation and include the sign
+  disp_out[0] =  disp_sign*temp_disp[1];
+  disp_out[1] = -disp_sign*temp_disp[0];
+  disp_out[2] =  disp_sign*temp_disp[2];
+
+  return disp_out;
+
 }
 
 
