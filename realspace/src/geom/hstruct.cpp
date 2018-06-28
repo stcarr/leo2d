@@ -346,7 +346,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 			kh_pos_here[0] = -kh_pos_here[0];
 			kh_pos_here[1] = -kh_pos_here[1];
 			kh_pos_here[2] = -kh_pos_here[2];
-      searchsize += 2;
+      searchsize += 10;
 		}
 
 
@@ -1340,8 +1340,9 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
               disps[idx][0] = x_pos;
               disps[idx][1] = y_pos;
               disps[idx][2] = z_pos;
-              r[idx][0] =  (x_pos - (o2_shift_x - o1_shift_x) );
-              r[idx][1] =  (y_pos - (o2_shift_y - o1_shift_y) );
+              // r[idx] is used to note the shift between the unit-cells, not the atoms.
+              r[idx][0] =  -(x_pos - (o2_shift_x - o1_shift_x) );
+              r[idx][1] =  -(y_pos - (o2_shift_y - o1_shift_y) );
               idx++;
     				}
     			}
@@ -1362,15 +1363,15 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
               if (strain_type == 2){
 
                 // strain_shift is single-layer strain, so multiply by 2 for this form: h( b + 2u(b) )
-                double disp_sign = 1.0; // sign is 1 if s1 == 0 -> disp_z should more positive
+                double disp_sign = 1.0; // sign is 1 if s1 == 0 -> disp_z should get more positive
                 if (s1 == 1){
                   disp_sign = -1.0; // change sign if s1 == 1 -> disp_z should get more negative
                   // If this was a supercell method (where u_1(r) = -u_2(r)) we would change sign
                   // but in config space, u_1(b) = -u_2(-b) is the proper relationship
                 }
                 //printf("disp = [%lf, %lf, %lf] \n",r[0],r[1],disp[2]);
-                disp[0] = disp[0] +           2.0*strain_shifts[idx2][0];
-                disp[1] = disp[1] +           2.0*strain_shifts[idx2][1];
+                disp[0] = disp[0] -           2.0*strain_shifts[idx2][0];
+                disp[1] = disp[1] -           2.0*strain_shifts[idx2][1];
                 disp[2] = disp[2] - disp_sign*2.0*strain_shifts[idx2][2];
                 //printf("strain = [%lf, %lf, %lf] \n",-2.0*strain_shift[0],-2.0*strain_shift[1],-disp_sign*2.0*strain_shift[2]);
                 //printf("disp_z  = %lf \n",disp[2]);

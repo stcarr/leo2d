@@ -3970,7 +3970,9 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 						strain_here[i].resize(2);
 						for (int j = 0; j < 2; ++j){
 							//strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
-							strain_here[i][j] = (strain[k_i][i][j])/2.0;
+							//strain_here[i][j] = (strain[k_i][i][j])/2.0;
+							strain_here[i][j] = 0.0; // for now turn of in-plane strain corrections!!
+
 						}
 					}
 

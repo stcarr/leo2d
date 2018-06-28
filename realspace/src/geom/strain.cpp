@@ -291,7 +291,7 @@ std::vector<double> StrainCalc::fourierStrainDisp(double* r, double* b1, double*
     // rotate by ~pi/2 to put into CONFIG basis
     disp_out[0] = -rot_disp_y;
     disp_out[1] = rot_disp_x;
-    disp_out[2] = disp_z; // for now turn off disp_z, can add later
+    disp_out[2] = disp_z;
     //printf("disp_out = [%lf,%lf,%lf]\n",disp_out[0],disp_out[1],disp_out[2]);
     return disp_out;
 
