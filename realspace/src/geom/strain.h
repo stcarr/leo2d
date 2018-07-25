@@ -42,6 +42,7 @@ class StrainCalc {
       void loadFourierConfigFile_interp(std::string config_filename); // not yet implemented...
 	    void setOpts(Job_params opts_in);
 
+      std::vector<double> fourierStrainDisp_config(std::vector<double> r, double* b1, double* b2, int sheet);
       std::vector<double> fourierStrainDisp(double* r, double* b1, double* b2);
       std::vector<double> fourierStrainDisp_sc(double* r, double* b1, double* b2, int s);
 

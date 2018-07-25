@@ -1314,18 +1314,21 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     			p = fftw_plan_dft_r2c_2d(x_size,y_size,in,out,FFTW_MEASURE);
 
           std::vector< std::vector<double> > disps;
-          std::vector< std::vector<double> > r;
+          std::vector< std::vector<double> > r1;
+          std::vector< std::vector<double> > r2;
 
           // first generate list of sampling points
           int idx = 0;
           int max_idx = (x_size)*(y_size);
           disps.resize(max_idx);
-          r.resize(max_idx);
+          r1.resize(max_idx);
+          r2.resize(max_idx);
 
     			for (int i = 0; i < x_size; i++){
     				for (int j = 0; j < y_size; j++){
               disps[idx].resize(3);
-              r[idx].resize(2);
+              r1[idx].resize(2);
+              r2[idx].resize(2);
 
     					if (i < x_size/2)
     						x_pos = -dx*i;
@@ -1341,16 +1344,24 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
               disps[idx][1] = y_pos;
               disps[idx][2] = z_pos;
               // r[idx] is used to note the shift between the unit-cells, not the atoms.
-              r[idx][0] =  -(x_pos - (o2_shift_x - o1_shift_x) );
-              r[idx][1] =  -(y_pos - (o2_shift_y - o1_shift_y) );
+              double r_base[2];
+              r_base[0] =  -(x_pos - (o2_shift_x - o1_shift_x) );
+              r_base[1] =  -(y_pos - (o2_shift_y - o1_shift_y) );
+              r1[idx][0] = cos(angle1)*r_base[0] + sin(angle1)*r_base[1];
+              r1[idx][1] = -sin(angle1)*r_base[0] + cos(angle1)*r_base[1];
+              r2[idx][0] = cos(angle2)*r_base[0] + sin(angle2)*r_base[1];
+              r2[idx][1] = -sin(angle2)*r_base[0] + cos(angle2)*r_base[1];
               idx++;
     				}
     			}
           //printf("done with r construction \n");
-          std::vector< std::vector<double> > strain_shifts;
+          std::vector< std::vector<double> > strain_shifts1;
+          std::vector< std::vector<double> > strain_shifts2;
+
           if (strain_type == 2){
 
-            strain_shifts = strainInfo.fourierStrainDisp_vectorized(r,b1,b2);
+            strain_shifts1 = strainInfo.fourierStrainDisp_vectorized(r1,b1,b2);
+            strain_shifts2 = strainInfo.fourierStrainDisp_vectorized(r2,b1,b2);
 
           }
           //printf("got strain_shifts \n");
@@ -1370,9 +1381,9 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
                   // but in config space, u_1(b) = -u_2(-b) is the proper relationship
                 }
                 //printf("disp = [%lf, %lf, %lf] \n",r[0],r[1],disp[2]);
-                disp[0] = disp[0] -           2.0*strain_shifts[idx2][0];
-                disp[1] = disp[1] -           2.0*strain_shifts[idx2][1];
-                disp[2] = disp[2] - disp_sign*2.0*strain_shifts[idx2][2];
+                disp[0] = disp[0] -           (strain_shifts1[idx2][0] + strain_shifts2[idx2][0]);
+                disp[1] = disp[1] -           (strain_shifts1[idx2][1] + strain_shifts2[idx2][1]);
+                disp[2] = disp[2] - disp_sign*(strain_shifts1[idx2][2] + strain_shifts2[idx2][2]);
                 //printf("strain = [%lf, %lf, %lf] \n",-2.0*strain_shift[0],-2.0*strain_shift[1],-disp_sign*2.0*strain_shift[2]);
                 //printf("disp_z  = %lf \n",disp[2]);
 
