@@ -346,7 +346,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 			kh_pos_here[0] = -kh_pos_here[0];
 			kh_pos_here[1] = -kh_pos_here[1];
 			kh_pos_here[2] = -kh_pos_here[2];
-      searchsize += 2;
+      searchsize += 10;
 		}
 
 
@@ -1314,18 +1314,21 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
     			p = fftw_plan_dft_r2c_2d(x_size,y_size,in,out,FFTW_MEASURE);
 
           std::vector< std::vector<double> > disps;
-          std::vector< std::vector<double> > r;
+          std::vector< std::vector<double> > r1;
+          std::vector< std::vector<double> > r2;
 
           // first generate list of sampling points
           int idx = 0;
           int max_idx = (x_size)*(y_size);
           disps.resize(max_idx);
-          r.resize(max_idx);
+          r1.resize(max_idx);
+          r2.resize(max_idx);
 
     			for (int i = 0; i < x_size; i++){
     				for (int j = 0; j < y_size; j++){
               disps[idx].resize(3);
-              r[idx].resize(2);
+              r1[idx].resize(2);
+              r2[idx].resize(2);
 
     					if (i < x_size/2)
     						x_pos = -dx*i;
@@ -1340,16 +1343,25 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
               disps[idx][0] = x_pos;
               disps[idx][1] = y_pos;
               disps[idx][2] = z_pos;
-              r[idx][0] =  (x_pos - (o2_shift_x - o1_shift_x) );
-              r[idx][1] =  (y_pos - (o2_shift_y - o1_shift_y) );
+              // r[idx] is used to note the shift between the unit-cells, not the atoms.
+              double r_base[2];
+              r_base[0] =  -(x_pos - (o2_shift_x - o1_shift_x) );
+              r_base[1] =  -(y_pos - (o2_shift_y - o1_shift_y) );
+              r1[idx][0] = cos(angle1)*r_base[0] + sin(angle1)*r_base[1];
+              r1[idx][1] = -sin(angle1)*r_base[0] + cos(angle1)*r_base[1];
+              r2[idx][0] = cos(angle2)*r_base[0] + sin(angle2)*r_base[1];
+              r2[idx][1] = -sin(angle2)*r_base[0] + cos(angle2)*r_base[1];
               idx++;
     				}
     			}
           //printf("done with r construction \n");
-          std::vector< std::vector<double> > strain_shifts;
+          std::vector< std::vector<double> > strain_shifts1;
+          std::vector< std::vector<double> > strain_shifts2;
+
           if (strain_type == 2){
 
-            strain_shifts = strainInfo.fourierStrainDisp_vectorized(r,b1,b2);
+            strain_shifts1 = strainInfo.fourierStrainDisp_vectorized(r1,b1,b2);
+            strain_shifts2 = strainInfo.fourierStrainDisp_vectorized(r2,b1,b2);
 
           }
           //printf("got strain_shifts \n");
@@ -1362,16 +1374,16 @@ void Hstruct::makeInterFFTFile(int n_x, int n_y, int L_x, int L_y, int length_x,
               if (strain_type == 2){
 
                 // strain_shift is single-layer strain, so multiply by 2 for this form: h( b + 2u(b) )
-                double disp_sign = 1.0; // sign is 1 if s1 == 0 -> disp_z should more positive
+                double disp_sign = 1.0; // sign is 1 if s1 == 0 -> disp_z should get more positive
                 if (s1 == 1){
                   disp_sign = -1.0; // change sign if s1 == 1 -> disp_z should get more negative
                   // If this was a supercell method (where u_1(r) = -u_2(r)) we would change sign
                   // but in config space, u_1(b) = -u_2(-b) is the proper relationship
                 }
                 //printf("disp = [%lf, %lf, %lf] \n",r[0],r[1],disp[2]);
-                disp[0] = disp[0] +           2.0*strain_shifts[idx2][0];
-                disp[1] = disp[1] +           2.0*strain_shifts[idx2][1];
-                disp[2] = disp[2] - disp_sign*2.0*strain_shifts[idx2][2];
+                disp[0] = disp[0] -           (strain_shifts1[idx2][0] + strain_shifts2[idx2][0]);
+                disp[1] = disp[1] -           (strain_shifts1[idx2][1] + strain_shifts2[idx2][1]);
+                disp[2] = disp[2] - disp_sign*(strain_shifts1[idx2][2] + strain_shifts2[idx2][2]);
                 //printf("strain = [%lf, %lf, %lf] \n",-2.0*strain_shift[0],-2.0*strain_shift[1],-disp_sign*2.0*strain_shift[2]);
                 //printf("disp_z  = %lf \n",disp[2]);
 

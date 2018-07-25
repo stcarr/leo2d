@@ -218,8 +218,9 @@ double Momentum_coupling::interp_fft(double x_input, double y_input, int s1, int
 	// o1, o2 are two two orbitals whose interlayer coupling you are computing
 	// entry is 0 for real and 1 for imaginary part
 
-	double momentum_inner_cutoff = 5.0;
-	double momentum_outer_cutoff = 4.0;
+	// really big cut-off for relaxation ....
+	double momentum_inner_cutoff = 15.0;
+	double momentum_outer_cutoff = 14.0;
 
 	double r_sq = (x_input)*(x_input) + (y_input)*(y_input);
 

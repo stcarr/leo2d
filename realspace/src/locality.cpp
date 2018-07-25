@@ -3009,19 +3009,24 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 					new_shift_configs[i][1] = new_shift_configs[i][1] + 1.0;
 				}
 
+				std::vector<double> disp_here;
+				disp_here.resize(3);
 
+				// Fourier method, not very good for small angles!
+				/*
 				//printf("on k=%d, sheet=%d, orbit=%d\n",i,s,orbit);
 				std::vector<double> temp_disp = strainInfo.fourierStrainDisp_old(new_shift_configs[i], s, orbit);
 				double ang = angles[s];
 				ang = 0.0;
-				std::vector<double> disp_here;
-				disp_here.resize(3);
+
 				disp_here[0] = cos(ang)*temp_disp[0] - sin(ang)*temp_disp[1];
 				disp_here[1] = sin(ang)*temp_disp[0] + cos(ang)*temp_disp[1];
-				disp_here[2] = 0.0;
+				disp_here[2] = temp_disp[2];
+				*/
 
+				// Config sampling method, fast but may break symmetries
 				// Tries to force rotational symm for numerical data
-				/*
+				// /*
 				int rot_max = 2;
 				for (int r = 1; r < rot_max; ++r){
 					double x_config = new_shift_configs[i][0] + new_shift_configs[i][1]*0.5;
@@ -3057,7 +3062,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				}
 				disp_here[0] = disp_here[0]/3.0;
 				disp_here[1] = disp_here[1]/3.0;
-				*/
+				// */
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];
 				i2pos[i*3 + 1] = i2pos[i*3 + 1] + disp_here[1];
@@ -3970,7 +3975,9 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 						strain_here[i].resize(2);
 						for (int j = 0; j < 2; ++j){
 							//strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
-							strain_here[i][j] = (strain[k_i][i][j])/2.0;
+							//strain_here[i][j] = (strain[k_i][i][j])/2.0;
+							strain_here[i][j] = 0.0; // for now turn of in-plane strain corrections!!
+
 						}
 					}
 
