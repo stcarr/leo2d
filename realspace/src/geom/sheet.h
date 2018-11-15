@@ -47,7 +47,7 @@ class Sheet {
       std::vector< std::vector<double> > supercell_inv;
       std::vector< std::vector<int> > supercell_stride;
       int sheet_index;
-      
+
       LoadedMat loadedMatData;
       Job_params opts;
 

@@ -70,7 +70,7 @@ Sheet::Sheet(Sdata input){
 	}
 
 	// strain from a configuration space basis of form b_x,b_y,o
-	if (strain_type == 2) {
+	if (strain_type == 2 || strain_type == 5) {
 		loadIndexConfiguration();
 	}
 
@@ -211,7 +211,6 @@ Sheet::~Sheet() {
 // Generates max_index, "index -> grid" and "grid -> index" matrices
 // -----------------------------------------------------------------
 void Sheet::setIndex(){
-
 	// Determine the size of the grid which will be populated with orbitals
     int height = max_shape[0] - min_shape[0];
     int width = max_shape[1] - min_shape[1];

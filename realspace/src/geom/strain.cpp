@@ -8,6 +8,7 @@
 #include "strain.h"
 #include "tools/numbers.h"
 
+#include <cstring> // for strtok
 #include <string>
 #include <cmath>
 #include <stdio.h>
@@ -144,8 +145,92 @@ void StrainCalc::loadConfigFile(std::string config_filename){
 }
 
 
+// Loads four text files (fourier relations on SUPERCELL data, from k-dot-p codebase).
+// These need to be converted into configuration space OR the moire pattern needs to be figured out
+void StrainCalc::loadFourierConfigFile_interp(std::string thetas_filename, std::string x_filename, std::string y_filename, std::string z_filename){
 
-void StrainCalc::loadFourierConfigFile_interp(std::string config_filename){
+  // load thetas.txt
+  std::ifstream fin;
+  fin.open(thetas_filename.c_str(), std::ifstream::in);
+
+  double temp_var;
+  while(!fin.eof()) {
+    fin >> temp_var;
+    theta_list.push_back(temp_var);
+  }
+  fin.close();
+
+  // load coeffs_x.txt
+  fin.open(x_filename.c_str(), std::ifstream::in);
+
+	std::string line = "";
+	while (getline(fin, line))
+	{
+    std::vector<double> vec;
+
+    char * str = (char*)line.c_str();
+    char * pch;
+    pch = strtok(str," ,"); // delimiters for token
+    while (pch != NULL)
+    {
+      vec.push_back(std::strtod(pch,NULL));
+      pch = strtok (NULL, " ,"); // move location of token
+    }
+
+		coeffs_x.push_back(vec);
+    //printf("first values of coeffs_x line: [[%lf, %lf, %lf] \n", vec[0], vec[1], vec[2]);
+
+	}
+	// Close the File
+	fin.close();
+
+  // load coeffs_y.txt
+  fin.open(y_filename.c_str(), std::ifstream::in);
+
+  while (getline(fin, line))
+  {
+    std::vector<double> vec;
+
+    char * str = (char*)line.c_str();
+    char * pch;
+    pch = strtok(str," ,"); // delimiters for token
+    while (pch != NULL)
+    {
+      vec.push_back(std::strtod(pch,NULL));
+      pch = strtok (NULL, " ,"); // move location of token
+    }
+
+    coeffs_y.push_back(vec);
+    //printf("first values of coeffs_y line: [[%lf, %lf, %lf] \n", vec[0], vec[1], vec[2]);
+
+  }
+  // Close the File
+  fin.close();
+
+
+  // load coeffs_z.txt
+  fin.open(z_filename.c_str(), std::ifstream::in);
+
+  while (getline(fin, line))
+  {
+    std::vector<double> vec;
+
+    char * str = (char*)line.c_str();
+    char * pch;
+    pch = strtok(str," ,"); // delimiters for token
+    while (pch != NULL)
+    {
+      vec.push_back(std::strtod(pch,NULL));
+      pch = strtok (NULL, " ,"); // move location of token
+    }
+
+    coeffs_z.push_back(vec);
+    //printf("first values of coeffs_x line: [[%lf, %lf, %lf] \n", vec[0], vec[1], vec[2]);
+
+  }
+  // Close the File
+  fin.close();
+
 
   // MATLAB code, for later implementation
   /*

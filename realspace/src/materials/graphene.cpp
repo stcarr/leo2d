@@ -112,6 +112,9 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
     }
     */
 
+    // can uncomment to turn of interlayer coupling in graphene
+    //return 0.0;
+    
     double r = std::sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
     if (r < Graphene::inter_cutoff_radius)
     {

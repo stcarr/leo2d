@@ -651,7 +651,6 @@ void Locality::constructGeom(){
 			target_indices = h.getTargetList(opts);
 		}
 
-
 		// MLMC of vacancy defects, loads vacancies in job creation loop later
 		if (solver_type == 3){
 
@@ -689,8 +688,8 @@ void Locality::constructGeom(){
 
 		}
 
-		// Construct shift configs if using configuration strain (strain_type == 2)
-		if (strain_type == 2){
+		// Construct shift configs if using configuration strain (strain_type == 2 or 5)
+		if (strain_type == 2 || strain_type == 5){
 
 			printf("Building shift_configs. \n");
 			h.getShiftConfigs(shift_configs, opts);
@@ -2886,6 +2885,13 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 		strain.resize(max_index);
 	}
 
+	if (strain_type == 5){
+		printf("Entering strain_type = PLANEWAVES \n");
+		strainInfo.loadFourierConfigFile_interp(jobIn.getString("strain_thetas"),jobIn.getString("strain_x_coeffs"),jobIn.getString("strain_y_coeffs"),jobIn.getString("strain_z_coeffs"));
+		strainInfo.setOpts(jobIn);
+		strain.resize(max_index);
+	}
+
 	if (solver_space == 0){
 		for (int i = 0; i < max_index; ++i) {
 
@@ -3379,8 +3385,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					strain_rot[1][0] = strain_rot[0][1];
 
 					Materials::Mat mat = sdata[s0].mat;
-					double raw_t;
-					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
 
 				} else {
 
@@ -3393,8 +3398,9 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				if (new_k == k_i){
 					if (elecOn == 1){
 						t = (raw_t + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;
-					} else if (elecOn == 0)
+					} else if (elecOn == 0){
 						t = (raw_t + energy_shift)/energy_rescale;
+					}
 				// Otherwise we enter the value just with rescaling
 				}
 				else {
@@ -4377,7 +4383,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 
 	int matrix_pos_save = opts.getInt("matrix_pos_save");
 	if (matrix_pos_save > 0){
-		
+
 		std::ofstream outFile3;
 		const char* extension3 = "_pos.dat";
 		outFile3.open ((job_name + extension3).c_str());

@@ -28,6 +28,12 @@ class StrainCalc {
       int max_k;
       std::vector< std::vector<double> > coeffs;
 
+      // variables for Fourier basis strain
+      std::vector<double> theta_list;
+      std::vector< std::vector<double> > coeffs_x;
+      std::vector< std::vector<double> > coeffs_y;
+      std::vector< std::vector<double> > coeffs_z;
+
       Job_params opts;
 
 
@@ -39,7 +45,7 @@ class StrainCalc {
 
       void loadConfigFile(std::string config_filename);
       void loadFourierConfigFile(std::string config_filename);
-      void loadFourierConfigFile_interp(std::string config_filename); // not yet implemented...
+      void loadFourierConfigFile_interp(std::string thetas_filename, std::string x_filename, std::string y_filename, std::string z_filename);
 	    void setOpts(Job_params opts_in);
 
       std::vector<double> fourierStrainDisp_config(std::vector<double> r, double* b1, double* b2, int sheet);

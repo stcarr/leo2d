@@ -271,6 +271,35 @@ int main(int argc, char** argv) {
 					opts.setParam("strain_file",strain_file);
 				}
 
+				// for the Fourier decomposed coefficients of relaxation (on a supercell)
+				if (in_string == "STRAIN_THETAS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					strain_file = in_string;
+					opts.setParam("strain_thetas",strain_file);
+				}
+
+				if (in_string == "STRAIN_X_COEFFS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					strain_file = in_string;
+					opts.setParam("strain_x_coeffs",strain_file);
+				}
+
+				if (in_string == "STRAIN_Y_COEFFS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					strain_file = in_string;
+					opts.setParam("strain_y_coeffs",strain_file);
+				}
+
+				if (in_string == "STRAIN_Z_COEFFS"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					strain_file = in_string;
+					opts.setParam("strain_z_coeffs",strain_file);
+				}
+
 				if (in_string == "NSHIFTS"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -489,6 +518,8 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",3);
 					} else if (in_string[0] == 'F'){ // STRAIN_TYPE = POSITIONS FROM FILE
 						opts.setParam("strain_type",4);
+					} else if (in_string[0] == 'P'){ // STRAIN_TYPE = PLANE WAVES (Fourier comp. in Config space)
+						opts.setParam("strain_type",5);
 					}
 				}
 
@@ -534,7 +565,7 @@ int main(int argc, char** argv) {
 					opts.setParam("diagonalize",atoi(in_string.c_str()));
 				}
 
-				if (in_string == "D_TYPE"){ // 0-> full eigenvalue and eigenvec solve. || 2-> only the 8 eigenvalues near center
+				if (in_string == "D_TYPE"){ // 0-> full eigenvalue and eigenvec solve. || 1 -> only eigenvalues || 2-> only the 8 eigenvalues near center
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("d_type",atoi(in_string.c_str()));
