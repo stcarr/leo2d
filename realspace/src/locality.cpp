@@ -1073,6 +1073,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 	int d_vecs = opts.getInt("d_vecs");
 	int d_cond = opts.getInt("d_cond");
 	int k_sampling = opts.getInt("k_sampling");
+	int kpm_trace = opts.getInt("kpm_trace");
 
 	int mlmc = opts.getInt("mlmc");
 
@@ -1211,6 +1212,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				vacancies.resize(n_vac);
 				for (int v = 0; v < n_vac; ++v){
 					vacancies[v] = mlmc_vacs[i][v];
+				}
+
+				// catch the zero vacancy case!
+				// vacancy file has -1 as empty list element
+				// but we subtract 1 during fileread (thus -2)
+				if (n_vac == 1 && vacancies[0] == -2){
+					n_vac = 0;
 				}
 
 				int n_targets = (int)mlmc_ids[i].size();
@@ -1663,6 +1671,69 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 		}
 
+		// random sampling of the trace
+		if (kpm_trace == 1){
+
+			int num_trace_samps = opts.getInt("kpm_trace_samps");
+			if (num_trace_samps == -1) {
+
+				// should get SMALLER as matrix size gets bigger (need less samples)
+				num_trace_samps = (int) 1.0e6 / ( (double) max_index ); // just a guess
+
+				// some edge cases!
+				if (num_trace_samps < 1)
+					num_trace_samps = 1;
+
+				// if matrix is too small, don't need too many samples
+				if (num_trace_samps > 100)
+					num_trace_samps = 100;
+
+			}
+
+
+			// setup random number generator
+			std::default_random_engine generator;
+		  std::normal_distribution<double> distribution(0.0,1.0); // mean = 0, std = 1
+
+			// loop over existing jobs
+			int trace_jobID = 1;
+			std::vector<Job_params> trace_jobArray;
+			for (int i = 0; i < (int)jobArray.size(); ++i){
+
+				int local_max_index;
+				// take care of vacancy case
+				if (solver_type == 3){
+					local_max_index = max_index - jobArray[i].getInt("num_vacancies");
+				} else {
+					local_max_index = max_index;
+				}
+
+				Job_params tempJob(jobArray[i]);
+				//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+				tempJob.setParam("jobID",trace_jobID);
+
+				std::vector< std::vector<double> > trace_vectors;
+				trace_vectors.resize(num_trace_samps);
+				for (int s = 0; s < num_trace_samps; ++s){
+
+						trace_vectors[s].resize(local_max_index);
+
+						for (int rand_idx = 0; rand_idx < local_max_index; ++rand_idx){
+							trace_vectors[s][rand_idx] = distribution(generator); // random gaussian distribution
+						}
+
+				}
+
+				tempJob.setParam("kpm_trace_vectors",trace_vectors);
+				tempJob.setParam("num_targets",num_trace_samps);
+				trace_jobArray.push_back(tempJob);
+				++trace_jobID;
+
+			}
+			jobArray = trace_jobArray;
+
+		}
+
 	} else if (solver_space == 1) {
 
 		int mom_vf_only = opts.getInt("mom_vf_only");
@@ -2052,10 +2123,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 	result_array.resize(maxJobs);
 
 	// try to give each worker its first job
-
 	for (int r = 1; r < size; ++r) {
 		if (currentJob < maxJobs) {
-
 			sendRootWork(jobArray[currentJob], r);
 			++currentJob;					// one more job sent out!
 			printf("rank %d has sent job to worker rank %d (%d/%d) \n", rank, r, currentJob, maxJobs);
@@ -2258,6 +2327,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		int d_weights = jobIn.getInt("d_weights");
 		int k_sampling = jobIn.getInt("k_sampling");
 		int ballistic_transport = jobIn.getInt("ballistic_transport");
+		int kpm_trace = jobIn.getInt("kpm_trace");
 
 		int complex_matrix = 0;
 
@@ -2420,11 +2490,26 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						cheb_coeffs[t].resize(poly_order);
 					}
 
-					computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
+					if (kpm_trace == 0) {
+						computeDosKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
+					} else {
+						computeDosTraceKPM(cheb_coeffs, H, jobIn, current_index_reduction, local_max_index);
+					}
 
 					results_out.setParam("cheb_coeffs",cheb_coeffs);
-					if (opts.getInt("dos_transform") == 1){
-						Param_tools::densityTransform(results_out);
+
+					if (kpm_trace == 0){
+						if (opts.getInt("dos_transform") == 1){
+							Param_tools::densityTransform(results_out);
+						}
+					}
+
+					// need a different transformation technique for kpm trace (average over moments before idct!)
+					if (kpm_trace == 1) {
+						int num_vac = jobIn.getInt("num_vacancies");
+						double num_dofs = local_max_index - num_vac;
+
+						Param_tools::densityTransformTrace(results_out, 1.0/num_dofs);
 					}
 
 			} else if (observable_type == 1){
@@ -2640,6 +2725,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 				for (int i = band_start_idx; i < band_end_idx; ++i){
 					eigenvalue_real_array[i - band_start_idx] = eigenvalue_array[i];
+					//printf("eigenvalues[%d] = %lf \n",i,eigenvalue_array[i]);
 				}
 
 				results_out.setParam("eigenvalues",eigenvalue_real_array);
@@ -2660,18 +2746,28 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 						for (int j = 0; j < poly_order; ++j) {
 							temp_vec.push_back(val_kpm_dos[i + j*poly_order]);
+							if (i == 0){
+								printf("temp_vec[%d] = %lf \n",j,temp_vec[j]);
+							}
 						}
 
 						kpm_dos_in.push_back(temp_vec);
 					}
 
+					/*
 					Job_params dummy_result(results_out);
 					dummy_result.setParam("kpm_dos_mat",kpm_dos_in);
 					Param_tools::matrixResponseTransform(dummy_result, "kpm_dos_mat");
 					kpm_dos_in = dummy_result.getDoubleMat("kpm_dos_mat");
+					*/
+					results_out.setParam("kpm_dos_mat",kpm_dos_in);
+					Param_tools::matrixResponseTransform(results_out, "kpm_dos_mat");
+					kpm_dos_in = results_out.getDoubleMat("kpm_dos_mat");
+
 
 					for (int i = 0; i < poly_order; ++i){
 						kpm_dos_out.push_back(kpm_dos_in[i][i]);
+						printf("kpm_dos_out[%d] = %lf \n",i,kpm_dos_out[i]);
 					}
 
 					results_out.setParam("kpm_dos",kpm_dos_out);
@@ -2834,7 +2930,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		clock_t timeSolve;
 		timeSolve = clock();
 		Param_tools::saveTiming(results_out, ( ((double)timeSolve) - ((double)timeMat) )/((double)CLOCKS_PER_SEC), "SOLVER");
-
 		// send back work to root, with a trash value sent first to get picked up by the recvSpool
 		int trash = 1;
 		MPI::COMM_WORLD.Send(
@@ -5223,6 +5318,216 @@ void Locality::computeDosKPM(std::vector< std::vector<double> > &cheb_coeffs, Sp
 
 				// get the jth entry
 				cheb_coeffs[t_count][j] = T_j[target_index].real();
+
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+
+				// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+				if (j >= poly_order/4){
+
+					double an_an = 0;
+					double anp_an = 0;
+					for (int c = 0; c < local_max_index; ++c){
+						an_an += (std::conj(T_j[c])*T_j[c]).real();
+						anp_an += (std::conj(T_next[c])*T_j[c]).real();
+					}
+
+					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1;
+					cheb_coeffs[t_count][2*j]     = 2*an_an  - cheb_coeffs[t_count][0];
+					cheb_coeffs[t_count][2*j + 1] = 2*anp_an - cheb_coeffs[t_count][1];
+
+				}
+
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			}
+
+			delete T_prev;
+			delete T_j;
+			delete T_next;
+
+		}
+
+	} // end complex matrix block
+}
+
+void Locality::computeDosTraceKPM(std::vector< std::vector<double> > &cheb_coeffs, SpMatrix &H, Job_params jobIn, std::vector<int> current_index_reduction, int local_max_index){
+
+	int magOn = jobIn.getInt("magOn");
+	int poly_order = jobIn.getInt("poly_order");
+	int solver_space = jobIn.getInt("solver_space");
+
+
+	int num_targets = jobIn.getInt("num_targets");
+	std::vector< std::vector<double> > kpm_trace_vectors = jobIn.getDoubleMat("kpm_trace_vectors");
+
+	// 0 for Real, 1 for Complex
+	int complex_matrix = H.getType();
+
+	if (complex_matrix == 0){
+
+		// Starting vector for Chebyshev method is a unit-vector at the target orbital
+
+		for (int t_count = 0; t_count < num_targets; ++t_count){
+
+			double T_prev[local_max_index];
+
+			for (int i = 0; i < local_max_index; ++i){
+				T_prev[i] = kpm_trace_vectors[t_count][i];
+			}
+
+			// Temporary vector for algorithm ("current" vector T_j)
+			double T_j[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_j[i] = 0.0;
+			}
+
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			double T_next[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_next[i] = 0.0;
+			}
+
+			// first T value
+			double temp_sum = 0.0;
+			for (int i = 0; i < local_max_index; ++i){
+				temp_sum += kpm_trace_vectors[t_count][i]*kpm_trace_vectors[t_count][i];
+			}
+			cheb_coeffs[t_count][0] = temp_sum;
+
+			// Next one
+			temp_sum = 0.0;
+			for (int i = 0; i < local_max_index; ++i){
+				temp_sum += T_j[i]*kpm_trace_vectors[t_count][i];
+			}
+			cheb_coeffs[t_count][1] = temp_sum;
+
+			// Now loop algorithm up to poly_order to find all T values
+			// double alpha2 = 2;
+
+			// want to do: T_next = 2*H*T_j - T_prev;
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < local_max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+
+			for (int j = 2; j < poly_order/2; ++j){
+
+				// reassign values from previous iteration
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+
+				// get the jth entry
+				temp_sum = 0.0;
+				for (int i = 0; i < local_max_index; ++i){
+					temp_sum += T_j[i]*kpm_trace_vectors[t_count][i];
+				}
+				cheb_coeffs[t_count][j] = temp_sum;
+
+				// compute the next vector
+				H.vectorMultiply(T_j, T_next, 2, 0);
+				for (int c = 0; c < local_max_index; ++c){
+					T_next[c] = T_next[c] - T_prev[c];
+				}
+
+				// use Chebyshev recursion relations to populate the {2j,2j+1} entries.
+				if (j >= poly_order/4){
+
+					double an_an = 0;
+					double anp_an = 0;
+					for (int c = 0; c < local_max_index; ++c){
+						an_an += T_j[c]*T_j[c];
+						anp_an += T_next[c]*T_j[c];
+					}
+
+					// u_{2n} 	= 2*<a_n|a_n>		- u_0;
+					// u_{2n+1} = 2*<a_{n+1}|a_n> 	- u_1;
+					cheb_coeffs[t_count][2*j]     = 2*an_an  - cheb_coeffs[t_count][0];
+					cheb_coeffs[t_count][2*j + 1] = 2*anp_an - cheb_coeffs[t_count][1];
+
+				}
+
+
+				// print every 100 steps on print rank
+				//if (rank == print_rank)
+					//if (j%100 == 0)
+						//printf("Chebyshev iteration (%d/%d) complete. \n",j,poly_order);
+			}
+
+		}
+
+	}	// end real matrix block
+	else if (complex_matrix == 1) {
+		// Starting vector for Chebyshev method is a unit-vector at the target rbital
+		for (int t_count = 0; t_count < num_targets; ++t_count){
+
+			std::complex<double>* T_prev = new std::complex<double>[local_max_index];
+
+			for (int i = 0; i < local_max_index; ++i){
+				T_prev[i] = kpm_trace_vectors[t_count][i];
+			}
+
+			// Temporary vector for algorithm ("current" vector T_j)
+			std::complex<double>* T_j = new std::complex<double>[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_j[i] = 0.0;
+			}
+
+			H.vectorMultiply(T_prev, T_j, 1, 0);
+
+			// Temporary vector for algorithm ("next" vector T_j+1)
+			std::complex<double>* T_next = new std::complex<double>[local_max_index];
+			for (int i = 0; i < local_max_index; ++i){
+				T_next[i] = 0.0;
+			}
+
+			// first T value
+			std::complex<double> temp_sum = 0.0;
+			for (int i = 0; i < local_max_index; ++i){
+				temp_sum += kpm_trace_vectors[t_count][i]*kpm_trace_vectors[t_count][i];
+			}
+			cheb_coeffs[t_count][0] = temp_sum.real();
+
+			// Next one is calculated simply
+			temp_sum = 0.0;
+			for (int i = 0; i < local_max_index; ++i){
+				temp_sum += T_j[i]*kpm_trace_vectors[t_count][i];
+			}
+			cheb_coeffs[t_count][1] = temp_sum.real();
+
+			// Now loop algorithm up to poly_order to find all T values
+			// double alpha2 = 2;
+
+			// want to do: T_next = 2*H*T_j - T_prev;
+			H.vectorMultiply(T_j, T_next, 2, 0);
+			for (int c = 0; c < local_max_index; ++c){
+				T_next[c] = T_next[c] - T_prev[c];
+			}
+
+			for (int j = 2; j < poly_order/2; ++j){
+
+				// reassign values from previous iteration
+				for (int c = 0; c < local_max_index; ++c){
+					T_prev[c] = T_j[c];	//T_prev = T_j;
+					T_j[c] = T_next[c];	//T_j = T_next;
+				}
+
+				// get the jth entry
+				temp_sum = 0.0;
+				for (int i = 0; i < local_max_index; ++i){
+					temp_sum += T_j[i]*kpm_trace_vectors[t_count][i];
+				}
+				cheb_coeffs[t_count][j] = temp_sum.real();
 
 				// compute the next vector
 				H.vectorMultiply(T_j, T_next, 2, 0);

@@ -578,6 +578,17 @@ int main(int argc, char** argv) {
 					opts.setParam("d_kpm_dos",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "KPM_TRACE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("kpm_trace",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "KPM_TRACE_SAMPS") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("kpm_trace_samps",atoi(in_string.c_str()));
+				}
 
 				if (in_string == "D_WEIGHTS"){
 					getline(in_line,in_string,' ');

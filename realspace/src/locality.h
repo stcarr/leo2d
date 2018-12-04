@@ -169,6 +169,9 @@ class Locality {
   		// Computes Local DOS using Chebyshev KPM methods
   		void computeDosKPM(std::vector< std::vector<double> >&,SpMatrix&, Job_params,std::vector<int>,int);
 
+      // Computes Local DOS using Chebyshev KPM methods and random sampling of the trace
+      void computeDosTraceKPM(std::vector< std::vector<double> >&,SpMatrix&, Job_params,std::vector<int>,int);
+
   		// Computes Local Electron-Electron Correlation using 2D Chebyshev KPM methods
   		void computeCondKPM(std::vector< std::vector<double> >&, SpMatrix&, SpMatrix&, Job_params, std::vector<int>, int, double*);
 

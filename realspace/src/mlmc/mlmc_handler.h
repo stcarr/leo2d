@@ -24,6 +24,7 @@ class Mlmc_handler {
 		double energy_shift;
 		int d_cond;
     int d_kpm_dos;
+    int kpm_trace;
 
 		std::string out_root;
 		std::string temp_root;

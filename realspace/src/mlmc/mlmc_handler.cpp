@@ -38,6 +38,7 @@ void Mlmc_handler::setup(Job_params opts_in){
 	average.setParam("M_yy",blank_double_mat);
 	average.setParam("M_xy",blank_double_mat);
 	average.setParam("kpm_dos",blank_double_vec);
+	average.setParam("kpm_trace_dos",blank_double_vec);
 
 	variance = Job_params(opts);
 	variance.setParam("mlmc_current_num_samples",1);
@@ -45,6 +46,7 @@ void Mlmc_handler::setup(Job_params opts_in){
 	variance.setParam("M_yy",blank_double_mat);
 	variance.setParam("M_xy",blank_double_mat);
 	variance.setParam("kpm_dos",blank_double_vec);
+	variance.setParam("kpm_trace_dos",blank_double_vec);
 
 	cluster_average = Job_params(opts);
 	cluster_average.setParam("mlmc_current_num_samples",1);
@@ -52,6 +54,7 @@ void Mlmc_handler::setup(Job_params opts_in){
 	cluster_average.setParam("M_yy",blank_double_mat);
 	cluster_average.setParam("M_xy",blank_double_mat);
 	cluster_average.setParam("kpm_dos",blank_double_vec);
+	cluster_average.setParam("kpm_trace_dos",blank_double_vec);
 
 	cluster_variance = Job_params(opts);
 	cluster_variance.setParam("mlmc_current_num_samples",1);
@@ -59,12 +62,14 @@ void Mlmc_handler::setup(Job_params opts_in){
 	cluster_variance.setParam("M_yy",blank_double_mat);
 	cluster_variance.setParam("M_xy",blank_double_mat);
 	cluster_variance.setParam("kpm_dos",blank_double_vec);
+	cluster_variance.setParam("kpm_trace_dos",blank_double_vec);
 
 	poly_order = opts.getInt("poly_order");
 	energy_rescale = opts.getDouble("energy_rescale");
 	energy_shift = opts.getDouble("energy_shift");
 	d_cond = opts.getInt("d_cond");
 	d_kpm_dos = opts.getInt("d_kpm_dos");
+	kpm_trace = opts.getInt("kpm_trace");
 
 	k_sampling = opts.getInt("k_sampling");
 	if (k_sampling == 1){
@@ -347,14 +352,39 @@ void Mlmc_handler::k_sampling_average(std::vector<Job_params> k_samples, Job_par
 			std::vector<double> temp_dos = k_samples[i].getDoubleVec("kpm_dos");
 			for (int x = 0; x < (int)dos.size(); ++x){
 				dos[x] = dos[x] + temp_dos[x];
+				//printf("temp_dos[%d] = %lf \n",x,temp_dos[x]);
 			}
 		}
 
 		// normalize
 		for (int x = 0; x < (int)dos.size(); ++x){
 			dos[x] = dos[x]/(double)num_k;
+			//printf("normalized_dos[%d] = %lf \n",x,dos[x]);
+
 		}
 		k_results.setParam("kpm_dos", dos);
+
+	}
+
+	if (kpm_trace == 1){
+
+		std::vector<double> dos = k_samples[0].getDoubleVec("kpm_trace_dos");
+
+		for (int i = 1; i < num_k; ++i){
+			std::vector<double> temp_dos = k_samples[i].getDoubleVec("kpm_trace_dos");
+			for (int x = 0; x < (int)dos.size(); ++x){
+				dos[x] = dos[x] + temp_dos[x];
+				//printf("temp_dos[%d] = %lf \n",x,temp_dos[x]);
+			}
+		}
+
+		// normalize
+		for (int x = 0; x < (int)dos.size(); ++x){
+			dos[x] = dos[x]/(double)num_k;
+			//printf("normalized_dos[%d] = %lf \n",x,dos[x]);
+
+		}
+		k_results.setParam("kpm_trace_dos", dos);
 
 	}
 
@@ -407,12 +437,17 @@ void Mlmc_handler::save(){
 	double E[poly_order];
 	for (int i = 0; i < poly_order; ++i){
 		E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+		//printf("E[%d] = %lf \n",i,E[i]);
 	}
 
 	std::ofstream file_E(tar_E_file.c_str(), std::ofstream::binary);
-	char* buffer = (char*)E;
-	file_E.write(buffer, poly_order*(sizeof(double)/sizeof(char)));
+	file_E.write(reinterpret_cast<char*>(E), std::streamsize(poly_order*sizeof(double)));
 
+	// old code (still works)
+	//char* buffer = (char*)E;
+	//file_E.write(buffer, poly_order*(sizeof(double)/sizeof(char)));
+
+	file_E.close();
 
 	// If we aren't on the top level also save cluster average and variance
 

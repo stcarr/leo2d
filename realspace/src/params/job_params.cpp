@@ -78,6 +78,11 @@ Job_params::Job_params() {
 	setParam("k_sampling",i_zero);
 	setParam("k_type",i_zero);
 
+	// KPM trace sampling settings (best for periodic systems)
+	setParam("kpm_trace",i_zero);
+	setParam("kpm_trace_samps",-i_one); // makes us choose based on matrix size!
+
+
 	// settings for the FFT for momentum-space interlayer coupling
 	setParam("fft_from_file",i_zero);
 	setParam("fft_n_x",40*i_one);

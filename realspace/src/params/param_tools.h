@@ -34,6 +34,9 @@ namespace Param_tools{
 	// Transform from chebyshev basis to energy basis
 	void densityTransform(Job_params& job);
 
+	// Transform from chebyshev basis to energy basis for the kpm_trace method
+	void densityTransformTrace(Job_params& job, double scale_fac);
+
 	// Transform from chebyshev basis to energy basis
 	void conductivityTransform(Job_params& job);
 

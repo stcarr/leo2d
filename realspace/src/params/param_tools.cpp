@@ -666,6 +666,69 @@ void Param_tools::densityTransform(Job_params& job) {
 
 }
 
+void Param_tools::densityTransformTrace(Job_params& job, double scale_fac) {
+
+	int poly_order = job.getInt("poly_order");
+
+	double energy_shift = job.getDouble("energy_shift");
+	double energy_rescale = job.getDouble("energy_rescale");
+
+	double g[poly_order];
+	double E[poly_order];
+	for (int i = 0; i < poly_order; ++i){
+		// Jackson coefficients
+		g[i] = ((poly_order-i)*cos((M_PI*i)/poly_order) + sin((M_PI*i)/poly_order)/tan(M_PI/poly_order))/(poly_order);
+		E[i] = energy_shift + energy_rescale*cos((i*1.0 + 0.5)*M_PI/poly_order);
+	}
+
+	//g[0] = 2*g[0];
+
+	std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
+
+	int n_s = cheb_coeffs.size(); // number of trace samples
+	int n_E = cheb_coeffs[0].size(); // poly_order <-> Energy sampling
+
+	std::vector<double> kpm_trace_moments;
+	kpm_trace_moments.resize(n_E);
+
+	for (int i_E = 0; i_E < n_E; ++i_E){
+
+		kpm_trace_moments[i_E] = 0.0;
+
+		// normalize by number of trace samples
+		for (int i_s = 0; i_s < n_s; ++i_s){
+			kpm_trace_moments[i_E] = kpm_trace_moments[i_E] + cheb_coeffs[i_s][i_E]/( (double)n_s  );
+		}
+
+		//printf("u[%d] = %le \n",i_E,kpm_trace_moments[i_E]);
+
+	}
+
+	int p = kpm_trace_moments.size();
+
+	double* in = new double[p];
+
+	for (int i = 0; i < p; ++i){
+		in[i] = g[i]*kpm_trace_moments[i];
+	}
+
+	double* out = new double[p];
+
+	fftw_plan fftplan;
+	fftplan = fftw_plan_r2r_1d(p,in,out,FFTW_REDFT01,FFTW_MEASURE);
+
+	fftw_execute(fftplan);
+
+	std::vector<double> kpm_trace_dos;
+	kpm_trace_dos.resize(p);
+	for (int i = 0; i < p; ++i){
+		kpm_trace_dos[i] = scale_fac*out[i]/(M_PI*sqrt( energy_rescale*energy_rescale - (E[i] - energy_shift)*(E[i] - energy_shift) ) );
+	}
+
+	job.setParam("kpm_trace_dos",kpm_trace_dos);
+
+}
+
 void Param_tools::conductivityTransform(Job_params& job){
 
 	int diagonalize = job.getInt("diagonalize");
@@ -761,20 +824,32 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 
 	if (type == 0){
 
-		double* in = new double[poly_order*poly_order];
-		double* out = new double[poly_order*poly_order];
+		//double* in = new double[poly_order*poly_order];
+		//double* out = new double[poly_order*poly_order];
+
+		double *in, *out;
+		in = (double*) fftw_malloc( sizeof(double)*poly_order*poly_order);
+		out = (double*) fftw_malloc( sizeof(double)*poly_order*poly_order);
 
 		// fftw_plan p;
 		// p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
 
+		fftw_plan p;
+		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
+
+		if (!p){
+			throw std::runtime_error("FFTW plan is NULL (in Param_tools::matrixResponseTransform)");
+		}
+
 		for (int i = 0; i < poly_order; ++i){
 			for (int j = 0; j < poly_order; ++j){
 				in[i*poly_order + j] = 2*g[i]*g[j]*matrixIn[i][j];
+				out[i*poly_order + j] = 99.123;
+				//if (j < 20 && i > 950)
+					//printf("in[%d][%d] = %le  |  out[%d][%d] = %le \n",i,j,in[i*poly_order + j],i,j,out[i*poly_order + j]);
 				}
 		}
 
-		fftw_plan p;
-		p = fftw_plan_r2r_2d(poly_order,poly_order,in,out,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 		fftw_execute(p);
 
 		matrixOut.resize(poly_order);
@@ -782,19 +857,27 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 			matrixOut[i].resize(poly_order);
 			for (int j = 0; j < poly_order; ++j){
 				matrixOut[i][j] = out[i*poly_order + j];
+				//if (j < 20 && i > 950)
+					//printf("in[%d][%d] = %le  |  out[%d][%d] = %le \n",i,j,in[i*poly_order + j],i,j,out[i*poly_order + j]);
 			}
 		}
 
 		job.setParam(tag,matrixOut);
-		fftw_destroy_plan(p);
 
-		delete in;
-		delete out;
+		fftw_destroy_plan(p);
+		fftw_free(in); fftw_free(out);
+
+		//delete in;
+		//delete out;
 
 	} else if (type == 1){
 
 		// real component transformation
 		double* in_real = new double[poly_order*poly_order];
+		double* out_real = new double[poly_order*poly_order];
+
+		fftw_plan p_real;
+		p_real = fftw_plan_r2r_2d(poly_order,poly_order,in_real,out_real,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 
 		for (int i = 0; i < poly_order; ++i){
 			for (int j = 0; j < poly_order; ++j){
@@ -802,10 +885,6 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 			}
 		}
 
-		double* out_real = new double[poly_order*poly_order];
-
-		fftw_plan p_real;
-		p_real = fftw_plan_r2r_2d(poly_order,poly_order,in_real,out_real,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 
 		fftw_execute(p_real);
 
@@ -824,17 +903,16 @@ void Param_tools::matrixResponseTransform(Job_params& job, std::string tag){
 
 		// imaginary component transformation
 		double* in_imag = new double[poly_order*poly_order];
+		double* out_imag = new double[poly_order*poly_order];
+
+		fftw_plan p_imag;
+		p_imag = fftw_plan_r2r_2d(poly_order,poly_order,in_imag,out_imag,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 
 		for (int i = 0; i < poly_order; ++i){
 			for (int j = 0; j < poly_order; ++j){
 				in_imag[i*poly_order + j] = 2*g[i]*g[j]*matrixIn_cpx[i][j].imag();
 			}
 		}
-
-		double* out_imag = new double[poly_order*poly_order];
-
-		fftw_plan p_imag;
-		p_imag = fftw_plan_r2r_2d(poly_order,poly_order,in_imag,out_imag,FFTW_REDFT01,FFTW_REDFT01,FFTW_MEASURE);
 
 		fftw_execute(p_imag);
 
@@ -860,6 +938,7 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 
 	int d_cond = job.getInt("d_cond");
 	int d_kpm_dos = job.getInt("d_kpm_dos");
+	int kpm_trace = job.getInt("kpm_trace");
 
 	// Use to load M_ij from a binary file
 	if (d_cond > 0) {
@@ -965,12 +1044,39 @@ void Param_tools::mlmc_load(Job_params& job, std::string file_name){
 		job.setParam("kpm_dos",dos);
 	}
 
+	// Use to load dos from a binary file
+	if (kpm_trace == 1) {
+
+		std::string file_name_dos = file_name;
+
+		file_name_dos.append("dos.bin");
+
+		std::vector<double> dos;
+
+
+		std::ifstream file_dos(file_name_dos.c_str(), std::ifstream::binary);
+		file_dos.seekg(0, file_dos.end);
+		int length_dos = (int) (file_dos.tellg()*sizeof(char))/sizeof(double);
+		file_dos.seekg(0, file_dos.beg);
+
+		char buffer[length_dos*(sizeof(double)/sizeof(char))];
+		file_dos.read(buffer, length_dos*(sizeof(double)/sizeof(char)));
+		double* doub_buffer = (double*) buffer;
+		std::vector<double> temp_vec(doub_buffer, doub_buffer + length_dos);
+		dos = temp_vec;
+
+		file_dos.close();
+
+		job.setParam("kpm_trace_dos",dos);
+	}
+
 }
 
 void Param_tools::mlmc_save(Job_params job, std::string file_name){
 
 	int d_cond = job.getInt("d_cond");
 	int d_kpm_dos = job.getInt("d_kpm_dos");
+	int kpm_trace = job.getInt("kpm_trace");
 
 	// Use to write M_ij to a binary file
 	if (d_cond > 0) {
@@ -1032,6 +1138,30 @@ void Param_tools::mlmc_save(Job_params job, std::string file_name){
 		std::ofstream file_dos(file_name_dos.c_str(), std::ofstream::binary);
 
 		if ( dos.size() > 0 ){
+			for (int p = 0; p < dos.size(); ++p){
+				//printf("dos[%d] = %lf \n",p,dos[p]);
+			}
+			 char* buffer = (char*)(&dos[0]);
+			 file_dos.write(buffer, dos.size()*(sizeof(double)/sizeof(char)));
+		}
+
+		file_dos.close();
+
+	}
+
+	if (kpm_trace == 1){
+
+		std::string file_name_dos = file_name;
+		file_name_dos.append("dos.bin");
+
+		std::vector<double> dos = job.getDoubleVec("kpm_trace_dos");
+
+		std::ofstream file_dos(file_name_dos.c_str(), std::ofstream::binary);
+
+		if ( dos.size() > 0 ){
+			for (int p = 0; p < dos.size(); ++p){
+				//printf("dos[%d] = %lf \n",p,dos[p]);
+			}
 			 char* buffer = (char*)(&dos[0]);
 			 file_dos.write(buffer, dos.size()*(sizeof(double)/sizeof(char)));
 		}
@@ -1053,6 +1183,7 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 
 	int d_cond = total.getInt("d_cond");
 	int d_kpm_dos = total.getInt("d_kpm_dos");
+	int kpm_trace = total.getInt("kpm_trace");
 
 	if (d_cond > 0){
 
@@ -1115,10 +1246,29 @@ void Param_tools::mlmc_average(Job_params& total, Job_params samp){
 		} else {
 			for (int i = 0; i < (int) dos.size(); ++i){
 				dos[i] = dos[i]*s_t + samp_dos[i]*s_s;
+				//printf("averaged_dos[%d] = %lf \n", i,dos[i]);
 			}
 		}
 
 		total.setParam("kpm_dos",dos);
+	}
+
+	if (kpm_trace == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_trace_dos");
+		std::vector<double> samp_dos = samp.getDoubleVec("kpm_trace_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			dos = samp_dos;
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + samp_dos[i]*s_s;
+				//printf("averaged_dos[%d] = %lf \n", i,dos[i]);
+			}
+		}
+
+		total.setParam("kpm_trace_dos",dos);
+
 	}
 
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
@@ -1133,6 +1283,7 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 
 	int d_cond = total.getInt("d_cond");
 	int d_kpm_dos = total.getInt("d_kpm_dos");
+	int kpm_trace = total.getInt("kpm_trace");
 
 	if (d_cond > 0){
 
@@ -1222,6 +1373,25 @@ void Param_tools::mlmc_variance(Job_params& total, Job_params samp){
 		total.setParam("kpm_dos",dos);
 	}
 
+	if (kpm_trace == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_trace_dos");
+		std::vector<double> samp_dos = samp.getDoubleVec("kpm_trace_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			dos.resize((int)samp_dos.size());
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = pow(samp_dos[i],2);
+			}
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + pow(samp_dos[i],2)*s_s;
+			}
+		}
+
+		total.setParam("kpm_trace_dos",dos);
+	}
+
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
 }
 
@@ -1232,8 +1402,10 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 	double s_t = (1.0*mlmc_current_num_samples - 1)/(1.0*mlmc_current_num_samples); // scale for total
 	double s_s = 1.0/(1.0*mlmc_current_num_samples); // scale for samp
 
+
 	int d_cond = total.getInt("d_cond");
 	int d_kpm_dos = total.getInt("d_kpm_dos");
+	int kpm_trace = total.getInt("kpm_trace");
 
 	if (d_cond > 0){
 
@@ -1318,7 +1490,7 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 
 		std::vector<double> dos = total.getDoubleVec("kpm_dos");
 		std::vector<double> samp_orig_dos = samp_orig.getDoubleVec("kpm_dos");
-		std::vector<double> samp_cluster_dos =samp_cluster.getDoubleVec("kpm_dos");
+		std::vector<double> samp_cluster_dos = samp_cluster.getDoubleVec("kpm_dos");
 
 		if (dos.empty() || mlmc_current_num_samples == 1){
 			int size = (int) samp_orig_dos.size();
@@ -1335,6 +1507,27 @@ void Param_tools::mlmc_cluster_average(Job_params& total, Job_params samp_orig, 
 		total.setParam("kpm_dos",dos);
 	}
 
+	if (kpm_trace == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_trace_dos");
+		std::vector<double> samp_orig_dos = samp_orig.getDoubleVec("kpm_trace_dos");
+		std::vector<double> samp_cluster_dos =samp_cluster.getDoubleVec("kpm_trace_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			int size = (int) samp_orig_dos.size();
+			dos.resize(size);
+			for (int i = 0; i < size; ++i){
+				dos[i] = samp_orig_dos[i] - samp_cluster_dos[i];
+			}
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + (samp_orig_dos[i] - samp_cluster_dos[i])*s_s;
+			}
+		}
+
+		total.setParam("kpm_trace_dos",dos);
+	}
+
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
 }
 
@@ -1347,6 +1540,7 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 
 	int d_cond = total.getInt("d_cond");
 	int d_kpm_dos = total.getInt("d_kpm_dos");
+	int kpm_trace = total.getInt("kpm_trace");
 
 	if (d_cond > 0){
 
@@ -1445,6 +1639,27 @@ void Param_tools::mlmc_cluster_variance(Job_params& total, Job_params samp_orig,
 		}
 
 		total.setParam("kpm_dos",dos);
+	}
+
+	if (kpm_trace == 1){
+
+		std::vector<double> dos = total.getDoubleVec("kpm_trace_dos");
+		std::vector<double> samp_orig_dos = samp_orig.getDoubleVec("kpm_trace_dos");
+		std::vector<double> samp_cluster_dos =samp_cluster.getDoubleVec("kpm_trace_dos");
+
+		if (dos.empty() || mlmc_current_num_samples == 1){
+			int size = (int) samp_orig_dos.size();
+			dos.resize(size);
+			for (int i = 0; i < size; ++i){
+				dos[i] = pow(samp_orig_dos[i] - samp_cluster_dos[i],2);
+			}
+		} else {
+			for (int i = 0; i < (int) dos.size(); ++i){
+				dos[i] = dos[i]*s_t + pow(samp_orig_dos[i] - samp_cluster_dos[i],2)*s_s;
+			}
+		}
+
+		total.setParam("kpm_trace_dos",dos);
 	}
 
 	total.setParam("mlmc_current_num_samples",mlmc_current_num_samples+1);
