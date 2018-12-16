@@ -1,19 +1,33 @@
 function [outstr] = make_hstruct_in(size,poly_order,k_sampling,k_grid,...
                                     max_level,level,num_CV,...
-                                    outdir,tempdir,dos_on,cond_on)
+                                    vacfile,outdir,tempdir,dos_on,cond_on)
+
+  %d_type = 1; % d_type unused
   observable_type = 'COND';
   diagonalize = 1;
-  
-  if dos_on == 1
-     diagonalize = 0;
-     observable_type = 'DOS';
+
+  if (dos_on == 1) % if doing DoS, dont diagonalize and turn of Cond
+    observable_type = 'DOS';
+    diagonalize = 0;
+    cond_on == 0;
   end
+
+%{
+  observable_type = 'DOS';
+  diagonalize = 0;
   
+
+  d_type = 0;
+  if dos_on == 1 && cond_on == 0
+     d_type = 1; 
+  end
+%}  
+
   if k_grid == 1
      k_sampling = 0; 
   end
   
-  outstr = [...
+ outstr = [...
     'HSTRUCT INPUTFILE\n',...
     'JOB_NAME = ml_mos2_mlmc\n\n',... % Name of job, will prefix all files
     '===STRUCTURE INFORMATION===\n\n',... 
@@ -34,10 +48,10 @@ function [outstr] = make_hstruct_in(size,poly_order,k_sampling,k_grid,...
     'OBSERVABLE_TYPE = ',observable_type,'\n',...    % Want to calculate Conductivity?
     'KPM_TRACE = ',int2str(dos_on),'\n',...    % Random sampling of the trace
     'KPM_TRACE_SAMPS = ',int2str(10),'\n',...    % # of samples for trace   
-    'DIAGONALIZE = \n',int2str(diagonalize),'\n'... % do explicit diagonalization with Eigen lib
+    'DIAGONALIZE = ',int2str(diagonalize),'\n'... % do explicit diagonalization with Eigen lib
     'D_WEIGHTS = 0\n',...   % no eigen-weights
     'D_VECS = 0\n',...      % no eigen-vectors
-    'D_COND = ',int2str(cond_on),'\n\n',...    % just does M_XX, set = 2 for M_YY and M_XY
+    'D_COND = ',int2str(cond_on),'\n',...    % just does M_XX, set = 2 for M_YY and M_XY  
     'NUM_TARGET_SHEETS = 1\n',...
     'TARGET_SHEETS = 1\n',...
     'NUM_SHIFT_SHEETS = 1\n',...
@@ -49,7 +63,7 @@ function [outstr] = make_hstruct_in(size,poly_order,k_sampling,k_grid,...
     'MLMC_CLUSTER_SIZE = 4\n',...   % Number of pieces we cut the CV into
     'MLMC_OUT_ROOT = ',outdir,'\n',...
     'MLMC_TEMP_ROOT = ',tempdir,'\n',...
-    'VACANCY_FILE = vacancies.dat\n\n',...  % Where to read Vac info from
+    'VACANCY_FILE = ',vacfile,'\n\n',...  % Where to read Vac info from
     'INTRA_SEARCHSIZE = 3\n',...
     'INTER_SEARCHSIZE = 3\n',...
     'ENERGY_RESCALE = 7\n',...

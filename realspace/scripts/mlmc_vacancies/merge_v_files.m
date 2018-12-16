@@ -166,8 +166,13 @@ disp(['Writing merged vacancy list files and additional information to ''',...
 
 for k=1:max_lev
   target_sub_dir = [target_dir,filesep,'Lev_',int2str(k)];
+  
+  hstructfile = ['hstruct_l',int2str(k),'.in'];
+  final_vacfile = ['vacancies_l',int2str(k),'.dat'];
+  
   eval(['!mkdir ',target_sub_dir]);
-  fh = fopen([target_sub_dir,filesep,'vacancies.dat'],'w');
+  fh = fopen([target_sub_dir,filesep,final_vacfile],'w');
+  %fh = fopen([target_sub_dir,filesep,'vacancies.dat'],'w');
   fprintf(fh,outfiles{k});
   fclose(fh);
   
@@ -187,8 +192,8 @@ for k=1:max_lev
   end
   
   hstruct_str = make_hstruct_in(sizes(k), poly_order, k_sampling_here, k_grid_here, max_lev, k,...
-      cv_here, final_outdir, final_tempdir, dos_on, cond_on);
-  fh2 = fopen([target_sub_dir,filesep,'hstruct.in'],'w');
+      cv_here, final_vacfile,final_outdir, final_tempdir, dos_on, cond_on);
+  fh2 = fopen([target_sub_dir,filesep,hstructfile],'w');
   fprintf(fh2,hstruct_str);
   fclose(fh2);
   

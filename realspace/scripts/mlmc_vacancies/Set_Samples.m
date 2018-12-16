@@ -58,31 +58,31 @@ end
 fprintf(1,']\n');
 
 % Probability of vacancy in atom sites of different types:
-pVacs = [0.0;0.05;0.05]; % M, X_A, X_B
+pVacs = [0.0;0.05;0.0]; % M, X_A, X_B
 
 % Parameters controlling the hierarchy
-Nbase  = 15; % Side of smallest super cell
+Nbase  = 10; % Side of smallest super cell
 Nr_ext = 1;  % Number of extensions (by doubling) from base to largest cell
 % The following vector prescribes number of samples, M, per level.
-M_v     = [50,10]; % Length should be Nr_ext+1
+M_v     = [10,2]; % Length should be Nr_ext+1
 % The choice M=100,20,3 is small for the smaller super cell sizes.  
 % Number of samples on different super cell sizes must in practice be
 % adjusted to parameters estimated from runs.
 
 % Polynomial order for the Chebyshev fitting to the current-current measure
-poly_order = 1000;
+poly_order = 200;
 
 % K sampling
 k_sampling = 1;
-k_grid = 4;
+k_grid = 8;
 
 % Default out and scratch/temp directories
 outdir = './out';
 tempdir = './tmp';
 
 % Default solver settings
-dos_on = 0;
-cond_on = 1;
+dos_on = 1;
+cond_on = 0;
 
 choice=-1;
 while choice~=0
