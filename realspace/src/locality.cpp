@@ -2680,6 +2680,10 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 						}
 					}
+
+					// convert to E basis
+					Param_tools::conductivityTransform(results_out);
+
 				}
 
 			} else if (complex_matrix == 1){
