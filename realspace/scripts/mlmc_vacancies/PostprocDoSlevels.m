@@ -107,47 +107,43 @@
         
         if ilev < maxlevel
             id = idxlevelE(ilev);
+            file_name = file{id}.name;
+            fM = fopen(file_name,'r');       % open the E(DoS)
+            Ml = fread(fM,[p 1],'double');   % p x 1 matrix load
+            ML{ilev}=Ml;
+            fclose(fM);
+            fprintf(1,'      File: %s \n',file_name);
             
-            if id > 0
+            id = idxlevelDE(ilev);
+            file_name = file{id}.name;
+            fDM = fopen(file_name,'r');       % open the DE(DoS)
+            DMl = fread(fDM,[p 1],'double');  % p x 1 matrix load
+            fclose(fDM);
+            fprintf(1,'      File: %s \n',file_name);
             
-                file_name = file{id}.name;
-                fM = fopen(file_name,'r');       % open the E(DoS)
-                Ml = fread(fM,[p 1],'double');   % p x 1 matrix load
-                ML{ilev}=Ml;
-                fclose(fM);
-                fprintf(1,'      File: %s \n',file_name);
-
-                id = idxlevelDE(ilev);
-                file_name = file{id}.name;
-                fDM = fopen(file_name,'r');       % open the DE(DoS)
-                DMl = fread(fDM,[p 1],'double');  % p x 1 matrix load
-                fclose(fDM);
-                fprintf(1,'      File: %s \n',file_name);
-
-                id = idxlevelV(ilev);
-                file_name = file{id}.name;
-                fV  = fopen(file_name,'r');        % open the Var(DoS)
-                M2l= fread(fV,[p,1],'double');     % p x 1 matrix load
-                VML{ilev} = M2l - Ml.^2;          
-                fclose(fV);
-                fprintf(1,'      File: %s \n',file_name);
-
-                id = idxlevelDV(ilev);
-                file_name = file{id}.name;
-                fDV  = fopen(file_name,'r');       % open the DVar(M)
-                DM2l= fread(fDV,[p,1],'double');   % p x 1 matrix load
-                fclose(fDV);
-                fprintf(1,'      File: %s \n',file_name);
-
-                %
-                % Accumulate estimator of Expected value of E[M]
-                if ilev == 1
-                    M = M + Ml + DMl;
-                    V = V + (M2l - Ml.^2)/(M_v(ilev)-1);
-                else
-                    M = M + DMl;
-                    V = V + (DM2l - DMl.^2)/(M_v(ilev)-1);
-                end
+            id = idxlevelV(ilev);
+            file_name = file{id}.name;
+            fV  = fopen(file_name,'r');        % open the Var(DoS)
+            M2l= fread(fV,[p,1],'double');     % p x 1 matrix load
+            VML{ilev} = M2l - Ml.^2;          
+            fclose(fV);
+            fprintf(1,'      File: %s \n',file_name);
+            
+            id = idxlevelDV(ilev);
+            file_name = file{id}.name;
+            fDV  = fopen(file_name,'r');       % open the DVar(M)
+            DM2l= fread(fDV,[p,1],'double');   % p x 1 matrix load
+            fclose(fDV);
+            fprintf(1,'      File: %s \n',file_name);
+ 
+            %
+            % Accumulate estimator of Expected value of E[M]
+            if ilev == 1
+                M = M + Ml + DMl;
+                V = V + (M2l - Ml.^2)/(M_v(ilev)-1);
+            else
+                M = M + DMl;
+                V = V + (DM2l - DMl.^2)/(M_v(ilev)-1);
             end
         else
             id = idxlevelE(ilev);
@@ -214,7 +210,14 @@
        ylabel('E'); xlabel('E[DoS(E)]');
        strtitle = [observable_name,' E[DoS(E)] Poly order=',int2str(p)]; 
        title(strtitle);
-       
+   %
+   % Plot EDoS so it can be compared with other runs
+   %
+   figure(5);
+       plot(E,M,'b'); hold on;
+       ylabel('E'); xlabel('E[DoS(E)]');
+       strtitle = [observable_name,' E[DoS(E)] Poly order=',int2str(p)]; 
+       title(strtitle);     
  %----------------------------------------------------------------------
 
  %----------------------------------------------------------------------

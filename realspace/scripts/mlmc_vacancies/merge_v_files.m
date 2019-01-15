@@ -161,24 +161,16 @@ for k=1:max_lev
 end
 
 target_dir = make_folder_merge_vacancies;
-target_sub_dir = [target_dir,filesep,'all_levels'];
-
-
 disp(['Writing merged vacancy list files and additional information to ''',...
-  target_sub_dir,''''])
-eval(['!mkdir ',target_sub_dir]);
-eval(['!mkdir ',[target_dir,filesep,'out']]);
-eval(['!mkdir ',[target_dir,filesep,'temp']]);
-
+  target_dir,''''])
 
 for k=1:max_lev
-  %target_sub_dir = [target_dir,filesep,'Lev_',int2str(k)];
-  %target_sub_dir = [target_dir,filesep,'all_levels'];
+  target_sub_dir = [target_dir,filesep,'Lev_',int2str(k)];
   
   hstructfile = ['hstruct_l',int2str(k),'.in'];
   final_vacfile = ['vacancies_l',int2str(k),'.dat'];
   
-  %eval(['!mkdir ',target_sub_dir]);
+  eval(['!mkdir ',target_sub_dir]);
   fh = fopen([target_sub_dir,filesep,final_vacfile],'w');
   %fh = fopen([target_sub_dir,filesep,'vacancies.dat'],'w');
   fprintf(fh,outfiles{k});
