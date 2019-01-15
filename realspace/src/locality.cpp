@@ -6052,12 +6052,12 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 			if (debugPrint == 1)
 				dxH.debugPrint();
 
-			dxH.denseMatrixMultiply(temp_matrix_x, eigvecs, 1, 0);
+			dxH.denseMatrixMultiply(temp_matrix_x, eigvecs, 1.0, 0.0);
 
 			if (debugPrint == 1)
 				temp_matrix_x.debugPrint();
 
-			eigvecs.matrixMultiply(J_x, temp_matrix_x, 1, 0,'T','N');
+			eigvecs.matrixMultiply(J_x, temp_matrix_x, 1.0, 0.0,'T','N');
 
 			if (debugPrint == 1)
 				J_x.debugPrint();
@@ -6084,7 +6084,7 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 			for (int m = 2; m < p; ++m){
 				// start cheb iteration p
 				for (int i = 0; i < N; ++i){
-					v_cheb[m*N + i] = 2*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
+					v_cheb[m*N + i] = 2.0*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
 				}
 			}
 
@@ -6092,19 +6092,19 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 			// J_xx element-wise via vdMul in MKL
 			DMatrix J_xx;
-			J_x.eleMatrixMultiply(J_xx, J_x, 1, 0, 'N', 'N');
+			J_x.eleMatrixMultiply(J_xx, J_x, 1.0, 0.0, 'N', 'N');
 
 			if (debugPrint == 1)
 				J_xx.debugPrint();
 
 			DMatrix temp_mat_xx;
-			J_xx.matrixMultiply(temp_mat_xx, cheb_eigvals, 1, 0);
+			J_xx.matrixMultiply(temp_mat_xx, cheb_eigvals, 1.0, 0.0);
 
 			if (debugPrint == 1)
 				temp_mat_xx.debugPrint();
 
 			//cheb_eigvals.matrixMultiply(M_xx,temp_mat_xx, 1.0/local_max_index, 0, 'T', 'N');
-			cheb_eigvals.matrixMultiply(M_xx,cheb_eigvals, 1.0/local_max_index, 0, 'T', 'N');
+			cheb_eigvals.matrixMultiply(M_xx,temp_mat_xx, 1.0/((double) local_max_index), 0.0, 'T', 'N');
 
 
 			if (debugPrint == 1)
@@ -6114,25 +6114,25 @@ void Locality::computeEigen(std::vector<double> &eigvals, DMatrix &eigvecs, DMat
 
 				DMatrix J_y;
 				DMatrix temp_matrix_y;
-				dyH.denseMatrixMultiply(temp_matrix_y, eigvecs, 1, 0);
+				dyH.denseMatrixMultiply(temp_matrix_y, eigvecs, 1.0, 0.0);
 				eigvecs.matrixMultiply(J_y, temp_matrix_y, 1, 0,'T','N');
 				//printf("J_y construction complete \n");
 
 				// J_yy, J_xy, element-wise via vdMul in MKL
 				DMatrix J_yy;
-				J_y.eleMatrixMultiply(J_yy, J_y, 1, 0, 'N', 'N');
+				J_y.eleMatrixMultiply(J_yy, J_y, 1.0, 0.0, 'N', 'N');
 				DMatrix J_xy;
-				J_x.eleMatrixMultiply(J_xy, J_y, 1, 0, 'N', 'N');
+				J_x.eleMatrixMultiply(J_xy, J_y, 1.0, 0.0, 'N', 'N');
 
 				//printf("J_ij construction complete \n");
 
 				DMatrix temp_mat_yy;
 				J_yy.matrixMultiply(temp_mat_yy, cheb_eigvals, 1, 0);
-				cheb_eigvals.matrixMultiply(M_yy,temp_mat_yy, 1.0/local_max_index, 0, 'T', 'N');
+				cheb_eigvals.matrixMultiply(M_yy,temp_mat_yy, 1.0/((double) local_max_index), 0.0, 'T', 'N');
 
 				DMatrix temp_mat_xy;
 				J_xy.matrixMultiply(temp_mat_xy, cheb_eigvals, 1, 0);
-				cheb_eigvals.matrixMultiply(M_xy,temp_mat_xy, 1.0/local_max_index, 0, 'T', 'N');
+				cheb_eigvals.matrixMultiply(M_xy,temp_mat_xy, 1.0/((double) local_max_index), 0.0, 'T', 'N');
 
 			}
 
@@ -6278,7 +6278,7 @@ void Locality::computeEigenComplex(std::vector<double> &eigvals, DMatrix &eigvec
 			for (int m = 2; m < p; ++m){
 				// start cheb iteration p
 				for (int i = 0; i < N; ++i){
-					v_cheb[m*N + i] = ((std::complex<double>)2.0)*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
+					v_cheb[m*N + i] = 2.0*eigvals[i]*v_cheb[(m-1)*N + i] - v_cheb[(m-2)*N + i];
 				}
 			}
 			// Finish calculating the the M_ij tensors
