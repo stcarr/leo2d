@@ -47,50 +47,29 @@
     M = zeros(p,p);
     V = zeros(p,p);
    
-    % Level 1
-    fM = fopen('ml_mos2_mlmc_L1_E_M_xx.bin','r');   % open the E(M)
-    Ml = fread(fM,[p p],'double');                  % p x p matrix load
-    ML{1}=Ml;
-    fclose(fM);
-    fDM = fopen('ml_mos2_mlmc_L1_DE_M_xx.bin','r');   % open the E(M)
-    DMl = fread(fDM,[p p],'double');                  % p x p matrix load
-    fclose(fDM);
-    %fV = fopen('ml_mos2_mlmc_L1_V_M_xx.bin','r');  % open the Var(M)
-    %M2l= fread(fV,[p,p],'double');
-    %close(fV);
     
-    M = M + Ml + DMl;
-    
-    % Level 2
-    fM = fopen('ml_mos2_mlmc_L2_E_M_xx.bin','r');   % open the E(M)
-    Ml = fread(fM,[p p],'double');                  % p x p matrix load
-    ML{2}=Ml;
-    fclose(fM);
-    fDM = fopen('ml_mos2_mlmc_L2_DE_M_xx.bin','r');   % open the E(M)
-    DMl = fread(fDM,[p p],'double');                  % p x p matrix load
-    fclose(fDM);
-    %fV = fopen('ml_mos2_mlmc_L2_V_M_xx.bin','r');  % open the Var(M)
-    %M2l= fread(fV,[p,p],'double');
-    %fDV = fopen('ml_mos2_mlmc_L2_DV_M_xx.bin','r');   % open the E(M)
-    %DVl = fread(fDV,[p p],'double');                  % p x p matrix load
-    
-    M = M + DMl;
-    
-    
-    % Level 3
-    fM = fopen('ml_mos2_mlmc_L3_E_M_xx.bin','r');   % open the E(M)
-    Ml = fread(fM,[p p],'double');                  % p x p matrix load
-    ML{3} = Ml;
-    fclose(fM);
-    %fDM = fopen('ml_mos2_mlmc_L3_DE_M_xx.bin','r');   % open the E(M)
-    %DMl = fread(fDM,[p p],'double');                  % p x p matrix load
-    %fclose(fDM);
-    %fV = fopen('ml_mos2_mlmc_L3_V_M_xx.bin','r');  % open the Var(M)
-    %M2l= fread(fV,[p,p],'double');
-    %fDV = fopen('ml_mos2_mlmc_L3_DV_M_xx.bin','r');   % open the E(M)
-    %DVl = fread(fDV,[p p],'double');                  % p x p matrix load
-    
-    %M = M + DMl;
+    for i = 1:nlev
+
+        fM = fopen(['ml_mos2_mlmc_L' num2str(i) '_E_M_xx.bin'],'r');   % open the E(M)
+        Ml = fread(fM,[p p],'double');                  % p x p matrix load
+        ML{i}=Ml;
+        fclose(fM);
+        if (i < max_lev)
+            fDM = fopen(['ml_mos2_mlmc_L' num2str(i) '_DE_M_xx.bin'],'r');   % open the E(M)
+            DMl = fread(fDM,[p p],'double');                  % p x p matrix load
+            fclose(fDM);
+        end
+
+        %fV = fopen('ml_mos2_mlmc_L1_V_M_xx.bin','r');  % open the Var(M)
+        %M2l= fread(fV,[p,p],'double');
+        %close(fV);
+
+        if (i == 1)
+            M = M + Ml + DMl;
+        elseif (i < max_lev)
+            M = M + DMl;
+        end
+    end
     
     fE = fopen('ml_mos2_mlmc_L3_ENERGIES.bin','r'); % open the Energy file
     E = fread(fE,[p 1],'double');                   % p energy samps load
@@ -149,14 +128,17 @@
         CCMdiag{i} = diag(Ml);
     end
     figure(3);clf;
+    
         leg(1)=plot(E,ccmdiag,'k','LineWidth',2); hold on;
-        leg(2)=plot(E,CCMdiag{1},'r'); hold on;
-        leg(3)=plot(E,CCMdiag{2},'b'); hold on;
-        leg(4)=plot(E,CCMdiag{3},'g'); hold on;
+        
+        for i = 1:max_lev
+            leg(1+i)=plot(E,CCMdiag{i}); hold on;
+        end
+
         xlabel('E');
         ylabel('E[M(E,E)]');
         title('Current-current correlation measure M(E,E)');
-        legend(leg,'MLMC','Lev 1','Lev 2','Lev 3')
+        legend(leg,'MLMC','Lev 1','Lev 2','Lev 3','Lev 4', 'Lev 5')
         
     figure(4);clf;
        plot(ccmdiag,E,'k','LineWidth',2); hold on;
