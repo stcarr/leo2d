@@ -1,4 +1,7 @@
-Home directory for this project.
 
-/realspace holds c++ code for a real-space simulation strategy
-/scatter holds in-progress c++ code for the scatter formulation
+INSTALL INSTRUCTIONS:
+1: 'cp CMakeLists_template.txt CMakeLists.txt'
+2: edit cmake options in CMakeLists.txt
+3: run 'cmake .'
+4: run 'make'
+
