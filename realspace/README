@@ -9,3 +9,7 @@ INSTALL INSTRUCTIONS:
 
 the application LEO2D will be placed in the app folder
 
+TESTING:
+The only up-to-date example input file is examples/tblg/tblg_hstruct.in
+>> mpirun -n 2 app/LEO2D examples/tblg/tblg_hstruct.in
+output will be written to bi_graphene001.cheb (DoS via KPM) and bi_graphene001_matrix.dat (sparse matrix format)
