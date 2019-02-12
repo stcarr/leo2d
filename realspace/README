@@ -1,1 +1,11 @@
-Main folder for the scatter method. Source files can be found in /src/. Compile into an executable here by typing 'make'. If there are issues try 'make clean' first (will remove old objects and executables)
+LEO2D (Locality for Electronic Observables in Two-Dimensions):
+An MPI + OpenMP tight-binding code for electronic structure in 2D materials
+
+INSTALL INSTRUCTIONS:
+1) >> cp CMakeLists_templates.txt CMakeLists.txt
+2) edit CMakeLists.txt options as desired
+3) >> cmake .
+4) >> make all
+
+the application LEO2D will be placed in the app folder
+
