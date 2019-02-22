@@ -515,6 +515,7 @@ void Locality::setupSupercell(){
 				A1_num_a2 = N;
 				A2_num_a1 = -N;
 				A2_num_a2 = (M+N);
+				printf("GIT test")
 			}
 
 			std::vector< std::vector<double> > unitCell;
