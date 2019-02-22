@@ -79,9 +79,9 @@ LEO2D_EXTERNAL_OBJECTS =
 
 app/LEO2D: app/src/CMakeFiles/LEO2D.dir/main.cpp.o
 app/LEO2D: app/src/CMakeFiles/LEO2D.dir/build.make
-app/LEO2D: /usr/local/lib/libfftw3.a
+app/LEO2D: /usr/local/lib/libfftw3.dylib
 app/LEO2D: lib/libleo2d.a
-app/LEO2D: /usr/local/lib/libfftw3.a
+app/LEO2D: /usr/local/lib/libfftw3.dylib
 app/LEO2D: app/src/CMakeFiles/LEO2D.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable ../LEO2D"
 	cd /Users/zoe/Desktop/CMT/leo2d/realspace/app/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/LEO2D.dir/link.txt --verbose=$(VERBOSE)
