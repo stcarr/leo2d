@@ -1,0 +1,67 @@
+# Specify the minimum version for CMake
+
+cmake_minimum_required(VERSION 2.4.0)
+
+# Project's name
+PROJECT(LEO2D)
+SET(CMAKE_BUILD_TYPE Debug)
+
+# Define name and version of package
+SET(PACKAGE_NAME "LEO2D" CACHE STRING "package_name" FORCE)
+SET(PACKAGE_VERSION "1.0" CACHE STRING "package_version" FORCE)
+
+# set code language
+ENABLE_LANGUAGE(CXX)
+SET(CMAKE_CXX_COMPILER mpicxx)
+
+# setup packages
+
+option(LINK_FFTW "Look for FFTW3 libraries for old compilers" ON)
+option(MKL_INTEL "Using MKL Library with Intel compilers" ON)
+option(MKL_GNU "Using MKL Library with GNU compilers" OFF)
+option(MKL_OFF "No MKL usage (use Eigen instead)" OFF)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
+
+# (WITH MKL, INTEL)
+if(MKL_INTEL)
+	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -DUSE_MKL -I$ENV{MKLROOT}/include")
+endif()
+
+# (WITH MKL, GNU)
+if(MKL_GNU)
+	SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -DUSE_MKL")
+	SET(MKL_USE_SINGLE_DYNAMIC_LIBRARY 1)
+	find_package(MKL REQUIRED)
+endif()
+
+# (WITHOUT MKL)
+if(MKL_OFF)
+	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -Wno-unused-variable -Wno-unused-parameter")
+	find_package(Eigen3 REQUIRED)
+endif()
+
+#MESSAGE( STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH} )
+
+find_package(MPI)
+
+if (LINK_FFTW)
+	find_package(FFTW REQUIRED)
+	include_directories(${FFTW_INCLUDES})
+endif()
+
+# include required directories
+if(MKL_OFF)
+	include_directories(${MPI_INCLUDE_PATH} ${EIGEN3_INCLUDE_DIR})
+else()
+	include_directories(${MPI_INCLUDE_PATH} ${MKL_INCLUDE_DIR})
+endif()
+
+
+include(CMakeBackwardCompatibilityCXX)
+include(CheckLibraryExists)
+
+# link necessary subdirectory library paths
+
+add_subdirectory(src)
+add_subdirectory(app)

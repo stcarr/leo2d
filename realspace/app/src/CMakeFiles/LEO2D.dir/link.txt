@@ -1,0 +1,1 @@
+mpicxx  -std=c++11 -Wno-unused-variable -Wno-unused-parameter -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/LEO2D.dir/main.cpp.o  -o ../LEO2D  -L/Users/zoe/Desktop/CMT/leo2d/realspace/lib -Wl,-rpath,/Users/zoe/Desktop/CMT/leo2d/realspace/lib /usr/local/lib/libfftw3.a ../../lib/libleo2d.a /usr/local/lib/libfftw3.a 
