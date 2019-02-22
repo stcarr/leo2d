@@ -1,0 +1,1329 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C8F79E5C221E114400337449 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E5B221E114400337449 /* main.cpp */; };
+		C8F79F73221E115A00337449 /* feature_tests.c in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E7E221E115900337449 /* feature_tests.c */; };
+		C8F79F74221E115A00337449 /* CMakeCCompilerId.c in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E87221E115900337449 /* CMakeCCompilerId.c */; };
+		C8F79F75221E115A00337449 /* CMakeCXXCompilerId.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E8C221E115900337449 /* CMakeCXXCompilerId.cpp */; };
+		C8F79F76221E115A00337449 /* feature_tests.cxx in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E92221E115900337449 /* feature_tests.cxx */; };
+		C8F79F77221E115A00337449 /* materials.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E9A221E115900337449 /* materials.cpp */; };
+		C8F79F78221E115A00337449 /* TMDC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E9B221E115900337449 /* TMDC.cpp */; };
+		C8F79F79221E115A00337449 /* graphene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79E9D221E115900337449 /* graphene.cpp */; };
+		C8F79F7A221E115A00337449 /* read_mat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EA1221E115900337449 /* read_mat.cpp */; };
+		C8F79F7B221E115A00337449 /* strained_graphene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EA3221E115900337449 /* strained_graphene.cpp */; };
+		C8F79F7C221E115A00337449 /* ballistic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EA6221E115900337449 /* ballistic.cpp */; };
+		C8F79F7D221E115A00337449 /* momentum_coupling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EA9221E115900337449 /* momentum_coupling.cpp */; };
+		C8F79F7E221E115A00337449 /* intralayer_coupling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EAB221E115900337449 /* intralayer_coupling.cpp */; };
+		C8F79F7F221E115A00337449 /* TMDC.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EB2221E115900337449 /* TMDC.o */; };
+		C8F79F80221E115A00337449 /* materials.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EB3221E115900337449 /* materials.o */; };
+		C8F79F81221E115A00337449 /* strained_graphene.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EB4221E115900337449 /* strained_graphene.o */; };
+		C8F79F82221E115A00337449 /* graphene.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EB5221E115900337449 /* graphene.o */; };
+		C8F79F83221E115A00337449 /* read_mat.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EB6221E115900337449 /* read_mat.o */; };
+		C8F79F84221E115A00337449 /* ballistic.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EB8221E115900337449 /* ballistic.o */; };
+		C8F79F85221E115A00337449 /* intralayer_coupling.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EBB221E115900337449 /* intralayer_coupling.o */; };
+		C8F79F86221E115A00337449 /* momentum_coupling.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EBC221E115900337449 /* momentum_coupling.o */; };
+		C8F79F87221E115A00337449 /* mlmc_handler.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EBF221E115900337449 /* mlmc_handler.o */; };
+		C8F79F88221E115A00337449 /* sdata.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EC5221E115900337449 /* sdata.o */; };
+		C8F79F89221E115A00337449 /* hstruct.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EC6221E115900337449 /* hstruct.o */; };
+		C8F79F8A221E115A00337449 /* strain.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EC7221E115900337449 /* strain.o */; };
+		C8F79F8B221E115A00337449 /* sheet.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EC8221E115900337449 /* sheet.o */; };
+		C8F79F8C221E115A00337449 /* param_tools.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ECA221E115900337449 /* param_tools.o */; };
+		C8F79F8D221E115A00337449 /* job_params.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ECB221E115900337449 /* job_params.o */; };
+		C8F79F8E221E115A00337449 /* dmatrix.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ECF221E115900337449 /* dmatrix.o */; };
+		C8F79F8F221E115A00337449 /* spmatrix.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ED0221E115900337449 /* spmatrix.o */; };
+		C8F79F90221E115A00337449 /* locality_serial.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ED2221E115900337449 /* locality_serial.o */; };
+		C8F79F91221E115A00337449 /* matrix_gen.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ED3221E115900337449 /* matrix_gen.o */; };
+		C8F79F92221E115A00337449 /* locality.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79ED4221E115900337449 /* locality.o */; };
+		C8F79F93221E115A00337449 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C8F79ED7221E115900337449 /* Makefile */; };
+		C8F79F94221E115A00337449 /* mlmc_handler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EDA221E115900337449 /* mlmc_handler.cpp */; };
+		C8F79F95221E115A00337449 /* strain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EDE221E115900337449 /* strain.cpp */; };
+		C8F79F96221E115A00337449 /* sdata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EDF221E115900337449 /* sdata.cpp */; };
+		C8F79F97221E115A00337449 /* hstruct.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EE0221E115900337449 /* hstruct.cpp */; };
+		C8F79F98221E115A00337449 /* sheet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EE5221E115900337449 /* sheet.cpp */; };
+		C8F79F99221E115A00337449 /* job_params.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EE7221E115900337449 /* job_params.cpp */; };
+		C8F79F9A221E115A00337449 /* param_tools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EE8221E115900337449 /* param_tools.cpp */; };
+		C8F79F9B221E115A00337449 /* locality.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EEB221E115900337449 /* locality.cpp */; };
+		C8F79F9C221E115A00337449 /* spmatrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EED221E115900337449 /* spmatrix.cpp */; };
+		C8F79F9D221E115A00337449 /* dmatrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EF0221E115900337449 /* dmatrix.cpp */; };
+		C8F79F9E221E115A00337449 /* locality_serial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EF2221E115900337449 /* locality_serial.cpp */; };
+		C8F79F9F221E115A00337449 /* matrix_gen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79EF3221E115900337449 /* matrix_gen.cpp */; };
+		C8F79FA0221E115A00337449 /* libleo2d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79EF8221E115900337449 /* libleo2d.a */; };
+		C8F79FA1221E115A00337449 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F2A221E115900337449 /* Makefile */; };
+		C8F79FA2221E115A00337449 /* cheb_compute.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F2F221E115900337449 /* cheb_compute.m */; };
+		C8F79FA3221E115A00337449 /* cheb_scan.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F30221E115900337449 /* cheb_scan.m */; };
+		C8F79FA4221E115A00337449 /* build_intra_data.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F35221E115A00337449 /* build_intra_data.cpp */; };
+		C8F79FA5221E115A00337449 /* p_and_sigma_process.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F37221E115A00337449 /* p_and_sigma_process.m */; };
+		C8F79FA6221E115A00337449 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F49221E115A00337449 /* Makefile */; };
+		C8F79FA7221E115A00337449 /* main.cpp.o in Frameworks */ = {isa = PBXBuildFile; fileRef = C8F79F4F221E115A00337449 /* main.cpp.o */; };
+		C8F79FA8221E115A00337449 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F5B221E115A00337449 /* Makefile */; };
+		C8F79FA9221E115A00337449 /* main_serial.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F5D221E115A00337449 /* main_serial.cpp */; };
+		C8F79FAA221E115A00337449 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F5E221E115A00337449 /* main.cpp */; };
+		C8F79FAB221E115A00337449 /* plot_CCCM.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F61221E115A00337449 /* plot_CCCM.m */; };
+		C8F79FAC221E115A00337449 /* generate_samples.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F62221E115A00337449 /* generate_samples.m */; };
+		C8F79FAD221E115A00337449 /* Set_up_samples_MoS2.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F63221E115A00337449 /* Set_up_samples_MoS2.m */; };
+		C8F79FAE221E115A00337449 /* PostprocCCM.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F64221E115A00337449 /* PostprocCCM.m */; };
+		C8F79FAF221E115A00337449 /* PostprocDoSlevels.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F65221E115A00337449 /* PostprocDoSlevels.m */; };
+		C8F79FB0221E115A00337449 /* Set_Samples.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F66221E115A00337449 /* Set_Samples.m */; };
+		C8F79FB1221E115A00337449 /* PostprocCCMlevels.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F67221E115A00337449 /* PostprocCCMlevels.m */; };
+		C8F79FB2221E115A00337449 /* make_folder_merge_vacancies.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F68221E115A00337449 /* make_folder_merge_vacancies.m */; };
+		C8F79FB3221E115A00337449 /* make_hstruct_in.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F69221E115A00337449 /* make_hstruct_in.m */; };
+		C8F79FB4221E115A00337449 /* plot_idos.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F6A221E115A00337449 /* plot_idos.m */; };
+		C8F79FB5221E115A00337449 /* merge_v_files.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F6C221E115A00337449 /* merge_v_files.m */; };
+		C8F79FB6221E115A00337449 /* ReadHamiltonian.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F6D221E115A00337449 /* ReadHamiltonian.m */; };
+		C8F79FB7221E115A00337449 /* compute_dos.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F6E221E115A00337449 /* compute_dos.m */; };
+		C8F79FB8221E115A00337449 /* PrintProblemDefREADME.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F6F221E115A00337449 /* PrintProblemDefREADME.m */; };
+		C8F79FB9221E115A00337449 /* PrintProblemDef.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F70221E115A00337449 /* PrintProblemDef.m */; };
+		C8F79FBA221E115A00337449 /* PostprocKuboCalc.m in Sources */ = {isa = PBXBuildFile; fileRef = C8F79F71221E115A00337449 /* PostprocKuboCalc.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C8F79E56221E114400337449 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		C8F79E58221E114400337449 /* trilayer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = trilayer; sourceTree = BUILT_PRODUCTS_DIR; };
+		C8F79E5B221E114400337449 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		C8F79E64221E115900337449 /* 20 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 20; sourceTree = "<group>"; };
+		C8F79E65221E115900337449 /* 18 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 18; sourceTree = "<group>"; };
+		C8F79E66221E115900337449 /* 9 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 9; sourceTree = "<group>"; };
+		C8F79E67221E115900337449 /* 11 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 11; sourceTree = "<group>"; };
+		C8F79E68221E115900337449 /* 7 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 7; sourceTree = "<group>"; };
+		C8F79E69221E115900337449 /* 16 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 16; sourceTree = "<group>"; };
+		C8F79E6A221E115900337449 /* 6 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 6; sourceTree = "<group>"; };
+		C8F79E6B221E115900337449 /* 17 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 17; sourceTree = "<group>"; };
+		C8F79E6C221E115900337449 /* 10 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 10; sourceTree = "<group>"; };
+		C8F79E6D221E115900337449 /* 19 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 19; sourceTree = "<group>"; };
+		C8F79E6E221E115900337449 /* 8 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 8; sourceTree = "<group>"; };
+		C8F79E6F221E115900337449 /* 21 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 21; sourceTree = "<group>"; };
+		C8F79E70221E115900337449 /* 23 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 23; sourceTree = "<group>"; };
+		C8F79E71221E115900337449 /* 4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 4; sourceTree = "<group>"; };
+		C8F79E72221E115900337449 /* 15 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 15; sourceTree = "<group>"; };
+		C8F79E73221E115900337449 /* 3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 3; sourceTree = "<group>"; };
+		C8F79E74221E115900337449 /* 12 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 12; sourceTree = "<group>"; };
+		C8F79E75221E115900337449 /* count.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = count.txt; sourceTree = "<group>"; };
+		C8F79E76221E115900337449 /* 2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 2; sourceTree = "<group>"; };
+		C8F79E77221E115900337449 /* 13 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 13; sourceTree = "<group>"; };
+		C8F79E78221E115900337449 /* 5 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 5; sourceTree = "<group>"; };
+		C8F79E79221E115900337449 /* 14 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 14; sourceTree = "<group>"; };
+		C8F79E7A221E115900337449 /* 22 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 22; sourceTree = "<group>"; };
+		C8F79E7B221E115900337449 /* cmake.check_cache */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake.check_cache; sourceTree = "<group>"; };
+		C8F79E7C221E115900337449 /* CMakeOutput.log */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeOutput.log; sourceTree = "<group>"; };
+		C8F79E7D221E115900337449 /* feature_tests.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = feature_tests.bin; sourceTree = "<group>"; };
+		C8F79E7E221E115900337449 /* feature_tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = feature_tests.c; sourceTree = "<group>"; };
+		C8F79E7F221E115900337449 /* Makefile.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.cmake; sourceTree = "<group>"; };
+		C8F79E81221E115900337449 /* progress.marks */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = progress.marks; sourceTree = "<group>"; };
+		C8F79E82221E115900337449 /* TargetDirectories.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TargetDirectories.txt; sourceTree = "<group>"; };
+		C8F79E84221E115900337449 /* CMakeDetermineCompilerABI_CXX.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = CMakeDetermineCompilerABI_CXX.bin; sourceTree = "<group>"; };
+		C8F79E85221E115900337449 /* CMakeDetermineCompilerABI_C.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = CMakeDetermineCompilerABI_C.bin; sourceTree = "<group>"; };
+		C8F79E87221E115900337449 /* CMakeCCompilerId.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CMakeCCompilerId.c; sourceTree = "<group>"; };
+		C8F79E88221E115900337449 /* a.out */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = a.out; sourceTree = "<group>"; };
+		C8F79E8B221E115900337449 /* a.out */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = a.out; sourceTree = "<group>"; };
+		C8F79E8C221E115900337449 /* CMakeCXXCompilerId.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CMakeCXXCompilerId.cpp; sourceTree = "<group>"; };
+		C8F79E8E221E115900337449 /* CMakeCXXCompiler.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeCXXCompiler.cmake; sourceTree = "<group>"; };
+		C8F79E8F221E115900337449 /* CMakeCCompiler.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeCCompiler.cmake; sourceTree = "<group>"; };
+		C8F79E90221E115900337449 /* CMakeSystem.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeSystem.cmake; sourceTree = "<group>"; };
+		C8F79E91221E115900337449 /* CMakeDirectoryInformation.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeDirectoryInformation.cmake; sourceTree = "<group>"; };
+		C8F79E92221E115900337449 /* feature_tests.cxx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = feature_tests.cxx; sourceTree = "<group>"; };
+		C8F79E93221E115900337449 /* Makefile2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile2; sourceTree = "<group>"; };
+		C8F79E96221E115900337449 /* numbers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = numbers.h; sourceTree = "<group>"; };
+		C8F79E97221E115900337449 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
+		C8F79E99221E115900337449 /* TMDC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TMDC.h; sourceTree = "<group>"; };
+		C8F79E9A221E115900337449 /* materials.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = materials.cpp; sourceTree = "<group>"; };
+		C8F79E9B221E115900337449 /* TMDC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TMDC.cpp; sourceTree = "<group>"; };
+		C8F79E9C221E115900337449 /* materials.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = materials.h; sourceTree = "<group>"; };
+		C8F79E9D221E115900337449 /* graphene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = graphene.cpp; sourceTree = "<group>"; };
+		C8F79E9E221E115900337449 /* strained_graphene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = strained_graphene.h; sourceTree = "<group>"; };
+		C8F79E9F221E115900337449 /* graphene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = graphene.h; sourceTree = "<group>"; };
+		C8F79EA0221E115900337449 /* read_mat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = read_mat.h; sourceTree = "<group>"; };
+		C8F79EA1221E115900337449 /* read_mat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = read_mat.cpp; sourceTree = "<group>"; };
+		C8F79EA2221E115900337449 /* loaded_mat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = loaded_mat.h; sourceTree = "<group>"; };
+		C8F79EA3221E115900337449 /* strained_graphene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = strained_graphene.cpp; sourceTree = "<group>"; };
+		C8F79EA4221E115900337449 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		C8F79EA6221E115900337449 /* ballistic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ballistic.cpp; sourceTree = "<group>"; };
+		C8F79EA7221E115900337449 /* ballistic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ballistic.h; sourceTree = "<group>"; };
+		C8F79EA9221E115900337449 /* momentum_coupling.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = momentum_coupling.cpp; sourceTree = "<group>"; };
+		C8F79EAA221E115900337449 /* intralayer_coupling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = intralayer_coupling.h; sourceTree = "<group>"; };
+		C8F79EAB221E115900337449 /* intralayer_coupling.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = intralayer_coupling.cpp; sourceTree = "<group>"; };
+		C8F79EAC221E115900337449 /* momentum_coupling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = momentum_coupling.h; sourceTree = "<group>"; };
+		C8F79EAF221E115900337449 /* DependInfo.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DependInfo.cmake; sourceTree = "<group>"; };
+		C8F79EB0221E115900337449 /* depend.internal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = depend.internal; sourceTree = "<group>"; };
+		C8F79EB2221E115900337449 /* TMDC.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = TMDC.o; sourceTree = "<group>"; };
+		C8F79EB3221E115900337449 /* materials.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = materials.o; sourceTree = "<group>"; };
+		C8F79EB4221E115900337449 /* strained_graphene.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = strained_graphene.o; sourceTree = "<group>"; };
+		C8F79EB5221E115900337449 /* graphene.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = graphene.o; sourceTree = "<group>"; };
+		C8F79EB6221E115900337449 /* read_mat.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = read_mat.o; sourceTree = "<group>"; };
+		C8F79EB8221E115900337449 /* ballistic.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = ballistic.o; sourceTree = "<group>"; };
+		C8F79EB9221E115900337449 /* cmake_clean_target.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake_clean_target.cmake; sourceTree = "<group>"; };
+		C8F79EBB221E115900337449 /* intralayer_coupling.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = intralayer_coupling.o; sourceTree = "<group>"; };
+		C8F79EBC221E115900337449 /* momentum_coupling.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = momentum_coupling.o; sourceTree = "<group>"; };
+		C8F79EBD221E115900337449 /* depend.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = depend.make; sourceTree = "<group>"; };
+		C8F79EBF221E115900337449 /* mlmc_handler.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = mlmc_handler.o; sourceTree = "<group>"; };
+		C8F79EC0221E115900337449 /* cmake_clean.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake_clean.cmake; sourceTree = "<group>"; };
+		C8F79EC1221E115900337449 /* link.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = link.txt; sourceTree = "<group>"; };
+		C8F79EC2221E115900337449 /* progress.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = progress.make; sourceTree = "<group>"; };
+		C8F79EC3221E115900337449 /* CXX.includecache */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CXX.includecache; sourceTree = "<group>"; };
+		C8F79EC5221E115900337449 /* sdata.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = sdata.o; sourceTree = "<group>"; };
+		C8F79EC6221E115900337449 /* hstruct.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = hstruct.o; sourceTree = "<group>"; };
+		C8F79EC7221E115900337449 /* strain.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = strain.o; sourceTree = "<group>"; };
+		C8F79EC8221E115900337449 /* sheet.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = sheet.o; sourceTree = "<group>"; };
+		C8F79ECA221E115900337449 /* param_tools.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = param_tools.o; sourceTree = "<group>"; };
+		C8F79ECB221E115900337449 /* job_params.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = job_params.o; sourceTree = "<group>"; };
+		C8F79ECC221E115900337449 /* build.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = build.make; sourceTree = "<group>"; };
+		C8F79ECD221E115900337449 /* flags.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = flags.make; sourceTree = "<group>"; };
+		C8F79ECF221E115900337449 /* dmatrix.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = dmatrix.o; sourceTree = "<group>"; };
+		C8F79ED0221E115900337449 /* spmatrix.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = spmatrix.o; sourceTree = "<group>"; };
+		C8F79ED2221E115900337449 /* locality_serial.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = locality_serial.o; sourceTree = "<group>"; };
+		C8F79ED3221E115900337449 /* matrix_gen.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = matrix_gen.o; sourceTree = "<group>"; };
+		C8F79ED4221E115900337449 /* locality.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = locality.o; sourceTree = "<group>"; };
+		C8F79ED5221E115900337449 /* progress.marks */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = progress.marks; sourceTree = "<group>"; };
+		C8F79ED6221E115900337449 /* CMakeDirectoryInformation.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeDirectoryInformation.cmake; sourceTree = "<group>"; };
+		C8F79ED7221E115900337449 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		C8F79ED8221E115900337449 /* cmake_install.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake_install.cmake; sourceTree = "<group>"; };
+		C8F79EDA221E115900337449 /* mlmc_handler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mlmc_handler.cpp; sourceTree = "<group>"; };
+		C8F79EDB221E115900337449 /* mlmc_handler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mlmc_handler.h; sourceTree = "<group>"; };
+		C8F79EDC221E115900337449 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		C8F79EDE221E115900337449 /* strain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = strain.cpp; sourceTree = "<group>"; };
+		C8F79EDF221E115900337449 /* sdata.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sdata.cpp; sourceTree = "<group>"; };
+		C8F79EE0221E115900337449 /* hstruct.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hstruct.cpp; sourceTree = "<group>"; };
+		C8F79EE1221E115900337449 /* sdata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sdata.h; sourceTree = "<group>"; };
+		C8F79EE2221E115900337449 /* hstruct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hstruct.h; sourceTree = "<group>"; };
+		C8F79EE3221E115900337449 /* strain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = strain.h; sourceTree = "<group>"; };
+		C8F79EE4221E115900337449 /* sheet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sheet.h; sourceTree = "<group>"; };
+		C8F79EE5221E115900337449 /* sheet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sheet.cpp; sourceTree = "<group>"; };
+		C8F79EE7221E115900337449 /* job_params.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = job_params.cpp; sourceTree = "<group>"; };
+		C8F79EE8221E115900337449 /* param_tools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = param_tools.cpp; sourceTree = "<group>"; };
+		C8F79EE9221E115900337449 /* param_tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = param_tools.h; sourceTree = "<group>"; };
+		C8F79EEA221E115900337449 /* job_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = job_params.h; sourceTree = "<group>"; };
+		C8F79EEB221E115900337449 /* locality.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = locality.cpp; sourceTree = "<group>"; };
+		C8F79EED221E115900337449 /* spmatrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = spmatrix.cpp; sourceTree = "<group>"; };
+		C8F79EEE221E115900337449 /* dmatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dmatrix.h; sourceTree = "<group>"; };
+		C8F79EEF221E115900337449 /* spmatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spmatrix.h; sourceTree = "<group>"; };
+		C8F79EF0221E115900337449 /* dmatrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = dmatrix.cpp; sourceTree = "<group>"; };
+		C8F79EF2221E115900337449 /* locality_serial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = locality_serial.cpp; sourceTree = "<group>"; };
+		C8F79EF3221E115900337449 /* matrix_gen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = matrix_gen.cpp; sourceTree = "<group>"; };
+		C8F79EF4221E115900337449 /* locality_serial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = locality_serial.h; sourceTree = "<group>"; };
+		C8F79EF5221E115900337449 /* matrix_gen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = matrix_gen.h; sourceTree = "<group>"; };
+		C8F79EF6221E115900337449 /* locality.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = locality.h; sourceTree = "<group>"; };
+		C8F79EF8221E115900337449 /* libleo2d.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libleo2d.a; sourceTree = "<group>"; };
+		C8F79EFA221E115900337449 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		C8F79EFB221E115900337449 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CMakeLists.txt; path = ../realspace/CMakeLists.txt; sourceTree = "<group>"; };
+		C8F79EFD221E115900337449 /* tblg_test2.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_test2.in; sourceTree = "<group>"; };
+		C8F79EFE221E115900337449 /* parallel_debug_cmd.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = parallel_debug_cmd.txt; sourceTree = "<group>"; };
+		C8F79EFF221E115900337449 /* tblg_test3.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_test3.in; sourceTree = "<group>"; };
+		C8F79F00221E115900337449 /* tblg_test2.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_test2.test; sourceTree = "<group>"; };
+		C8F79F01221E115900337449 /* tblg_test3.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_test3.test; sourceTree = "<group>"; };
+		C8F79F02221E115900337449 /* tblg_test1.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_test1.test; sourceTree = "<group>"; };
+		C8F79F03221E115900337449 /* tblg_test1.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_test1.in; sourceTree = "<group>"; };
+		C8F79F07221E115900337449 /* vacancies.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vacancies.dat; sourceTree = "<group>"; };
+		C8F79F08221E115900337449 /* mos2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mos2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F09221E115900337449 /* mos2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mos2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F0B221E115900337449 /* ws2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ws2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F0D221E115900337449 /* tblg_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_hstruct.in; sourceTree = "<group>"; };
+		C8F79F0F221E115900337449 /* mos2_ws2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mos2_ws2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F11221E115900337449 /* ml_graphene_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ml_graphene_hstruct.in; sourceTree = "<group>"; };
+		C8F79F13221E115900337449 /* vacancies.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vacancies.dat; sourceTree = "<group>"; };
+		C8F79F14221E115900337449 /* ml_graphene_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ml_graphene_hstruct.in; sourceTree = "<group>"; };
+		C8F79F16221E115900337449 /* ml_graphene_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ml_graphene_hstruct.in; sourceTree = "<group>"; };
+		C8F79F18221E115900337449 /* wse2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = wse2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F1A221E115900337449 /* tblg_bulk_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tblg_bulk_hstruct.in; sourceTree = "<group>"; };
+		C8F79F1C221E115900337449 /* mos2_l2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mos2_l2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F1D221E115900337449 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		C8F79F1E221E115900337449 /* matrix_plotter.gnu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = matrix_plotter.gnu; sourceTree = "<group>"; };
+		C8F79F1F221E115900337449 /* mos2_l1_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mos2_l1_hstruct.in; sourceTree = "<group>"; };
+		C8F79F20221E115900337449 /* pos_debug.gnu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pos_debug.gnu; sourceTree = "<group>"; };
+		C8F79F21221E115900337449 /* vacancies_l2.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vacancies_l2.dat; sourceTree = "<group>"; };
+		C8F79F22221E115900337449 /* vacancies_l1.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vacancies_l1.dat; sourceTree = "<group>"; };
+		C8F79F24221E115900337449 /* mose2_wse2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mose2_wse2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F26221E115900337449 /* mos2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mos2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F28221E115900337449 /* mose2_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mose2_hstruct.in; sourceTree = "<group>"; };
+		C8F79F29221E115900337449 /* CMakeCache.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CMakeCache.txt; path = ../realspace/CMakeCache.txt; sourceTree = "<group>"; };
+		C8F79F2A221E115900337449 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; name = Makefile; path = ../realspace/Makefile; sourceTree = "<group>"; };
+		C8F79F2C221E115900337449 /* gnu_dos_plotter.gnu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = gnu_dos_plotter.gnu; sourceTree = "<group>"; };
+		C8F79F2D221E115900337449 /* pos_debug.gnu */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pos_debug.gnu; sourceTree = "<group>"; };
+		C8F79F2F221E115900337449 /* cheb_compute.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = cheb_compute.m; sourceTree = "<group>"; };
+		C8F79F30221E115900337449 /* cheb_scan.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = cheb_scan.m; sourceTree = "<group>"; };
+		C8F79F31221E115A00337449 /* cmake_install.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = cmake_install.cmake; path = ../realspace/cmake_install.cmake; sourceTree = "<group>"; };
+		C8F79F33221E115A00337449 /* Makefile_oldstyle */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile_oldstyle; sourceTree = "<group>"; };
+		C8F79F34221E115A00337449 /* transpose.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = transpose.sh; sourceTree = "<group>"; };
+		C8F79F35221E115A00337449 /* build_intra_data.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = build_intra_data.cpp; sourceTree = "<group>"; };
+		C8F79F36221E115A00337449 /* p_and_sigma_process.asv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = p_and_sigma_process.asv; sourceTree = "<group>"; };
+		C8F79F37221E115A00337449 /* p_and_sigma_process.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = p_and_sigma_process.m; sourceTree = "<group>"; };
+		C8F79F38221E115A00337449 /* hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = hstruct.in; sourceTree = "<group>"; };
+		C8F79F39221E115A00337449 /* Makefile.example */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Makefile.example; sourceTree = "<group>"; };
+		C8F79F3A221E115A00337449 /* run_script.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = run_script.sh; sourceTree = "<group>"; };
+		C8F79F3B221E115A00337449 /* bl_hstruct.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bl_hstruct.in; sourceTree = "<group>"; };
+		C8F79F3C221E115A00337449 /* p_and_sigma_sweep_run.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = p_and_sigma_sweep_run.py; sourceTree = "<group>"; };
+		C8F79F3D221E115A00337449 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README; path = ../realspace/README; sourceTree = "<group>"; };
+		C8F79F40221E115A00337449 /* FindFFTW.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FindFFTW.cmake; sourceTree = "<group>"; };
+		C8F79F41221E115A00337449 /* FindEigen3.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FindEigen3.cmake; sourceTree = "<group>"; };
+		C8F79F42221E115A00337449 /* FindMPI.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FindMPI.cmake; sourceTree = "<group>"; };
+		C8F79F43221E115A00337449 /* FindMKL.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FindMKL.cmake; sourceTree = "<group>"; };
+		C8F79F45221E115A00337449 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		C8F79F47221E115A00337449 /* progress.marks */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = progress.marks; sourceTree = "<group>"; };
+		C8F79F48221E115A00337449 /* CMakeDirectoryInformation.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeDirectoryInformation.cmake; sourceTree = "<group>"; };
+		C8F79F49221E115A00337449 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		C8F79F4A221E115A00337449 /* cmake_install.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake_install.cmake; sourceTree = "<group>"; };
+		C8F79F4C221E115A00337449 /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		C8F79F4F221E115A00337449 /* main.cpp.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = main.cpp.o; sourceTree = "<group>"; };
+		C8F79F50221E115A00337449 /* DependInfo.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = DependInfo.cmake; sourceTree = "<group>"; };
+		C8F79F51221E115A00337449 /* depend.internal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = depend.internal; sourceTree = "<group>"; };
+		C8F79F52221E115A00337449 /* depend.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = depend.make; sourceTree = "<group>"; };
+		C8F79F53221E115A00337449 /* cmake_clean.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake_clean.cmake; sourceTree = "<group>"; };
+		C8F79F54221E115A00337449 /* link.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = link.txt; sourceTree = "<group>"; };
+		C8F79F55221E115A00337449 /* progress.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = progress.make; sourceTree = "<group>"; };
+		C8F79F56221E115A00337449 /* CXX.includecache */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CXX.includecache; sourceTree = "<group>"; };
+		C8F79F57221E115A00337449 /* build.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = build.make; sourceTree = "<group>"; };
+		C8F79F58221E115A00337449 /* flags.make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = flags.make; sourceTree = "<group>"; };
+		C8F79F59221E115A00337449 /* progress.marks */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = progress.marks; sourceTree = "<group>"; };
+		C8F79F5A221E115A00337449 /* CMakeDirectoryInformation.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeDirectoryInformation.cmake; sourceTree = "<group>"; };
+		C8F79F5B221E115A00337449 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		C8F79F5C221E115A00337449 /* cmake_install.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cmake_install.cmake; sourceTree = "<group>"; };
+		C8F79F5D221E115A00337449 /* main_serial.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main_serial.cpp; sourceTree = "<group>"; };
+		C8F79F5E221E115A00337449 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		C8F79F61221E115A00337449 /* plot_CCCM.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = plot_CCCM.m; sourceTree = "<group>"; };
+		C8F79F62221E115A00337449 /* generate_samples.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = generate_samples.m; sourceTree = "<group>"; };
+		C8F79F63221E115A00337449 /* Set_up_samples_MoS2.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Set_up_samples_MoS2.m; sourceTree = "<group>"; };
+		C8F79F64221E115A00337449 /* PostprocCCM.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PostprocCCM.m; sourceTree = "<group>"; };
+		C8F79F65221E115A00337449 /* PostprocDoSlevels.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PostprocDoSlevels.m; sourceTree = "<group>"; };
+		C8F79F66221E115A00337449 /* Set_Samples.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Set_Samples.m; sourceTree = "<group>"; };
+		C8F79F67221E115A00337449 /* PostprocCCMlevels.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PostprocCCMlevels.m; sourceTree = "<group>"; };
+		C8F79F68221E115A00337449 /* make_folder_merge_vacancies.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = make_folder_merge_vacancies.m; sourceTree = "<group>"; };
+		C8F79F69221E115A00337449 /* make_hstruct_in.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = make_hstruct_in.m; sourceTree = "<group>"; };
+		C8F79F6A221E115A00337449 /* plot_idos.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = plot_idos.m; sourceTree = "<group>"; };
+		C8F79F6B221E115A00337449 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		C8F79F6C221E115A00337449 /* merge_v_files.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = merge_v_files.m; sourceTree = "<group>"; };
+		C8F79F6D221E115A00337449 /* ReadHamiltonian.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReadHamiltonian.m; sourceTree = "<group>"; };
+		C8F79F6E221E115A00337449 /* compute_dos.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = compute_dos.m; sourceTree = "<group>"; };
+		C8F79F6F221E115A00337449 /* PrintProblemDefREADME.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PrintProblemDefREADME.m; sourceTree = "<group>"; };
+		C8F79F70221E115A00337449 /* PrintProblemDef.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PrintProblemDef.m; sourceTree = "<group>"; };
+		C8F79F71221E115A00337449 /* PostprocKuboCalc.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PostprocKuboCalc.m; sourceTree = "<group>"; };
+		C8F79F72221E115A00337449 /* CMakeLists_template.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = CMakeLists_template.txt; path = ../realspace/CMakeLists_template.txt; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C8F79E55221E114400337449 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C8F79F8D221E115A00337449 /* job_params.o in Frameworks */,
+				C8F79F83221E115A00337449 /* read_mat.o in Frameworks */,
+				C8F79F85221E115A00337449 /* intralayer_coupling.o in Frameworks */,
+				C8F79F91221E115A00337449 /* matrix_gen.o in Frameworks */,
+				C8F79F8B221E115A00337449 /* sheet.o in Frameworks */,
+				C8F79F86221E115A00337449 /* momentum_coupling.o in Frameworks */,
+				C8F79F80221E115A00337449 /* materials.o in Frameworks */,
+				C8F79F87221E115A00337449 /* mlmc_handler.o in Frameworks */,
+				C8F79F92221E115A00337449 /* locality.o in Frameworks */,
+				C8F79FA0221E115A00337449 /* libleo2d.a in Frameworks */,
+				C8F79F82221E115A00337449 /* graphene.o in Frameworks */,
+				C8F79F8C221E115A00337449 /* param_tools.o in Frameworks */,
+				C8F79F8F221E115A00337449 /* spmatrix.o in Frameworks */,
+				C8F79FA7221E115A00337449 /* main.cpp.o in Frameworks */,
+				C8F79F8A221E115A00337449 /* strain.o in Frameworks */,
+				C8F79F84221E115A00337449 /* ballistic.o in Frameworks */,
+				C8F79F81221E115A00337449 /* strained_graphene.o in Frameworks */,
+				C8F79F7F221E115A00337449 /* TMDC.o in Frameworks */,
+				C8F79F90221E115A00337449 /* locality_serial.o in Frameworks */,
+				C8F79F89221E115A00337449 /* hstruct.o in Frameworks */,
+				C8F79F88221E115A00337449 /* sdata.o in Frameworks */,
+				C8F79F8E221E115A00337449 /* dmatrix.o in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C8F79E4F221E114400337449 = {
+			isa = PBXGroup;
+			children = (
+				C8F79F44221E115A00337449 /* app */,
+				C8F79F3E221E115A00337449 /* cmake */,
+				C8F79F31221E115A00337449 /* cmake_install.cmake */,
+				C8F79F29221E115900337449 /* CMakeCache.txt */,
+				C8F79E62221E115900337449 /* CMakeFiles */,
+				C8F79F72221E115A00337449 /* CMakeLists_template.txt */,
+				C8F79EFB221E115900337449 /* CMakeLists.txt */,
+				C8F79F2B221E115900337449 /* debug_tools */,
+				C8F79F04221E115900337449 /* examples */,
+				C8F79EF7221E115900337449 /* lib */,
+				C8F79F2A221E115900337449 /* Makefile */,
+				C8F79F2E221E115900337449 /* matlab_post */,
+				C8F79EF9221E115900337449 /* obj */,
+				C8F79F32221E115A00337449 /* old_files */,
+				C8F79F3D221E115A00337449 /* README */,
+				C8F79F5F221E115A00337449 /* scripts */,
+				C8F79E94221E115900337449 /* src */,
+				C8F79EFC221E115900337449 /* tests */,
+				C8F79E5A221E114400337449 /* trilayer */,
+				C8F79E59221E114400337449 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C8F79E59221E114400337449 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E58221E114400337449 /* trilayer */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C8F79E5A221E114400337449 /* trilayer */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E5B221E114400337449 /* main.cpp */,
+			);
+			path = trilayer;
+			sourceTree = "<group>";
+		};
+		C8F79E62221E115900337449 /* CMakeFiles */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E63221E115900337449 /* Progress */,
+				C8F79E7B221E115900337449 /* cmake.check_cache */,
+				C8F79E7C221E115900337449 /* CMakeOutput.log */,
+				C8F79E7D221E115900337449 /* feature_tests.bin */,
+				C8F79E7E221E115900337449 /* feature_tests.c */,
+				C8F79E7F221E115900337449 /* Makefile.cmake */,
+				C8F79E80221E115900337449 /* CMakeTmp */,
+				C8F79E81221E115900337449 /* progress.marks */,
+				C8F79E82221E115900337449 /* TargetDirectories.txt */,
+				C8F79E83221E115900337449 /* 3.13.4 */,
+				C8F79E91221E115900337449 /* CMakeDirectoryInformation.cmake */,
+				C8F79E92221E115900337449 /* feature_tests.cxx */,
+				C8F79E93221E115900337449 /* Makefile2 */,
+			);
+			name = CMakeFiles;
+			path = ../realspace/CMakeFiles;
+			sourceTree = "<group>";
+		};
+		C8F79E63221E115900337449 /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E64221E115900337449 /* 20 */,
+				C8F79E65221E115900337449 /* 18 */,
+				C8F79E66221E115900337449 /* 9 */,
+				C8F79E67221E115900337449 /* 11 */,
+				C8F79E68221E115900337449 /* 7 */,
+				C8F79E69221E115900337449 /* 16 */,
+				C8F79E6A221E115900337449 /* 6 */,
+				C8F79E6B221E115900337449 /* 17 */,
+				C8F79E6C221E115900337449 /* 10 */,
+				C8F79E6D221E115900337449 /* 19 */,
+				C8F79E6E221E115900337449 /* 8 */,
+				C8F79E6F221E115900337449 /* 21 */,
+				C8F79E70221E115900337449 /* 23 */,
+				C8F79E71221E115900337449 /* 4 */,
+				C8F79E72221E115900337449 /* 15 */,
+				C8F79E73221E115900337449 /* 3 */,
+				C8F79E74221E115900337449 /* 12 */,
+				C8F79E75221E115900337449 /* count.txt */,
+				C8F79E76221E115900337449 /* 2 */,
+				C8F79E77221E115900337449 /* 13 */,
+				C8F79E78221E115900337449 /* 5 */,
+				C8F79E79221E115900337449 /* 14 */,
+				C8F79E7A221E115900337449 /* 22 */,
+			);
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		C8F79E80221E115900337449 /* CMakeTmp */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = CMakeTmp;
+			sourceTree = "<group>";
+		};
+		C8F79E83221E115900337449 /* 3.13.4 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E84221E115900337449 /* CMakeDetermineCompilerABI_CXX.bin */,
+				C8F79E85221E115900337449 /* CMakeDetermineCompilerABI_C.bin */,
+				C8F79E86221E115900337449 /* CompilerIdC */,
+				C8F79E8A221E115900337449 /* CompilerIdCXX */,
+				C8F79E8E221E115900337449 /* CMakeCXXCompiler.cmake */,
+				C8F79E8F221E115900337449 /* CMakeCCompiler.cmake */,
+				C8F79E90221E115900337449 /* CMakeSystem.cmake */,
+			);
+			path = 3.13.4;
+			sourceTree = "<group>";
+		};
+		C8F79E86221E115900337449 /* CompilerIdC */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E87221E115900337449 /* CMakeCCompilerId.c */,
+				C8F79E88221E115900337449 /* a.out */,
+				C8F79E89221E115900337449 /* tmp */,
+			);
+			path = CompilerIdC;
+			sourceTree = "<group>";
+		};
+		C8F79E89221E115900337449 /* tmp */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = tmp;
+			sourceTree = "<group>";
+		};
+		C8F79E8A221E115900337449 /* CompilerIdCXX */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E8B221E115900337449 /* a.out */,
+				C8F79E8C221E115900337449 /* CMakeCXXCompilerId.cpp */,
+				C8F79E8D221E115900337449 /* tmp */,
+			);
+			path = CompilerIdCXX;
+			sourceTree = "<group>";
+		};
+		C8F79E8D221E115900337449 /* tmp */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = tmp;
+			sourceTree = "<group>";
+		};
+		C8F79E94221E115900337449 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E95221E115900337449 /* tools */,
+				C8F79E98221E115900337449 /* materials */,
+				C8F79EA4221E115900337449 /* CMakeLists.txt */,
+				C8F79EA5221E115900337449 /* transport */,
+				C8F79EA8221E115900337449 /* momentum */,
+				C8F79EAD221E115900337449 /* CMakeFiles */,
+				C8F79ED7221E115900337449 /* Makefile */,
+				C8F79ED8221E115900337449 /* cmake_install.cmake */,
+				C8F79ED9221E115900337449 /* mlmc */,
+				C8F79EDC221E115900337449 /* README */,
+				C8F79EDD221E115900337449 /* geom */,
+				C8F79EE6221E115900337449 /* params */,
+				C8F79EEB221E115900337449 /* locality.cpp */,
+				C8F79EEC221E115900337449 /* matrix */,
+				C8F79EF1221E115900337449 /* serial */,
+				C8F79EF6221E115900337449 /* locality.h */,
+			);
+			name = src;
+			path = ../realspace/src;
+			sourceTree = "<group>";
+		};
+		C8F79E95221E115900337449 /* tools */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E96221E115900337449 /* numbers.h */,
+				C8F79E97221E115900337449 /* types.h */,
+			);
+			path = tools;
+			sourceTree = "<group>";
+		};
+		C8F79E98221E115900337449 /* materials */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79E99221E115900337449 /* TMDC.h */,
+				C8F79E9A221E115900337449 /* materials.cpp */,
+				C8F79E9B221E115900337449 /* TMDC.cpp */,
+				C8F79E9C221E115900337449 /* materials.h */,
+				C8F79E9D221E115900337449 /* graphene.cpp */,
+				C8F79E9E221E115900337449 /* strained_graphene.h */,
+				C8F79E9F221E115900337449 /* graphene.h */,
+				C8F79EA0221E115900337449 /* read_mat.h */,
+				C8F79EA1221E115900337449 /* read_mat.cpp */,
+				C8F79EA2221E115900337449 /* loaded_mat.h */,
+				C8F79EA3221E115900337449 /* strained_graphene.cpp */,
+			);
+			path = materials;
+			sourceTree = "<group>";
+		};
+		C8F79EA5221E115900337449 /* transport */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EA6221E115900337449 /* ballistic.cpp */,
+				C8F79EA7221E115900337449 /* ballistic.h */,
+			);
+			path = transport;
+			sourceTree = "<group>";
+		};
+		C8F79EA8221E115900337449 /* momentum */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EA9221E115900337449 /* momentum_coupling.cpp */,
+				C8F79EAA221E115900337449 /* intralayer_coupling.h */,
+				C8F79EAB221E115900337449 /* intralayer_coupling.cpp */,
+				C8F79EAC221E115900337449 /* momentum_coupling.h */,
+			);
+			path = momentum;
+			sourceTree = "<group>";
+		};
+		C8F79EAD221E115900337449 /* CMakeFiles */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EAE221E115900337449 /* leo2d.dir */,
+				C8F79ED5221E115900337449 /* progress.marks */,
+				C8F79ED6221E115900337449 /* CMakeDirectoryInformation.cmake */,
+			);
+			path = CMakeFiles;
+			sourceTree = "<group>";
+		};
+		C8F79EAE221E115900337449 /* leo2d.dir */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EAF221E115900337449 /* DependInfo.cmake */,
+				C8F79EB0221E115900337449 /* depend.internal */,
+				C8F79EB1221E115900337449 /* materials */,
+				C8F79EB7221E115900337449 /* transport */,
+				C8F79EB9221E115900337449 /* cmake_clean_target.cmake */,
+				C8F79EBA221E115900337449 /* momentum */,
+				C8F79EBD221E115900337449 /* depend.make */,
+				C8F79EBE221E115900337449 /* mlmc */,
+				C8F79EC0221E115900337449 /* cmake_clean.cmake */,
+				C8F79EC1221E115900337449 /* link.txt */,
+				C8F79EC2221E115900337449 /* progress.make */,
+				C8F79EC3221E115900337449 /* CXX.includecache */,
+				C8F79EC4221E115900337449 /* geom */,
+				C8F79EC9221E115900337449 /* params */,
+				C8F79ECC221E115900337449 /* build.make */,
+				C8F79ECD221E115900337449 /* flags.make */,
+				C8F79ECE221E115900337449 /* matrix */,
+				C8F79ED1221E115900337449 /* serial */,
+				C8F79ED4221E115900337449 /* locality.o */,
+			);
+			path = leo2d.dir;
+			sourceTree = "<group>";
+		};
+		C8F79EB1221E115900337449 /* materials */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EB2221E115900337449 /* TMDC.o */,
+				C8F79EB3221E115900337449 /* materials.o */,
+				C8F79EB4221E115900337449 /* strained_graphene.o */,
+				C8F79EB5221E115900337449 /* graphene.o */,
+				C8F79EB6221E115900337449 /* read_mat.o */,
+			);
+			path = materials;
+			sourceTree = "<group>";
+		};
+		C8F79EB7221E115900337449 /* transport */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EB8221E115900337449 /* ballistic.o */,
+			);
+			path = transport;
+			sourceTree = "<group>";
+		};
+		C8F79EBA221E115900337449 /* momentum */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EBB221E115900337449 /* intralayer_coupling.o */,
+				C8F79EBC221E115900337449 /* momentum_coupling.o */,
+			);
+			path = momentum;
+			sourceTree = "<group>";
+		};
+		C8F79EBE221E115900337449 /* mlmc */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EBF221E115900337449 /* mlmc_handler.o */,
+			);
+			path = mlmc;
+			sourceTree = "<group>";
+		};
+		C8F79EC4221E115900337449 /* geom */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EC5221E115900337449 /* sdata.o */,
+				C8F79EC6221E115900337449 /* hstruct.o */,
+				C8F79EC7221E115900337449 /* strain.o */,
+				C8F79EC8221E115900337449 /* sheet.o */,
+			);
+			path = geom;
+			sourceTree = "<group>";
+		};
+		C8F79EC9221E115900337449 /* params */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79ECA221E115900337449 /* param_tools.o */,
+				C8F79ECB221E115900337449 /* job_params.o */,
+			);
+			path = params;
+			sourceTree = "<group>";
+		};
+		C8F79ECE221E115900337449 /* matrix */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79ECF221E115900337449 /* dmatrix.o */,
+				C8F79ED0221E115900337449 /* spmatrix.o */,
+			);
+			path = matrix;
+			sourceTree = "<group>";
+		};
+		C8F79ED1221E115900337449 /* serial */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79ED2221E115900337449 /* locality_serial.o */,
+				C8F79ED3221E115900337449 /* matrix_gen.o */,
+			);
+			path = serial;
+			sourceTree = "<group>";
+		};
+		C8F79ED9221E115900337449 /* mlmc */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EDA221E115900337449 /* mlmc_handler.cpp */,
+				C8F79EDB221E115900337449 /* mlmc_handler.h */,
+			);
+			path = mlmc;
+			sourceTree = "<group>";
+		};
+		C8F79EDD221E115900337449 /* geom */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EDE221E115900337449 /* strain.cpp */,
+				C8F79EDF221E115900337449 /* sdata.cpp */,
+				C8F79EE0221E115900337449 /* hstruct.cpp */,
+				C8F79EE1221E115900337449 /* sdata.h */,
+				C8F79EE2221E115900337449 /* hstruct.h */,
+				C8F79EE3221E115900337449 /* strain.h */,
+				C8F79EE4221E115900337449 /* sheet.h */,
+				C8F79EE5221E115900337449 /* sheet.cpp */,
+			);
+			path = geom;
+			sourceTree = "<group>";
+		};
+		C8F79EE6221E115900337449 /* params */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EE7221E115900337449 /* job_params.cpp */,
+				C8F79EE8221E115900337449 /* param_tools.cpp */,
+				C8F79EE9221E115900337449 /* param_tools.h */,
+				C8F79EEA221E115900337449 /* job_params.h */,
+			);
+			path = params;
+			sourceTree = "<group>";
+		};
+		C8F79EEC221E115900337449 /* matrix */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EED221E115900337449 /* spmatrix.cpp */,
+				C8F79EEE221E115900337449 /* dmatrix.h */,
+				C8F79EEF221E115900337449 /* spmatrix.h */,
+				C8F79EF0221E115900337449 /* dmatrix.cpp */,
+			);
+			path = matrix;
+			sourceTree = "<group>";
+		};
+		C8F79EF1221E115900337449 /* serial */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EF2221E115900337449 /* locality_serial.cpp */,
+				C8F79EF3221E115900337449 /* matrix_gen.cpp */,
+				C8F79EF4221E115900337449 /* locality_serial.h */,
+				C8F79EF5221E115900337449 /* matrix_gen.h */,
+			);
+			path = serial;
+			sourceTree = "<group>";
+		};
+		C8F79EF7221E115900337449 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EF8221E115900337449 /* libleo2d.a */,
+			);
+			name = lib;
+			path = ../realspace/lib;
+			sourceTree = "<group>";
+		};
+		C8F79EF9221E115900337449 /* obj */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EFA221E115900337449 /* README */,
+			);
+			name = obj;
+			path = ../realspace/obj;
+			sourceTree = "<group>";
+		};
+		C8F79EFC221E115900337449 /* tests */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79EFD221E115900337449 /* tblg_test2.in */,
+				C8F79EFE221E115900337449 /* parallel_debug_cmd.txt */,
+				C8F79EFF221E115900337449 /* tblg_test3.in */,
+				C8F79F00221E115900337449 /* tblg_test2.test */,
+				C8F79F01221E115900337449 /* tblg_test3.test */,
+				C8F79F02221E115900337449 /* tblg_test1.test */,
+				C8F79F03221E115900337449 /* tblg_test1.in */,
+			);
+			name = tests;
+			path = ../realspace/tests;
+			sourceTree = "<group>";
+		};
+		C8F79F04221E115900337449 /* examples */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F05221E115900337449 /* mlmos2 */,
+				C8F79F0A221E115900337449 /* biws2 */,
+				C8F79F0C221E115900337449 /* tblg */,
+				C8F79F0E221E115900337449 /* mos2_ws2 */,
+				C8F79F10221E115900337449 /* mlgraphene */,
+				C8F79F17221E115900337449 /* biwse2 */,
+				C8F79F19221E115900337449 /* tblg_on_bulk */,
+				C8F79F1B221E115900337449 /* mlmc_mos2 */,
+				C8F79F23221E115900337449 /* mose2_wse2 */,
+				C8F79F25221E115900337449 /* bimos2 */,
+				C8F79F27221E115900337449 /* bimose2 */,
+			);
+			name = examples;
+			path = ../realspace/examples;
+			sourceTree = "<group>";
+		};
+		C8F79F05221E115900337449 /* mlmos2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F06221E115900337449 /* vacancies_from_file */,
+				C8F79F09221E115900337449 /* mos2_hstruct.in */,
+			);
+			path = mlmos2;
+			sourceTree = "<group>";
+		};
+		C8F79F06221E115900337449 /* vacancies_from_file */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F07221E115900337449 /* vacancies.dat */,
+				C8F79F08221E115900337449 /* mos2_hstruct.in */,
+			);
+			path = vacancies_from_file;
+			sourceTree = "<group>";
+		};
+		C8F79F0A221E115900337449 /* biws2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F0B221E115900337449 /* ws2_hstruct.in */,
+			);
+			path = biws2;
+			sourceTree = "<group>";
+		};
+		C8F79F0C221E115900337449 /* tblg */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F0D221E115900337449 /* tblg_hstruct.in */,
+			);
+			path = tblg;
+			sourceTree = "<group>";
+		};
+		C8F79F0E221E115900337449 /* mos2_ws2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F0F221E115900337449 /* mos2_ws2_hstruct.in */,
+			);
+			path = mos2_ws2;
+			sourceTree = "<group>";
+		};
+		C8F79F10221E115900337449 /* mlgraphene */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F11221E115900337449 /* ml_graphene_hstruct.in */,
+				C8F79F12221E115900337449 /* vacancies_from_file */,
+				C8F79F15221E115900337449 /* sq_sampling */,
+			);
+			path = mlgraphene;
+			sourceTree = "<group>";
+		};
+		C8F79F12221E115900337449 /* vacancies_from_file */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F13221E115900337449 /* vacancies.dat */,
+				C8F79F14221E115900337449 /* ml_graphene_hstruct.in */,
+			);
+			path = vacancies_from_file;
+			sourceTree = "<group>";
+		};
+		C8F79F15221E115900337449 /* sq_sampling */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F16221E115900337449 /* ml_graphene_hstruct.in */,
+			);
+			path = sq_sampling;
+			sourceTree = "<group>";
+		};
+		C8F79F17221E115900337449 /* biwse2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F18221E115900337449 /* wse2_hstruct.in */,
+			);
+			path = biwse2;
+			sourceTree = "<group>";
+		};
+		C8F79F19221E115900337449 /* tblg_on_bulk */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F1A221E115900337449 /* tblg_bulk_hstruct.in */,
+			);
+			path = tblg_on_bulk;
+			sourceTree = "<group>";
+		};
+		C8F79F1B221E115900337449 /* mlmc_mos2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F1C221E115900337449 /* mos2_l2_hstruct.in */,
+				C8F79F1D221E115900337449 /* README */,
+				C8F79F1E221E115900337449 /* matrix_plotter.gnu */,
+				C8F79F1F221E115900337449 /* mos2_l1_hstruct.in */,
+				C8F79F20221E115900337449 /* pos_debug.gnu */,
+				C8F79F21221E115900337449 /* vacancies_l2.dat */,
+				C8F79F22221E115900337449 /* vacancies_l1.dat */,
+			);
+			path = mlmc_mos2;
+			sourceTree = "<group>";
+		};
+		C8F79F23221E115900337449 /* mose2_wse2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F24221E115900337449 /* mose2_wse2_hstruct.in */,
+			);
+			path = mose2_wse2;
+			sourceTree = "<group>";
+		};
+		C8F79F25221E115900337449 /* bimos2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F26221E115900337449 /* mos2_hstruct.in */,
+			);
+			path = bimos2;
+			sourceTree = "<group>";
+		};
+		C8F79F27221E115900337449 /* bimose2 */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F28221E115900337449 /* mose2_hstruct.in */,
+			);
+			path = bimose2;
+			sourceTree = "<group>";
+		};
+		C8F79F2B221E115900337449 /* debug_tools */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F2C221E115900337449 /* gnu_dos_plotter.gnu */,
+				C8F79F2D221E115900337449 /* pos_debug.gnu */,
+			);
+			name = debug_tools;
+			path = ../realspace/debug_tools;
+			sourceTree = "<group>";
+		};
+		C8F79F2E221E115900337449 /* matlab_post */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F2F221E115900337449 /* cheb_compute.m */,
+				C8F79F30221E115900337449 /* cheb_scan.m */,
+			);
+			name = matlab_post;
+			path = ../realspace/matlab_post;
+			sourceTree = "<group>";
+		};
+		C8F79F32221E115A00337449 /* old_files */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F33221E115A00337449 /* Makefile_oldstyle */,
+				C8F79F34221E115A00337449 /* transpose.sh */,
+				C8F79F35221E115A00337449 /* build_intra_data.cpp */,
+				C8F79F36221E115A00337449 /* p_and_sigma_process.asv */,
+				C8F79F37221E115A00337449 /* p_and_sigma_process.m */,
+				C8F79F38221E115A00337449 /* hstruct.in */,
+				C8F79F39221E115A00337449 /* Makefile.example */,
+				C8F79F3A221E115A00337449 /* run_script.sh */,
+				C8F79F3B221E115A00337449 /* bl_hstruct.in */,
+				C8F79F3C221E115A00337449 /* p_and_sigma_sweep_run.py */,
+			);
+			name = old_files;
+			path = ../realspace/old_files;
+			sourceTree = "<group>";
+		};
+		C8F79F3E221E115A00337449 /* cmake */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F3F221E115A00337449 /* module */,
+			);
+			name = cmake;
+			path = ../realspace/cmake;
+			sourceTree = "<group>";
+		};
+		C8F79F3F221E115A00337449 /* module */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F40221E115A00337449 /* FindFFTW.cmake */,
+				C8F79F41221E115A00337449 /* FindEigen3.cmake */,
+				C8F79F42221E115A00337449 /* FindMPI.cmake */,
+				C8F79F43221E115A00337449 /* FindMKL.cmake */,
+			);
+			path = module;
+			sourceTree = "<group>";
+		};
+		C8F79F44221E115A00337449 /* app */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F45221E115A00337449 /* CMakeLists.txt */,
+				C8F79F46221E115A00337449 /* CMakeFiles */,
+				C8F79F49221E115A00337449 /* Makefile */,
+				C8F79F4A221E115A00337449 /* cmake_install.cmake */,
+				C8F79F4B221E115A00337449 /* src */,
+			);
+			name = app;
+			path = ../realspace/app;
+			sourceTree = "<group>";
+		};
+		C8F79F46221E115A00337449 /* CMakeFiles */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F47221E115A00337449 /* progress.marks */,
+				C8F79F48221E115A00337449 /* CMakeDirectoryInformation.cmake */,
+			);
+			path = CMakeFiles;
+			sourceTree = "<group>";
+		};
+		C8F79F4B221E115A00337449 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F4C221E115A00337449 /* CMakeLists.txt */,
+				C8F79F4D221E115A00337449 /* CMakeFiles */,
+				C8F79F5B221E115A00337449 /* Makefile */,
+				C8F79F5C221E115A00337449 /* cmake_install.cmake */,
+				C8F79F5D221E115A00337449 /* main_serial.cpp */,
+				C8F79F5E221E115A00337449 /* main.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		C8F79F4D221E115A00337449 /* CMakeFiles */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F4E221E115A00337449 /* LEO2D.dir */,
+				C8F79F59221E115A00337449 /* progress.marks */,
+				C8F79F5A221E115A00337449 /* CMakeDirectoryInformation.cmake */,
+			);
+			path = CMakeFiles;
+			sourceTree = "<group>";
+		};
+		C8F79F4E221E115A00337449 /* LEO2D.dir */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F4F221E115A00337449 /* main.cpp.o */,
+				C8F79F50221E115A00337449 /* DependInfo.cmake */,
+				C8F79F51221E115A00337449 /* depend.internal */,
+				C8F79F52221E115A00337449 /* depend.make */,
+				C8F79F53221E115A00337449 /* cmake_clean.cmake */,
+				C8F79F54221E115A00337449 /* link.txt */,
+				C8F79F55221E115A00337449 /* progress.make */,
+				C8F79F56221E115A00337449 /* CXX.includecache */,
+				C8F79F57221E115A00337449 /* build.make */,
+				C8F79F58221E115A00337449 /* flags.make */,
+			);
+			path = LEO2D.dir;
+			sourceTree = "<group>";
+		};
+		C8F79F5F221E115A00337449 /* scripts */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F60221E115A00337449 /* mlmc_vacancies */,
+			);
+			name = scripts;
+			path = ../realspace/scripts;
+			sourceTree = "<group>";
+		};
+		C8F79F60221E115A00337449 /* mlmc_vacancies */ = {
+			isa = PBXGroup;
+			children = (
+				C8F79F61221E115A00337449 /* plot_CCCM.m */,
+				C8F79F62221E115A00337449 /* generate_samples.m */,
+				C8F79F63221E115A00337449 /* Set_up_samples_MoS2.m */,
+				C8F79F64221E115A00337449 /* PostprocCCM.m */,
+				C8F79F65221E115A00337449 /* PostprocDoSlevels.m */,
+				C8F79F66221E115A00337449 /* Set_Samples.m */,
+				C8F79F67221E115A00337449 /* PostprocCCMlevels.m */,
+				C8F79F68221E115A00337449 /* make_folder_merge_vacancies.m */,
+				C8F79F69221E115A00337449 /* make_hstruct_in.m */,
+				C8F79F6A221E115A00337449 /* plot_idos.m */,
+				C8F79F6B221E115A00337449 /* README */,
+				C8F79F6C221E115A00337449 /* merge_v_files.m */,
+				C8F79F6D221E115A00337449 /* ReadHamiltonian.m */,
+				C8F79F6E221E115A00337449 /* compute_dos.m */,
+				C8F79F6F221E115A00337449 /* PrintProblemDefREADME.m */,
+				C8F79F70221E115A00337449 /* PrintProblemDef.m */,
+				C8F79F71221E115A00337449 /* PostprocKuboCalc.m */,
+			);
+			path = mlmc_vacancies;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C8F79E57221E114400337449 /* trilayer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C8F79E5F221E114400337449 /* Build configuration list for PBXNativeTarget "trilayer" */;
+			buildPhases = (
+				C8F79E54221E114400337449 /* Sources */,
+				C8F79E55221E114400337449 /* Frameworks */,
+				C8F79E56221E114400337449 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = trilayer;
+			productName = trilayer;
+			productReference = C8F79E58221E114400337449 /* trilayer */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C8F79E50221E114400337449 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1000;
+				ORGANIZATIONNAME = Harvard;
+				TargetAttributes = {
+					C8F79E57221E114400337449 = {
+						CreatedOnToolsVersion = 10.0;
+					};
+				};
+			};
+			buildConfigurationList = C8F79E53221E114400337449 /* Build configuration list for PBXProject "trilayer" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = C8F79E4F221E114400337449;
+			productRefGroup = C8F79E59221E114400337449 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C8F79E57221E114400337449 /* trilayer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C8F79E54221E114400337449 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C8F79F74221E115A00337449 /* CMakeCCompilerId.c in Sources */,
+				C8F79FA3221E115A00337449 /* cheb_scan.m in Sources */,
+				C8F79FB4221E115A00337449 /* plot_idos.m in Sources */,
+				C8F79F7B221E115A00337449 /* strained_graphene.cpp in Sources */,
+				C8F79FA8221E115A00337449 /* Makefile in Sources */,
+				C8F79FAD221E115A00337449 /* Set_up_samples_MoS2.m in Sources */,
+				C8F79FB8221E115A00337449 /* PrintProblemDefREADME.m in Sources */,
+				C8F79FB9221E115A00337449 /* PrintProblemDef.m in Sources */,
+				C8F79F9C221E115A00337449 /* spmatrix.cpp in Sources */,
+				C8F79FA2221E115A00337449 /* cheb_compute.m in Sources */,
+				C8F79FB0221E115A00337449 /* Set_Samples.m in Sources */,
+				C8F79F7C221E115A00337449 /* ballistic.cpp in Sources */,
+				C8F79FA6221E115A00337449 /* Makefile in Sources */,
+				C8F79FB1221E115A00337449 /* PostprocCCMlevels.m in Sources */,
+				C8F79F78221E115A00337449 /* TMDC.cpp in Sources */,
+				C8F79FB6221E115A00337449 /* ReadHamiltonian.m in Sources */,
+				C8F79F9E221E115A00337449 /* locality_serial.cpp in Sources */,
+				C8F79F7D221E115A00337449 /* momentum_coupling.cpp in Sources */,
+				C8F79F9A221E115A00337449 /* param_tools.cpp in Sources */,
+				C8F79F99221E115A00337449 /* job_params.cpp in Sources */,
+				C8F79FB3221E115A00337449 /* make_hstruct_in.m in Sources */,
+				C8F79F96221E115A00337449 /* sdata.cpp in Sources */,
+				C8F79FAB221E115A00337449 /* plot_CCCM.m in Sources */,
+				C8F79F98221E115A00337449 /* sheet.cpp in Sources */,
+				C8F79FB5221E115A00337449 /* merge_v_files.m in Sources */,
+				C8F79F73221E115A00337449 /* feature_tests.c in Sources */,
+				C8F79F76221E115A00337449 /* feature_tests.cxx in Sources */,
+				C8F79E5C221E114400337449 /* main.cpp in Sources */,
+				C8F79FAE221E115A00337449 /* PostprocCCM.m in Sources */,
+				C8F79FB2221E115A00337449 /* make_folder_merge_vacancies.m in Sources */,
+				C8F79FAA221E115A00337449 /* main.cpp in Sources */,
+				C8F79FA5221E115A00337449 /* p_and_sigma_process.m in Sources */,
+				C8F79F94221E115A00337449 /* mlmc_handler.cpp in Sources */,
+				C8F79F77221E115A00337449 /* materials.cpp in Sources */,
+				C8F79FAF221E115A00337449 /* PostprocDoSlevels.m in Sources */,
+				C8F79F7E221E115A00337449 /* intralayer_coupling.cpp in Sources */,
+				C8F79F7A221E115A00337449 /* read_mat.cpp in Sources */,
+				C8F79FA1221E115A00337449 /* Makefile in Sources */,
+				C8F79F9B221E115A00337449 /* locality.cpp in Sources */,
+				C8F79FAC221E115A00337449 /* generate_samples.m in Sources */,
+				C8F79F9F221E115A00337449 /* matrix_gen.cpp in Sources */,
+				C8F79F95221E115A00337449 /* strain.cpp in Sources */,
+				C8F79F75221E115A00337449 /* CMakeCXXCompilerId.cpp in Sources */,
+				C8F79FA4221E115A00337449 /* build_intra_data.cpp in Sources */,
+				C8F79FB7221E115A00337449 /* compute_dos.m in Sources */,
+				C8F79F93221E115A00337449 /* Makefile in Sources */,
+				C8F79F9D221E115A00337449 /* dmatrix.cpp in Sources */,
+				C8F79F79221E115A00337449 /* graphene.cpp in Sources */,
+				C8F79FA9221E115A00337449 /* main_serial.cpp in Sources */,
+				C8F79F97221E115A00337449 /* hstruct.cpp in Sources */,
+				C8F79FBA221E115A00337449 /* PostprocKuboCalc.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		C8F79E5D221E114400337449 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C8F79E5E221E114400337449 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		C8F79E60221E114400337449 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C8F79E61221E114400337449 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C8F79E53221E114400337449 /* Build configuration list for PBXProject "trilayer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C8F79E5D221E114400337449 /* Debug */,
+				C8F79E5E221E114400337449 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C8F79E5F221E114400337449 /* Build configuration list for PBXNativeTarget "trilayer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C8F79E60221E114400337449 /* Debug */,
+				C8F79E61221E114400337449 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C8F79E50221E114400337449 /* Project object */;
+}
