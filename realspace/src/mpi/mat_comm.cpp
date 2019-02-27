@@ -15,10 +15,10 @@ void MPI_Bcast_root_loadedMat(int root, LoadedMat &dat){
   MPI::COMM_WORLD.Bcast(&(dat.num_inter_data), 1, MPI_INT, root);
 
   for (int i = 0; i < dat.num_intra_data; ++i){
-      MPI_Bcast_root_loadedIntra(root, dat.intra_data[i])
+      MPI_Bcast_root_loadedIntra(root, dat.intra_data[i]);
   }
   for (int i = 0; i < dat.num_inter_data; ++i){
-      MPI_Bcast_root_loadedInter(root, dat.inter_data[i])
+      MPI_Bcast_root_loadedInter(root, dat.inter_data[i]);
   }
 
 }
@@ -34,10 +34,10 @@ void MPI_Bcast_loadedMat(int root, LoadedMat &dat){
 
 
   for (int i = 0; i < dat.num_intra_data; ++i){
-      MPI_Bcast_loadedIntra(root, dat.intra_data[i])
+      MPI_Bcast_loadedIntra(root, dat.intra_data[i]);
   }
   for (int i = 0; i < dat.num_inter_data; ++i){
-      MPI_Bcast_loadedInter(root, dat.inter_data[i])
+      MPI_Bcast_loadedInter(root, dat.inter_data[i]);
   }
 
 }
@@ -47,7 +47,7 @@ void MPI_Bcast_root_loadedIntra(int root, LoadedIntraData &dat){
 
         MPI::COMM_WORLD.Bcast(&(dat.num_orbs), 1, MPI_INT, root);
         int max_R = dat.intralayer_terms.size();
-        MPI::COMM_WORLD.Bcast(&(dat.max_R), 1, MPI_INT, root);
+        MPI::COMM_WORLD.Bcast(&max_R, 1, MPI_INT, root);
 
         MPI::Status status;
 
@@ -97,10 +97,10 @@ void MPI_Bcast_root_loadedIntra(int root, LoadedIntraData &dat){
         MPI::COMM_WORLD.Bcast(temp_val, dim, MPI::DOUBLE, root);
 }
 
-void MPI_Bcast(int root, LoadedIntraData &dat){
+void MPI_Bcast_loadedIntra(int root, LoadedIntraData &dat){
         MPI::COMM_WORLD.Bcast(&(dat.num_orbs), 1, MPI_INT, root);
         int max_R;
-        MPI::COMM_WORLD.Bcast(&(dat.max_R), 1, MPI_INT, root);
+        MPI::COMM_WORLD.Bcast(&max_R, 1, MPI_INT, root);
 
         MPI::Status status;
 

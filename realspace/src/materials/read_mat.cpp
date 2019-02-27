@@ -37,10 +37,11 @@ double ReadMat::orbital_pos(LoadedMat mat, int idx, int dim, int sheet){
 
 double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int, 2>& vector, LoadedMat mat, int sheet){
 
+
   int max_R = mat.intra_data[sheet].intralayer_terms.size();
   int c = (max_R - 1)/2;
   // return 0.0 if part of vector is bigger than intralyer_terms span
-  if ( abs(vector[0]) > c || abs(vector[1] > c) )
+  if ( abs(vector[0]) > c || abs(vector[1]) > c )
     return 0.0;
 
   return mat.intra_data[sheet].intralayer_terms[vector[0]+c][vector[1]+c][orbital_row][orbital_col];
@@ -112,6 +113,8 @@ LoadedMat ReadMat::loadMat(std::string filename){
   ifstream fileIn;
   fileIn.open(filename);
 
+  fileIn.ignore(256, '\n');  // header info line
+
   LoadedMat outMat;
   std::vector< LoadedIntraData > intra_data;
   std::vector< LoadedInterData > inter_data;
@@ -132,6 +135,7 @@ LoadedMat ReadMat::loadMat(std::string filename){
 
   // loop over intra data (comes  before inter data)
   for (int idx = 0; idx < num_intra_data; ++idx){
+
     string name;
     array< array<double, 2>, 2> lattice;
 
@@ -218,7 +222,7 @@ LoadedMat ReadMat::loadMat(std::string filename){
       fileIn >> o2;
       fileIn >> t;
 
-      intralayer_terms[R_i + big_R][R_j + big_R][o1][o2] = t;
+      intralayer_terms[R_i + big_R][R_j + big_R][o1-1][o2-1] = t;
 
     }
 
