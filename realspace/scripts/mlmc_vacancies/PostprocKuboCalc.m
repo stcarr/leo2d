@@ -3,7 +3,7 @@ clear all;
 load problem_definition.mat
 p = poly_order;
 
-tar_lev = 3;
+tar_lev = 2;
 
 fM = fopen(['ml_mos2_mlmc_L' num2str(tar_lev) '_E_M_xx.bin'],'r');   % open the E(M)
 M = fread(fM,[p p],'double');                  % p x p matrix load

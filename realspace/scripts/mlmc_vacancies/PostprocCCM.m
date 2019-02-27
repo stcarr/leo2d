@@ -71,7 +71,7 @@
         end
     end
     
-    fE = fopen('ml_mos2_mlmc_L3_ENERGIES.bin','r'); % open the Energy file
+    fE = fopen('ml_mos2_mlmc_L1_ENERGIES.bin','r'); % open the Energy file
     E = fread(fE,[p 1],'double');                   % p energy samps load
     fclose(fE);
 
@@ -104,7 +104,8 @@
        ylabel('Energy E_2');
        zlabel('E[M(E_1,E_2)]');
        title('Current-current correlation measure Level 2'); 
-    subplot(2,2,3);   
+    subplot(2,2,3); 
+    if (nlev > 2)
     surf(E,E,ML{3},'EdgeColor','none'); hold on; % simple plot
        view(2);
        axis square;
@@ -112,7 +113,8 @@
        ylabel('Energy E_2');
        zlabel('E[M(E_1,E_2)]');
        title('Current-current correlation measure Level 3'); 
-    subplot(2,2,4);   
+    end
+    subplot(2,2,4); 
     surf(E,E,M,'EdgeColor','none'); hold on; % simple plot
        view(2);
        axis square;

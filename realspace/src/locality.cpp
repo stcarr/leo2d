@@ -1667,6 +1667,78 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 					jobArray = k_jobArray;
 
+				} else if (k_type == 3){
+
+					double num_k1 = opts.getInt("num_k1");
+					maxJobs = num_k1;
+
+					std::vector< std::vector<double> > a = opts.getDoubleMat("supercell");
+					std::vector< std::vector<double> > b = getReciprocal(a);
+					printf("b = [%lf %lf ; %lf %lf] \n",b[0][0],b[0][1],b[1][0],b[1][1]);
+
+					double gamma[2];
+					double m[2];
+					double k_1[2];
+					double k_2[2];
+
+					gamma[0] = 0.0;
+					gamma[1] = 0.0;
+
+					k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(-M_PI/6)*b[1][0] - sin(-M_PI/6)*b[1][1]);
+					k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(sin(-M_PI/6)*b[1][0] + cos(-M_PI/6)*b[1][1]);
+
+					k_2[0] = cos(-M_PI/3)*k_1[0] - sin(-M_PI/3)*k_1[1];
+					k_2[1] = sin(-M_PI/3)*k_1[0] + cos(-M_PI/3)*k_1[1];
+
+					m[0] = b[1][0]/2.0;
+					m[1] = b[1][1]/2.0;
+
+					printf("gamma = [%lf, %lf], m = [%lf, %lf], k_1 = [%lf, %lf], k_2 = [%lf, %lf] \n",gamma[0],gamma[1],m[0],m[1],k_1[0],k_1[1],k_2[0],k_2[1]);
+
+					int k_jobID = 1;
+					std::vector<Job_params> k_jobArray;
+					for (int j = 0; j < (int) jobArray.size(); ++j){
+						for (int i = 0; i < maxJobs; ++i){
+							//double x = (1.0/((double) maxJobs))*i;
+							//double x = 0.5 + 2.0*(1.0/((double) maxJobs))*(i - maxJobs/2.0);
+							//double x = .3333 + (1.0/((double) maxJobs))*(i-maxJobs/2)/(20);
+							double c = (4.0/((double) maxJobs))*i;
+
+							double k_x = 0;
+							double k_y = 0;
+
+							if (c <= 1) {
+								k_x = (1.0-c)*gamma[0] + (c-0.0)*m[0];
+								k_y = (1.0-c)*gamma[1] + (c-0.0)*m[1];
+							} else if (c <= 2) {
+								k_x = (2.0-c)*m[0] + (c-1.0)*k_1[0];
+								k_y = (2.0-c)*m[1] + (c-1.0)*k_1[1];
+							} else if (c <= 3) {
+								k_x = (3.0-c)*k_1[0] + (c-2.0)*k_2[0];
+								k_y = (3.0-c)*k_1[1] + (c-2.0)*k_2[1];
+							} else {
+								k_x = (4.0-c)*k_2[0] + (c-3.0)*gamma[0];
+								k_y = (4.0-c)*k_2[1] + (c-3.0)*gamma[1];
+							}
+
+							Job_params tempJob(jobArray[j]);
+							//tempJob.setParam("origJobID",tempJob.getInt("jobID"));
+							tempJob.setParam("jobID",k_jobID);
+
+							std::vector<double> k_vec;
+							k_vec.resize(2);
+							k_vec[0] = k_x;
+							k_vec[1] = k_y;
+							printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+							tempJob.setParam("k_vec",k_vec);
+
+							k_jobArray.push_back(tempJob);
+							++k_jobID;
+
+						}
+					}
+
+					jobArray = k_jobArray;
 				}
 
 		}
@@ -3616,7 +3688,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				//t += interlayer_term(x1, y1, z1, x2, y2, z2, orbit1, orbit2, theta1, theta2, mat1, mat2)/energy_rescale;
 				if (t != 0 ){
 					v[input_counter] += t;
-					v_dx[input_counter] += (x1 - x2 )*t;
+					v_dx[input_counter] += (x1 - x2)*t;
 					v_dy[input_counter] += (y1 - y2)*t;
 				}
 
@@ -3694,13 +3766,15 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 			int start_index = row_pointer[i];
 			int stop_index = row_pointer[i+1];
 				for(int j = start_index; j < stop_index; ++j){
-					outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+					if (abs(v[j]) > 1e-12){
+						outFile << col_index[j] + 1 << ", " << i + 1 << ", " << v[j] << "\n";
+					}
 				}
 		}
 
-		if (matrix_save > 1){
+		outFile.close();
 
-			outFile.close();
+		if (matrix_save > 1){
 
 			std::ofstream outFile2;
 			const char* extension2 = "_dxH_matrix.dat";
@@ -3710,11 +3784,29 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				int start_index = row_pointer_dx[i];
 				int stop_index = row_pointer_dx[i+1];
 					for(int j = start_index; j < stop_index; ++j){
-						outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << "\n";
+						if (abs(v_dx[j]) > 1e-12){
+							outFile2 << col_index_dx[j] + 1 << ", " << i + 1 << ", " << v_dx[j] << "\n";
+						}
 					}
 			}
 
 			outFile2.close();
+
+			std::ofstream outFile3;
+			const char* extension3 = "_dyH_matrix.dat";
+			outFile3.open ((job_name + extension3).c_str());
+
+			for(int i = 0; i < local_max_index; ++i){
+				int start_index = row_pointer_dy[i];
+				int stop_index = row_pointer_dy[i+1];
+					for(int j = start_index; j < stop_index; ++j){
+						if (abs(v_dy[j]) > 1e-12){
+							outFile3 << col_index_dy[j] + 1 << ", " << i + 1 << ", " << v_dy[j] << "\n";
+						}
+					}
+			}
+
+			outFile3.close();
 		}
 		//
 

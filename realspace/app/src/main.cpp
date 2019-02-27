@@ -193,6 +193,7 @@ int main(int argc, char** argv) {
 					// 0 -> Grid sampling of layer 1's Hexagonal BZ
 					// 1 -> LC sampling of twisted supercell Hexagonal BZ
 					// 2 -> LC sampling of layer 1's Hexagonal BZ ()
+					// 3 -> LC sampling for sandwich project (twisted supercell, both K,K')
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("k_type",atoi(in_string.c_str()));
