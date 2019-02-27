@@ -9,6 +9,7 @@
 #include "tools/numbers.h"
 #include "params/param_tools.h"
 #include "materials/read_mat.h"
+#include "mpi/mat_comm.h"
 
 //#include "transport/ballistic.h"
 
@@ -60,12 +61,12 @@ void Locality::setup(Job_params opts_in){
 		opts.printParams();
 		if (mat_from_file == 1){
 			loadedMatData = ReadMat::loadMat("test_data");
-			loadedMatData.MPI_Bcast_root(root);
+			MPI_Bcast_root_loadedMat(root,loadedMatData);
 		}
 	} else {
 		if (mat_from_file == 1){
 			// wait for command to read file
-			loadedMatData.MPI_Bcast(root);
+			MPI_Bcast_loadedMat(root, loadedMatData);
 		}
 	}
 

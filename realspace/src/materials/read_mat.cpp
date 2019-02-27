@@ -14,12 +14,12 @@
 using namespace std;
 
 array<array<double, 2>, 2>  ReadMat::getLattice(LoadedMat mat, int sheet){
-  return mat.lattice;
+  return mat.intra_data[sheet].lattice;
 }
 
 
 int ReadMat::n_orbitals(LoadedMat mat, int sheet){
-  return mat.num_orbs;
+  return mat.intra_data[sheet].num_orbs;
 }
 
 
@@ -32,18 +32,18 @@ double ReadMat::inter_search_radius(LoadedMat mat){
 }
 
 double ReadMat::orbital_pos(LoadedMat mat, int idx, int dim, int sheet){
-  return mat.orb_pos[idx][dim];
+  return mat.intra_data[sheet].orb_pos[idx][dim];
 }
 
 double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int, 2>& vector, LoadedMat mat, int sheet){
 
-  int max_R = mat.intralayer_terms.size();
+  int max_R = mat.intra_data[sheet].intralayer_terms.size();
   int c = (max_R - 1)/2;
   // return 0.0 if part of vector is bigger than intralyer_terms span
   if ( abs(vector[0]) > c || abs(vector[1] > c) )
     return 0.0;
 
-  return mat.intralayer_terms[vector[0]+c][vector[1]+c][orbital_row][orbital_col];
+  return mat.intra_data[sheet].intralayer_terms[vector[0]+c][vector[1]+c][orbital_row][orbital_col];
 
 }
 
@@ -124,11 +124,11 @@ LoadedMat ReadMat::loadMat(std::string filename){
   // Get number of data types in this file
   fileIn >> temp;
   num_intra_data = atoi(temp.c_str());
-  intra_data.resize(num_intra_data)
+  intra_data.resize(num_intra_data);
 
   fileIn >> temp;
   num_inter_data = atoi(temp.c_str());
-  inter_data.resize(num_inter_data)
+  inter_data.resize(num_inter_data);
 
   // loop over intra data (comes  before inter data)
   for (int idx = 0; idx < num_intra_data; ++idx){
