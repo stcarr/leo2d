@@ -103,6 +103,12 @@ namespace Materials {
 	intralayer_term(const int orbital_row, const int orbital_col,
                     const std::array<int, 2>& vector, const std::vector< std::vector<double> >& strain,
                     const Mat mat);
+
+  // overloaded strain method (bonding dist only)
+	double
+	intralayer_term(const int orbital_row, const int orbital_col,
+                    const std::array<int, 2>& vector, const double r,
+                    const Mat mat);
     /**
      * Returns whether a given intra-layer tight-binding hopping term for a two dimensional material
      * is nonzero, for a given pair of orbitals and a lattice hopping vector in grid coordinates computed

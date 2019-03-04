@@ -2018,7 +2018,13 @@ void Locality_serial::setConfigPositions(double* i2pos, double* index_to_pos, in
 				sc_pos[0] = sc_inv[0][0]*x + sc_inv[0][1]*y;
 				sc_pos[1] = sc_inv[1][0]*x + sc_inv[1][1]*y;
 
-				std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
+				//std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
+				std::vector<double> disp_here;
+				disp_here.resize(3);
+				disp_here[0] = 0.0;
+				disp_here[1] = 0.0;
+				disp_here[2] = 0.0;
+
 				strain[i] = strainInfo.supercellStrain(sc_pos, s, orbit);
 
 				i2pos[i*3 + 0] = i2pos[i*3 + 0] + disp_here[0];

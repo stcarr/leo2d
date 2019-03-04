@@ -521,6 +521,8 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",4);
 					} else if (in_string[0] == 'P'){ // STRAIN_TYPE = PLANE WAVES (Fourier comp. in Config space)
 						opts.setParam("strain_type",5);
+					} else if (in_string[0] == 'D'){ // STRAIN_TYPE = DIRECT PLANE WAVES (Fourier comp. on supercell)
+						opts.setParam("strain_type",6);
 					}
 				}
 

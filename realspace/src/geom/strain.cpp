@@ -753,76 +753,78 @@ double StrainCalc::interp_4point(double x, double y, double v1, double v2, doubl
   return value;
 }
 
-std::vector<double> StrainCalc::supercellDisp(std::vector<double> pos_in, int sheet, int orb){
+std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2, int s){
+
+  // hardcoded for graphene sandwich system
 
 	std::vector<double> disp;
 	disp.resize(3);
 
-  /*
-	double amp = 20.0;
-	double freq = 1.0;
+  double u_k1 = 0.0;
+  double u_k2 = 0.0;
 
-	// u_x:
-	disp[0] = amp*sin(2.0*PI*freq*pos_in[0]);
-	// u_y:
-	disp[1] = amp*cos(2.0*PI*freq*pos_in[1]);
-	// u_z:
-	disp[2] = 0.0;
-  */
+  // relaxation coeffs for 1.47 degrees
+  if (s == 0 || s == 2){
+    u_k1 = -0.019951155162081;
+    u_k2 = -0.000806807799645;
 
-  double sign = 1.0;
+  } else if (s == 1) {
+    u_k1 = 0.039902310324162;
+    u_k2 = 0.001613615599290;
 
-  // Rework to force symmetry between layers
-  // /*
-  if (sheet == 1){
-    sheet == 0;
-    if (pos_in[0] != 0) {
-      pos_in[0] = 1.0 - pos_in[0];
-    }
-    if (pos_in[1] != 0){
-        pos_in[1] = 1.0 - pos_in[1];
-    }
-    sign = -1.0;
   }
-  // */
 
-  //double r_scale = 0.1072;
-  //double r_scale = 0.0524; // value for 26_25 super cell (~1.30 degrees)
-  //double r_scale = 0.2;
-  double r_scale = opts.getDouble("gsfe_r_scale");
 
-  double x_c01 =  0.0;
-  double x_c10 =  r_scale*sqrt(3.0)/2.0;;
-  double x_c11 =  r_scale*sqrt(3.0)/2.0;;
+  disp[0] = 0.0;
+  disp[1] = 0.0;
+  disp[2] = 0.0;
 
-  double y_c01 =  r_scale;
-  double y_c10 = -r_scale/2.0;
-  double y_c11 =  r_scale/2.0;
+  std::vector<double> k1_base;
+  k1_base.resize(2);
+  k1_base[0] = b1[0];
+  k1_base[1] = b1[1];
 
-  double trig_x = pos_in[0]*2.0*PI;
-  double trig_y = pos_in[1]*2.0*PI;
+  std::vector<double> k2_base;
+  k2_base.resize(2);
+  k2_base[0] = 2.0*b1[0];
+  k2_base[1] = 2.0*b1[1];
 
-  disp[0] = sign*(x_c10*sin(trig_x) + x_c01*sin(trig_y) + x_c11*sin(trig_x + trig_y) );
-  disp[1] = sign*(y_c10*sin(trig_x) + y_c01*sin(trig_y) + y_c11*sin(trig_x + trig_y) );
+  std::vector<double> k1 = k1_base;
+  std::vector<double> k2 = k2_base;
 
-  double c0 =     3.47889 - 0.04;
-  double c1 =    -0.02648;
-  double c2 =    -0.00352;
-  double c3 =     0.00037;
-  double c4 =     SQRT3*c1;
-  double c5 =    -SQRT3*c3;
 
-  double b0 = c0;
-  double b1 = -2.0*c1;
-  double b2 = c2;
-  double b3 = -2.0*c3;
+  double u_k1_x, u_k1_y, u_k2_x, u_k2_y;
+  double disp_x, disp_y;
 
-  double F =  b0 +
-              b1*(cos(trig_x)               + cos(trig_y)           + cos(trig_x + trig_y)) +
-              b2*(cos(trig_x + 2.0*trig_y)  + cos(trig_x - trig_y)  + cos(2.0*trig_x + trig_y)) +
-              b3*(cos(2.0*trig_x)           + cos(2.0*trig_y)       + cos(2.0*trig_x + 2.0*trig_y));
+  for (int rot = 0; rot < 3; ++rot){
 
-  disp[2] = sign*(3.35 - F)/2.0;
+    k1[0] = cos(rot*M_PI/3.0)*k1_base[0] - sin(rot*M_PI/3.0)*k1_base[1];
+    k1[1] = sin(rot*M_PI/3.0)*k1_base[0] + cos(rot*M_PI/3.0)*k1_base[1];
+
+    k2[0] = cos(rot*M_PI/3.0)*k2_base[0] - sin(rot*M_PI/3.0)*k2_base[1];
+    k2[1] = sin(rot*M_PI/3.0)*k2_base[0] + cos(rot*M_PI/3.0)*k2_base[1];
+
+    u_k1_x = cos(rot*M_PI/3.0)*0.0 - sin(rot*M_PI/3.0)*u_k1;
+    u_k1_y = sin(rot*M_PI/3.0)*0.0 + cos(rot*M_PI/3.0)*u_k1;
+
+    u_k2_x = cos(rot*M_PI/3.0)*0.0 - sin(rot*M_PI/3.0)*u_k2;
+    u_k2_y = sin(rot*M_PI/3.0)*0.0 + cos(rot*M_PI/3.0)*u_k2;
+
+    disp_x = disp_x+ u_k1_x*2.0*sin(k1[0]*r[0] + k1[1]*r[1]);
+    disp_x = disp_x + u_k2_x*2.0*sin(k2[0]*r[0] + k2[1]*r[1]);
+
+    disp_y = disp_y + u_k1_y*2.0*sin(k1[0]*r[0] + k1[1]*r[1]);
+    disp_y = disp_y + u_k2_y*2.0*sin(k2[0]*r[0] + k2[1]*r[1]);
+
+  }
+
+  double basis_rot = atan2(b1[1],b1[0]); // above data assumes b1 is along x axis
+  double rot_disp_x = cos(basis_rot)*disp_x - sin(basis_rot)*disp_y;
+  double rot_disp_y = sin(basis_rot)*disp_x + cos(basis_rot)*disp_y;
+
+  disp[0] = rot_disp_x;
+  disp[1] = rot_disp_y;
+
 
 	return disp;
 

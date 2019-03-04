@@ -3057,7 +3057,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	}
 
 	if (strain_type == 5){
-		printf("Entering strain_type = PLANEWAVES \n");
+		printf("Loaded Fourier Coefficients for relaxation. \n");
 		strainInfo.loadFourierConfigFile_interp(jobIn.getString("strain_thetas"),jobIn.getString("strain_x_coeffs"),jobIn.getString("strain_y_coeffs"),jobIn.getString("strain_z_coeffs"));
 		strainInfo.setOpts(jobIn);
 		strain.resize(max_index);
@@ -3102,7 +3102,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				}
 			}
 			*/
-			if (strain_type == 1){
+			if (strain_type == 1 || strain_type == 6){
 
 				// sample strain from a supercell grid
 				std::vector< std::vector<double> > sc = jobIn.getDoubleMat("supercell");
@@ -3142,10 +3142,14 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				double r[2];
 				r[0] = x;
 				r[1] = y;
+				std::vector<double> disp_here;
 
-				std::vector<double> disp_here = strainInfo.fourierStrainDisp_sc(r, b1, b2, s);
+			if (strain_type == 1){
+				disp_here = strainInfo.fourierStrainDisp_sc(r, b1, b2, s);
 				//printf("disp_here = [%lf, %lf, %lf] \n",disp_here[0], disp_here[1], disp_here[2]);
-
+			} else if (strain_type == 6){
+				disp_here = strainInfo.supercellDisp(r, b1, b2, s);
+			}
 				// old Supercell methods...
 				//std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
 				//strain[i] = strainInfo.supercellStrain(sc_pos, s, orbit);
@@ -3470,7 +3474,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				double raw_t;
 
-				if (strain_type == 1){
+				if (strain_type == 1 || strain_type == 6){
 
 				 int i0 = index_to_grid[k_i*4 + 0];
 				 int j0 = index_to_grid[k_i*4 + 1];
@@ -3556,7 +3560,10 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					strain_rot[1][0] = strain_rot[0][1];
 
 					Materials::Mat mat = sdata[s0].mat;
-					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
+					//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
+
+					// by bonding distance only
+					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
 
 				} else {
 
@@ -4140,7 +4147,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double t;
 				double raw_t;
 
-				if (strain_type == 1){
+				if (strain_type == 1 || strain_type == 6){
 
 				 int i0 = index_to_grid[k_i*4 + 0];
 				 int j0 = index_to_grid[k_i*4 + 1];
@@ -4229,8 +4236,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 					Materials::Mat mat = sdata[s0].mat;
 
 					if (mat_from_file == 0){
-						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+
 						//raw_t = intra_pairs_t[intra_counter];
+
+						// use bonding length only
+						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat)/energy_rescale;
 
 					} else {
 						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0)/energy_rescale;

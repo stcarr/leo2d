@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   strained_graphene.h
  * Author:  Paul Cazeaux
- * 
+ *
  * Created on June 12, 2017, 9:00 AM
  */
 
@@ -16,8 +16,11 @@
 namespace Coupling {
 
     namespace Intralayer {
-        double strained_graphene(const Graphene::Orbital orbit_row, const Graphene::Orbital orbit_col, 
+        double strained_graphene(const Graphene::Orbital orbit_row, const Graphene::Orbital orbit_col,
                             const std::array<int, 2>& vector, const std::vector< std::vector<double> >& strain);
+
+        double strained_graphene(const Graphene::Orbital orbit_row, const Graphene::Orbital orbit_col,
+                            const std::array<int, 2>& vector, const double r);
 
     }   /* End namespace Intralayer */
 
@@ -26,14 +29,14 @@ namespace Coupling {
 namespace IsNonZero {
 
     namespace Intralayer {
-        bool strained_graphene(const Graphene::Orbital orbit_row, const Graphene::Orbital orbit_col, 
+        bool strained_graphene(const Graphene::Orbital orbit_row, const Graphene::Orbital orbit_col,
                             const std::array<int, 2>& vector);
     }   /* End namespace Intralayer */
 
 }   /* End namespace IsNonZero */
 
 namespace StrainedGraphene {
-    
+
     /* Geometry library */
     const double alpha           = 2.4768;
     const std::array<std::array<double, 2>, 2>
