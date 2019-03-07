@@ -760,63 +760,108 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
 	std::vector<double> disp;
 	disp.resize(3);
 
-  double u_k1 = 0.0;
-  double u_k2 = 0.0;
+  double in_plane_fac = 1.0;
+  double out_of_plane_fac = 1.0;
 
   // relaxation coeffs for 1.47 degrees
-  if (s == 0 || s == 2){
-    u_k1 = -0.019951155162081;
-    u_k2 = -0.000806807799645;
+  if (s == 2){
+    out_of_plane_fac = -1.0;
 
   } else if (s == 1) {
-    u_k1 = 0.039902310324162;
-    u_k2 = 0.001613615599290;
+    in_plane_fac = -2.0;
+    out_of_plane_fac = 0.0;
 
   }
 
+  coeffs.resize(3);
 
-  disp[0] = 0.0;
-  disp[1] = 0.0;
-  disp[2] = 0.0;
+  std::vector<double> coeffs_x;
+  coeffs_x.resize(4);
+  coeffs_x[0] = in_plane_fac*0.0;
+  coeffs_x[1] = in_plane_fac*0.0;
+  coeffs_x[2] = in_plane_fac*0.0;
+  coeffs_x[3] = in_plane_fac*0.0;
 
-  std::vector<double> k1_base;
-  k1_base.resize(2);
-  k1_base[0] = b1[0];
-  k1_base[1] = b1[1];
+  std::vector<double> coeffs_y;
+  coeffs_y.resize(4);
+  coeffs_y[0] = in_plane_fac* 0.0;
+  coeffs_y[1] = in_plane_fac*-0.019951155162081;
+  coeffs_y[2] = in_plane_fac*-0.000806807799645;
+  coeffs_y[3] = in_plane_fac* 0.0;
 
-  std::vector<double> k2_base;
-  k2_base.resize(2);
-  k2_base[0] = 2.0*b1[0];
-  k2_base[1] = 2.0*b1[1];
+  std::vector<double> coeffs_z;
+  coeffs_z.resize(4);
+  coeffs_z[0] = out_of_plane_fac*-0.061901691526695;
+  coeffs_z[1] = out_of_plane_fac*-0.0220634404118861;
+  coeffs_z[2] = out_of_plane_fac*-0.004100201789620;
+  coeffs_z[3] = out_of_plane_fac*-0.002676762110702;
 
-  std::vector<double> k1 = k1_base;
-  std::vector<double> k2 = k2_base;
+  coeffs[0] = coeffs_x;
+  coeffs[1] = coeffs_y;
+  coeffs[2] = coeffs_z;
+
+  std::vector<double> k_base;
+  k_base.resize(2);
+
+  std::vector<double> k;
+  k.resize(2);
+
+  std::vector<double> c_base;
+  c_base.resize(3);
+
+  std::vector<double> c;
+  c.resize(3);
+
+  double disp_x = 0.0;
+  double disp_y = 0.0;
+  double disp_z = 0.0;
 
 
-  double u_k1_x, u_k1_y, u_k2_x, u_k2_y;
-  double disp_x, disp_y;
+  int idx = 0;
 
-  for (int rot = 0; rot < 3; ++rot){
+  max_k = 2;
+  // loop over [i,j] Fourier components
+  for (int i = 0; i < max_k+1; ++i){
+      for (int j = 0; j < max(i,1); ++j){
+          //printf("[%d, %d] \n",i,j);
+          // fixing factor, to account for exp(ikr) vs const term
+          double ff = 2.0;
+          int rot_max = 3;
+          if (i == 0) {
+             rot_max = 1;
+             ff = 1.0;
+          }
 
-    k1[0] = cos(rot*M_PI/3.0)*k1_base[0] - sin(rot*M_PI/3.0)*k1_base[1];
-    k1[1] = sin(rot*M_PI/3.0)*k1_base[0] + cos(rot*M_PI/3.0)*k1_base[1];
+          // define Fourier component direction
+          k_base[0] =  i*b1[0] + j*b2[0];
+          k_base[1] =  i*b1[1] + j*b2[1];
 
-    k2[0] = cos(rot*M_PI/3.0)*k2_base[0] - sin(rot*M_PI/3.0)*k2_base[1];
-    k2[1] = sin(rot*M_PI/3.0)*k2_base[0] + cos(rot*M_PI/3.0)*k2_base[1];
+          // define Fourier coefficients for this direction
+          c_base[0] =  coeffs[0][idx]; // coeffs are in SUPERCELL basis
+          c_base[1] =  coeffs[1][idx]; // later we put them in CONFIG basis
+          c_base[2] =  coeffs[2][idx];
 
-    u_k1_x = cos(rot*M_PI/3.0)*0.0 - sin(rot*M_PI/3.0)*u_k1;
-    u_k1_y = sin(rot*M_PI/3.0)*0.0 + cos(rot*M_PI/3.0)*u_k1;
+          for (int r_idx = 0; r_idx < rot_max; ++r_idx){
+              double r_theta = r_idx*PI/3.0;
+              k[0] = cos(r_theta)*k_base[0] - sin(r_theta)*k_base[1];
+              k[1] = sin(r_theta)*k_base[0] + cos(r_theta)*k_base[1];
 
-    u_k2_x = cos(rot*M_PI/3.0)*0.0 - sin(rot*M_PI/3.0)*u_k2;
-    u_k2_y = sin(rot*M_PI/3.0)*0.0 + cos(rot*M_PI/3.0)*u_k2;
+              //c = rot^(r_idx)*[coeffs[idx,]];
+              c[0] = cos(r_theta)*c_base[0] - sin(r_theta)*c_base[1];
+              c[1] = sin(r_theta)*c_base[0] + cos(r_theta)*c_base[1];
+              c[2] = c_base[2];
 
-    disp_x = disp_x+ u_k1_x*2.0*sin(k1[0]*r[0] + k1[1]*r[1]);
-    disp_x = disp_x + u_k2_x*2.0*sin(k2[0]*r[0] + k2[1]*r[1]);
+              // the coeffs are for exp(i*k*r), so we mulitply by 2 for sin/cos
+              disp_x = disp_x + ff*c[0]*sin(k[0]*r[0] + k[1]*r[1]);
+              disp_y = disp_y + ff*c[1]*sin(k[0]*r[0] + k[1]*r[1]);
+              disp_z = disp_z + ff*c[2]*cos(k[0]*r[0] + k[1]*r[1]);
+          }
 
-    disp_y = disp_y + u_k1_y*2.0*sin(k1[0]*r[0] + k1[1]*r[1]);
-    disp_y = disp_y + u_k2_y*2.0*sin(k2[0]*r[0] + k2[1]*r[1]);
+          idx++;
 
+      }
   }
+
 
   double basis_rot = atan2(b1[1],b1[0]); // above data assumes b1 is along x axis
   double rot_disp_x = cos(basis_rot)*disp_x - sin(basis_rot)*disp_y;
@@ -824,7 +869,7 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
 
   disp[0] = rot_disp_x;
   disp[1] = rot_disp_y;
-
+  disp[2] = disp_z;
 
 	return disp;
 
