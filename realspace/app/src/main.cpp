@@ -532,6 +532,24 @@ int main(int argc, char** argv) {
 					opts.setParam("strain_lambda",atof(in_string.c_str()));
 				}
 
+				if (in_string == "UNIFORM_STRAIN"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("uniform_strain",atoi(in_string.c_str()));
+				}
+
+				if (in_string == "UNIFORM_STRAIN_X"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("uniform_strain_x",atof(in_string.c_str()));
+				}
+
+				if (in_string == "UNIFORM_STRAIN_Y"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("uniform_strain_y",atof(in_string.c_str()));
+				}
+
 				if (in_string == "GSFE_Z_ON"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

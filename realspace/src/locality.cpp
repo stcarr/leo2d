@@ -2392,6 +2392,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		int solver_space = jobIn.getInt("solver_space");
 		int diagonalize = jobIn.getInt("diagonalize");
 		int boundary_condition = jobIn.getInt("boundary_condition");
+		int uniform_strain = jobIn.getInt("uniform_strain");
 		int chiral_on = jobIn.getInt("chiral_on");
 		int d_kpm_dos = jobIn.getInt("d_kpm_dos");
 		int d_vecs =  jobIn.getInt("d_vecs");
@@ -2442,6 +2443,22 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 
 		setConfigPositions(i2pos, index_to_pos, index_to_grid, s_configs, shift_configs, strain, jobIn);
+
+		// rescale supercell if using uniform strain method
+		if (boundary_condition == 1 && uniform_strain == 1){
+			std::vector< std::vector<double> > supercell = jobIn.getDoubleMat("supercell");
+			double uniform_strain_x = jobIn.getDouble("uniform_strain_x");
+			double uniform_strain_y = jobIn.getDouble("uniform_strain_y");
+
+			for (int sc_idx = 0; sc_idx < 2; ++sc_idx){
+				supercell[sc_idx][0] = uniform_strain_x*supercell[sc_idx][0];
+				supercell[sc_idx][1] = uniform_strain_y*supercell[sc_idx][1];
+
+			}
+
+			jobIn.setParam("supercell",supercell);
+
+		}
 
 		clock_t timePos;
 		timePos = clock();
@@ -3036,6 +3053,10 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	int gsfe_z_on = jobIn.getInt("gsfe_z_on");
 	int global_shifts_on = jobIn.getInt("global_shifts_on");
 
+	int uniform_strain = jobIn.getInt("uniform_strain");
+	double uniform_strain_x = jobIn.getDouble("uniform_strain_x");
+	double uniform_strain_y = jobIn.getDouble("uniform_strain_y");
+
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
 	if (strain_type == 1){
@@ -3293,7 +3314,17 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 
 			}
 
+			// uniform strain applied last
+			if (uniform_strain == 1){
+
+				i2pos[i*3 + 0] = uniform_strain_x*i2pos[i*3 + 0];
+				i2pos[i*3 + 1] = uniform_strain_y*i2pos[i*3 + 1];
+
+			}
+
+
 		}
+
 	} else if (solver_space == 1){
 
 		// Here we define new positions as " A = q + K "
@@ -3349,6 +3380,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	double energy_rescale = jobIn.getDouble("energy_rescale");
 	double energy_shift = jobIn.getDouble("energy_shift");
 	//std::vector<double> k_vec = jobIn.getDoubleVec("k");
+
+	int uniform_strain = jobIn.getInt("uniform_strain");
 
 	//jobIn.printParams();
 
@@ -3444,19 +3477,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				if (boundary_condition == 1){
 
-						int sheet_here = index_to_grid[k_i*4 + 3];
-						std::vector< std::vector<double> > supercell_orig = sdata[sheet_here].supercell;
-						double theta = angles[sheet_here];
-						std::vector< std::vector<double> > supercell;
-						supercell.resize(2);
-
-						for (int dim = 0; dim < 2; ++dim){
-							supercell[dim].resize(2);
-
-							supercell[dim][0] = cos(theta)*supercell_orig[dim][0] - sin(theta)*supercell_orig[dim][1];
-							supercell[dim][1] = sin(theta)*supercell_orig[dim][0] + cos(theta)*supercell_orig[dim][1];
-						}
-
+						std::vector< std::vector<double> > supercell = jobIn.getDoubleMat("supercell");
 
 						sc_i = intra_sc_vecs[intra_counter][0];
 						sc_j = intra_sc_vecs[intra_counter][1];
@@ -3474,7 +3495,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				double raw_t;
 
-				if (strain_type == 1 || strain_type == 6){
+				if (strain_type == 1 || strain_type == 6 || uniform_strain == 1){
 
 				 int i0 = index_to_grid[k_i*4 + 0];
 				 int j0 = index_to_grid[k_i*4 + 1];
@@ -3641,7 +3662,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				if (boundary_condition == 1){
 
-						std::vector< std::vector<double> > supercell = opts.getDoubleMat("supercell");
+						std::vector< std::vector<double> > supercell = jobIn.getDoubleMat("supercell");
 
 						sc_i = inter_sc_vecs[inter_counter][0];
 						sc_j = inter_sc_vecs[inter_counter][1];
@@ -3905,6 +3926,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 	double energy_rescale = jobIn.getDouble("energy_rescale");
 	double energy_shift = jobIn.getDouble("energy_shift");
 
+	int uniform_strain = jobIn.getInt("uniform_strain");
+
 	// Check to see if we will do k sampling
 	int k_sampling = jobIn.getInt("k_sampling");
 
@@ -4112,22 +4135,10 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double new_pos_shift_x = 0.0;
 				double new_pos_shift_y = 0.0;
 
-				// ToDo: Need to compute intra_sc for each sheet here
 				if (boundary_condition == 1){
 
 						int sheet_here = index_to_grid[k_i*4 + 3];
-						std::vector< std::vector<double> > supercell_orig = sdata[sheet_here].supercell;
-						double theta = angles[sheet_here];
-						std::vector< std::vector<double> > supercell;
-						supercell.resize(2);
-
-						for (int dim = 0; dim < 2; ++dim){
-							supercell[dim].resize(2);
-
-							supercell[dim][0] = cos(theta)*supercell_orig[dim][0] - sin(theta)*supercell_orig[dim][1];
-							supercell[dim][1] = sin(theta)*supercell_orig[dim][0] + cos(theta)*supercell_orig[dim][1];
-						}
-
+						std::vector< std::vector<double> > supercell = jobIn.getDoubleMat("supercell");
 
 						sc_i = intra_sc_vecs[intra_counter][0];
 						sc_j = intra_sc_vecs[intra_counter][1];
@@ -4147,7 +4158,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double t;
 				double raw_t;
 
-				if (strain_type == 1 || strain_type == 6){
+				if (strain_type == 1 || strain_type == 6 || uniform_strain == 1){
 
 				 int i0 = index_to_grid[k_i*4 + 0];
 				 int j0 = index_to_grid[k_i*4 + 1];
@@ -4169,8 +4180,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 
 				  // we correct the grid values by the supercell_stride when there are periodic BCs
 				  if (boundary_condition == 1){
-					grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
-					grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
+						grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
+						grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
 				  }
 
 					// take strain as avg of both orbital strains
@@ -4365,7 +4376,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 
 				if (boundary_condition == 1){
 
-						std::vector< std::vector<double> > supercell = opts.getDoubleMat("supercell");
+						std::vector< std::vector<double> > supercell = jobIn.getDoubleMat("supercell");
 
 						sc_i = inter_sc_vecs[inter_counter][0];
 						sc_j = inter_sc_vecs[inter_counter][1];
@@ -6508,6 +6519,13 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 	for (int i = 0; i < 2; ++i){
 		a[i][0] = orig_a[i][0]*cos(theta) - orig_a[i][1]*sin(theta);
 		a[i][1] = orig_a[i][0]*sin(theta) + orig_a[i][1]*cos(theta);
+	}
+
+	if (opts.getInt("boundary_condition") == 1 && opts.getInt("uniform_strain") == 1){
+		for (int i = 0; i < 2; ++i){
+			a[i][0] = opts.getDouble("uniform_strain_x")*a[i][0];
+			a[i][1] = opts.getDouble("uniform_strain_y")*a[i][1];
+		}
 	}
 
 	std::vector< std::vector<double> > b;

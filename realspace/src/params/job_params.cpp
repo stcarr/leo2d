@@ -59,6 +59,10 @@ Job_params::Job_params() {
 	// Strain settings
 	setParam("strain_type",i_zero);
 	setParam("gsfe_z_on",i_zero);
+	setParam("uniform_strain",i_zero);
+	setParam("uniform_strain_x",(double)1.0);
+	setParam("uniform_strain_y",(double)1.0);
+
 
 	// Debug settings
 	setParam("matrix_save",i_zero);
