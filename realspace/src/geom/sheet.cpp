@@ -705,18 +705,27 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
 
 							  // we correct the grid values by the supercell_stride when there are periodic BCs
 							  if (boundary_condition == 1){
-								grid_disp[0] = grid_disp[0] - dx*supercell_stride[0][0] - dy*supercell_stride[1][0];
-								grid_disp[1] = grid_disp[1] - dx*supercell_stride[0][1] - dy*supercell_stride[1][1];
+  								grid_disp[0] = grid_disp[0] - dx*supercell_stride[0][0] - dy*supercell_stride[1][0];
+  								grid_disp[1] = grid_disp[1] - dx*supercell_stride[0][1] - dy*supercell_stride[1][1];
 							  }
 
     							double t;
+                  //int dist_skipper = 0;
                   if (mat_from_file == 0){
         						t = Materials::intralayer_term(l0, l, grid_disp, mat);
         					} else {
         						t = ReadMat::intralayer_term(l0, l, grid_disp, loadedMatData, sheet_index);
+                    /*
+                    double dx = posAtomIndex(k2,0) - pos_here[0];
+                    double dy = posAtomIndex(k2,1) - pos_here[1];
+                    if (dx*dx + dy*dy > 5.0*5.0){
+                      dist_skipper = 1;
+                    }
+                    */
                   }
 
-    							if (t != 0 || (kh == k2 && dx == 0 && dy == 0)){
+    							//if ( (t != 0 || (kh == k2 && dx == 0 && dy == 0)) && dist_skipper == 0){
+                  if ( t != 0 || (kh == k2 && dx == 0 && dy == 0) ){
 
     								 //if (kh == 0 || k2 == 0)
     								   //printf("adding term at search [i,j,l] = [%d, %d, %d]: [%d,%d] = %lf \n",i,j,l,kh,k2,t);

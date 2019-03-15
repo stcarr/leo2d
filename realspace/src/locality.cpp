@@ -1568,6 +1568,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					double dot = b1[0][0]*b1[1][0] + b1[0][1]*b1[1][1];	//dot product
 					double det = b1[0][0]*b1[1][1] - b1[1][0]*b1[0][1];	//determinant
 					double phi = atan2(det, dot);   										// angle between the two
+					phi = M_PI/3.0;
 
 					gamma[0] = 0.0;
 					gamma[1] = 0.0;
@@ -3136,6 +3137,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	int observable_type = jobIn.getInt("observable_type");
 	int boundary_condition = jobIn.getInt("boundary_condition");
 	int strain_type = jobIn.getInt("strain_type");
+	int mat_from_file = jobIn.getInt("mat_from_file");
 
 	int diagonalize = jobIn.getInt("diagonalize");
 	int elecOn = jobIn.getInt("elecOn");
@@ -3353,7 +3355,13 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 					Materials::Mat mat = sdata[s0].mat;
 					double raw_t;
-					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+					if (mat_from_file == 0){
+						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
+						//raw_t = intra_pairs_t[intra_counter];
+
+					} else {
+						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0)/energy_rescale;
+					}
 
 				} else {
 
@@ -3475,8 +3483,11 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					y2 - y1,
 					z2 - z1}};
 
-				t = Materials::interlayer_term(orbit1, orbit2,disp, theta1, theta2,mat1, mat2)/energy_rescale;
-
+				if (mat_from_file == 1){
+					t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+				} else {
+					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
+				}
 				//if ( (new_k == 568 && k_i == 3941) || (new_k == 3941 && k_i == 568) ){
 					//printf("inter[%d,%d] = %lf, [%lf, %lf] -> [%lf, %lf] \n", k_i,new_k,t, x1,y1, x2,y2);
 				//}
@@ -4170,7 +4181,13 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 					y2 - y1,
 					z2 - z1}};
 
-				double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
+				double t;
+
+				if (mat_from_file == 1){
+					t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+				} else {
+					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
+				}
 
 				//double t = Materials::interlayer_term(orbit1, orbit2, disp, 0.0, 0.0, mat1, mat2)/energy_rescale;
 				//if(abs(t) > 1e-4){
@@ -6038,7 +6055,21 @@ double Locality::onSiteE(double x, double y, double z, double E_in){
 
 std::vector< std::vector<double> > Locality::getReciprocal(int s){
 
-	std::vector< std::vector<double> > orig_a = sdata[s].a;
+	int mat_from_file = opts.getInt("mat_from_file");
+
+	std::vector< std::vector<double> > orig_a;
+
+	if (mat_from_file == 1){
+		std::array<std::array<double, 2>, 2> a_in = ReadMat::getLattice(loadedMatData, 0);
+		orig_a.resize(2);
+		for (int d = 0; d < 2; ++d){
+			orig_a[d].resize(2);
+			orig_a[d][0] = a_in[d][0];
+			orig_a[d][1] = a_in[d][1];
+		}
+	}	else{
+		orig_a = sdata[s].a;
+	}
 	double theta = angles[s];
 
 	std::vector< std::vector<double> > a;

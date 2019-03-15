@@ -13,31 +13,35 @@
 
 using namespace std;
 
-array<array<double, 2>, 2>  ReadMat::getLattice(LoadedMat mat, int sheet){
+array<array<double, 2>, 2>  ReadMat::getLattice(LoadedMat& mat, int sheet){
+  // for now we hard code sheet = 0, as we only have bilayer systems with only one copy of monolayer information
+  sheet = 0;
   return mat.intra_data[sheet].lattice;
 }
 
 
-int ReadMat::n_orbitals(LoadedMat mat, int sheet){
+int ReadMat::n_orbitals(LoadedMat& mat, int sheet){
+  sheet = 0;
   return mat.intra_data[sheet].num_orbs;
 }
 
 
-double ReadMat::intra_search_radius(LoadedMat mat){
+double ReadMat::intra_search_radius(LoadedMat& mat){
   return 3.0;
 }
 
-double ReadMat::inter_search_radius(LoadedMat mat){
-  return 10.0;
+double ReadMat::inter_search_radius(LoadedMat& mat){
+  return 3.0;
 }
 
-double ReadMat::orbital_pos(LoadedMat mat, int idx, int dim, int sheet){
+double ReadMat::orbital_pos(LoadedMat& mat, int idx, int dim, int sheet){
+  sheet = 0;
   return mat.intra_data[sheet].orb_pos[idx][dim];
 }
 
-double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int, 2>& vector, LoadedMat mat, int sheet){
+double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int, 2>& vector, LoadedMat& mat, int sheet){
 
-
+  sheet = 0;
   int max_R = mat.intra_data[sheet].intralayer_terms.size();
   int c = (max_R - 1)/2;
   // return 0.0 if part of vector is bigger than intralyer_terms span
@@ -48,7 +52,97 @@ double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int
 
 }
 
-double ReadMat::interlayer_term(int orbital_row, int orbital_col, std::array<double, 3>& vector, double angle_row, double angle_col, LoadedMat mat_row, LoadedMat mat_col){
+double ReadMat::interlayer_term(int orbital_row, int orbital_col, std::array<double, 3>& vector, double angle_row, double angle_col, LoadedMat& mat){
+
+
+    // if vector is pointing down, pass tranposed term instead (ensure Hermiticity):
+    if (vector[2] < 0.0){
+      std::array<double, 3> new_vector;
+      for (int d = 0; d < 3; ++d){
+        new_vector[d] = -vector[d];
+      }
+      //printf("passing reversed vector to ReadMat::interlayer_term \n");
+      //printf("[%d, %d, %lf, %lf, %lf] \n",orbital_row,orbital_col,new_vector[0],new_vector[1],new_vector[2]);
+
+      return interlayer_term(orbital_col, orbital_row, new_vector, angle_col, angle_row, mat);
+    }
+
+
+    // mat_row and mat_col are identical now
+    // need to find a good system of dealing with general # of interlayer coupling functionals
+    int inter_idx = 0; // needs to be generalized eventually for modeling beyond bilayer systems
+
+    double max_r = mat.inter_data[inter_idx].max_r;
+    int gridsize_x = mat.inter_data[inter_idx].gridsize_x;
+    int gridsize_y = mat.inter_data[inter_idx].gridsize_y;
+
+    std::vector<int> saved_orbs1 = mat.inter_data[inter_idx].saved_orbs1;
+    std::vector<int> saved_orbs2 = mat.inter_data[inter_idx].saved_orbs2;
+
+    double x_h = vector[0];
+    double y_h = vector[1];
+
+    // see if vector is within coupling cutoff square.
+    if (x_h > max_r || x_h < -max_r || y_h > max_r || y_h < -max_r){
+      return 0.0;
+    }
+
+    // see if we have a coupling pair for the two supplied orbital indices
+    // if so, save the local orbital indices for the interlayer_terms dataset
+    int found_pair = 0;
+    int o1, o2;
+    int o1_here, o2_here;
+
+    for (int o1_idx = 0; o1_idx < (int)saved_orbs1.size(); ++o1_idx){
+      o1_here = saved_orbs1[o1_idx]-1;
+      for (int o2_idx = 0; o2_idx < (int)saved_orbs2.size(); ++o2_idx){
+        o2_here = saved_orbs2[o2_idx]-1;
+        if(o1_here == orbital_row && o2_here == orbital_col){
+          o1 = o1_idx;
+          o2 = o2_idx;
+          found_pair = 1;
+          o1_idx = 999;
+          o2_idx = 999;
+        }
+      }
+    }
+
+    if (found_pair == 0){
+      return 0.0;
+    }
+
+    // spacing between grid-points in x and y
+    double dx = 2.0*max_r/( (double)(gridsize_x-1) );
+    double dy = 2.0*max_r/( (double)(gridsize_y-1) );
+
+    // find number of dx's that vector[0] is away from the start of the grid, -max_r:
+    double x_tar = (x_h - (-max_r) ) / dx;
+    double y_tar = (y_h - (-max_r) ) / dy;
+
+    int x_floor = floor(x_tar);
+    int y_floor = floor(y_tar);
+
+    double x_fac = x_tar - x_floor;
+    double y_fac = y_tar - y_floor;
+
+    /*
+    2d linear interpolant:
+            c---d
+            |   |
+            a---b
+    [x_floor][y_floor] is given by "a"
+    */
+
+
+    double a = mat.inter_data[inter_idx].interlayer_terms[o1][o2][x_floor  ][y_floor  ];
+    double b = mat.inter_data[inter_idx].interlayer_terms[o1][o2][x_floor+1][y_floor  ];
+    double c = mat.inter_data[inter_idx].interlayer_terms[o1][o2][x_floor  ][y_floor+1];
+    double d = mat.inter_data[inter_idx].interlayer_terms[o1][o2][x_floor+1][y_floor+1];
+
+
+    // 2D linear interpolation algorithm (bilinear interpolant):
+    double t = ( a*(1.0-x_fac)*(1.0-y_fac) + b*x_fac*(1.0-y_fac) + c*(1.0-x_fac)*y_fac + d*x_fac*y_fac  );
+    return t;
 
     /*
       const double nu_sigma   =  2.627;   const double nu_pi      = -0.708;
@@ -233,12 +327,140 @@ LoadedMat ReadMat::loadMat(std::string filename){
     intra_data[idx].intralayer_terms = intralayer_terms;
 
     //printf("done with ReadMat::loadMat (%d orbs, %d couplings) \n",num_orbs, num_mono_couplings);
+    fileIn.ignore(256, '\n');  // end of line
 
   }
+
+  fileIn.ignore(256, '\n');  // end mono couplings
+  fileIn.ignore(256, '\n');  // blank line
 
   // Now loop over all inter data
   for (int idx = 0; idx < num_inter_data; ++idx){
 
+        string name;
+
+        int num_orbs1;
+        int num_orbs2;
+
+        vector< array<double, 3> > orb_pos;
+
+        int num_saved_orbs1;
+        int num_saved_orbs2;
+
+        std::vector<int> saved_orbs1;
+        std::vector<int> saved_orbs2;
+
+        double max_r;
+        int gridsize_x;
+        int gridsize_y;
+        vector< vector< vector< vector<double> > > > interlayer_terms;
+
+        fileIn >> name;   // name
+        //printf("name = %s \n",name.c_str());
+        fileIn.ignore(256, '\n');  // end of line
+        fileIn.ignore(256, '\n');  // blank line
+        fileIn.ignore(256, '\n');  // begin orb list
+
+        fileIn >> num_orbs1;
+        fileIn >> temp; // skip "x"
+        fileIn >> num_orbs2;
+        fileIn.ignore(256, '\n'); // end of line
+
+        // Now read the positions of every orbital
+        orb_pos.resize(num_orbs1 + num_orbs2);
+        for (int i = 0; i < num_orbs1+num_orbs2; ++i){
+          fileIn >> orb_pos[i][0];
+          fileIn >> orb_pos[i][1];
+          fileIn >> orb_pos[i][2];
+          //printf("orb_pos[%d] = [%lf, %lf, %lf] \n",i,orb_pos[i][0],orb_pos[i][1],orb_pos[i][2]);
+        }
+
+        fileIn.ignore(256, '\n');  // end of line
+        fileIn.ignore(256, '\n');  // end orb list
+        fileIn.ignore(256, '\n');  // blank line
+
+        fileIn.ignore(256, '\n');  // start saved_orb list
+
+        fileIn >> num_saved_orbs1;
+        fileIn >> temp; // skip "x"
+        fileIn >> num_saved_orbs2;
+        fileIn.ignore(256, '\n'); // end of line
+
+        saved_orbs1.resize(num_saved_orbs1);
+        saved_orbs2.resize(num_saved_orbs2);
+
+        for (int i = 0; i < num_saved_orbs1; ++i){
+          fileIn >> saved_orbs1[i];
+        }
+        fileIn.ignore(256, '\n'); // end of line
+
+        for (int i = 0; i < num_saved_orbs2; ++i){
+          fileIn >> saved_orbs2[i];
+        }
+        fileIn.ignore(256, '\n'); // end of line
+        fileIn.ignore(256, '\n'); // end saved_orb list
+
+        fileIn.ignore(256, '\n');  // blank line
+        fileIn.ignore(256, '\n');  // begin inter couplings
+
+        fileIn >> max_r;
+        fileIn >> gridsize_x;
+        fileIn >> gridsize_y;
+        fileIn.ignore(256, '\n'); // end of line
+        fileIn.ignore(256, '\n'); // blank line
+
+        interlayer_terms.resize(num_saved_orbs1);
+
+        //printf("max_r = %lf, gridsize_x = %d, gridsize_y = %d \n",max_r, gridsize_x, gridsize_y);
+
+        int temp_o1;
+        int temp_o2;
+
+        for (int o1 = 0; o1 < num_saved_orbs1; ++o1){
+          interlayer_terms[o1].resize(num_saved_orbs2);
+          for (int o2 = 0; o2 < num_saved_orbs2; ++o2){
+            interlayer_terms[o1][o2].resize(gridsize_x);
+
+            fileIn >> temp_o1;
+            fileIn >> temp_o2;
+
+            if (temp_o1 != saved_orbs1[o1]){
+              throw std::runtime_error("ReadMat::LoadMat Interlayer coupling orbital index mismatch in orbital 1! \n");
+            }
+
+            if (temp_o2 != saved_orbs2[o2]){
+              throw std::runtime_error("ReadMat::LoadMat Interlayer coupling orbital index mismatch in orbital 2! \n");
+            }
+
+            for (int gx = 0; gx < gridsize_x; ++gx){
+              interlayer_terms[o1][o2][gx].resize(gridsize_y);
+              for (int gy = 0; gy < gridsize_y; ++gy){
+                fileIn >> interlayer_terms[o1][o2][gx][gy];
+              }
+            }
+
+            fileIn.ignore(256, '\n'); // end of line
+            fileIn.ignore(256, '\n'); // blank line
+
+        }
+      }
+
+      inter_data[idx].name = name;
+      inter_data[idx].num_orbs1 = num_orbs1;
+      inter_data[idx].num_orbs2 = num_orbs2;
+      inter_data[idx].num_saved_orbs1 = num_saved_orbs1;
+      inter_data[idx].num_saved_orbs2 = num_saved_orbs2;
+      inter_data[idx].saved_orbs1 = saved_orbs1;
+      inter_data[idx].saved_orbs2 = saved_orbs2;
+      inter_data[idx].max_r = max_r;
+      inter_data[idx].gridsize_x = gridsize_x;
+      inter_data[idx].gridsize_y = gridsize_y;
+      inter_data[idx].orb_pos = orb_pos;
+      inter_data[idx].interlayer_terms = interlayer_terms;
+
+
+
+      //printf("done with ReadMat::loadMat (%d orbs, %d couplings) \n",num_orbs, num_mono_couplings);
   }
 
   fileIn.close();

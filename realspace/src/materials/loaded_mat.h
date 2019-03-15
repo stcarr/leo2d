@@ -21,12 +21,31 @@ struct LoadedIntraData{
   int num_orbs;
   std::vector< std::array<double, 3> > orb_pos;
 
-  // intralyer terms, intralyer_terms[R_i][R_j][o1][o2]
+  // intralayer terms, intralayer_terms[R_i][R_j][o1][o2]
   std::vector< std::vector< std::vector< std::vector<double> > > > intralayer_terms;
 
 };
 
 struct LoadedInterData{
+
+  std::string name;
+
+  int num_orbs1;
+  int num_orbs2;
+  int num_saved_orbs1;
+  int num_saved_orbs2;
+
+  std::vector<int> saved_orbs1;
+  std::vector<int> saved_orbs2;
+
+  double max_r;
+  int gridsize_x;
+  int gridsize_y;
+
+  std::vector< std::array<double, 3> > orb_pos;
+
+  // interlayer terms, interlayer_terms[o1][o2][gx][gy]
+  std::vector< std::vector< std::vector< std::vector<double> > > > interlayer_terms;
 
 };
 

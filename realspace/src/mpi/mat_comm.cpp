@@ -163,8 +163,141 @@ void MPI_Bcast_loadedIntra(int root, LoadedIntraData &dat){
 
 void MPI_Bcast_root_loadedInter(int root, LoadedInterData &dat){
 
+  // Send basic types
+  MPI::COMM_WORLD.Bcast(&(dat.num_orbs1), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.num_orbs2), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.num_saved_orbs1), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.num_saved_orbs2), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.gridsize_x), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.gridsize_y), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.max_r), 1, MPI_DOUBLE, root);
+
+  // Send name
+  int len = (int) dat.name.size();
+  MPI::COMM_WORLD.Bcast(&len, 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.name[0]), len, MPI_CHAR, root);
+
+  // Send orbital positions
+  double temp_pos[3*(dat.num_orbs1 + dat.num_orbs2)];
+  int counter = 0;
+  for (int o = 0; o < (dat.num_orbs1 + dat.num_orbs2); ++o){
+          for (int d = 0; d < 3; ++d){
+                  temp_pos[counter] = dat.orb_pos[o][d];
+                  counter++;
+          }
+  }
+  MPI::COMM_WORLD.Bcast(temp_pos, 3*(dat.num_orbs1 + dat.num_orbs2), MPI::DOUBLE, root);
+
+  // Send saved orbs
+  int temp_orbs1[dat.num_saved_orbs1];
+  counter = 0;
+  for (int o = 0; o < dat.num_saved_orbs1; ++o){
+          temp_orbs1[counter] = dat.saved_orbs1[o];
+          counter++;
+  }
+
+  int temp_orbs2[dat.num_saved_orbs1];
+  counter = 0;
+  for (int o = 0; o < dat.num_saved_orbs1; ++o){
+          temp_orbs2[counter] = dat.saved_orbs2[o];
+          counter++;
+  }
+
+  MPI::COMM_WORLD.Bcast(temp_orbs1, dat.num_saved_orbs1, MPI::INT, root);
+  MPI::COMM_WORLD.Bcast(temp_orbs2, dat.num_saved_orbs1, MPI::INT, root);
+
+  // Send interlayer terms
+  int dim = dat.num_saved_orbs1*dat.num_saved_orbs2*dat.gridsize_x*dat.gridsize_y;
+  double* temp_val = new double[dim];  // too big to allocate on the stack
+
+  counter = 0;
+  for (int i = 0; i <  dat.num_saved_orbs1; ++i){
+          for (int j = 0; j < dat.num_saved_orbs2; ++j){
+                  for (int k = 0; k < dat.gridsize_x; ++k){
+                          for (int l = 0; l < dat.gridsize_y; ++l){
+                                  temp_val[counter] = dat.interlayer_terms[i][j][k][l];
+                                  ++counter;
+                          }
+                  }
+          }
+  }
+
+  MPI::COMM_WORLD.Bcast(temp_val, dim, MPI::DOUBLE, root);
+  delete temp_val;
+
+
 }
 
 void MPI_Bcast_loadedInter(int root, LoadedInterData &dat){
+
+  MPI::COMM_WORLD.Bcast(&(dat.num_orbs1), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.num_orbs2), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.num_saved_orbs1), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.num_saved_orbs2), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.gridsize_x), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.gridsize_y), 1, MPI_INT, root);
+  MPI::COMM_WORLD.Bcast(&(dat.max_r), 1, MPI_DOUBLE, root);
+
+  // Recieve name
+  int len;
+  MPI::COMM_WORLD.Bcast(&len, 1, MPI_INT, root);
+  char temp_name[len];
+  MPI::COMM_WORLD.Bcast(temp_name, len, MPI_CHAR, root);
+  dat.name.assign(temp_name,len);
+
+  // Recieve orbital positions
+  double temp_pos[3*(dat.num_orbs1 + dat.num_orbs2)];
+
+  MPI::COMM_WORLD.Bcast(temp_pos, 3*(dat.num_orbs1 + dat.num_orbs2), MPI::DOUBLE, root);
+
+  int counter = 0;
+  dat.orb_pos.resize(3*(dat.num_orbs1 + dat.num_orbs2));
+  for (int o = 0; o < 3*(dat.num_orbs1 + dat.num_orbs2); ++o){
+          for (int d = 0; d < 3; ++d){
+                  dat.orb_pos[o][d] = temp_pos[counter];
+                  counter++;
+          }
+  }
+
+  // Recieve saved orbs
+  int temp_orbs1[dat.num_saved_orbs1];
+  int temp_orbs2[dat.num_saved_orbs1];
+
+  MPI::COMM_WORLD.Bcast(temp_orbs1, dat.num_saved_orbs1, MPI::INT, root);
+  MPI::COMM_WORLD.Bcast(temp_orbs2, dat.num_saved_orbs1, MPI::INT, root);
+
+  dat.saved_orbs1.resize(dat.num_saved_orbs1);
+  for (int o = 0; o < dat.num_saved_orbs1; ++o){
+          dat.saved_orbs1[o] = temp_orbs1[o];
+  }
+
+  dat.saved_orbs2.resize(dat.num_saved_orbs2);
+  for (int o = 0; o < dat.num_saved_orbs2; ++o){
+          dat.saved_orbs2[o] = temp_orbs2[o];
+  }
+
+  // Recieve interlayer terms
+  int dim = dat.num_saved_orbs1*dat.num_saved_orbs2*dat.gridsize_x*dat.gridsize_y;
+  double* temp_val = new double[dim]; // too big to allocate on the stack
+
+  counter = 0;
+
+  MPI::COMM_WORLD.Bcast(temp_val, dim, MPI::DOUBLE, root);
+
+  dat.interlayer_terms.resize(dat.num_saved_orbs1);
+  for (int i = 0; i < dat.num_saved_orbs1; ++i){
+          dat.interlayer_terms[i].resize(dat.num_saved_orbs2);
+          for (int j = 0; j < dat.num_saved_orbs2; ++j){
+                  dat.interlayer_terms[i][j].resize(dat.gridsize_x);
+                  for (int k = 0; k < dat.gridsize_x; ++k){
+                          dat.interlayer_terms[i][j][k].resize(dat.gridsize_y);
+                          for (int l = 0; l < dat.gridsize_y; ++l){
+                                  dat.interlayer_terms[i][j][k][l] = temp_val[counter];
+                                  ++counter;
+                          }
+                  }
+          }
+  }
+  delete temp_val;
 
 }

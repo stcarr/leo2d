@@ -301,7 +301,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
 
   // We search over a searchsize x searchsize sized grid of unitcells
 	int searchsize;
-	if (mat_from_file = 0){
+	if (mat_from_file == 0){
   	searchsize = Materials::inter_search_radius(sheets[0].getMat());
 	} else {
 		searchsize = ReadMat::inter_search_radius(loadedMatData);
