@@ -166,7 +166,6 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 				}
 
 				if (in_string == "SUPERCELL_M_N"){
-
 						getline(in_line,in_string,' ');
 						getline(in_line,in_string,' ');
 						int m = atoi(in_string.c_str());
@@ -174,11 +173,11 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 						int n = atoi(in_string.c_str());
 						opts.setParam("m_supercell",m);
 						opts.setParam("n_supercell",n);
-						if (num_sheets == 2){
-						int o = 1;
-						opts.setParam("supercell_type",o);
-					} else if (num_sheets == 3){
+						if (num_sheets == 3){
 						int o = 3;
+						opts.setParam("supercell_type",o);
+					} else if (num_sheets == 1){
+						int o = 1;
 						opts.setParam("supercell_type",o);
 					}
 				}

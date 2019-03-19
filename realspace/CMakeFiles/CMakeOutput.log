@@ -9394,3 +9394,592 @@ Linking CXX executable cmTC_1c846
 /Users/zoe/anaconda/bin/c++  -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_1c846.dir/TestForSSTREAM.cxx.o  -o cmTC_1c846 
 
 
+The system is: Darwin - 18.2.0 - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /Users/zoe/anaconda/bin/cc 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is GNU, found in "/Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/3.13.4/CompilerIdC/a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /Users/zoe/anaconda/bin/c++ 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+The CXX compiler identification is GNU, found in "/Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/3.13.4/CompilerIdCXX/a.out"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_729e0/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_729e0.dir/build.make CMakeFiles/cmTC_729e0.dir/build
+Building C object CMakeFiles/cmTC_729e0.dir/testCCompiler.c.o
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_729e0.dir/testCCompiler.c.o   -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_729e0
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_729e0.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_729e0.dir/testCCompiler.c.o  -o cmTC_729e0 
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_00029/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_00029.dir/build.make CMakeFiles/cmTC_00029.dir/build
+Building C object CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o   -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_00029
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_00029.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o  -o cmTC_00029 
+Using built-in specs.
+COLLECT_GCC=/Users/zoe/anaconda/bin/cc
+COLLECT_LTO_WRAPPER=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/lto-wrapper
+Target: x86_64-apple-darwin11.4.2
+Configured with: ./configure --prefix=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-gxx-include-dir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ --bindir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/bin --datarootdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/share --libdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib --with-gmp=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpfr=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpc=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-isl=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-cloog=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-boot-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --with-stage1-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --enable-checking=release --with-tune=generic --disable-multilib
+Thread model: posix
+gcc version 4.8.5 (GCC) 
+COMPILER_PATH=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../libexec/gcc/
+LIBRARY_PATH=/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../lib/gcc/:/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../../:/usr/lib/
+COLLECT_GCC_OPTIONS='-mmacosx-version-min=10.14.2' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk' '-v' '-o' 'cmTC_00029' '-mtune=generic'
+ /Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/collect2 -dynamic -arch x86_64 -macosx_version_min 10.14.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -weak_reference_mismatches non-weak -o cmTC_00029 -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5 -L/Users/zoe/anaconda/bin/../lib/gcc -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+collect2 version 4.8.5
+/usr/bin/ld -dynamic -arch x86_64 -macosx_version_min 10.14.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -weak_reference_mismatches non-weak -o cmTC_00029 -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5 -L/Users/zoe/anaconda/bin/../lib/gcc -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-409.12
+BUILD 17:47:51 Sep 25 2018
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em arm64e arm64_32
+@(#)PROGRAM:ld  PROJECT:ld64-409.12
+BUILD 17:47:51 Sep 25 2018
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em arm64e arm64_32
+Library search paths:
+	/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5
+	/Users/zoe/anaconda/lib/gcc
+	/Users/zoe/anaconda/lib
+	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib
+Framework search paths:
+	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks/
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_00029/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_00029.dir/build.make CMakeFiles/cmTC_00029.dir/build]
+  ignore line: [Building C object CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o]
+  ignore line: [/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o   -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTC_00029]
+  ignore line: [/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_00029.dir/link.txt --verbose=1]
+  ignore line: [/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o  -o cmTC_00029 ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/Users/zoe/anaconda/bin/cc]
+  ignore line: [COLLECT_LTO_WRAPPER=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/lto-wrapper]
+  ignore line: [Target: x86_64-apple-darwin11.4.2]
+  ignore line: [Configured with: ./configure --prefix=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-gxx-include-dir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ --bindir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/bin --datarootdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/share --libdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib --with-gmp=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpfr=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpc=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-isl=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-cloog=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-boot-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --with-stage1-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --enable-checking=release --with-tune=generic --disable-multilib]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 4.8.5 (GCC) ]
+  ignore line: [COMPILER_PATH=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../libexec/gcc/]
+  ignore line: [LIBRARY_PATH=/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../lib/gcc/:/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../../:/usr/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-mmacosx-version-min=10.14.2' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk' '-v' '-o' 'cmTC_00029' '-mtune=generic']
+  link line: [ /Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/collect2 -dynamic -arch x86_64 -macosx_version_min 10.14.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -weak_reference_mismatches non-weak -o cmTC_00029 -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5 -L/Users/zoe/anaconda/bin/../lib/gcc -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v]
+    arg [/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/collect2] ==> ignore
+    arg [-dynamic] ==> ignore
+    arg [-arch] ==> ignore
+    arg [x86_64] ==> ignore
+    arg [-macosx_version_min] ==> ignore
+    arg [10.14.2] ==> ignore
+    arg [-syslibroot] ==> ignore
+    arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk] ==> ignore
+    arg [-weak_reference_mismatches] ==> ignore
+    arg [non-weak] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_00029] ==> ignore
+    arg [-L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5] ==> dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5]
+    arg [-L/Users/zoe/anaconda/bin/../lib/gcc] ==> dir [/Users/zoe/anaconda/bin/../lib/gcc]
+    arg [-L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../..] ==> dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../..]
+    arg [-search_paths_first] ==> ignore
+    arg [-headerpad_max_install_names] ==> ignore
+    arg [-v] ==> ignore
+    arg [CMakeFiles/cmTC_00029.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [-no_compact_unwind] ==> ignore
+    arg [-lSystem] ==> lib [System]
+    arg [-lgcc_ext.10.5] ==> lib [gcc_ext.10.5]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lSystem] ==> lib [System]
+    arg [-v] ==> ignore
+  Library search paths: [;/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5;/Users/zoe/anaconda/lib/gcc;/Users/zoe/anaconda/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib]
+  Framework search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks/]
+  remove lib [System]
+  remove lib [System]
+  collapse library dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5] ==> [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5]
+  collapse library dir [/Users/zoe/anaconda/bin/../lib/gcc] ==> [/Users/zoe/anaconda/lib/gcc]
+  collapse library dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../..] ==> [/Users/zoe/anaconda/lib]
+  collapse library dir [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5] ==> [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5]
+  collapse library dir [/Users/zoe/anaconda/lib/gcc] ==> [/Users/zoe/anaconda/lib/gcc]
+  collapse library dir [/Users/zoe/anaconda/lib] ==> [/Users/zoe/anaconda/lib]
+  collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib]
+  collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks/] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks]
+  implicit libs: [gcc_ext.10.5;gcc]
+  implicit dirs: [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5;/Users/zoe/anaconda/lib/gcc;/Users/zoe/anaconda/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib]
+  implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks]
+
+
+
+
+Detecting C [-std=c11] compiler features compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_6c419/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_6c419.dir/build.make CMakeFiles/cmTC_6c419.dir/build
+Building C object CMakeFiles/cmTC_6c419.dir/feature_tests.c.o
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -std=c11 -o CMakeFiles/cmTC_6c419.dir/feature_tests.c.o   -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/feature_tests.c
+Linking C executable cmTC_6c419
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6c419.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_6c419.dir/feature_tests.c.o  -o cmTC_6c419 
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_restrict
+    Feature record: C_FEATURE:1c_static_assert
+    Feature record: C_FEATURE:1c_variadic_macros
+
+
+Detecting C [-std=c99] compiler features compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_83ac7/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_83ac7.dir/build.make CMakeFiles/cmTC_83ac7.dir/build
+Building C object CMakeFiles/cmTC_83ac7.dir/feature_tests.c.o
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -std=c99 -o CMakeFiles/cmTC_83ac7.dir/feature_tests.c.o   -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/feature_tests.c
+Linking C executable cmTC_83ac7
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_83ac7.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_83ac7.dir/feature_tests.c.o  -o cmTC_83ac7 
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_restrict
+    Feature record: C_FEATURE:0c_static_assert
+    Feature record: C_FEATURE:1c_variadic_macros
+
+
+Detecting C [-std=c90] compiler features compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_5ea33/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_5ea33.dir/build.make CMakeFiles/cmTC_5ea33.dir/build
+Building C object CMakeFiles/cmTC_5ea33.dir/feature_tests.c.o
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -std=c90 -o CMakeFiles/cmTC_5ea33.dir/feature_tests.c.o   -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/feature_tests.c
+Linking C executable cmTC_5ea33
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5ea33.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_5ea33.dir/feature_tests.c.o  -o cmTC_5ea33 
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:0c_restrict
+    Feature record: C_FEATURE:0c_static_assert
+    Feature record: C_FEATURE:0c_variadic_macros
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_8fc4f/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_8fc4f.dir/build.make CMakeFiles/cmTC_8fc4f.dir/build
+Building CXX object CMakeFiles/cmTC_8fc4f.dir/testCXXCompiler.cxx.o
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_8fc4f.dir/testCXXCompiler.cxx.o -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_8fc4f
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8fc4f.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_8fc4f.dir/testCXXCompiler.cxx.o  -o cmTC_8fc4f 
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_0f052/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_0f052.dir/build.make CMakeFiles/cmTC_0f052.dir/build
+Building CXX object CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_0f052
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0f052.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_0f052 
+Using built-in specs.
+COLLECT_GCC=/Users/zoe/anaconda/bin/c++
+COLLECT_LTO_WRAPPER=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/lto-wrapper
+Target: x86_64-apple-darwin11.4.2
+Configured with: ./configure --prefix=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-gxx-include-dir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ --bindir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/bin --datarootdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/share --libdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib --with-gmp=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpfr=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpc=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-isl=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-cloog=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-boot-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --with-stage1-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --enable-checking=release --with-tune=generic --disable-multilib
+Thread model: posix
+gcc version 4.8.5 (GCC) 
+COMPILER_PATH=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../libexec/gcc/
+LIBRARY_PATH=/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../lib/gcc/:/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../../:/usr/lib/
+COLLECT_GCC_OPTIONS='-mmacosx-version-min=10.14.2' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk' '-v' '-o' 'cmTC_0f052' '-shared-libgcc' '-mtune=generic'
+ /Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/collect2 -dynamic -arch x86_64 -macosx_version_min 10.14.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -weak_reference_mismatches non-weak -o cmTC_0f052 -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5 -L/Users/zoe/anaconda/bin/../lib/gcc -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+collect2 version 4.8.5
+/usr/bin/ld -dynamic -arch x86_64 -macosx_version_min 10.14.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -weak_reference_mismatches non-weak -o cmTC_0f052 -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5 -L/Users/zoe/anaconda/bin/../lib/gcc -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-409.12
+BUILD 17:47:51 Sep 25 2018
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em arm64e arm64_32
+@(#)PROGRAM:ld  PROJECT:ld64-409.12
+BUILD 17:47:51 Sep 25 2018
+configured to support archs: armv6 armv7 armv7s arm64 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em arm64e arm64_32
+Library search paths:
+	/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5
+	/Users/zoe/anaconda/lib/gcc
+	/Users/zoe/anaconda/lib
+	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib
+Framework search paths:
+	/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks/
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_0f052/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_0f052.dir/build.make CMakeFiles/cmTC_0f052.dir/build]
+  ignore line: [Building CXX object CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTC_0f052]
+  ignore line: [/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0f052.dir/link.txt --verbose=1]
+  ignore line: [/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_0f052 ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/Users/zoe/anaconda/bin/c++]
+  ignore line: [COLLECT_LTO_WRAPPER=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/lto-wrapper]
+  ignore line: [Target: x86_64-apple-darwin11.4.2]
+  ignore line: [Configured with: ./configure --prefix=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-gxx-include-dir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/gcc/include/c++ --bindir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/bin --datarootdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/share --libdir=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib --with-gmp=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpfr=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-mpc=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-isl=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-cloog=/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac --with-boot-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --with-stage1-ldflags='-Wl,-headerpad_max_install_names -Wl,-L/Users/ray/mc-x64-3.5/conda-bld/gcc-4.8_1477649012852/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_plac/lib -Wl,-L/usr/lib' --enable-checking=release --with-tune=generic --disable-multilib]
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 4.8.5 (GCC) ]
+  ignore line: [COMPILER_PATH=/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../libexec/gcc/]
+  ignore line: [LIBRARY_PATH=/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/:/Users/zoe/anaconda/bin/../lib/gcc/:/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../../:/usr/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-mmacosx-version-min=10.14.2' '-isysroot' '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk' '-v' '-o' 'cmTC_0f052' '-shared-libgcc' '-mtune=generic']
+  link line: [ /Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/collect2 -dynamic -arch x86_64 -macosx_version_min 10.14.2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -weak_reference_mismatches non-weak -o cmTC_0f052 -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5 -L/Users/zoe/anaconda/bin/../lib/gcc -L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../.. -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lSystem -v]
+    arg [/Users/zoe/anaconda/bin/../libexec/gcc/x86_64-apple-darwin11.4.2/4.8.5/collect2] ==> ignore
+    arg [-dynamic] ==> ignore
+    arg [-arch] ==> ignore
+    arg [x86_64] ==> ignore
+    arg [-macosx_version_min] ==> ignore
+    arg [10.14.2] ==> ignore
+    arg [-syslibroot] ==> ignore
+    arg [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk] ==> ignore
+    arg [-weak_reference_mismatches] ==> ignore
+    arg [non-weak] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_0f052] ==> ignore
+    arg [-L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5] ==> dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5]
+    arg [-L/Users/zoe/anaconda/bin/../lib/gcc] ==> dir [/Users/zoe/anaconda/bin/../lib/gcc]
+    arg [-L/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../..] ==> dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../..]
+    arg [-search_paths_first] ==> ignore
+    arg [-headerpad_max_install_names] ==> ignore
+    arg [-v] ==> ignore
+    arg [CMakeFiles/cmTC_0f052.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [-lstdc++] ==> lib [stdc++]
+    arg [-no_compact_unwind] ==> ignore
+    arg [-lSystem] ==> lib [System]
+    arg [-lgcc_ext.10.5] ==> lib [gcc_ext.10.5]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lSystem] ==> lib [System]
+    arg [-v] ==> ignore
+  Library search paths: [;/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5;/Users/zoe/anaconda/lib/gcc;/Users/zoe/anaconda/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib]
+  Framework search paths: [;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks/]
+  remove lib [System]
+  remove lib [System]
+  collapse library dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5] ==> [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5]
+  collapse library dir [/Users/zoe/anaconda/bin/../lib/gcc] ==> [/Users/zoe/anaconda/lib/gcc]
+  collapse library dir [/Users/zoe/anaconda/bin/../lib/gcc/x86_64-apple-darwin11.4.2/4.8.5/../../..] ==> [/Users/zoe/anaconda/lib]
+  collapse library dir [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5] ==> [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5]
+  collapse library dir [/Users/zoe/anaconda/lib/gcc] ==> [/Users/zoe/anaconda/lib/gcc]
+  collapse library dir [/Users/zoe/anaconda/lib] ==> [/Users/zoe/anaconda/lib]
+  collapse library dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib]
+  collapse framework dir [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks/] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks]
+  implicit libs: [stdc++;gcc_ext.10.5;gcc]
+  implicit dirs: [/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5;/Users/zoe/anaconda/lib/gcc;/Users/zoe/anaconda/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib]
+  implicit fwks: [/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks]
+
+
+
+
+Detecting CXX [-std=c++1y] compiler features compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_7f0ba/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_7f0ba.dir/build.make CMakeFiles/cmTC_7f0ba.dir/build
+Building CXX object CMakeFiles/cmTC_7f0ba.dir/feature_tests.cxx.o
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -std=c++1y -o CMakeFiles/cmTC_7f0ba.dir/feature_tests.cxx.o -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_7f0ba
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7f0ba.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_7f0ba.dir/feature_tests.cxx.o  -o cmTC_7f0ba 
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++11] compiler features compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_f4293/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_f4293.dir/build.make CMakeFiles/cmTC_f4293.dir/build
+Building CXX object CMakeFiles/cmTC_f4293.dir/feature_tests.cxx.o
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -std=c++11 -o CMakeFiles/cmTC_f4293.dir/feature_tests.cxx.o -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_f4293
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f4293.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_f4293.dir/feature_tests.cxx.o  -o cmTC_f4293 
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++98] compiler features compiled with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_98622/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_98622.dir/build.make CMakeFiles/cmTC_98622.dir/build
+Building CXX object CMakeFiles/cmTC_98622.dir/feature_tests.cxx.o
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -std=c++98 -o CMakeFiles/cmTC_98622.dir/feature_tests.cxx.o -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_98622
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_98622.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++    -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_98622.dir/feature_tests.cxx.o  -o cmTC_98622 
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:0cxx_alias_templates
+    Feature record: CXX_FEATURE:0cxx_alignas
+    Feature record: CXX_FEATURE:0cxx_alignof
+    Feature record: CXX_FEATURE:0cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:0cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:0cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:0cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:0cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:0cxx_default_function_template_args
+    Feature record: CXX_FEATURE:0cxx_defaulted_functions
+    Feature record: CXX_FEATURE:0cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:0cxx_delegating_constructors
+    Feature record: CXX_FEATURE:0cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:0cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:0cxx_explicit_conversions
+    Feature record: CXX_FEATURE:0cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:0cxx_extern_templates
+    Feature record: CXX_FEATURE:0cxx_final
+    Feature record: CXX_FEATURE:0cxx_func_identifier
+    Feature record: CXX_FEATURE:0cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:0cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:0cxx_inline_namespaces
+    Feature record: CXX_FEATURE:0cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:0cxx_local_type_template_args
+    Feature record: CXX_FEATURE:0cxx_long_long_type
+    Feature record: CXX_FEATURE:0cxx_noexcept
+    Feature record: CXX_FEATURE:0cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:0cxx_nullptr
+    Feature record: CXX_FEATURE:0cxx_override
+    Feature record: CXX_FEATURE:0cxx_range_for
+    Feature record: CXX_FEATURE:0cxx_raw_string_literals
+    Feature record: CXX_FEATURE:0cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:0cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:0cxx_rvalue_references
+    Feature record: CXX_FEATURE:0cxx_sizeof_member
+    Feature record: CXX_FEATURE:0cxx_static_assert
+    Feature record: CXX_FEATURE:0cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:0cxx_thread_local
+    Feature record: CXX_FEATURE:0cxx_trailing_return_types
+    Feature record: CXX_FEATURE:0cxx_unicode_literals
+    Feature record: CXX_FEATURE:0cxx_uniform_initialization
+    Feature record: CXX_FEATURE:0cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:0cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:0cxx_variadic_macros
+    Feature record: CXX_FEATURE:0cxx_variadic_templates
+Determining if the include file iostream exists passed with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_718e3/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_718e3.dir/build.make CMakeFiles/cmTC_718e3.dir/build
+Building CXX object CMakeFiles/cmTC_718e3.dir/CheckIncludeFile.cxx.o
+/Users/zoe/anaconda/bin/c++    -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_718e3.dir/CheckIncludeFile.cxx.o -c /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp/CheckIncludeFile.cxx
+Linking CXX executable cmTC_718e3
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_718e3.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++  -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_718e3.dir/CheckIncludeFile.cxx.o  -o cmTC_718e3 
+
+
+Determining if the CXX compiler has std namespace passed with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_54c82/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_54c82.dir/build.make CMakeFiles/cmTC_54c82.dir/build
+Building CXX object CMakeFiles/cmTC_54c82.dir/TestForSTDNamespace.cxx.o
+/Users/zoe/anaconda/bin/c++    -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_54c82.dir/TestForSTDNamespace.cxx.o -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/TestForSTDNamespace.cxx
+/var/folders/dw/00xfphjj7mqfdx9qd2n3glth0000gp/T//ccF5UMCH.s:4:11: warning: section "__textcoal_nt" is deprecated
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+/var/folders/dw/00xfphjj7mqfdx9qd2n3glth0000gp/T//ccF5UMCH.s:4:11: note: change section name to "__text"
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+/var/folders/dw/00xfphjj7mqfdx9qd2n3glth0000gp/T//ccF5UMCH.s:45:11: warning: section "__textcoal_nt" is deprecated
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+/var/folders/dw/00xfphjj7mqfdx9qd2n3glth0000gp/T//ccF5UMCH.s:45:11: note: change section name to "__text"
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+/var/folders/dw/00xfphjj7mqfdx9qd2n3glth0000gp/T//ccF5UMCH.s:110:11: warning: section "__textcoal_nt" is deprecated
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+/var/folders/dw/00xfphjj7mqfdx9qd2n3glth0000gp/T//ccF5UMCH.s:110:11: note: change section name to "__text"
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+Linking CXX executable cmTC_54c82
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_54c82.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++  -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_54c82.dir/TestForSTDNamespace.cxx.o  -o cmTC_54c82 
+
+
+Determining if the CXX compiler understands ansi for scopes passed with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_22815/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_22815.dir/build.make CMakeFiles/cmTC_22815.dir/build
+Building CXX object CMakeFiles/cmTC_22815.dir/TestForAnsiForScope.cxx.o
+/Users/zoe/anaconda/bin/c++    -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_22815.dir/TestForAnsiForScope.cxx.o -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/TestForAnsiForScope.cxx
+Linking CXX executable cmTC_22815
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_22815.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++  -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_22815.dir/TestForAnsiForScope.cxx.o  -o cmTC_22815 
+
+
+Determining if the CXX compiler has sstream passed with the following output:
+Change Dir: /Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_b0908/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_b0908.dir/build.make CMakeFiles/cmTC_b0908.dir/build
+Building CXX object CMakeFiles/cmTC_b0908.dir/TestForSSTREAM.cxx.o
+/Users/zoe/anaconda/bin/c++    -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk   -o CMakeFiles/cmTC_b0908.dir/TestForSSTREAM.cxx.o -c /usr/local/Cellar/cmake/3.13.4/share/cmake/Modules/TestForSSTREAM.cxx
+Linking CXX executable cmTC_b0908
+/usr/local/Cellar/cmake/3.13.4/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b0908.dir/link.txt --verbose=1
+/Users/zoe/anaconda/bin/c++  -std=c++11 -Wno-unused-variable -Wno-unused-parameter   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_b0908.dir/TestForSSTREAM.cxx.o  -o cmTC_b0908 
+
+
