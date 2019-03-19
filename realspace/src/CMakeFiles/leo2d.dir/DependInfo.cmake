@@ -25,7 +25,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix_gen.cpp" "/Users/zoe/Desktop/CMT/leo2d/realspace/src/CMakeFiles/leo2d.dir/serial/matrix_gen.o"
   "/Users/zoe/Desktop/CMT/leo2d/realspace/src/transport/ballistic.cpp" "/Users/zoe/Desktop/CMT/leo2d/realspace/src/CMakeFiles/leo2d.dir/transport/ballistic.o"
   )
-set(CMAKE_CXX_COMPILER_ID "Clang")
+set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH

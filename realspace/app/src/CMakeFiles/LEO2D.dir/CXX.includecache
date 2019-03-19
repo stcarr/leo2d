@@ -317,6 +317,8 @@ matrix/dmatrix.h
 src/matrix/dmatrix.h
 params/job_params.h
 src/params/job_params.h
+params/param_tools.h
+src/params/param_tools.h
 mlmc/mlmc_handler.h
 src/mlmc/mlmc_handler.h
 materials/loaded_mat.h
@@ -431,6 +433,10 @@ vector
 -
 complex
 -
+
+src/params/param_tools.h
+job_params.h
+src/params/job_params.h
 
 src/tools/numbers.h
 complex

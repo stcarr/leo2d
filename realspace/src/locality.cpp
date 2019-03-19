@@ -8,6 +8,7 @@
 #include "locality.h"
 #include "tools/numbers.h"
 #include "params/param_tools.h"
+#include "params/job_params.h"
 #include "materials/read_mat.h"
 
 //#include "transport/ballistic.h"
@@ -100,7 +101,7 @@ void Locality::setupSupercell(){
 			sdata[i].supercell = sc_here;
 
 		}
-	} else if (type == 1) { // (M,N) Supercell type
+	} else if (type == 1) { // (M,N) Supercell type, in the /src/matrix_gen.cpp file
 		std::vector<int> sc_groups;
 
 		if ((int)sdata.size() < 3){
@@ -176,12 +177,10 @@ void Locality::setupSupercell(){
 			sc_here[0].resize(2);
 			sc_here[1].resize(2);
 
-
 			sc_here[0][0] = A1_num_a1*unitCell[0][0] + A1_num_a2*unitCell[1][0];
 			sc_here[0][1] = A1_num_a1*unitCell[0][1] + A1_num_a2*unitCell[1][1];
 			sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
 			sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
-			sc_here[2][0] =
 
 			std::vector< std::vector<int> > sc_stride_here;
 			sc_stride_here.resize(2);
@@ -394,7 +393,6 @@ void Locality::setupSupercell(){
 
 			// Not updating the twist-angle is correct, as this will make sure the supercell is always
 			// saved in coordinates relative to the individual sheet, not the overall heterostructure.
-			// base_unitCell: unrotated unit cell
 			double theta_here = 0.0;
 
 			unitCell[0][0] = cos(theta_here)*base_unitCell[0][0] - sin(theta_here)*base_unitCell[0][1];

@@ -40,7 +40,6 @@ src/CMakeFiles/leo2d.dir/geom/hstruct.o: /usr/local/include/openmpi/ompi/mpi/cxx
 src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/geom/sdata.h
 src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/geom/sheet.h
 src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/geom/strain.h
-src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/materials/loaded_mat.h
 src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/materials/materials.h
@@ -52,7 +51,6 @@ src/CMakeFiles/leo2d.dir/geom/hstruct.o: src/tools/numbers.h
 
 src/CMakeFiles/leo2d.dir/geom/sdata.o: src/geom/sdata.cpp
 src/CMakeFiles/leo2d.dir/geom/sdata.o: src/geom/sdata.h
-src/CMakeFiles/leo2d.dir/geom/sdata.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/geom/sdata.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/geom/sdata.o: src/materials/materials.h
 src/CMakeFiles/leo2d.dir/geom/sdata.o: src/materials/strained_graphene.h
@@ -95,7 +93,6 @@ src/CMakeFiles/leo2d.dir/geom/sheet.o: /usr/local/include/openmpi/ompi/mpi/cxx/t
 src/CMakeFiles/leo2d.dir/geom/sheet.o: /usr/local/include/openmpi/ompi/mpi/cxx/win.h
 src/CMakeFiles/leo2d.dir/geom/sheet.o: /usr/local/include/openmpi/ompi/mpi/cxx/win_inln.h
 src/CMakeFiles/leo2d.dir/geom/sheet.o: src/geom/sdata.h
-src/CMakeFiles/leo2d.dir/geom/sheet.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/geom/sheet.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/geom/sheet.o: src/materials/loaded_mat.h
 src/CMakeFiles/leo2d.dir/geom/sheet.o: src/materials/materials.h
@@ -158,21 +155,16 @@ src/CMakeFiles/leo2d.dir/locality.o: /usr/local/include/openmpi/ompi/mpi/cxx/win
 src/CMakeFiles/leo2d.dir/locality.o: /usr/local/include/openmpi/ompi/mpi/cxx/win_inln.h
 src/CMakeFiles/leo2d.dir/locality.o: src/geom/sdata.h
 src/CMakeFiles/leo2d.dir/locality.o: src/geom/sheet.h
-src/CMakeFiles/leo2d.dir/locality.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/locality.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/locality.o: src/materials/materials.h
 src/CMakeFiles/leo2d.dir/locality.o: src/materials/strained_graphene.h
 
-src/CMakeFiles/leo2d.dir/materials/TMDC.o: src/materials/TMDC.cpp
-src/CMakeFiles/leo2d.dir/materials/TMDC.o: src/materials/TMDC.h
-src/CMakeFiles/leo2d.dir/materials/TMDC.o: src/tools/numbers.h
 
 src/CMakeFiles/leo2d.dir/materials/graphene.o: src/materials/graphene.cpp
 src/CMakeFiles/leo2d.dir/materials/graphene.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/materials/graphene.o: src/tools/numbers.h
 
 src/CMakeFiles/leo2d.dir/materials/materials.o: src/materials/materials.cpp
-src/CMakeFiles/leo2d.dir/materials/materials.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/materials/materials.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/materials/materials.o: src/materials/materials.h
 src/CMakeFiles/leo2d.dir/materials/materials.o: src/materials/strained_graphene.h
@@ -239,7 +231,6 @@ src/CMakeFiles/leo2d.dir/momentum/intralayer_coupling.o: src/momentum/intralayer
 src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: src/momentum/momentum_coupling.cpp
 src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: src/momentum/momentum_coupling.h
 src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: /usr/local/include/fftw3.h
-src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: src/materials/materials.h
 src/CMakeFiles/leo2d.dir/momentum/momentum_coupling.o: src/materials/strained_graphene.h
@@ -327,7 +318,6 @@ src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/geom/hstruct.h
 src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/geom/sdata.h
 src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/geom/sheet.h
 src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/geom/strain.h
-src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/materials/loaded_mat.h
 src/CMakeFiles/leo2d.dir/serial/locality_serial.o: src/materials/materials.h
@@ -380,7 +370,6 @@ src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/geom/hstruct.h
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/geom/sdata.h
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/geom/sheet.h
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/geom/strain.h
-src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/materials/TMDC.h
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/materials/graphene.h
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/materials/loaded_mat.h
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o: src/materials/materials.h

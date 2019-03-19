@@ -1,10 +1,10 @@
-set(CMAKE_C_COMPILER "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc")
+set(CMAKE_C_COMPILER "/Users/zoe/anaconda/bin/cc")
 set(CMAKE_C_COMPILER_ARG1 "")
-set(CMAKE_C_COMPILER_ID "AppleClang")
-set(CMAKE_C_COMPILER_VERSION "10.0.0.10001145")
+set(CMAKE_C_COMPILER_ID "GNU")
+set(CMAKE_C_COMPILER_VERSION "4.8.5")
 set(CMAKE_C_COMPILER_VERSION_INTERNAL "")
 set(CMAKE_C_COMPILER_WRAPPER "")
-set(CMAKE_C_STANDARD_COMPUTED_DEFAULT "11")
+set(CMAKE_C_STANDARD_COMPUTED_DEFAULT "90")
 set(CMAKE_C_COMPILE_FEATURES "c_std_90;c_function_prototypes;c_std_99;c_restrict;c_variadic_macros;c_std_11;c_static_assert")
 set(CMAKE_C90_COMPILE_FEATURES "c_std_90;c_function_prototypes")
 set(CMAKE_C99_COMPILE_FEATURES "c_std_99;c_restrict;c_variadic_macros")
@@ -16,12 +16,12 @@ set(CMAKE_C_SIMULATE_VERSION "")
 
 
 
-set(CMAKE_AR "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar")
-set(CMAKE_C_COMPILER_AR "")
-set(CMAKE_RANLIB "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib")
-set(CMAKE_C_COMPILER_RANLIB "")
-set(CMAKE_LINKER "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld")
-set(CMAKE_COMPILER_IS_GNUCC )
+set(CMAKE_AR "/usr/bin/ar")
+set(CMAKE_C_COMPILER_AR "/Users/zoe/anaconda/bin/gcc-ar")
+set(CMAKE_RANLIB "/usr/bin/ranlib")
+set(CMAKE_C_COMPILER_RANLIB "/Users/zoe/anaconda/bin/gcc-ranlib")
+set(CMAKE_LINKER "/usr/bin/ld")
+set(CMAKE_COMPILER_IS_GNUCC 1)
 set(CMAKE_C_COMPILER_LOADED 1)
 set(CMAKE_C_COMPILER_WORKS TRUE)
 set(CMAKE_C_ABI_COMPILED TRUE)
@@ -65,9 +65,9 @@ if(CMAKE_C_CL_SHOWINCLUDES_PREFIX)
 endif()
 
 
+set(CMAKE_C_SYSROOT_FLAG "-isysroot")
+set(CMAKE_C_OSX_DEPLOYMENT_TARGET_FLAG "-mmacosx-version-min=")
 
-
-
-set(CMAKE_C_IMPLICIT_LINK_LIBRARIES "")
-set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib")
+set(CMAKE_C_IMPLICIT_LINK_LIBRARIES "gcc_ext.10.5;gcc")
+set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "/Users/zoe/anaconda/lib/gcc/x86_64-apple-darwin11.4.2/4.8.5;/Users/zoe/anaconda/lib/gcc;/Users/zoe/anaconda/lib;/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/usr/lib")
 set(CMAKE_C_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks")

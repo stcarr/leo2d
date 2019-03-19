@@ -155,16 +155,32 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 				}
 				*/
 
+				if (in_string == "NUM_SHEETS") {
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					num_sheets = atoi(in_string.c_str());
+					s_data.resize(num_sheets);
+					heights.resize(num_sheets);
+					angles.resize(num_sheets);
+					opts.setParam("num_sheets",num_sheets);
+				}
+
 				if (in_string == "SUPERCELL_M_N"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					int m = atoi(in_string.c_str());
-					getline(in_line,in_string,' ');
-					int n = atoi(in_string.c_str());
-					opts.setParam("m_supercell",m);
-					opts.setParam("n_supercell",n);
-					int o = 1;
-					opts.setParam("supercell_type",o);
+
+						getline(in_line,in_string,' ');
+						getline(in_line,in_string,' ');
+						int m = atoi(in_string.c_str());
+						getline(in_line,in_string,' ');
+						int n = atoi(in_string.c_str());
+						opts.setParam("m_supercell",m);
+						opts.setParam("n_supercell",n);
+						if (num_sheets == 2){
+						int o = 1;
+						opts.setParam("supercell_type",o);
+					} else if (num_sheets == 3){
+						int o = 3;
+						opts.setParam("supercell_type",o);
+					}
 				}
 
 				if (in_string == "SUPERCELL_GRID"){
@@ -198,16 +214,6 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 					getline(in_line,in_string,' ');
 					opts.setParam("num_k2",atoi(in_string.c_str()));
 				}
-
-				if (in_string == "NUM_SHEETS") {
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					num_sheets = atoi(in_string.c_str());
-					s_data.resize(num_sheets);
-					heights.resize(num_sheets);
-					angles.resize(num_sheets);
-					opts.setParam("num_sheets",num_sheets);
-					}
 
 				if (in_string == "START_SHEET") {
 					getline(in_line,in_string,' ');
