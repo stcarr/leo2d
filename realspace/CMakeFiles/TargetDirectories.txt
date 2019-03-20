@@ -1,2 +1,0 @@
-/n/home02/zzhu/leo2d/realspace/app/src/CMakeFiles/LEO2D.dir
-/n/home02/zzhu/leo2d/realspace/src/CMakeFiles/leo2d.dir
