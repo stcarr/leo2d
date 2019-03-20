@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,37 +6,131 @@
 
 #IncludeRegexTransform: 
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/hstruct.h
-geom/sheet.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/geom/sheet.h
-momentum/momentum_coupling.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/momentum/momentum_coupling.h
-params/job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/params/job_params.h
-materials/loaded_mat.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/materials/loaded_mat.h
-geom/strain.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/geom/strain.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/CMakeFiles/3.13.4/CompilerIdCXX/CMakeCXXCompilerId.cpp
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/strain.h
+/n/home02/zzhu/leo2d/realspace/src/geom/hstruct.cpp
+hstruct.h
+/n/home02/zzhu/leo2d/realspace/src/geom/hstruct.h
+materials/read_mat.h
+/n/home02/zzhu/leo2d/realspace/src/geom/materials/read_mat.h
+fftw3.h
+-
+iostream
+-
+fstream
+-
+string
+-
+cmath
+-
+stdio.h
+-
+math.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/geom/hstruct.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
+geom/sheet.h
+/n/home02/zzhu/leo2d/realspace/src/geom/geom/sheet.h
+momentum/momentum_coupling.h
+/n/home02/zzhu/leo2d/realspace/src/geom/momentum/momentum_coupling.h
 params/job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/geom/params/job_params.h
+materials/loaded_mat.h
+/n/home02/zzhu/leo2d/realspace/src/geom/materials/loaded_mat.h
+geom/strain.h
+/n/home02/zzhu/leo2d/realspace/src/geom/geom/strain.h
+
+<<<<<<< HEAD
+/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/strain.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/geom/sdata.cpp
+sdata.h
+/n/home02/zzhu/leo2d/realspace/src/geom/sdata.h
+vector
+-
+
+/n/home02/zzhu/leo2d/realspace/src/geom/sdata.h
+vector
+-
+string
+-
+materials/materials.h
+/n/home02/zzhu/leo2d/realspace/src/geom/materials/materials.h
+params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/geom/params/job_params.h
+
+/n/home02/zzhu/leo2d/realspace/src/geom/sheet.cpp
+sheet.h
+/n/home02/zzhu/leo2d/realspace/src/geom/sheet.h
+materials/read_mat.h
+/n/home02/zzhu/leo2d/realspace/src/geom/materials/read_mat.h
+math.h
+-
+stdio.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/geom/sheet.h
+vector
+-
+string
+-
+sstream
+-
+fstream
+-
+cstdlib
+-
+params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/geom/params/job_params.h
+geom/sdata.h
+/n/home02/zzhu/leo2d/realspace/src/geom/geom/sdata.h
+materials/materials.h
+/n/home02/zzhu/leo2d/realspace/src/geom/materials/materials.h
+materials/loaded_mat.h
+/n/home02/zzhu/leo2d/realspace/src/geom/materials/loaded_mat.h
+
+/n/home02/zzhu/leo2d/realspace/src/geom/strain.cpp
+strain.h
+/n/home02/zzhu/leo2d/realspace/src/geom/strain.h
+tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/geom/tools/numbers.h
+cstring
+-
+string
+-
+cmath
+-
+stdio.h
+-
+fstream
+-
+stdexcept
+-
+
+/n/home02/zzhu/leo2d/realspace/src/geom/strain.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
+params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/geom/params/job_params.h
 string
 -
 vector
 -
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/locality.cpp
+/n/home02/zzhu/leo2d/realspace/src/locality.cpp
 locality.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/locality.h
+/n/home02/zzhu/leo2d/realspace/src/locality.h
 tools/numbers.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/tools/numbers.h
 params/param_tools.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/param_tools.h
+/n/home02/zzhu/leo2d/realspace/src/params/param_tools.h
 params/job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/params/job_params.h
 materials/read_mat.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/materials/read_mat.h
+/n/home02/zzhu/leo2d/realspace/src/materials/read_mat.h
 math.h
 -
 mpi.h
@@ -60,33 +154,45 @@ time.h
 random
 -
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/locality.h
+/n/home02/zzhu/leo2d/realspace/src/locality.h
 geom/hstruct.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/hstruct.h
+/n/home02/zzhu/leo2d/realspace/src/geom/hstruct.h
 geom/strain.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/strain.h
+/n/home02/zzhu/leo2d/realspace/src/geom/strain.h
 momentum/momentum_coupling.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/momentum/momentum_coupling.h
+/n/home02/zzhu/leo2d/realspace/src/momentum/momentum_coupling.h
 matrix/spmatrix.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/matrix/spmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/spmatrix.h
 matrix/dmatrix.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/matrix/dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/dmatrix.h
 params/job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/params/job_params.h
 params/param_tools.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/param_tools.h
+/n/home02/zzhu/leo2d/realspace/src/params/param_tools.h
 mlmc/mlmc_handler.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/mlmc/mlmc_handler.h
+/n/home02/zzhu/leo2d/realspace/src/mlmc/mlmc_handler.h
 materials/loaded_mat.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/materials/loaded_mat.h
+/n/home02/zzhu/leo2d/realspace/src/materials/loaded_mat.h
 fftw3.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/fftw3.h
+/n/home02/zzhu/leo2d/realspace/src/fftw3.h
 time.h
 -
 math.h
 -
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/materials/loaded_mat.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/materials/TMDC.cpp
+materials/TMDC.h
+/n/home02/zzhu/leo2d/realspace/src/materials/materials/TMDC.h
+
+/n/home02/zzhu/leo2d/realspace/src/materials/graphene.cpp
+materials/graphene.h
+/n/home02/zzhu/leo2d/realspace/src/materials/materials/graphene.h
+
+/n/home02/zzhu/leo2d/realspace/src/materials/loaded_mat.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 array
 -
 vector
@@ -94,31 +200,113 @@ vector
 mpi.h
 -
 tools/numbers.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/materials/tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/materials/tools/numbers.h
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/materials/read_mat.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/materials/materials.cpp
+materials/materials.h
+/n/home02/zzhu/leo2d/realspace/src/materials/materials/materials.h
+
+/n/home02/zzhu/leo2d/realspace/src/materials/read_mat.cpp
+string
+-
+fstream
+-
+sstream
+-
+materials/read_mat.h
+/n/home02/zzhu/leo2d/realspace/src/materials/materials/read_mat.h
+
+/n/home02/zzhu/leo2d/realspace/src/materials/read_mat.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 array
 -
 string
 -
 materials/loaded_mat.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/materials/materials/loaded_mat.h
+/n/home02/zzhu/leo2d/realspace/src/materials/materials/loaded_mat.h
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/matrix/dmatrix.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/materials/strained_graphene.cpp
+materials/strained_graphene.h
+/n/home02/zzhu/leo2d/realspace/src/materials/materials/strained_graphene.h
+tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/materials/tools/numbers.h
+
+/n/home02/zzhu/leo2d/realspace/src/matrix/dmatrix.cpp
+dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/dmatrix.h
+stdio.h
+-
+stdlib.h
+-
+stdexcept
+-
+iostream
+-
+mkl.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/mkl.h
+essl.h
+-
+Eigen/Dense
+-
+
+/n/home02/zzhu/leo2d/realspace/src/matrix/dmatrix.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 complex
 -
 vector
 -
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/matrix/spmatrix.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/matrix/spmatrix.cpp
+spmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/spmatrix.h
+stdio.h
+-
+stdlib.h
+-
+stdexcept
+-
+mkl.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/mkl.h
+essl.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/matrix/spmatrix.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 complex
 -
 dmatrix.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/matrix/dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/matrix/dmatrix.h
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/mlmc/mlmc_handler.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/mlmc/mlmc_handler.cpp
+mlmc_handler.h
+/n/home02/zzhu/leo2d/realspace/src/mlmc/mlmc_handler.h
+params/param_tools.h
+/n/home02/zzhu/leo2d/realspace/src/mlmc/params/param_tools.h
+stdio.h
+-
+sstream
+-
+stdlib.h
+-
+math.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/mlmc/mlmc_handler.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 params/job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/mlmc/params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/mlmc/params/job_params.h
 string
 -
 vector
@@ -126,7 +314,35 @@ vector
 fstream
 -
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/momentum/momentum_coupling.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/momentum/intralayer_coupling.cpp
+intralayer_coupling.h
+/n/home02/zzhu/leo2d/realspace/src/momentum/intralayer_coupling.h
+stdio.h
+-
+cmath
+-
+
+/n/home02/zzhu/leo2d/realspace/src/momentum/intralayer_coupling.h
+math.h
+-
+vector
+-
+
+/n/home02/zzhu/leo2d/realspace/src/momentum/momentum_coupling.cpp
+momentum_coupling.h
+/n/home02/zzhu/leo2d/realspace/src/momentum/momentum_coupling.h
+materials/materials.h
+/n/home02/zzhu/leo2d/realspace/src/momentum/materials/materials.h
+cmath
+-
+stdio.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/momentum/momentum_coupling.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 fftw3.h
 -
 fstream
@@ -138,9 +354,9 @@ string
 vector
 -
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/job_params.cpp
+/n/home02/zzhu/leo2d/realspace/src/params/job_params.cpp
 params/job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/params/params/job_params.h
 iostream
 -
 stdio.h
@@ -152,7 +368,7 @@ stdexcept
 mpi.h
 -
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/params/job_params.h
 string
 -
 vector
@@ -160,13 +376,89 @@ vector
 complex
 -
 
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/params/param_tools.h
-job_params.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/params/job_params.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/params/param_tools.cpp
+param_tools.h
+/n/home02/zzhu/leo2d/realspace/src/params/param_tools.h
+tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/params/tools/numbers.h
+fftw3.h
+-
+fstream
+-
+stdio.h
+-
+stdlib.h
+-
+math.h
+-
+stdexcept
+-
 
+/n/home02/zzhu/leo2d/realspace/src/params/param_tools.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
+job_params.h
+/n/home02/zzhu/leo2d/realspace/src/params/job_params.h
+
+<<<<<<< HEAD
 /Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix_gen.cpp
+=======
+/n/home02/zzhu/leo2d/realspace/src/serial/locality_serial.cpp
+locality_serial.h
+/n/home02/zzhu/leo2d/realspace/src/serial/locality_serial.h
+tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/serial/tools/numbers.h
+params/param_tools.h
+/n/home02/zzhu/leo2d/realspace/src/serial/params/param_tools.h
+math.h
+-
+stdio.h
+-
+stdlib.h
+-
+iostream
+-
+fstream
+-
+sstream
+-
+string
+-
+math.h
+-
+unistd.h
+-
+time.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/serial/locality_serial.h
+geom/hstruct.h
+/n/home02/zzhu/leo2d/realspace/src/serial/geom/hstruct.h
+geom/strain.h
+/n/home02/zzhu/leo2d/realspace/src/serial/geom/strain.h
+momentum/momentum_coupling.h
+/n/home02/zzhu/leo2d/realspace/src/serial/momentum/momentum_coupling.h
+matrix/spmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/serial/matrix/spmatrix.h
+matrix/dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/serial/matrix/dmatrix.h
+params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/serial/params/job_params.h
+mlmc/mlmc_handler.h
+/n/home02/zzhu/leo2d/realspace/src/serial/mlmc/mlmc_handler.h
+fftw3.h
+/n/home02/zzhu/leo2d/realspace/src/serial/fftw3.h
+time.h
+-
+math.h
+-
+
+/n/home02/zzhu/leo2d/realspace/src/serial/matrix_gen.cpp
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 matrix_gen.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix_gen.h
+/n/home02/zzhu/leo2d/realspace/src/serial/matrix_gen.h
 stdio.h
 -
 iostream
@@ -182,16 +474,17 @@ string
 sstream
 -
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix_gen.h
+/n/home02/zzhu/leo2d/realspace/src/serial/matrix_gen.h
 serial/locality_serial.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/serial/locality_serial.h
+/n/home02/zzhu/leo2d/realspace/src/serial/serial/locality_serial.h
 matrix/dmatrix.h
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix/dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/serial/matrix/dmatrix.h
 
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/tools/numbers.h
 complex
 -
 
+<<<<<<< HEAD
 /usr/local/include/fftw3.h
 stdio.h
 -
@@ -419,6 +712,33 @@ openmpi/ompi/mpi/cxx/file_inln.h
 /usr/local/include/openmpi/ompi/mpi/cxx/win.h
 
 /usr/local/include/openmpi/ompi/mpi/cxx/win_inln.h
+=======
+/n/home02/zzhu/leo2d/realspace/src/transport/ballistic.cpp
+ballistic.h
+/n/home02/zzhu/leo2d/realspace/src/transport/ballistic.h
+tools/numbers.h
+/n/home02/zzhu/leo2d/realspace/src/transport/tools/numbers.h
+matrix/dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/transport/matrix/dmatrix.h
+fstream
+-
+stdio.h
+-
+stdlib.h
+-
+math.h
+-
+stdexcept
+-
+
+/n/home02/zzhu/leo2d/realspace/src/transport/ballistic.h
+params/job_params.h
+/n/home02/zzhu/leo2d/realspace/src/transport/params/job_params.h
+matrix/dmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/transport/matrix/dmatrix.h
+matrix/spmatrix.h
+/n/home02/zzhu/leo2d/realspace/src/transport/matrix/spmatrix.h
+>>>>>>> 28f2307c23b488b2bb7852e9402b00fcdd304ec8
 
 src/geom/hstruct.h
 geom/sheet.h
