@@ -1,10 +1,2 @@
-/Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/rebuild_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/CMakeFiles/edit_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/CMakeFiles/rebuild_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/CMakeFiles/edit_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/CMakeFiles/leo2d.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/app/CMakeFiles/rebuild_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/app/CMakeFiles/edit_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/app/src/CMakeFiles/rebuild_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/app/src/CMakeFiles/edit_cache.dir
-/Users/zoe/Desktop/CMT/leo2d/realspace/app/src/CMakeFiles/LEO2D.dir
+/n/home02/zzhu/leo2d/realspace/app/src/CMakeFiles/LEO2D.dir
+/n/home02/zzhu/leo2d/realspace/src/CMakeFiles/leo2d.dir
