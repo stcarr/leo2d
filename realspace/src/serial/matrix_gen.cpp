@@ -176,7 +176,7 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 						if (num_sheets == 3){
 						int o = 3;
 						opts.setParam("supercell_type",o);
-					} else if (num_sheets == 1){
+					} else if (num_sheets == 2){
 						int o = 1;
 						opts.setParam("supercell_type",o);
 					}
