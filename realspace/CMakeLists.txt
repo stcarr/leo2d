@@ -16,10 +16,10 @@ SET(CMAKE_CXX_COMPILER mpicxx)
 
 # setup packages
 
-option(LINK_FFTW "Look for FFTW3 libraries for old compilers" OFF)
-option(MKL_INTEL "Using MKL Library with Intel compilers" ON)
+option(LINK_FFTW "Look for FFTW3 libraries for old compilers" ON)
+option(MKL_INTEL "Using MKL Library with Intel compilers" OFF)
 option(MKL_GNU "Using MKL Library with GNU compilers" OFF)
-option(MKL_OFF "No MKL usage (use Eigen instead)" OFF)
+option(MKL_OFF "No MKL usage (use Eigen instead)" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
 

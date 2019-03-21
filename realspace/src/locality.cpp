@@ -92,7 +92,7 @@ void Locality::setupSupercell(){
 			std::vector< std::vector<double> > sc_here;
 			sc_here.resize(2);
 			sc_here[0].resize(2);
-			sc_here[1].resize(2);
+            sc_here[1].resize(2);
 
 			sc_here[0][0] =  sc[0][0]*cos(theta) + sc[0][1]*sin(theta);
 			sc_here[0][1] = -sc[0][0]*sin(theta) + sc[0][1]*cos(theta);
@@ -905,7 +905,8 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			inter_supercell_vecs_i = new int[max_inter_pairs];
 			inter_supercell_vecs_j = new int[max_inter_pairs];
-		}
+
+		}
 
 		for(int x = 0; x < max_inter_pairs; ++x){
 			inter_pairs_i[x] = inter_pairs_vec[x][0];
@@ -922,7 +923,8 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			intra_supercell_vecs_i = new int[max_intra_pairs];
 			intra_supercell_vecs_j = new int[max_intra_pairs];
-		}
+
+		}
 		for(int x = 0; x < max_intra_pairs; ++x){
 
 			intra_pairs_i[x] = intra_pairs_vec_i[x];
@@ -972,7 +974,8 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			inter_supercell_vecs_i = new int[max_inter_pairs];
 			inter_supercell_vecs_j = new int[max_inter_pairs];
-		}
+
+		}
 
 		intra_pairs_i = new int[max_intra_pairs];
 		intra_pairs_j = new int[max_intra_pairs];
@@ -980,7 +983,8 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			intra_supercell_vecs_i = new int[max_intra_pairs];
 			intra_supercell_vecs_j = new int[max_intra_pairs];
-		}
+
+		}
 
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -1004,7 +1008,8 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_i, max_inter_pairs, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_j, max_inter_pairs, MPI_INT, root);
-	}
+
+	}
 
 	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
@@ -1012,7 +1017,8 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_i, max_intra_pairs, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_j, max_intra_pairs, MPI_INT, root);
-	}
+
+	}
 
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
@@ -1041,7 +1047,8 @@ void Locality::constructGeom(){
 	std::vector< std::vector<int> > inter_sc_vecs;
 	if (boundary_condition == 1){
 		inter_sc_vecs.resize(max_inter_pairs);
-	}
+
+	}
 	for (int x = 0; x < max_inter_pairs; ++x){
 		inter_pairs[x*2 + 0] = inter_pairs_i[x];
 		inter_pairs[x*2 + 1] = inter_pairs_j[x];
@@ -1057,7 +1064,8 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		delete inter_supercell_vecs_i;
 		delete inter_supercell_vecs_j;
-	}
+
+	}
 
 	int* intra_pairs = new int[2*max_intra_pairs];
 
@@ -1065,7 +1073,8 @@ void Locality::constructGeom(){
 	std::vector< std::vector<int> > intra_sc_vecs;
 	if (boundary_condition == 1){
 		intra_sc_vecs.resize(max_intra_pairs);
-	}
+
+	}
 
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
@@ -1082,7 +1091,8 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		delete intra_supercell_vecs_i;
 		delete intra_supercell_vecs_j;
-	}
+
+	}
 
 	double* index_to_pos = new double[3*max_index];
 

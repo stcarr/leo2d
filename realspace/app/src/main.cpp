@@ -127,17 +127,6 @@ int main(int argc, char** argv) {
 					opts.setParam("boundary_condition",boundary_condition);
 				}
 
-				if (in_string == "SUPERCELL_M_N"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					int m = atoi(in_string.c_str());
-					getline(in_line,in_string,' ');
-					int n = atoi(in_string.c_str());
-					opts.setParam("m_supercell",m);
-					opts.setParam("n_supercell",n);
-					int o = 1;
-					opts.setParam("supercell_type",o);
-				}
 
 				if (in_string == "SUPERCELL_GROUPS"){
 						int sheet_count = 0;
@@ -215,6 +204,25 @@ int main(int argc, char** argv) {
 					angles.resize(num_sheets);
 					opts.setParam("num_sheets",num_sheets);
 					}
+                
+                if (in_string == "SUPERCELL_M_N"){
+                    getline(in_line,in_string,' ');
+                    getline(in_line,in_string,' ');
+                    int m = atoi(in_string.c_str());
+                    getline(in_line,in_string,' ');
+                    int n = atoi(in_string.c_str());
+                    opts.setParam("m_supercell",m);
+                    opts.setParam("n_supercell",n);
+                    if(num_sheets==2){
+                        int o = 1;
+                        opts.setParam("supercell_type",o);
+                    }else if(num_sheets==3){
+                        int o = 3;
+                        opts.setParam("supercell_type",o);
+                    }
+                   
+                    
+                }
 
 				if (in_string == "START_SHEET") {
 					getline(in_line,in_string,' ');
