@@ -1657,8 +1657,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 
 				printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
 
+				// save k line data
 				int k_jobID = 1;
 				std::vector<Job_params> k_jobArray;
+				std::ofstream outFile_k;
+				const char* ext = "_kline.dat";
+				outFile_k.open ((job_name + ext).c_str());
+
 				for (int j = 0; j < (int) jobArray.size(); ++j){
 					for (int i = 0; i < maxJobs; ++i){
 						//double x = (1.0/((double) maxJobs))*i;
@@ -1690,6 +1695,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 						k_vec[1] = k_y;
 						printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
 						tempJob.setParam("k_vec",k_vec);
+
+						outFile_k << k_vec[0] << "," << k_vec[1] << "\n"
 
 						k_jobArray.push_back(tempJob);
 						++k_jobID;
