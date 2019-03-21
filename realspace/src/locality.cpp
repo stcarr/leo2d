@@ -1696,7 +1696,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 						printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
 						tempJob.setParam("k_vec",k_vec);
 
-						outFile_k << k_vec[0] << "," << k_vec[1] << "\n"
+						outFile_k << k_vec[0] << "," << k_vec[1] << "\n";
 
 						k_jobArray.push_back(tempJob);
 						++k_jobID;
