@@ -47,14 +47,14 @@ class Sheet {
       std::vector< std::vector<double> > supercell_inv;
       std::vector< std::vector<int> > supercell_stride;
       int sheet_index;
-      
+
       LoadedMat loadedMatData;
       Job_params opts;
 
 
     public:
       Sheet(Sdata);
-      Sheet(Sdata input, LoadedMat matData_in, int s);
+      Sheet(Sdata input, LoadedMat matData_in);
       Sheet(const Sheet& orig);
       ~Sheet();
       bool checkShape(double (&pos)[3]);

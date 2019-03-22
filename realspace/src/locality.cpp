@@ -61,6 +61,20 @@ void Locality::setup(Job_params opts_in){
 		opts.printParams();
 		if (mat_from_file == 1){
 			loadedMatData = ReadMat::loadMat("test_data");
+			// For testing interlayer coupling terms from loadedMatData
+			/*
+			int o1 = 7;
+			int o2 = 8;
+			double x = -0.914812;
+			double y =  1.584500;
+			double z =  3.055500;
+			std::array<double, 3> vector;
+			vector[0] = x;
+			vector[1] = y;
+			vector[2] = z;
+			double t_test = ReadMat::interlayer_term(o1, o2, vector, 0.0, 0.0, loadedMatData);
+			printf("H[%d][%d], [%lf, %lf, %lf] = %lf \n",o1,o2,x,y,z,t_test);
+			*/
 			MPI_Bcast_root_loadedMat(root,loadedMatData);
 		}
 	} else {
@@ -633,7 +647,7 @@ void Locality::constructGeom(){
 			if (mat_from_file == 0){
 				sheets.push_back(Sheet(sdata[i]));
 			} else {
-				sheets.push_back( Sheet(sdata[i],loadedMatData,i) );
+				sheets.push_back( Sheet(sdata[i],loadedMatData) );
 			}
 		}
 
@@ -3484,7 +3498,9 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					z2 - z1}};
 
 				if (mat_from_file == 1){
-					t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+
 				} else {
 					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
 				}
@@ -4022,7 +4038,14 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				} else {
 
 					raw_t = intra_pairs_t[intra_counter];
-
+					// get H terms at K point of monolayer (for debugging)
+					/*
+					if ( (abs(k_vec[0] - 1.144714) < 1e-3) && (abs(k_vec[1] - -0.660901) < 1e-3) && (abs(raw_t) > 0.1) ){
+						if (index_to_grid[k_i*4 + 2] == 5 && index_to_grid[new_k*4 + 2] == 5){
+							printf("[%lf, %lf, %lf]: %lf \n",x2-x1,y2-y1,z2-z1,raw_t);
+						}
+					}
+					*/
 				}
 
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
@@ -4044,7 +4067,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 
 				// Then get k dot R phase from the supercell wrapping
 				// R is the vector connecting orbital k_i to orbital k_new
-				phase = phase + k_vec[0]*(-new_pos_shift_x) + k_vec[1]*(-new_pos_shift_y);
+				phase = phase + k_vec[0]*(x2-x1) + k_vec[1]*(y2-y1);
 
 				//t_cpx = t_cpx + std::polar(t, phase);
 					t_cpx = std::polar(t, phase);
@@ -4184,7 +4207,18 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double t;
 
 				if (mat_from_file == 1){
-					t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+
+					// get H terms at K point of monolayer (for debugging)
+				  /*
+					if ( (abs(k_vec[0] - 1.144714) < 1e-3) && (abs(k_vec[1] - -0.660901) < 1e-3) && (abs(t) > 0.1) ){
+						if (orbit1 == 5 && orbit2 == 8){
+							printf("[%lf, %lf, %lf]: %lf \n",disp[0],disp[1],disp[2],t);
+						}
+					}
+					*/
+
 				} else {
 					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
 				}
@@ -4201,7 +4235,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double phase = peierlsPhase(x1, x2, y1, y2, B);
 
 				// Then get k dot R phase from the supercell wrapping
-				phase = phase + k_vec[0]*(-new_pos_shift_x) + k_vec[1]*(-new_pos_shift_y);
+				phase = phase + k_vec[0]*(x2-x1) + k_vec[1]*(y2-y1);
 				//printf("[%d, %d]: phase = %lf, k_vec = [%lf, %lf], R = [%lf, %lf] \n",k_i,new_k,phase, k_vec[0],k_vec[1], -new_pos_shift_x, -new_pos_shift_y);
 				//t_cpx = t_cpx + std::polar(t, phase);
 					t_cpx = std::polar(t,phase);

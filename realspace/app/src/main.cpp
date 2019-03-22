@@ -746,6 +746,10 @@ int main(int argc, char** argv) {
 							temp_shifts[i][d] = var;
 						}
 					}
+
+					printf("global_shifts[0] = [%lf, %lf, %lf] \n",temp_shifts[0][0], temp_shifts[0][1], temp_shifts[0][2] );
+					printf("global_shifts[1] = [%lf, %lf, %lf] \n",temp_shifts[1][0], temp_shifts[1][1], temp_shifts[1][2] );
+
 					opts.setParam("global_shifts",temp_shifts);
 				}
 
@@ -774,7 +778,7 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < num_sheets; ++i){
 			s_data[i].solver_space = opts.getInt("solver_space");
 			s_data[i].strain_type = opts.getInt("strain_type");
-			opts.setParam("sheet_index",i);
+			s_data[i].sheet_index = i;
 			s_data[i].opts = opts;
 		}
 

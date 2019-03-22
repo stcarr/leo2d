@@ -48,7 +48,120 @@ double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int
   if ( abs(vector[0]) > c || abs(vector[1]) > c )
     return 0.0;
 
+  /* debugging
+  if (orbital_row == 5 && orbital_col == 5){
+    printf("vector = [%d, %d], max_R = %d, c = %d, t = % lf\n",vector[0],vector[1],max_R,c, mat.intra_data[sheet].intralayer_terms[vector[0]+c][vector[1]+c][orbital_row][orbital_col]);
+  }
+  */
+  
   return mat.intra_data[sheet].intralayer_terms[vector[0]+c][vector[1]+c][orbital_row][orbital_col];
+
+}
+
+double ReadMat::interlayer_term_xy_sym(int orbital_row, int orbital_col, std::array<double, 3>& vector, double angle_row, double angle_col, LoadedMat& mat){
+
+  // swap to other direction for easy hermiticity:
+  // if vector is pointing down, pass tranposed term instead (ensure Hermiticity):
+  if (vector[2] < 0.0){
+    std::array<double, 3> new_vector;
+    for (int d = 0; d < 3; ++d){
+      new_vector[d] = -vector[d];
+    }
+    //printf("passing reversed vector to ReadMat::interlayer_term \n");
+    //printf("[%d, %d, %lf, %lf, %lf] \n",orbital_row,orbital_col,new_vector[0],new_vector[1],new_vector[2]);
+
+    return interlayer_term_xy_sym(orbital_col, orbital_row, new_vector, angle_col, angle_row, mat);
+  }
+
+  // Decompose each orbital into correct [x,y] channels for proper symmetrization via the interlayer coupling functional
+  std::vector< std::vector<int> > xy_pairs;
+  xy_pairs.resize(4);
+  xy_pairs[0].resize(2);
+  xy_pairs[1].resize(2);
+  xy_pairs[2].resize(2);
+  xy_pairs[3].resize(2);
+
+  /*
+  // wannier90 convention should be:
+  0 : dz^2
+  1 : dxz
+  2 : dyz
+  3 : dx^2-y^2
+  4 : dxy
+  5 : top pz
+  6 : top px
+  7 : top py
+  8 : bot pz
+  9 : bot px
+  10: bot py
+  */
+
+  // bottom Chalcogenide
+  xy_pairs[0][0] = 6;  // top p_x
+  xy_pairs[0][1] = 7;  // top p_y
+
+  // top Chalcogenide
+  xy_pairs[1][0] = 9;  // bot p_x
+  xy_pairs[1][1] = 10; // bot p_y
+
+  // d orbitals :
+  xy_pairs[2][0] = 1;  // d_xz
+  xy_pairs[2][1] = 2;  // d_yz
+
+  // d orbitals :
+  xy_pairs[3][0] = 3;  // d_{x^2 - y^2}
+  xy_pairs[3][1] = 4;  // d_xy
+
+  std::vector<int> row_orbs{orbital_row};
+  std::vector<int> col_orbs{orbital_col};
+  std::vector<double> row_facs{1.0};
+  std::vector<double> col_facs{1.0};
+
+  // Project rotated orbitals into unrotated components
+  for (int idx = 0; idx < xy_pairs.size(); ++idx){
+
+    if (xy_pairs[idx][0] == orbital_row){
+      row_orbs = xy_pairs[idx];
+      row_facs.resize(2);
+      row_facs[0] = cos(angle_row);
+      row_facs[1] = sin(angle_row);
+
+    }
+
+    if (xy_pairs[idx][1] == orbital_row){
+      row_orbs = xy_pairs[idx];
+      row_facs.resize(2);
+      row_facs[0] = -sin(angle_row);
+      row_facs[1] =  cos(angle_row);
+    }
+
+    if (xy_pairs[idx][0] == orbital_col){
+      col_orbs = xy_pairs[idx];
+      col_facs.resize(2);
+      col_facs[0] = cos(angle_col);
+      col_facs[1] = sin(angle_col);
+
+    }
+
+    if (xy_pairs[idx][1] == orbital_col){
+      col_orbs = xy_pairs[idx];
+      col_facs.resize(2);
+      col_facs[0] = -sin(angle_col);
+      col_facs[1] =  cos(angle_col);
+    }
+
+  }
+
+  double t = 0;
+
+  // loop over all unrotated channels and add them up!
+  for(int r_idx = 0; r_idx < row_orbs.size(); ++r_idx){
+    for(int c_idx = 0; c_idx < col_orbs.size(); ++c_idx){
+      t += row_facs[r_idx]*col_facs[c_idx]*interlayer_term(row_orbs[r_idx], col_orbs[c_idx], vector, 0.0, 0.0, mat);
+    }
+  }
+
+  return t;
 
 }
 

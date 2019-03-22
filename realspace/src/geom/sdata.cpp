@@ -44,6 +44,7 @@ Sdata::Sdata(const Sdata& orig) {
   solver_space = orig.solver_space;
   strain_type = orig.strain_type;
   strain_file = orig.strain_file;
+  sheet_index = orig.sheet_index;
 
   if (boundary_condition == 1){
     supercell = orig.supercell;

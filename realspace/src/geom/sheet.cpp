@@ -18,6 +18,7 @@ Sheet::Sheet(Sdata input){
 
   opts = input.opts;
   mat = input.mat;
+  sheet_index = input.sheet_index;
   a.resize(2);
   a[0].resize(2);
   a[1].resize(2);
@@ -85,9 +86,9 @@ Sheet::Sheet(Sdata input){
 
 }
 
-Sheet::Sheet(Sdata input, LoadedMat matData, int s){
+Sheet::Sheet(Sdata input, LoadedMat matData){
 
-  sheet_index = s;
+  sheet_index = input.sheet_index;
   loadedMatData = matData;
   opts = input.opts;
 
@@ -510,7 +511,6 @@ double Sheet::posAtomGrid(int (&grid_index)[3],int dim){
     int global_shifts_on = opts.getInt("global_shifts_on");
     if (global_shifts_on == 1){
       std::vector< std::vector<double> > global_shifts = opts.getDoubleMat("global_shifts");
-      int sheet_index = opts.getInt("sheet_index");
       std::vector<double> gs = global_shifts[sheet_index];
       x = x + gs[0]*a[0][0] + gs[1]*a[1][0];
       y = y + gs[0]*a[0][1] + gs[1]*a[1][1];

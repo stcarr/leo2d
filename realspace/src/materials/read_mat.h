@@ -103,7 +103,13 @@ namespace ReadMat {
      * The real-space vector goes FROM the 'row' orbital site TO the 'column' orbital site.
      */
 
-    double interlayer_term(int orbital_row, int orbital_col,
+     // has xy symm for TMDC loaded mats baked in.
+     double interlayer_term_xy_sym(int orbital_row, int orbital_col,
+                     std::array<double, 3>& vector,
+                     double angle_row, double angle_col,
+                     LoadedMat& mat);
+
+     double interlayer_term(int orbital_row, int orbital_col,
                     std::array<double, 3>& vector,
                     double angle_row, double angle_col,
                     LoadedMat& mat);

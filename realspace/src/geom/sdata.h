@@ -31,6 +31,7 @@ class Sdata {
     std::vector< std::vector<int> > supercell_stride;
 		int solver_space;
 		int strain_type;
+    int sheet_index;
 		std::string strain_file;
     Job_params opts;
 
