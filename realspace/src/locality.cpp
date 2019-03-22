@@ -368,22 +368,22 @@ void Locality::setupSupercell(){
 
 			if (sc_group_here == 0){
 				angles[i] = 0;
-				A1_num_a1 = N^2 - M^2;
-				A1_num_a2 = M^2 - 2*M*N;
-				A2_num_a1 = -(M^2 + 2*M*N);
-				A2_num_a2 = N^2 + 2*M*N;
+				A1_num_a1 = pow(N,2) - pow(M,2);
+				A1_num_a2 = pow(M,2) + 2*M*N;
+				A2_num_a1 = -(pow(M,2) + 2*M*N);
+				A2_num_a2 = pow(N,2) + 2*M*N;
 			} else if (sc_group_here == 1){
 				angles[i] = theta;
 				A1_num_a1 = 0;
-				A1_num_a2 = M^2 + M*N + N^2;
-				A2_num_a1 = -(N^2 + 2*M*N + M^2);
-				A2_num_a2 = N^2 + 2*M*N + M^2;
+				A1_num_a2 = pow(M,2) + (M*N) + pow(N,2);
+				A2_num_a1 = -(pow(N,2) + (M*N) + pow(M,2));
+				A2_num_a2 = pow(N,2)+ M*N + pow(M,2);
 			} else if (sc_group_here == 2){
 				angles[i] = 2*theta;
-				A1_num_a1 = M^2 - N^2;
-				A1_num_a2 = N^2 - 2*M*N;
-				A2_num_a1 = -(N^2 + 2*M*N);
-				A2_num_a2 = M^2 + 2*M*N;
+				A1_num_a1 = pow(M,2) - pow(N,2);
+				A1_num_a2 = pow(N,2) + 2*M*N;
+				A2_num_a1 = -(pow(N,2) + (2*M*N));
+				A2_num_a2 = pow(M,2) + (2*M*N);
 			}
 
 			std::vector< std::vector<double> > unitCell;
@@ -420,22 +420,9 @@ void Locality::setupSupercell(){
 			sc_stride_here[1][0] = A2_num_a1;
 			sc_stride_here[1][1] = A2_num_a2;
 
-			/*
-			std::vector< std::vector<double> > local_sc_here;
-			local_sc_here.resize(2);
-			local_sc_here[0].resize(2);
-			local_sc_here[1].resize(2);
-
-			double theta_here = -angles[i];
-
-			local_sc_here[0][0] = cos(theta_here)*sc_here[0][0] - sin(theta_here)*sc_here[0][1];
-			local_sc_here[0][1] = sin(theta_here)*sc_here[0][0] + cos(theta_here)*sc_here[0][1];
-			local_sc_here[1][0] = cos(theta_here)*sc_here[1][0] - sin(theta_here)*sc_here[1][1];
-			local_sc_here[1][1] = sin(theta_here)*sc_here[1][0] + cos(theta_here)*sc_here[1][1];
-			*/
 			printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
 			printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
-			//printf("local_supercell = [%lf %lf; %lf %lf]\n", local_sc_here[0][0], local_sc_here[0][1], local_sc_here[1][0], local_sc_here[1][1]);
+		
 			printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
 
 
@@ -4903,6 +4890,7 @@ void Locality::generateMomH(SpMatrix &H, Job_params jobIn, int* index_to_grid, d
 	// row_pointer tells us the start of row j (at element i = row_pointer[j]) and the end of row j (at element i = row_pointer[j] - 1)
 
 	H.setup(max_nnz, local_max_index, local_max_index);
+    
 
 	int* col_index = H.allocColIndx();
 	int* row_pointer = H.allocRowPtr();

@@ -125,40 +125,6 @@ src/CMakeFiles/leo2d.dir/locality.o
  /Users/zoe/Desktop/CMT/leo2d/realspace/src/params/job_params.h
  /Users/zoe/Desktop/CMT/leo2d/realspace/src/params/param_tools.h
  /Users/zoe/Desktop/CMT/leo2d/realspace/src/tools/numbers.h
- /usr/local/include/fftw3.h
- /usr/local/include/mpi.h
- /usr/local/include/mpi_portable_platform.h
- /usr/local/include/openmpi/ompi/mpi/cxx/comm.h
- /usr/local/include/openmpi/ompi/mpi/cxx/comm_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/constants.h
- /usr/local/include/openmpi/ompi/mpi/cxx/datatype.h
- /usr/local/include/openmpi/ompi/mpi/cxx/datatype_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/errhandler.h
- /usr/local/include/openmpi/ompi/mpi/cxx/errhandler_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/exception.h
- /usr/local/include/openmpi/ompi/mpi/cxx/file.h
- /usr/local/include/openmpi/ompi/mpi/cxx/file_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/functions.h
- /usr/local/include/openmpi/ompi/mpi/cxx/functions_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/group.h
- /usr/local/include/openmpi/ompi/mpi/cxx/group_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/info.h
- /usr/local/include/openmpi/ompi/mpi/cxx/info_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intercomm.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intercomm_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intracomm.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intracomm_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
- /usr/local/include/openmpi/ompi/mpi/cxx/op.h
- /usr/local/include/openmpi/ompi/mpi/cxx/op_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/request.h
- /usr/local/include/openmpi/ompi/mpi/cxx/request_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/status.h
- /usr/local/include/openmpi/ompi/mpi/cxx/status_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/topology.h
- /usr/local/include/openmpi/ompi/mpi/cxx/topology_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/win.h
- /usr/local/include/openmpi/ompi/mpi/cxx/win_inln.h
  src/geom/sdata.h
  src/geom/sheet.h
  src/materials/TMDC.h
@@ -557,40 +523,6 @@ src/CMakeFiles/leo2d.dir/serial/locality_serial.o
 src/CMakeFiles/leo2d.dir/serial/matrix_gen.o
  /Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix_gen.cpp
  /Users/zoe/Desktop/CMT/leo2d/realspace/src/serial/matrix_gen.h
- /usr/local/include/fftw3.h
- /usr/local/include/mpi.h
- /usr/local/include/mpi_portable_platform.h
- /usr/local/include/openmpi/ompi/mpi/cxx/comm.h
- /usr/local/include/openmpi/ompi/mpi/cxx/comm_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/constants.h
- /usr/local/include/openmpi/ompi/mpi/cxx/datatype.h
- /usr/local/include/openmpi/ompi/mpi/cxx/datatype_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/errhandler.h
- /usr/local/include/openmpi/ompi/mpi/cxx/errhandler_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/exception.h
- /usr/local/include/openmpi/ompi/mpi/cxx/file.h
- /usr/local/include/openmpi/ompi/mpi/cxx/file_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/functions.h
- /usr/local/include/openmpi/ompi/mpi/cxx/functions_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/group.h
- /usr/local/include/openmpi/ompi/mpi/cxx/group_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/info.h
- /usr/local/include/openmpi/ompi/mpi/cxx/info_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intercomm.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intercomm_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intracomm.h
- /usr/local/include/openmpi/ompi/mpi/cxx/intracomm_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/mpicxx.h
- /usr/local/include/openmpi/ompi/mpi/cxx/op.h
- /usr/local/include/openmpi/ompi/mpi/cxx/op_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/request.h
- /usr/local/include/openmpi/ompi/mpi/cxx/request_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/status.h
- /usr/local/include/openmpi/ompi/mpi/cxx/status_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/topology.h
- /usr/local/include/openmpi/ompi/mpi/cxx/topology_inln.h
- /usr/local/include/openmpi/ompi/mpi/cxx/win.h
- /usr/local/include/openmpi/ompi/mpi/cxx/win_inln.h
  src/geom/hstruct.h
  src/geom/sdata.h
  src/geom/sheet.h
