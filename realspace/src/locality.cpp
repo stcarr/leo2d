@@ -1593,7 +1593,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				int type = opts.getInt("supercell_type");
 				int base_s1 = 0;
 				int base_s2 = 1;
-				if (type == 1){
+				if ((type == 1) || (type == 3)){
 					std::vector<int> sc_groups = opts.getIntVec("sc_groups");
 					int first_type = sc_groups[0];
 					for (int idx = 1; idx < sc_groups.size(); ++idx){
@@ -1695,9 +1695,9 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				}
 
 				jobArray = k_jobArray;
-
-			// Sample around Monolayer BZ
-			} else if (k_type == 2){
+            
+            // Sample around Monolayer BZ
+            else if (k_type == 2){
 
 					double num_k1 = opts.getInt("num_k1");
 					maxJobs = num_k1;

@@ -829,21 +829,21 @@ DMatrix getLeoMatrix(string hstruct_input_file){
                     
                     if (i == 0){
                         printf("i = 0\n");
-                        angles[i] = 0;
+                        angles[i] = -theta;
                         A1_num_a1 = pow(N,2) - pow(M,2);
                         A1_num_a2 = pow(M,2) + (2*M*N);
                         A2_num_a1 = -(pow(M,2) + (2*M*N));
                         A2_num_a2 = pow(N,2) + 2*M*N;
                     } else if (i == 1){
                         printf("i = 1\n");
-                        angles[i] = theta;
+                        angles[i] = 0;
                         A1_num_a1 = 0;
                         A1_num_a2 = pow(M,2) + M*N + pow(N,2);
                         A2_num_a1 = -(pow(N,2) + M*N + pow(M,2));
                         A2_num_a2 = pow(N,2) + M*N + pow(M,2);
                     } else if (i == 2){
                         printf("i = 2\n");
-                        angles[i] = 2*theta;
+                        angles[i] = theta;
                         A1_num_a1 = pow(M,2) - pow(N,2);
                         A1_num_a2 = pow(N,2) + 2*M*N;
                         A2_num_a1 = -(pow(N,2) + 2*M*N);
