@@ -1697,7 +1697,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				jobArray = k_jobArray;
             
             // Sample around Monolayer BZ
-            else if (k_type == 2){
+            }else if (k_type == 2){
 
 					double num_k1 = opts.getInt("num_k1");
 					maxJobs = num_k1;
