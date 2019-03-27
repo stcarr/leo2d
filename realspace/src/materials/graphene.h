@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <map>
 #include <cmath>
-#include <math>
 #include <cassert>
 #include "tools/numbers.h"
 

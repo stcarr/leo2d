@@ -115,6 +115,7 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
     // can uncomment to turn of interlayer coupling in graphene
     //return 0.0;
     if (abs(vector[2])>5){
+        #printf("The layer is decoupled");
         return 0;
     }
     
