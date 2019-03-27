@@ -388,6 +388,7 @@ void Hstruct::getInterPairs(std::vector<std::vector<int> > &pair_array, std::vec
         pos_here[2] = kh_pos_here[2];
 
     		// if we are not on the "lowest" sheet, we look for pairs from the sheet below
+          
     		if (sh > 0) {
 
     			// "0" determines the center of our search range on sheet s0

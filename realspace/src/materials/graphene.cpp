@@ -114,6 +114,9 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
 
     // can uncomment to turn of interlayer coupling in graphene
     //return 0.0;
+    if (abs(vector[2])>5){
+        return 0;
+    }
     
     double r = std::sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
     if (r < Graphene::inter_cutoff_radius)
@@ -142,6 +145,7 @@ double Coupling::Interlayer::C_to_C(const Orbital orbit_row, const Orbital orbit
         double rs = r/Graphene::a;
         double z_eq = 3.35; // Equilbrium AB height from our DFT Calculations
     		double z_eps = (fabs(vector[2]) - z_eq)/z_eq;
+        
 
         // New coefficients (with compression dependence fitting)
         // /*
