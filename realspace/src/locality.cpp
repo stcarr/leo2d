@@ -1591,21 +1591,23 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				maxJobs = num_k1;
 
 				int type = opts.getInt("supercell_type");
-				int base_s1 = 0;
-				int base_s2 = 1;
-				if ((type == 1) || (type == 3)){
-					std::vector<int> sc_groups = opts.getIntVec("sc_groups");
-					int first_type = sc_groups[0];
-					for (int idx = 1; idx < sc_groups.size(); ++idx){
-						if (sc_groups[idx] != first_type){
-							base_s2 = idx;
-							break;
-						}
-					}
-				}
-
-				std::vector< std::vector<double> > b1 = getReciprocal(base_s1);
-				std::vector< std::vector<double> > b2 = getReciprocal(base_s2);
+            
+                int base_s1 = 0;
+                int base_s2 = 1;
+                if (type == 1){
+                        std::vector<int> sc_groups = opts.getIntVec("sc_groups");
+                        int first_type = sc_groups[0];
+                        for (int idx = 1; idx < sc_groups.size(); ++idx){
+                            if (sc_groups[idx] != first_type){
+                                base_s2 = idx;
+                                break;
+                            }
+                        }
+                    }
+                
+                std::vector< std::vector<double> > b1 = getReciprocal(base_s1);
+                std::vector< std::vector<double> > b2 = getReciprocal(base_s2); // reciprocal lattice of the monolayers
+      
 
 				printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
 				printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
@@ -1807,10 +1809,161 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 					jobArray = k_jobArray;
+                // zoe: sampling around the trilayer supercell BZ (commensurated only)
+				}else if (k_type == 3){
+                        
+                    int num_k1 = opts.getInt("num_k1");
+                    maxJobs = 3*num_k1;
+                        
+                    int type = opts.getInt("supercell_type");   // type 1: bilayer; type 3: trilayer
+                    
+                    if ( (type != 1) && (type != 3)){
+                        printf("You need to have a supercell for this type of the k sampling!");
+                    }
 
-				}
-
-		}
+                    int M = opts.getInt("m_supercell");
+                    int N = opts.getInt("n_supercell");
+                    
+                    double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+                    
+                    std::vector<int> sc_groups = opts.getIntVec("sc_groups");
+                    
+                    int A11;
+                    int A12;
+                    int A21;
+                    int A22;
+                    
+                    if (sc_groups.size() == 2){
+                        
+                        A11 = N;
+                        A12 = M;
+                        A21 = -M;
+                        A22 = (M+N);
+                        
+                        
+                    } else if (sc_groups.size() == 3) {
+                        
+                        A11 = pow(N,2) - pow(M,2);
+                        A12 = pow(M,2) + 2*M*N;
+                        A21 = -(pow(M,2) + 2*M*N);
+                        A22 = pow(N,2) + 2*M*N;
+                    
+                    }
+                    
+                    // Unit cell vector
+                    std::vector< std::vector<double> > unitCell = sdata[0].a;
+                    
+                    std::vector< std::vector<double> > sc_here;
+                    sc_here.resize(2);
+                    sc_here[0].resize(2);
+                    sc_here[1].resize(2);
+                    
+                    sc_here[0][0] = A11*unitCell[0][0] + A12*unitCell[1][0];
+                    sc_here[0][1] = A11*unitCell[0][1] + A12*unitCell[1][1];
+                    sc_here[1][0] = A21*unitCell[0][0] + A22*unitCell[1][0];
+                    sc_here[1][1] = A21*unitCell[0][1] + A22*unitCell[1][1];
+                    
+                    std::vector< std::vector<double> > b_sc = getReciprocal(sc_here);
+                    
+                    // define high symmetry points
+                    double k[2];
+                    double m[2];
+                    double gamma[2];
+                    
+                    double r3 = sqrt(3);
+                    double alpha = M_PI/6;
+                    std::vector< std::vector<double> > rot30;
+                    rot30.resize(2);
+                    rot30[0].resize(2);
+                    rot30[0].resize(2);
+                    
+                    rot30[0] = {cos(alpha), sin(alpha)};
+                    rot30[1] = {-sin(alpha), cos(alpha)};
+                    
+                    
+                    for(int i = 0; i < 2; i++){
+                        m[i] = 0.5*(b_sc[0][i] + b_sc[1][i]);
+                    }
+                    
+                    
+                    for(int i = 0; i < 2; i++){
+                        k[i] = 0;
+                        for(int j = 0; j < 2; j++){
+                            k[i] = k[i] + rot30[i][j] * b_sc[1][j] / r3;
+                        }
+                    }
+                    
+                    gamma[0] = 0;
+                    gamma[1] = 0;
+                    
+                    printf("\n");
+                    printf("b_sc = [%lf %lf; %lf %lf] \n",b_sc[0][0],b_sc[0][1],b_sc[1][0],b_sc[1][1]);
+                    std::cout << "K = [" << k[0] << "," << k[1] << "]\n";
+                    std::cout << "M = [" << m[0] << "," << m[1] << "]\n";
+                    std::cout << "Gamma = [" << gamma[0] << "," << gamma[1] << "]\n";
+                    
+                    
+                    double s1 = (k[1] - gamma[1]) / (k[0] - gamma[0]);
+                    double s2 = (m[1] - k[1]) / (m[0] - k[0]);
+                    double s3 = (gamma[1] - m[1]) / (gamma[0] - m[0]);
+                    
+                    double b1 = (k[0]*gamma[1] - gamma[0]*k[1]) / (k[0] - gamma[0]);
+                    double b2 = (m[0]*k[1] - k[0]*m[1]) / (m[0] - k[0]);
+                    double b3 = (gamma[0]*m[1] - m[0]*gamma[1]) / (gamma[0] - m[0]);
+                    
+                    double l1 = k[0]-gamma[0] ;
+                    double l2 = m[0]-k[0] ;
+                    double l3 = gamma[0] - m[0];
+                
+                    // save k line data
+                    int k_jobID = 1;
+                    std::vector<Job_params> k_jobArray;
+                    std::ofstream outFile_k;
+                    const char* ext = "_kline.dat";
+                    outFile_k.open ((job_name + ext).c_str());
+                    
+                    double kx[maxJobs];
+                    double ky[maxJobs];
+                    
+                    for (int i = 0; i < num_k1; ++i){
+                        
+                        // Line 1
+                        kx[i] = gamma[0] + i * l1 / num_k1;
+                        ky[i] = gamma[1] + s1 * i * l1 / num_k1 + b1;
+                        
+                        // Line 2
+                        kx[i+num_k1] = k[0] + i * l2 / num_k1;
+                        ky[i+num_k1] = k[1] + s2 * i * l2 / num_k1;
+                        
+                        // Line 3
+                        kx[i+num_k1*2] = m[0] + i * l3 / num_k1;
+                        ky[i+num_k1*2] = m[1] + s3 * i * l3 / num_k1;
+                    }
+                        
+                    
+                    for (int j = 0; j < maxJobs; ++j){
+                            
+                        Job_params tempJob(jobArray[j]);
+                        
+                        tempJob.setParam("jobID",k_jobID);
+                        
+                        std::vector<double> k_vec;
+                        k_vec.resize(2);
+                        k_vec[0] = kx[j];
+                        k_vec[1] = ky[j];
+                        printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+                        tempJob.setParam("k_vec",k_vec);
+                        
+                        outFile_k << k_vec[0] << "," << k_vec[1] << "\n";
+                        
+                        k_jobArray.push_back(tempJob);
+                        ++k_jobID;
+                        
+                    }
+                    
+                    jobArray = k_jobArray;
+                }
+        }
 
 		// random sampling of the trace
 		if (kpm_trace == 1){
@@ -6534,6 +6687,7 @@ double Locality::onSiteE(double x, double y, double z, double E_in){
 }
 
 std::vector< std::vector<double> > Locality::getReciprocal(int s){
+    // calculate the monolayer reciprocal lattice vector of a given layer
 
 	std::vector< std::vector<double> > orig_a = sdata[s].a;
 	double theta = angles[s];
@@ -6553,6 +6707,7 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 	b = getReciprocal(a);
 	return b;
 }
+                
 
 std::vector< std::vector<double> > Locality::getReciprocal(std::vector< std::vector<double> > a_in){
 

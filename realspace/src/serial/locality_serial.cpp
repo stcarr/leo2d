@@ -4587,7 +4587,7 @@ double Locality_serial::onSiteE(double x, double y, double z, double E_in){
 	return z*E_in;
 }
 
-std::vector< std::vector<double> > Locality_serial::getReciprocal(int s){
+std::vector< std::vector<double> > Locality_serial::getReciprocal(int s){ // calculate the supercell reciprocal lattice vectors
 
 	std::vector< std::vector<double> > orig_a = sdata[s].a;
 	double theta = angles[s];
@@ -4608,6 +4608,7 @@ std::vector< std::vector<double> > Locality_serial::getReciprocal(int s){
 	return b;
 }
 
+// Calculate the reciprocal lattice given lattice vectors 
 std::vector< std::vector<double> > Locality_serial::getReciprocal(std::vector< std::vector<double> > a_in){
 
 	// Here we assume a is a 2x2 matrix
