@@ -1,1 +1,0 @@
-mpicxx   -std=c++11 -DUSE_MKL -I/n/sw/intel-cluster-studio-2017/mkl/include -g    CMakeFiles/LEO2D.dir/main.cpp.o  -o ../LEO2D  -L/n/home02/zzhu/leo2d/realspace/lib -rdynamic ../../lib/libleo2d.a -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl -Wl,-rpath,/n/home02/zzhu/leo2d/realspace/lib 
