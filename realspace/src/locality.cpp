@@ -1835,18 +1835,25 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 
                 if (sc_groups.size() == 2){
                     
-                    A11 = N;
-                    A12 = M;
-                    A21 = -M;
-                    A22 = (M+N);
+                    if(M>N){
+                        A11 = N;
+                        A12 = M;
+                        A21 = -M;
+                        A22 = (M+N);
+                    } else {
+                        A11 = M;
+                        A12 = N;
+                        A21 = -N;
+                        A22 = (M+N);
+                    }
                     
                     
                 } else if (sc_groups.size() == 3) {
                     
-                    A11 = pow(N,2) - pow(M,2);
-                    A12 = pow(M,2) + 2*M*N;
-                    A21 = -(pow(M,2) + 2*M*N);
-                    A22 = pow(N,2) + 2*M*N;
+                    A11 = 0;
+                    A12 = pow(M,2) + (M*N) + pow(N,2);
+                    A21 = -(pow(N,2) + (M*N) + pow(M,2));
+                    A22 = pow(N,2)+ M*N + pow(M,2);
                     
                 }
                 
