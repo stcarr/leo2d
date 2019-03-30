@@ -1821,6 +1821,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                     printf("You need to have a supercell for this type of the k sampling!");
                 }
                 
+                
+                
                 int M = opts.getInt("m_supercell");
                 int N = opts.getInt("n_supercell");
                 
@@ -1836,11 +1838,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 if (sc_groups.size() == 2){
                     
                     if(M>N){
+                        
                         A11 = N;
                         A12 = M;
                         A21 = -M;
                         A22 = (M+N);
+                        
                     } else {
+                        
                         A11 = M;
                         A12 = N;
                         A21 = -N;
@@ -1949,8 +1954,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                         } else {
                             // Line 3
                             int n = i - 2*num_k1;
-                            kx[i] = m[0] + n * l3 / num_k1;
-                            ky[i] = m[1] + s3 * n * l3 / num_k1;
+                            if (isnan(b3)||isnan(s3)){
+                                double len = gamma[1] - m[1];
+                                kx[i] = m[0];
+                                ky[i] = m[1] +  n * len / num_k1;
+                            } else{
+                                kx[i] = m[0] + n * l3 / num_k1;
+                                ky[i] = m[1] + s3 * n * l3 / num_k1 + b3;
+                            }
                         }
                         
                         
