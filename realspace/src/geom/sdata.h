@@ -18,7 +18,7 @@ class Sdata {
 
   public:
 
-    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, double, int, int, int, std::string);
+    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, double, int, int, int, std::string, int);
     Sdata(const Sdata& orig);
 		Sdata();
     ~Sdata();

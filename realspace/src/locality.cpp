@@ -76,6 +76,21 @@ void Locality::setup(Job_params opts_in){
 			printf("H[%d][%d], [%lf, %lf, %lf] = %lf \n",o1,o2,x,y,z,t_test);
 			*/
 			MPI_Bcast_root_loadedMat(root,loadedMatData);
+
+			// now initialze lattice in sdata[i] objects
+			std::vector<std::vector<double> > a_temp;
+			a_temp.resize(2);
+			for (int d1 = 0; d1 < 2; ++d1){
+				a_temp[d1].resize(2);
+				for (int d2 = 0; d2 < 2; ++d2){
+					a_temp[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+				}
+			}
+
+			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				sdata[s_idx].a = a_temp;
+			}
+
 		}
 	} else {
 		if (mat_from_file == 1){

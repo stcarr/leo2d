@@ -241,10 +241,10 @@ int main(int argc, char** argv) {
 					if (in_string == "FILE"){
 						opts.setParam("mat_from_file", 1);
 						Materials::Mat blank_mat;
-						s_data[current_sheet] = Sdata(blank_mat, min,max,max_R,boundary_condition,0,0,strain_file);
+						s_data[current_sheet] = Sdata(blank_mat, min,max,max_R,boundary_condition,0,0,strain_file,1);
 					} else {
 					Materials::Mat mat = Materials::string_to_mat(in_string);
-					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file);
+					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file,0);
 					}
 				}
 
