@@ -21,6 +21,10 @@ namespace Param_tools{
 	// Save header information for job to outFile
 	void saveHeader(Job_params job, std::ofstream& outFile);
 
+
+	// Save kpts from job to outFile
+	void saveKpts(Job_params job, std::ofstream& outFile);
+
 	// Print some settings for job to terminal
 	// Maybe not use, already implemented in Job_params class pretty easily
 	//void printParams(Job_params job);

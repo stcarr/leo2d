@@ -1013,7 +1013,7 @@ void DMatrix::eigenSolve(std::vector<double> &eigvals, DMatrix &eigvecs, char jo
 		eigvecs.setup(nrows, nrows);
 		double* eigvecs_ptr;
 		eigvecs_ptr = eigvecs.allocRealVal();
-		printf("entering eigensolver \n");
+		//printf("entering eigensolver \n");
 		#ifdef USE_MKL
 			//printf("jobz = %c, diag_type = %c, il = %d, iu = %d \n",jobz,diag_type,il,iu);
 

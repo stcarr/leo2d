@@ -563,6 +563,31 @@ void Param_tools::saveHeader(Job_params job, std::ofstream& outFile){
 
 }
 
+void Param_tools::saveKpts(Job_params job, std::ofstream& outFile) {
+
+	outFile << fixed;
+	outFile.precision(10);
+
+
+	int jobID = job.getInt("jobID");
+	int k_sampling = job.getInt("k_sampling");
+	if (k_sampling == 1){
+		std::vector<double> k_vec = job.getDoubleVec("k_vec");
+
+		if (k_vec[0] >= 0){
+			outFile << " ";
+		}
+
+		outFile << k_vec[0] << "		";
+		if (k_vec[1] >= 0){
+			outFile << " ";
+		}
+
+		outFile << k_vec[1] << " \n";
+	}
+
+}
+
 void Param_tools::saveTiming(Job_params& job, double t, std::string tag){
 
 	std::vector<double> temp_cpu_time;

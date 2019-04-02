@@ -77,25 +77,33 @@ void Locality::setup(Job_params opts_in){
 			*/
 			MPI_Bcast_root_loadedMat(root,loadedMatData);
 
-			// now initialze lattice in sdata[i] objects
-			std::vector<std::vector<double> > a_temp;
-			a_temp.resize(2);
-			for (int d1 = 0; d1 < 2; ++d1){
-				a_temp[d1].resize(2);
-				for (int d2 = 0; d2 < 2; ++d2){
-					a_temp[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				sdata[s_idx].a.resize(2);
+				for (int d1 = 0; d1 < 2; ++d1){
+					sdata[s_idx].a[d1].resize(2);
+					for (int d2 = 0; d2 < 2; ++d2){
+						sdata[s_idx].a[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+					}
 				}
 			}
 
-			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
-				sdata[s_idx].a = a_temp;
-			}
 
 		}
 	} else {
 		if (mat_from_file == 1){
 			// wait for command to read file
 			MPI_Bcast_loadedMat(root, loadedMatData);
+
+			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				sdata[s_idx].a.resize(2);
+				for (int d1 = 0; d1 < 2; ++d1){
+					sdata[s_idx].a[d1].resize(2);
+					for (int d2 = 0; d2 < 2; ++d2){
+						sdata[s_idx].a[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+					}
+				}
+			}
+
 		}
 	}
 
@@ -2164,6 +2172,20 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			Param_tools::save(result_array[job], outFile);
 		}
 		outFile.close();
+
+		if (k_sampling == 1){
+
+			std::cout << "Saving " << job_name << ".kpts to disk. \n";
+			std::ofstream outFile_k;
+			const char* extension_k =".kpts";
+			outFile_k.open( (job_name + extension_k).c_str() );
+
+			for (int job = 0; job < maxJobs; ++job){
+				Param_tools::saveKpts(result_array[job], outFile_k);
+			}
+			outFile_k.close();
+
+		}
 
 		int wan_save = opts.getInt("wan_save");
 		if (wan_save == 1){
