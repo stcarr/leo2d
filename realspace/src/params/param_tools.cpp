@@ -30,6 +30,7 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 	int observable_type = job.getInt("observable_type");
 	int chiral_on = job.getInt("chiral_on");
 	int ballistic_transport = job.getInt("ballistic_transport");
+	int kpm_trace = job.getInt("kpm_trace");
 
 	int poly_order = job.getInt("poly_order");
 	double energy_rescale = job.getDouble("energy_rescale");
@@ -248,8 +249,6 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 			// KPM DOS
 			if (observable_type == 0){
 
-				std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
-
 				if (jobID == 1){
 					//print E vals:
 					double g[poly_order];
@@ -264,11 +263,25 @@ void Param_tools::save(Job_params job, std::ofstream& outFile) {
 					outFile << "\n";
 				}
 
-				for(int t = 0; t < num_targets; ++t){
+				if (kpm_trace == 1){
+
+					std::vector<double> dos = job.getDoubleVec("kpm_trace_dos");
+
 					for(int j = 0; j < poly_order-1; ++j){
-						outFile << cheb_coeffs[t][j] << " ";
+						outFile << dos[j] << " ";
 					}
-					outFile << cheb_coeffs[t][poly_order-1] << "\n";
+					outFile << dos[poly_order-1] << "\n";
+
+				} else { // conventional local observable KPM
+
+					std::vector< std::vector<double> > cheb_coeffs = job.getDoubleMat("cheb_coeffs");
+
+					for(int t = 0; t < num_targets; ++t){
+						for(int j = 0; j < poly_order-1; ++j){
+							outFile << cheb_coeffs[t][j] << " ";
+						}
+						outFile << cheb_coeffs[t][poly_order-1] << "\n";
+					}
 				}
 
 				// KPM Conductivity
