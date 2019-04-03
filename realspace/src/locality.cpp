@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <random>
+#include <cmath>
 
 //#include <Eigen/Dense>
 //#include <Eigen/Eigenvalues>
@@ -1954,7 +1955,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                         } else {
                             // Line 3
                             int n = i - 2*num_k1;
-                            if (isnan(b3)||isnan(s3)){
+                            if (m[0] ==m [1]){
                                 double len = gamma[1] - m[1];
                                 kx[i] = m[0];
                                 ky[i] = m[1] +  n * len / num_k1;
