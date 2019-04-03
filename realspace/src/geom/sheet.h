@@ -54,7 +54,7 @@ class Sheet {
 
     public:
       Sheet(Sdata);
-      Sheet(Sdata input, LoadedMat matData_in, int s);
+      Sheet(Sdata input, LoadedMat matData_in);
       Sheet(const Sheet& orig);
       ~Sheet();
       bool checkShape(double (&pos)[3]);

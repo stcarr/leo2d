@@ -18,7 +18,7 @@ class Sdata {
 
   public:
 
-    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, double, int, int, int, std::string);
+    Sdata(Materials::Mat, std::vector<int>, std::vector<int>, double, int, int, int, std::string, int);
     Sdata(const Sdata& orig);
 		Sdata();
     ~Sdata();
@@ -31,6 +31,7 @@ class Sdata {
     std::vector< std::vector<int> > supercell_stride;
 		int solver_space;
 		int strain_type;
+    int sheet_index;
 		std::string strain_file;
     Job_params opts;
 

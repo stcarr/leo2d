@@ -242,10 +242,10 @@ int main(int argc, char** argv) {
 					if (in_string == "FILE"){
 						opts.setParam("mat_from_file", 1);
 						Materials::Mat blank_mat;
-						s_data[current_sheet] = Sdata(blank_mat, min,max,max_R,boundary_condition,0,0,strain_file);
+						s_data[current_sheet] = Sdata(blank_mat, min,max,max_R,boundary_condition,0,0,strain_file,1);
 					} else {
 					Materials::Mat mat = Materials::string_to_mat(in_string);
-					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file);
+					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file,0);
 					}
 				}
 
@@ -809,6 +809,10 @@ int main(int argc, char** argv) {
 							temp_shifts[i][d] = var;
 						}
 					}
+
+					printf("global_shifts[0] = [%lf, %lf, %lf] \n",temp_shifts[0][0], temp_shifts[0][1], temp_shifts[0][2] );
+					printf("global_shifts[1] = [%lf, %lf, %lf] \n",temp_shifts[1][0], temp_shifts[1][1], temp_shifts[1][2] );
+
 					opts.setParam("global_shifts",temp_shifts);
 				}
 
@@ -837,7 +841,7 @@ int main(int argc, char** argv) {
 		for (int i = 0; i < num_sheets; ++i){
 			s_data[i].solver_space = opts.getInt("solver_space");
 			s_data[i].strain_type = opts.getInt("strain_type");
-			opts.setParam("sheet_index",i);
+			s_data[i].sheet_index = i;
 			s_data[i].opts = opts;
 		}
 

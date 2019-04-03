@@ -228,7 +228,7 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					Materials::Mat mat = Materials::string_to_mat(in_string);
-					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file);
+					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file,0);
 				}
 
 				if (in_string == "HEIGHT"){

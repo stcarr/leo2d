@@ -9,6 +9,7 @@
 #include "tools/numbers.h"
 #include "params/param_tools.h"
 #include "materials/read_mat.h"
+#include "mpi/mat_comm.h"
 
 //#include "transport/ballistic.h"
 
@@ -60,12 +61,49 @@ void Locality::setup(Job_params opts_in){
 		opts.printParams();
 		if (mat_from_file == 1){
 			loadedMatData = ReadMat::loadMat("test_data");
-			loadedMatData.MPI_Bcast_root(root);
+			// For testing interlayer coupling terms from loadedMatData
+			/*
+			int o1 = 7;
+			int o2 = 8;
+			double x = -0.914812;
+			double y =  1.584500;
+			double z =  3.055500;
+			std::array<double, 3> vector;
+			vector[0] = x;
+			vector[1] = y;
+			vector[2] = z;
+			double t_test = ReadMat::interlayer_term(o1, o2, vector, 0.0, 0.0, loadedMatData);
+			printf("H[%d][%d], [%lf, %lf, %lf] = %lf \n",o1,o2,x,y,z,t_test);
+			*/
+			MPI_Bcast_root_loadedMat(root,loadedMatData);
+
+			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				sdata[s_idx].a.resize(2);
+				for (int d1 = 0; d1 < 2; ++d1){
+					sdata[s_idx].a[d1].resize(2);
+					for (int d2 = 0; d2 < 2; ++d2){
+						sdata[s_idx].a[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+					}
+				}
+			}
+
+
 		}
 	} else {
 		if (mat_from_file == 1){
 			// wait for command to read file
-			loadedMatData.MPI_Bcast(root);
+			MPI_Bcast_loadedMat(root, loadedMatData);
+
+			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				sdata[s_idx].a.resize(2);
+				for (int d1 = 0; d1 < 2; ++d1){
+					sdata[s_idx].a[d1].resize(2);
+					for (int d2 = 0; d2 < 2; ++d2){
+						sdata[s_idx].a[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+					}
+				}
+			}
+
 		}
 	}
 
@@ -632,7 +670,7 @@ void Locality::constructGeom(){
 			if (mat_from_file == 0){
 				sheets.push_back(Sheet(sdata[i]));
 			} else {
-				sheets.push_back( Sheet(sdata[i],loadedMatData,i) );
+				sheets.push_back( Sheet(sdata[i],loadedMatData) );
 			}
 		}
 
@@ -1574,6 +1612,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					double dot = b1[0][0]*b1[1][0] + b1[0][1]*b1[1][1];	//dot product
 					double det = b1[0][0]*b1[1][1] - b1[1][0]*b1[0][1];	//determinant
 					double phi = atan2(det, dot);   										// angle between the two
+					phi = M_PI/3.0;
 
 					gamma[0] = 0.0;
 					gamma[1] = 0.0;
@@ -2273,6 +2312,20 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 			Param_tools::save(result_array[job], outFile);
 		}
 		outFile.close();
+
+		if (k_sampling == 1){
+
+			std::cout << "Saving " << job_name << ".kpts to disk. \n";
+			std::ofstream outFile_k;
+			const char* extension_k =".kpts";
+			outFile_k.open( (job_name + extension_k).c_str() );
+
+			for (int job = 0; job < maxJobs; ++job){
+				Param_tools::saveKpts(result_array[job], outFile_k);
+			}
+			outFile_k.close();
+
+		}
 
 		int wan_save = opts.getInt("wan_save");
 		if (wan_save == 1){
@@ -3373,6 +3426,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	int observable_type = jobIn.getInt("observable_type");
 	int boundary_condition = jobIn.getInt("boundary_condition");
 	int strain_type = jobIn.getInt("strain_type");
+	int mat_from_file = jobIn.getInt("mat_from_file");
 
 	int diagonalize = jobIn.getInt("diagonalize");
 	int elecOn = jobIn.getInt("elecOn");
@@ -3581,10 +3635,18 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					strain_rot[1][0] = strain_rot[0][1];
 
 					Materials::Mat mat = sdata[s0].mat;
-					//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
 
-					// by bonding distance only
-					raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
+					double raw_t;
+
+					if (mat_from_file == 0){
+						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
+						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
+
+						//raw_t = intra_pairs_t[intra_counter];
+
+					} else {
+						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0);
+					}
 
 				} else {
 
@@ -3707,8 +3769,13 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					y2 - y1,
 					z2 - z1}};
 
-				t = Materials::interlayer_term(orbit1, orbit2,disp, theta1, theta2,mat1, mat2)/energy_rescale;
+				if (mat_from_file == 1){
+					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
 
+				} else {
+					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
+				}
 				//if ( (new_k == 568 && k_i == 3941) || (new_k == 3941 && k_i == 568) ){
 					//printf("inter[%d,%d] = %lf, [%lf, %lf] -> [%lf, %lf] \n", k_i,new_k,t, x1,y1, x2,y2);
 				//}
@@ -4252,16 +4319,23 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 						//raw_t = intra_pairs_t[intra_counter];
 
 						// use bonding length only
-						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat)/energy_rescale;
+						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
 
 					} else {
-						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0)/energy_rescale;
+						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0);
 					}
 
 				} else {
 
 					raw_t = intra_pairs_t[intra_counter];
-
+					// get H terms at K point of monolayer (for debugging)
+					/*
+					if ( (abs(k_vec[0] - 1.144714) < 1e-3) && (abs(k_vec[1] - -0.660901) < 1e-3) && (abs(raw_t) > 0.1) ){
+						if (index_to_grid[k_i*4 + 2] == 5 && index_to_grid[new_k*4 + 2] == 5){
+							printf("[%lf, %lf, %lf]: %lf \n",x2-x1,y2-y1,z2-z1,raw_t);
+						}
+					}
+					*/
 				}
 
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
@@ -4283,7 +4357,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 
 				// Then get k dot R phase from the supercell wrapping
 				// R is the vector connecting orbital k_i to orbital k_new
-				phase = phase + k_vec[0]*(-new_pos_shift_x) + k_vec[1]*(-new_pos_shift_y);
+				phase = phase + k_vec[0]*(x2-x1) + k_vec[1]*(y2-y1);
 
 				//t_cpx = t_cpx + std::polar(t, phase);
 					t_cpx = std::polar(t, phase);
@@ -4420,7 +4494,24 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 					y2 - y1,
 					z2 - z1}};
 
-				double t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
+				double t;
+
+				if (mat_from_file == 1){
+					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+
+					// get H terms at K point of monolayer (for debugging)
+				  /*
+					if ( (abs(k_vec[0] - 1.144714) < 1e-3) && (abs(k_vec[1] - -0.660901) < 1e-3) && (abs(t) > 0.1) ){
+						if (orbit1 == 5 && orbit2 == 8){
+							printf("[%lf, %lf, %lf]: %lf \n",disp[0],disp[1],disp[2],t);
+						}
+					}
+					*/
+
+				} else {
+					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
+				}
 
 				//double t = Materials::interlayer_term(orbit1, orbit2, disp, 0.0, 0.0, mat1, mat2)/energy_rescale;
 				//if(abs(t) > 1e-4){
@@ -4434,7 +4525,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double phase = peierlsPhase(x1, x2, y1, y2, B);
 
 				// Then get k dot R phase from the supercell wrapping
-				phase = phase + k_vec[0]*(-new_pos_shift_x) + k_vec[1]*(-new_pos_shift_y);
+				phase = phase + k_vec[0]*(x2-x1) + k_vec[1]*(y2-y1);
 				//printf("[%d, %d]: phase = %lf, k_vec = [%lf, %lf], R = [%lf, %lf] \n",k_i,new_k,phase, k_vec[0],k_vec[1], -new_pos_shift_x, -new_pos_shift_y);
 				//t_cpx = t_cpx + std::polar(t, phase);
 					t_cpx = std::polar(t,phase);
@@ -6507,7 +6598,21 @@ double Locality::onSiteE(double x, double y, double z, double E_in){
 
 std::vector< std::vector<double> > Locality::getReciprocal(int s){
 
-	std::vector< std::vector<double> > orig_a = sdata[s].a;
+	int mat_from_file = opts.getInt("mat_from_file");
+
+	std::vector< std::vector<double> > orig_a;
+
+	if (mat_from_file == 1){
+		std::array<std::array<double, 2>, 2> a_in = ReadMat::getLattice(loadedMatData, 0);
+		orig_a.resize(2);
+		for (int d = 0; d < 2; ++d){
+			orig_a[d].resize(2);
+			orig_a[d][0] = a_in[d][0];
+			orig_a[d][1] = a_in[d][1];
+		}
+	}	else{
+		orig_a = sdata[s].a;
+	}
 	double theta = angles[s];
 
 	std::vector< std::vector<double> > a;

@@ -9,14 +9,16 @@
  #include <vector>
 
 
-Sdata::Sdata(Materials::Mat _mat, std::vector<int> _min, std::vector<int> _max, double _max_R, int _boundary_condition, int _solver_space, int _strain_type, std::string _strain_file) {
+Sdata::Sdata(Materials::Mat _mat, std::vector<int> _min, std::vector<int> _max, double _max_R, int _boundary_condition, int _solver_space, int _strain_type, std::string _strain_file, int mat_from_file) {
   mat = _mat;
   a.resize(2);
 
   for(int i = 0; i < 2; ++i){
     a[i].resize(2);
     for(int j = 0; j < 2; ++j){
-      a[i][j] = Materials::lattice(mat)[i][j];
+      if (mat_from_file == 0){
+        a[i][j] = Materials::lattice(mat)[i][j];
+      }
     }
   }
 
@@ -44,6 +46,7 @@ Sdata::Sdata(const Sdata& orig) {
   solver_space = orig.solver_space;
   strain_type = orig.strain_type;
   strain_file = orig.strain_file;
+  sheet_index = orig.sheet_index;
 
   if (boundary_condition == 1){
     supercell = orig.supercell;
