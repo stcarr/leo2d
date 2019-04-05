@@ -1558,6 +1558,10 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 
                 int k_jobID = 1;
                 std::vector<Job_params> k_jobArray;
+                std::ofstream outFile_k;
+                const char* ext = "_kgrid.dat";
+                outFile_k.open ((job_name + ext).c_str());
+                
                 for (int i = 0; i < (int)jobArray.size(); ++i){
                     for (int k1 = 0; k1 < num_k1; ++k1){
                         for (int k2 = 0; k2 < num_k2; ++k2){
@@ -1577,6 +1581,8 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                             tempJob.setParam("k_vec",k_vec);
                             tempJob.setParam("k_vec_grid",k_vec_grid);
                             tempJob.setParam("unit_cell",a);
+                            
+                            outFile_k << k_vec[0] << "," << k_vec[1] << "\n";
                             
                             k_jobArray.push_back(tempJob);
                             ++k_jobID;
@@ -1986,6 +1992,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 }
                 
                 jobArray = k_jobArray;
+                
             }
         }
         
