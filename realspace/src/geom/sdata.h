@@ -33,6 +33,7 @@ class Sdata {
 		int strain_type;
     int sheet_index;
 		std::string strain_file;
+    std::string lmat_name;
     Job_params opts;
 
 };

@@ -60,7 +60,8 @@ void Locality::setup(Job_params opts_in){
 	if (rank == root){
 		opts.printParams();
 		if (mat_from_file == 1){
-			loadedMatData = ReadMat::loadMat("test_data");
+
+			loadedMatData = ReadMat::loadMat(opts.getString("mat_filename"),sdata);
 			// For testing interlayer coupling terms from loadedMatData
 			/*
 			int o1 = 7;
@@ -78,11 +79,12 @@ void Locality::setup(Job_params opts_in){
 			MPI_Bcast_root_loadedMat(root,loadedMatData);
 
 			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				std::array<std::array<double, 2>, 2> a_here = ReadMat::getLattice(loadedMatData, sdata[s_idx]);
 				sdata[s_idx].a.resize(2);
 				for (int d1 = 0; d1 < 2; ++d1){
 					sdata[s_idx].a[d1].resize(2);
 					for (int d2 = 0; d2 < 2; ++d2){
-						sdata[s_idx].a[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+						sdata[s_idx].a[d1][d2] = a_here[d1][d2];
 					}
 				}
 			}
@@ -95,11 +97,12 @@ void Locality::setup(Job_params opts_in){
 			MPI_Bcast_loadedMat(root, loadedMatData);
 
 			for (int s_idx = 0; s_idx < sdata.size(); ++s_idx){
+				std::array<std::array<double, 2>, 2> a_here = ReadMat::getLattice(loadedMatData, sdata[s_idx]);
 				sdata[s_idx].a.resize(2);
 				for (int d1 = 0; d1 < 2; ++d1){
 					sdata[s_idx].a[d1].resize(2);
 					for (int d2 = 0; d2 < 2; ++d2){
-						sdata[s_idx].a[d1][d2] = loadedMatData.intra_data[0].lattice[d1][d2];
+						sdata[s_idx].a[d1][d2] = a_here[d1][d2];
 					}
 				}
 			}
@@ -171,7 +174,7 @@ void Locality::setupSupercell(){
 			if (mat_from_file == 0){
 				base_unitCell = Materials::lattice(sdata[0].mat);
 			} else {
-				base_unitCell = ReadMat::getLattice(loadedMatData, 0);
+				base_unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
 			}
 
 			int A1_num_a1;
@@ -285,7 +288,7 @@ void Locality::setupSupercell(){
 		if (mat_from_file == 0){
 			unitCell = Materials::lattice(sdata[0].mat);
 		} else {
-			unitCell = ReadMat::getLattice(loadedMatData, 0);
+			unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
 		}
 
 		std::vector< std::vector<double> > sc_here;
@@ -3645,7 +3648,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 						//raw_t = intra_pairs_t[intra_counter];
 
 					} else {
-						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0);
+						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, sdata[s0]);
 					}
 
 				} else {
@@ -3770,7 +3773,9 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 					z2 - z1}};
 
 				if (mat_from_file == 1){
-					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					int s1 = index_to_grid[k_i*4 + 3];
+					int s2 = index_to_grid[new_k*4 + 3];
+					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
 					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
 
 				} else {
@@ -4322,7 +4327,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
 
 					} else {
-						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, s0);
+						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, sdata[s0]);
 					}
 
 				} else {
@@ -4497,7 +4502,9 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double t;
 
 				if (mat_from_file == 1){
-					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+				  int s1 = index_to_grid[k_i*4 + 3];
+					int s2 = index_to_grid[new_k*4 + 3];
+					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
 					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
 
 					// get H terms at K point of monolayer (for debugging)
@@ -6603,7 +6610,7 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 	std::vector< std::vector<double> > orig_a;
 
 	if (mat_from_file == 1){
-		std::array<std::array<double, 2>, 2> a_in = ReadMat::getLattice(loadedMatData, 0);
+		std::array<std::array<double, 2>, 2> a_in = ReadMat::getLattice(loadedMatData, sdata[s]);
 		orig_a.resize(2);
 		for (int d = 0; d < 2; ++d){
 			orig_a[d].resize(2);

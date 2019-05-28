@@ -13,6 +13,7 @@
 #include <string>
 
 #include "materials/loaded_mat.h"
+#include "geom/sdata.h"
 
 
 /**
@@ -41,12 +42,12 @@ namespace ReadMat {
    * The returned basis is given as an array of columns, so to construct the corresponding
    * matrix, the i-th row and j-th column entry is basis[j][i].
    */
-    std::array<std::array<double, 2>, 2>  getLattice(LoadedMat& mat, int sheet);
+    std::array<std::array<double, 2>, 2>  getLattice(LoadedMat& mat, Sdata& sheet_data);
     /**
      * The number of orbitals in the tight-binding model implemented in this library
      * for this material.
      */
-    int n_orbitals(LoadedMat& mat, int sheet);
+    int n_orbitals(LoadedMat& mat,  Sdata& sheet_data);
     /**
      * The cut-off radius for nonzero terms in the intra-layer Hamiltonian.
      */
@@ -61,7 +62,7 @@ namespace ReadMat {
      * The vertical position of a given orbital in a given layered material, provided the
      * unit cell is centered around the z=0 plane.
      */
-    double orbital_pos(LoadedMat& mat, int idx, int dim, int sheet);
+    double orbital_pos(LoadedMat& mat, int idx, int dim, Sdata& sheet_data);
 
     /***********************************************************************************/
     /* Methods for returning tight-binding hopping terms and associated nonzero checks */
@@ -76,7 +77,7 @@ namespace ReadMat {
      */
     double intralayer_term(int orbital_row, int orbital_col,
                     std::array<int, 2>& vector,
-                    LoadedMat& mat, int sheet);
+                    LoadedMat& mat, Sdata& sheet_data);
     /**
      * Returns whether a given intra-layer tight-binding hopping term for a two dimensional material
      * is nonzero, for a given pair of orbitals and a lattice hopping vector in grid coordinates computed
@@ -107,18 +108,18 @@ namespace ReadMat {
      double interlayer_term_xy_sym(int orbital_row, int orbital_col,
                      std::array<double, 3>& vector,
                      double angle_row, double angle_col,
-                     LoadedMat& mat);
+                     LoadedMat& mat,  Sdata& sheet_data1, Sdata& sheet_data2);
 
      double interlayer_term(int orbital_row, int orbital_col,
                     std::array<double, 3>& vector,
                     double angle_row, double angle_col,
-                    LoadedMat& mat);
+                    LoadedMat& mat, Sdata& sheet_data1, Sdata& sheet_data2);
 
    /**
     * Also a method to read all the info for a loaded material from file
     */
 
-    LoadedMat loadMat(std::string filename);
+    LoadedMat loadMat(std::string filename, std::vector<Sdata> sdata);
 
 }   /* End namespace ReadMat */
 #endif

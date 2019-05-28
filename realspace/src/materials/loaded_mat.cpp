@@ -8,11 +8,4 @@
 #ifndef loaded_mat_h
 #define loaded_mat_h
 
-#include <array>
-#include <vector>
-#include <mpi.h>
-
-#include "tools/numbers.h"
-
-
 #endif

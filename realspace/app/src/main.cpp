@@ -207,6 +207,18 @@ int main(int argc, char** argv) {
 					opts.setParam("num_k2",atoi(in_string.c_str()));
 				}
 
+				if (in_string == "MAT_FROM_FILE"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mat_from_file", atoi(in_string.c_str()));
+				}
+
+				if (in_string == "MAT_FILENAME"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mat_filename", in_string);
+				}
+
 				if (in_string == "NUM_SHEETS") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
@@ -239,13 +251,15 @@ int main(int argc, char** argv) {
 				if (in_string == "MATERIAL") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					if (in_string == "FILE"){
-						opts.setParam("mat_from_file", 1);
+					//if (in_string == "FILE"){
+					if (opts.getInt("mat_from_file") == 1){
+						//opts.setParam("mat_from_file", 1);
 						Materials::Mat blank_mat;
 						s_data[current_sheet] = Sdata(blank_mat, min,max,max_R,boundary_condition,0,0,strain_file,1);
+						s_data[current_sheet].lmat_name = in_string;
 					} else {
-					Materials::Mat mat = Materials::string_to_mat(in_string);
-					s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file,0);
+						Materials::Mat mat = Materials::string_to_mat(in_string);
+						s_data[current_sheet] = Sdata(mat,min,max,max_R,boundary_condition,0,0,strain_file,0);
 					}
 				}
 

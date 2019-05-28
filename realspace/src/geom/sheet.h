@@ -50,7 +50,7 @@ class Sheet {
 
       LoadedMat loadedMatData;
       Job_params opts;
-
+      Sdata sdata;
 
     public:
       Sheet(Sdata);

@@ -55,6 +55,7 @@ Job_params::Job_params() {
 	setParam("sc_search_size", i_one);
 	setParam("global_shifts_on",i_zero);
 	setParam("mat_from_file",i_zero);
+	setParam("mat_filename", "test_data");
 
 	// Strain settings
 	setParam("strain_type",i_zero);

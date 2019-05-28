@@ -16,6 +16,7 @@
 // ---------------------
 Sheet::Sheet(Sdata input){
 
+  sdata = input;
   opts = input.opts;
   mat = input.mat;
   sheet_index = input.sheet_index;
@@ -90,13 +91,14 @@ Sheet::Sheet(Sdata input, LoadedMat matData){
 
   sheet_index = input.sheet_index;
   loadedMatData = matData;
+  sdata = input;
   opts = input.opts;
 
   a.resize(2);
   a[0].resize(2);
   a[1].resize(2);
 
-  std::array<std::array<double, 2>, 2> lattice = ReadMat::getLattice(matData, sheet_index);
+  std::array<std::array<double, 2>, 2> lattice = ReadMat::getLattice(matData, input);
 
   for (int i = 0; i < 2; ++i){
     for (int j = 0; j < 2; ++j){
@@ -112,7 +114,7 @@ Sheet::Sheet(Sdata input, LoadedMat matData){
   intra_search_size = ReadMat::intra_search_radius(matData);
 
 	// "atoms" <--> "orbitals"
-  n_orbitals = ReadMat::n_orbitals(matData, sheet_index);
+  n_orbitals = ReadMat::n_orbitals(matData, sdata);
   atom_pos.resize(n_orbitals);
 
 
@@ -120,7 +122,7 @@ Sheet::Sheet(Sdata input, LoadedMat matData){
   for (int i = 0; i < n_orbitals; ++i){
     atom_pos[i].resize(3);
     for (int j = 0; j < 3; ++j){
-      atom_pos[i][j] = ReadMat::orbital_pos(matData, i, j, sheet_index);
+      atom_pos[i][j] = ReadMat::orbital_pos(matData, i, j, sdata);
     }
   }
 
@@ -168,6 +170,7 @@ Sheet::Sheet(Sdata input, LoadedMat matData){
 // ----------------
 Sheet::Sheet(const Sheet& orig) {
 
+  sdata = orig.sdata;
   opts = orig.opts;
   a = orig.a;
   max_shape = orig.max_shape;
@@ -713,7 +716,7 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
                   if (mat_from_file == 0){
         						t = Materials::intralayer_term(l0, l, grid_disp, mat);
         					} else {
-        						t = ReadMat::intralayer_term(l0, l, grid_disp, loadedMatData, sheet_index);
+        						t = ReadMat::intralayer_term(l0, l, grid_disp, loadedMatData, sdata);
                     /*
                     double dx = posAtomIndex(k2,0) - pos_here[0];
                     double dy = posAtomIndex(k2,1) - pos_here[1];
