@@ -1590,7 +1590,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                     }
                 }
                 jobArray = k_jobArray;
-            }
+            
                 
                 // Sample around twisted supercell BZ
             } else if (k_type == 1){
