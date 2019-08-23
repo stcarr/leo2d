@@ -2063,7 +2063,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                             // Line 2, K_L2 to K_L3
                             int n = i - num_k1;
                             kx[i] = k_2[0] + n * l2 / num_k1;
-                            ky[i] = s2 * kxLq:Quanta:Quanta:Quanta[i] + m2;
+                            ky[i] = s2 * kx[0]+ m2;
                             
                         } else{
                             kx[i] = k_3[0];
