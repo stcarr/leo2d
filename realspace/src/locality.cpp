@@ -455,6 +455,7 @@ void Locality::setupSupercell(){
         }
         
     }
+    
 }
 
 
@@ -1830,7 +1831,6 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 }
                 
                 
-                
                 int M = opts.getInt("m_supercell");
                 int N = opts.getInt("n_supercell");
                 
@@ -1931,7 +1931,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 double b2 = (m[0]*k[1] - k[0]*m[1]) / (m[0] - k[0]);
                 double b3 = (gamma[0]*m[1] - m[0]*gamma[1]) / (gamma[0] - m[0]);
                 
-                double l1 = k[0]-gamma[0] ;
+                double l1 = k[0]-gamma[0];
                 double l2 = m[0]-k[0] ;
                 double l3 = gamma[0] - m[0];
                 
@@ -1994,7 +1994,102 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
                 
                 jobArray = k_jobArray;
                 
+            } else if (k_type == 4){ // Connecting the three Dirac points of the trilayer
+                int num_k1 = opts.getInt("num_k1");
+                maxJobs = 2*num_k1;
+                
+                int type = opts.getInt("supercell_type");   // type 3: trilayer
+                
+                if ( (type != 3)){
+                    printf("You don't have a trilayer supercell!");
+                }
+                
+                int M = opts.getInt("m_supercell");
+                int N = opts.getInt("n_supercell");
+                
+                double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+                
+                std::vector< std::vector<double> > b1 = getReciprocal(0);
+                std::vector< std::vector<double> > b2 = getReciprocal(1);
+                std::vector< std::vector<double> > b3 = getReciprocal(2); // reciprocal lattice of the monolayers
+                
+                printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+                printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+                printf("b3 = [%lf %lf; %lf %lf] \n",b3[0][0],b3[0][1],b3[1][0],b3[1][1]);
+                
+                // K points of each layer
+                double k_1[2];
+                double k_2[2];
+                double k_3[2];
+                
+                for(int i = 0; i < 2; i++){
+                    k_1[i] = 1.0/3.0*(2.0*b1[0][i]+b1[1][i]);
+                    k_2[i] = 1.0/3.0*(2.0*b2[0][i]+b2[1][i]);
+                    k_3[i] = 1.0/3.0*(2.0*b3[0][i]+b3[1][i]);
+                }
+
+                printf("K_L1 = [%lf %lf] \n", k_1[0], k_1[1]);
+                printf("K_L2 = [%lf %lf] \n", k_2[0], k_2[1]);
+                printf("K_L3 = [%lf %lf] \n", k_3[0], k_3[1]);
+                
+                // create and save k line data
+                int k_jobID = 1;
+                std::vector<Job_params> k_jobArray;
+                
+                std::ofstream outFile_k;
+                const char* ext = "_kline.dat";
+                outFile_k.open ((job_name + ext).c_str());
+                
+                double s1 = (k_2[1]-k_1[1])/(k_2[0]-k_1[0]);
+                double s2 = (k_3[1]-k_2[1])/(k_3[0]-k_2[0]);
+                double m1 = k_2[1] - s1*k_2[0];
+                double m2 = k_3[1] - s2*k_3[0];
+                double l1 = k_2[0]-k_1[0];
+                double l2 = k_3[0]-k_2[0];
+                printf("[%lf %lf] \n", s2, m2);
+                
+                double kx[maxJobs+1];
+                double ky[maxJobs+1]; // add one because we need to include K_L3
+                
+                for (int j = 0; j < (int) jobArray.size(); ++j){
+                    for (int i = 0; i < maxJobs+1; ++i){
+                        
+                        if (i < num_k1){
+                            // Line 1, K_L1 to K_L2
+                            kx[i] = k_1[0] + i * l1 / num_k1;
+                            ky[i] = s1 * kx[i] + m1;
+                            
+                        } else if (i < maxJobs){
+                            // Line 2, K_L2 to K_L3
+                            int n = i - num_k1;
+                            kx[i] = k_2[0] + n * l2 / num_k1;
+                            ky[i] = s2 * kxLq:Quanta:Quanta:Quanta[i] + m2;
+                            
+                        } else{
+                            kx[i] = k_3[0];
+                            ky[i] = k_3[1];
+                        }
+                    
+                        Job_params tempJob(jobArray[j]);
+                        
+                        tempJob.setParam("jobID",k_jobID);
+                        
+                        std::vector<double> k_vec;
+                        k_vec.resize(2);
+                        k_vec[0] = kx[i];
+                        k_vec[1] = ky[i];
+                        printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+                        tempJob.setParam("k_vec",k_vec);
+                        
+                        outFile_k << k_vec[0] << "," << k_vec[1] << "\n";
+                        
+                        k_jobArray.push_back(tempJob);
+                        ++k_jobID;
+                    }
+                }
+                jobArray = k_jobArray;
             }
+            
         }
         
         // random sampling of the trace
