@@ -235,6 +235,13 @@ int main(int argc, char** argv) {
 
 				}
 
+				// set to 1 for TMDCs (different a2 relative to graphene definition)
+				if (in_string == "HEX_SUPERCELL_MODIFY"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("hex_supercell_modify", atoi(in_string.c_str()));
+				}
+
 				if (in_string == "TRILAYER_SUPERCELL"){
 				    getline(in_line,in_string,' ');
 				    getline(in_line,in_string,' ');
@@ -830,18 +837,17 @@ int main(int argc, char** argv) {
 				if (in_string == "GLOBAL_SHIFTS"){
 					std::vector< std::vector<double> > temp_shifts;
           temp_shifts.resize(opts.getInt("num_sheets"));
-					getline(in_line,in_string,' ');
 					for (int i = 0; i < opts.getInt("num_sheets"); ++i){
+						getline(in_line,in_string,' '); // skip "=" or "|" spacing
 						temp_shifts[i].resize(3);
 						for (int d = 0; d < 3; ++d){
 							getline(in_line,in_string,' ');
 							double var = atof(in_string.c_str());
 							temp_shifts[i][d] = var;
 						}
-					}
+						printf("global_shifts[%d] = [%lf, %lf, %lf] \n",i,temp_shifts[i][0], temp_shifts[i][1], temp_shifts[i][2] );
 
-					printf("global_shifts[0] = [%lf, %lf, %lf] \n",temp_shifts[0][0], temp_shifts[0][1], temp_shifts[0][2] );
-					printf("global_shifts[1] = [%lf, %lf, %lf] \n",temp_shifts[1][0], temp_shifts[1][1], temp_shifts[1][2] );
+					}
 
 					opts.setParam("global_shifts",temp_shifts);
 				}

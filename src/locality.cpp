@@ -198,6 +198,22 @@ void Locality::setupSupercell(){
                 A2_num_a2 = (M+N);
             }
 
+						// TMDC have unit-cell defined differently, need to modify!
+						int hex_supercell_modify = opts.getInt("hex_supercell_modify");
+						if (hex_supercell_modify == 1){
+							// we have: a1_actual = a1, a2_actual = a2 - a1
+
+							int tmp_11 = A1_num_a1;
+							int tmp_12 = A1_num_a2;
+							int tmp_21 = A2_num_a1;
+							int tmp_22 = A2_num_a2;
+
+							// need to cancel out the extra -a1 in definition of a2_actual
+							A1_num_a1 = tmp_11 + tmp_12;
+							A2_num_a1 = tmp_21 + tmp_22;
+
+						}
+
             std::vector< std::vector<double> > unitCell;
             unitCell.resize(2);
             unitCell[0].resize(2);
