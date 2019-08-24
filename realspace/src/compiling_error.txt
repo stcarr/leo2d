@@ -1,6 +1,0 @@
-In file included from /Users/zoe/Desktop/CMT/leo2d/realspace/src/locality.cpp:8:
-In file included from /Users/zoe/Desktop/CMT/leo2d/realspace/src/locality.h:12:
-/Users/zoe/Desktop/CMT/leo2d/realspace/src/geom/hstruct.h:12:10: fatal error: 'geom/sheet.h' file not found
-#include "geom/sheet.h"
-         ^~~~~~~~~~~~~~
-1 error generated.
