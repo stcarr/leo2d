@@ -460,7 +460,8 @@ void Locality_serial::constructGeom(){
 		if (boundary_condition == 1){
 			inter_supercell_vecs_i = new int[max_inter_pairs];
 			inter_supercell_vecs_j = new int[max_inter_pairs];
-		}
+
+		}
 
 		for(int x = 0; x < max_inter_pairs; ++x){
 			inter_pairs_i[x] = inter_pairs_vec[x][0];
@@ -477,7 +478,8 @@ void Locality_serial::constructGeom(){
 		if (boundary_condition == 1){
 			intra_supercell_vecs_i = new int[max_intra_pairs];
 			intra_supercell_vecs_j = new int[max_intra_pairs];
-		}
+
+		}
 		for(int x = 0; x < max_intra_pairs; ++x){
 
 			intra_pairs_i[x] = intra_pairs_vec_i[x];
@@ -528,7 +530,8 @@ void Locality_serial::constructGeom(){
 	std::vector< std::vector<int> > inter_sc_vecs;
 	if (boundary_condition == 1){
 		inter_sc_vecs.resize(max_inter_pairs);
-	}
+
+	}
 	for (int x = 0; x < max_inter_pairs; ++x){
 		inter_pairs[x*2 + 0] = inter_pairs_i[x];
 		inter_pairs[x*2 + 1] = inter_pairs_j[x];
@@ -544,7 +547,8 @@ void Locality_serial::constructGeom(){
 	if (boundary_condition == 1){
 		delete inter_supercell_vecs_i;
 		delete inter_supercell_vecs_j;
-	}
+
+	}
 
 	int* intra_pairs = new int[2*max_intra_pairs];
 
@@ -552,7 +556,8 @@ void Locality_serial::constructGeom(){
 	std::vector< std::vector<int> > intra_sc_vecs;
 	if (boundary_condition == 1){
 		intra_sc_vecs.resize(max_intra_pairs);
-	}
+
+	}
 
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
@@ -569,7 +574,8 @@ void Locality_serial::constructGeom(){
 	if (boundary_condition == 1){
 		delete intra_supercell_vecs_i;
 		delete intra_supercell_vecs_j;
-	}
+
+	}
 
 	double* index_to_pos = new double[3*max_index];
 
@@ -1573,7 +1579,8 @@ Job_params Locality_serial::workerChebSolve(int* index_to_grid, double* index_to
 
 					results_out.setParam("cheb_coeffs",cheb_coeffs);
 					if (opts.getInt("dos_transform") == 1){
-						Param_tools::densityTransform(results_out);					}
+						Param_tools::densityTransform(results_out);
+					}
 
 			} else if (observable_type == 1){
 

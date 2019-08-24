@@ -155,17 +155,38 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 				}
 				*/
 
-				if (in_string == "SUPERCELL_M_N"){
+				if (in_string == "NUM_SHEETS") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
-					int m = atoi(in_string.c_str());
-					getline(in_line,in_string,' ');
-					int n = atoi(in_string.c_str());
-					opts.setParam("m_supercell",m);
-					opts.setParam("n_supercell",n);
-					int o = 1;
-					opts.setParam("supercell_type",o);
+					num_sheets = atoi(in_string.c_str());
+					s_data.resize(num_sheets);
+					heights.resize(num_sheets);
+					angles.resize(num_sheets);
+					opts.setParam("num_sheets",num_sheets);
+                    if (num_sheets == 3){
+                        opts.setParam("supercell_type",3);
+                    }
+
 				}
+
+                if (in_string == "SUPERCELL_M_N"){
+                        getline(in_line,in_string,' ');
+                        getline(in_line,in_string,' ');
+                        int m = atoi(in_string.c_str());
+                        getline(in_line,in_string,' ');
+                        int n = atoi(in_string.c_str());
+                        opts.setParam("m_supercell",m);
+                        opts.setParam("n_supercell",n);
+                        if (num_sheets == 3){
+                            int o = 3;
+                            opts.setParam("supercell_type",o);
+                        } else if (num_sheets == 2){
+                            int o = 1;
+                            opts.setParam("supercell_type",o);
+                        } else {
+                            printf("something is wrong");
+                        }
+                }
 
 				if (in_string == "SUPERCELL_GRID"){
 					getline(in_line,in_string,' ');
@@ -198,16 +219,6 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 					getline(in_line,in_string,' ');
 					opts.setParam("num_k2",atoi(in_string.c_str()));
 				}
-
-				if (in_string == "NUM_SHEETS") {
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					num_sheets = atoi(in_string.c_str());
-					s_data.resize(num_sheets);
-					heights.resize(num_sheets);
-					angles.resize(num_sheets);
-					opts.setParam("num_sheets",num_sheets);
-					}
 
 				if (in_string == "START_SHEET") {
 					getline(in_line,in_string,' ');
@@ -595,7 +606,7 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 					s_data[i].supercell = sc_here;
 
 				}
-			} else if (type == 1) { // (M,N) Supercell type
+			} else if (type == 1) { // (M,N) Supercell type for bilayers
 				if ((int)s_data.size() > 2){
 					printf("!!WARNING!!: (M,N) Supercell method not defined for more than 2 sheets \nReturning empty matrix... \n");
 					DMatrix junk_matrix;
@@ -785,7 +796,130 @@ DMatrix getLeoMatrix(string hstruct_input_file){
 					outFile.close();
 				}
 
-			}
+            } else if (type == 3){ // (M,N) type supercell for trilayers
+                if ((int)s_data.size() > 3){
+                    printf("!!WARNING!!: (M,N) Supercell method not defined for more than 3 sheets \nReturning empty matrix... \n");
+                    DMatrix junk_matrix;
+                    return junk_matrix;
+                }
+                int M = opts.getInt("m_supercell");
+                int N = opts.getInt("n_supercell");
+                
+                double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+                if (M < N){
+                    theta = -theta;
+                }
+                printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+                // we assume unitCell is same for both sheets...
+                for (int i = 0; i < s_data.size(); ++i){
+                    
+                    std::vector< std::vector<double> > base_unitCell;
+                    base_unitCell.resize(2);
+                    for(int n = 0; n < 2; ++n){
+                        base_unitCell[n].resize(2);
+                        for(int m = 0; m < 2; ++m){
+                            base_unitCell[n][m] = Materials::lattice(s_data[0].mat)[n][m];
+                        }
+                    }
+                    
+                    int A1_num_a1;
+                    int A1_num_a2;
+                    int A2_num_a1;
+                    int A2_num_a2;
+                    
+                    if (i == 0){
+                        printf("i = 0\n");
+                        angles[i] = -theta;
+                        A1_num_a1 = pow(N,2) - pow(M,2);
+                        A1_num_a2 = pow(M,2) + (2*M*N);
+                        A2_num_a1 = -(pow(M,2) + (2*M*N));
+                        A2_num_a2 = pow(N,2) + 2*M*N;
+                    } else if (i == 1){
+                        printf("i = 1\n");
+                        angles[i] = 0;
+                        A1_num_a1 = 0;
+                        A1_num_a2 = pow(M,2) + M*N + pow(N,2);
+                        A2_num_a1 = -(pow(N,2) + M*N + pow(M,2));
+                        A2_num_a2 = pow(N,2) + M*N + pow(M,2);
+                    } else if (i == 2){
+                        printf("i = 2\n");
+                        angles[i] = theta;
+                        A1_num_a1 = pow(M,2) - pow(N,2);
+                        A1_num_a2 = pow(N,2) + 2*M*N;
+                        A2_num_a1 = -(pow(N,2) + 2*M*N);
+                        A2_num_a2 = pow(M,2) + 2*M*N;
+                    }
+    
+                    
+                    std::vector< std::vector<double> > unitCell;
+                    unitCell.resize(2);
+                    unitCell[0].resize(2);
+                    unitCell[1].resize(2);
+                    
+                    // Not updating the twist-angle is correct, as this will make sure the supercell is always
+                    // saved in coordinates relative to the individual sheet, not the overall heterostructure.
+                    double theta_here = 0.0;
+                    
+                    unitCell[0][0] = cos(theta_here)*base_unitCell[0][0] - sin(theta_here)*base_unitCell[0][1];
+                    unitCell[0][1] = sin(theta_here)*base_unitCell[0][0] + cos(theta_here)*base_unitCell[0][1];
+                    unitCell[1][0] = cos(theta_here)*base_unitCell[1][0] - sin(theta_here)*base_unitCell[1][1];
+                    unitCell[1][1] = sin(theta_here)*base_unitCell[1][0] + cos(theta_here)*base_unitCell[1][1];
+                    
+                    std::vector< std::vector<double> > sc_here;
+                    sc_here.resize(2);
+                    sc_here[0].resize(2);
+                    sc_here[1].resize(2);
+                    
+                    sc_here[0][0] = A1_num_a1*unitCell[0][0] + A1_num_a2*unitCell[1][0];
+                    sc_here[0][1] = A1_num_a1*unitCell[0][1] + A1_num_a2*unitCell[1][1];
+                    sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
+                    sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
+                    
+                    std::vector< std::vector<int> > sc_stride_here;
+                    sc_stride_here.resize(2);
+                    sc_stride_here[0].resize(2);
+                    sc_stride_here[1].resize(2);
+                    
+                    sc_stride_here[0][0] = A1_num_a1;
+                    sc_stride_here[0][1] = A1_num_a2;
+                    sc_stride_here[1][0] = A2_num_a1;
+                    sc_stride_here[1][1] = A2_num_a2;
+                    
+    
+                    printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+                    printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+                    //printf("local_supercell = [%lf %lf; %lf %lf]\n", local_sc_here[0][0], local_sc_here[0][1], local_sc_here[1][0], local_sc_here[1][1]);
+                    printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
+                    
+                    
+                    s_data[i].supercell = sc_here;
+                    s_data[i].supercell_stride = sc_stride_here;
+                    
+                    // Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
+                    if (i == 0){
+                        opts.setParam("supercell",sc_here);
+                        
+                        int matrix_pos_save = opts.getInt("matrix_pos_save");
+                        if (matrix_pos_save == 1){
+                            
+                            string job_name = opts.getString("job_name");
+                            const char* extension = "_supercell.dat";
+                            
+                            ofstream outFile;
+                            outFile.open ((job_name + extension).c_str());
+                            outFile <<     "0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+                            "0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+                            sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+                            sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+                            sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+                            sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+                            outFile.close();
+                        }
+                    }
+
+                }
+                
+            }
 		}
 
 		// Create the locality object with the sheet input data

@@ -127,17 +127,6 @@ int main(int argc, char** argv) {
 					opts.setParam("boundary_condition",boundary_condition);
 				}
 
-				if (in_string == "SUPERCELL_M_N"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					int m = atoi(in_string.c_str());
-					getline(in_line,in_string,' ');
-					int n = atoi(in_string.c_str());
-					opts.setParam("m_supercell",m);
-					opts.setParam("n_supercell",n);
-					int o = 1;
-					opts.setParam("supercell_type",o);
-				}
 
 				if (in_string == "SUPERCELL_GROUPS"){
 						int sheet_count = 0;
@@ -194,6 +183,9 @@ int main(int argc, char** argv) {
 					// 1 -> LC sampling of twisted supercell Hexagonal BZ
 					// 2 -> LC sampling of layer 1's Hexagonal BZ ()
 					// 3 -> LC sampling for sandwich project (twisted supercell, both K,K')
+					// 4 -> LC sampling of trilayer graphene supercell (3 incomm twist angles)
+					// 5 -> LC sampling of trilayer graphene through each K point (3 incomm twist angles)
+
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("k_type",atoi(in_string.c_str()));
@@ -228,6 +220,30 @@ int main(int argc, char** argv) {
 					angles.resize(num_sheets);
 					opts.setParam("num_sheets",num_sheets);
 					}
+
+				if (in_string == "SUPERCELL_M_N"){
+				    getline(in_line,in_string,' ');
+				    getline(in_line,in_string,' ');
+				    int m = atoi(in_string.c_str());
+				    getline(in_line,in_string,' ');
+				    int n = atoi(in_string.c_str());
+				    opts.setParam("m_supercell",m);
+				    opts.setParam("n_supercell",n);
+		        int one = 1; // explicit type cast, saftey for setParam
+		        opts.setParam("supercell_type",one);
+
+
+				}
+
+				if (in_string == "TRILAYER_SUPERCELL"){
+				    getline(in_line,in_string,' ');
+				    getline(in_line,in_string,' ');
+				    int trilayer_on = atoi(in_string.c_str());
+						if (trilayer_on == 1) {
+			        int three = 3;
+			        opts.setParam("supercell_type",three);
+						}
+				}
 
 				if (in_string == "START_SHEET") {
 					getline(in_line,in_string,' ');

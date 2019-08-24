@@ -121,250 +121,380 @@ void Locality::setup(Job_params opts_in){
 
 void Locality::setupSupercell(){
 
-	int type = opts.getInt("supercell_type");
-	int mat_from_file = opts.getInt("mat_from_file");
+    int type = opts.getInt("supercell_type");
+    int mat_from_file = opts.getInt("mat_from_file");
 
-	// Standard fixed supercell definition
-	if (type == 0) {
-		std::vector< std::vector<double> > sc = opts.getDoubleMat("supercell");
-		for (int i = 0; i < sdata.size(); ++i){
-			double theta = angles[i];
-			std::vector< std::vector<double> > sc_here;
-			sc_here.resize(2);
-			sc_here[0].resize(2);
-			sc_here[1].resize(2);
+    // Standard fixed supercell definition
+    if (type == 0) {
+        std::vector< std::vector<double> > sc = opts.getDoubleMat("supercell");
+        for (int i = 0; i < sdata.size(); ++i){
+            double theta = angles[i];
+            std::vector< std::vector<double> > sc_here;
+            sc_here.resize(2);
+            sc_here[0].resize(2);
+            sc_here[1].resize(2);
 
-			sc_here[0][0] =  sc[0][0]*cos(theta) + sc[0][1]*sin(theta);
-			sc_here[0][1] = -sc[0][0]*sin(theta) + sc[0][1]*cos(theta);
-			sc_here[1][0] =  sc[1][0]*cos(theta) + sc[1][1]*sin(theta);
-			sc_here[1][1] = -sc[1][0]*sin(theta) + sc[1][1]*cos(theta);
-			sdata[i].supercell = sc_here;
+            sc_here[0][0] =  sc[0][0]*cos(theta) + sc[0][1]*sin(theta);
+            sc_here[0][1] = -sc[0][0]*sin(theta) + sc[0][1]*cos(theta);
+            sc_here[1][0] =  sc[1][0]*cos(theta) + sc[1][1]*sin(theta);
+            sc_here[1][1] = -sc[1][0]*sin(theta) + sc[1][1]*cos(theta);
+            sdata[i].supercell = sc_here;
 
-		}
-	} else if (type == 1) { // (M,N) Supercell type
-		std::vector<int> sc_groups;
+        }
+    } else if (type == 1) { // (M,N) Supercell type, in the /src/matrix_gen.cpp file
+        std::vector<int> sc_groups;
 
-		if ((int)sdata.size() < 3){
-			sc_groups.resize(2);
-			sc_groups[0] = 0;
-			sc_groups[1] = 1;
-			opts.setParam("sc_groups",sc_groups);
-		} else {
-			sc_groups = opts.getIntVec("sc_groups");
+        if ((int)sdata.size() < 3){
+            sc_groups.resize(2);
+            sc_groups[0] = 0;
+            sc_groups[1] = 1;
+            opts.setParam("sc_groups",sc_groups);
+        } else {
+            sc_groups = opts.getIntVec("sc_groups");
 
-			printf("sc_groups = ");
-			for (int i = 0; i < sc_groups.size(); ++i){
-				printf("%d , ",sc_groups[i]);
-			}
-			printf("\n");
-		}
+            printf("sc_groups = ");
+            for (int i = 0; i < sc_groups.size(); ++i){
+                printf("%d , ",sc_groups[i]);
+            }
+            printf("\n");
+        }
 
-		int M = opts.getInt("m_supercell");
-		int N = opts.getInt("n_supercell");
+        int M = opts.getInt("m_supercell");
+        int N = opts.getInt("n_supercell");
 
-		double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
-		if (M < N){
-			theta = -theta;
-		}
-		printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
-		// we assume unitCell is same for both sheets...
-		for (int i = 0; i < sdata.size(); ++i){
+        double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+        if (M < N){
+            theta = -theta;
+        }
+        printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+        // we assume unitCell is same for both sheets...
+        for (int i = 0; i < sdata.size(); ++i){
 
-			std::array<std::array<double, 2>, 2> base_unitCell;
-			if (mat_from_file == 0){
-				base_unitCell = Materials::lattice(sdata[0].mat);
-			} else {
-				base_unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
-			}
+            std::array<std::array<double, 2>, 2> base_unitCell;
+            if (mat_from_file == 0){
+                base_unitCell = Materials::lattice(sdata[0].mat);
+            } else {
+                base_unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
+            }
 
-			int A1_num_a1;
-			int A1_num_a2;
-			int A2_num_a1;
-			int A2_num_a2;
+            int A1_num_a1;
+            int A1_num_a2;
+            int A2_num_a1;
+            int A2_num_a2;
 
-			int sc_group_here = sc_groups[i];
+            int sc_group_here = sc_groups[i];
 
-			if (sc_group_here == 0){
-				angles[i] = 0;
-				A1_num_a1 = N;
-				A1_num_a2 = M;
-				A2_num_a1 = -M;
-				A2_num_a2 = (M+N);
-			} else if (sc_group_here == 1){
-				angles[i] = theta;
-				A1_num_a1 = M;
-				A1_num_a2 = N;
-				A2_num_a1 = -N;
-				A2_num_a2 = (M+N);
-			}
+            if (sc_group_here == 0){
+                angles[i] = 0;
+                A1_num_a1 = N;
+                A1_num_a2 = M;
+                A2_num_a1 = -M;
+                A2_num_a2 = (M+N);
+            } else if (sc_group_here == 1){
+                angles[i] = theta;
+                A1_num_a1 = M;
+                A1_num_a2 = N;
+                A2_num_a1 = -N;
+                A2_num_a2 = (M+N);
+            }
 
-			std::vector< std::vector<double> > unitCell;
-			unitCell.resize(2);
-			unitCell[0].resize(2);
-			unitCell[1].resize(2);
+            std::vector< std::vector<double> > unitCell;
+            unitCell.resize(2);
+            unitCell[0].resize(2);
+            unitCell[1].resize(2);
 
-			// Not updating the twist-angle is correct, as this will make sure the supercell is always
-			// saved in coordinates relative to the individual sheet, not the overall heterostructure.
-			double theta_here = 0.0;
+            // Not updating the twist-angle is correct, as this will make sure the supercell is always
+            // saved in coordinates relative to the individual sheet, not the overall heterostructure.
+            double theta_here = 0.0;
 
-			unitCell[0][0] = cos(theta_here)*base_unitCell[0][0] - sin(theta_here)*base_unitCell[0][1];
-			unitCell[0][1] = sin(theta_here)*base_unitCell[0][0] + cos(theta_here)*base_unitCell[0][1];
-			unitCell[1][0] = cos(theta_here)*base_unitCell[1][0] - sin(theta_here)*base_unitCell[1][1];
-			unitCell[1][1] = sin(theta_here)*base_unitCell[1][0] + cos(theta_here)*base_unitCell[1][1];
+            unitCell[0][0] = cos(theta_here)*base_unitCell[0][0] - sin(theta_here)*base_unitCell[0][1];
+            unitCell[0][1] = sin(theta_here)*base_unitCell[0][0] + cos(theta_here)*base_unitCell[0][1];
+            unitCell[1][0] = cos(theta_here)*base_unitCell[1][0] - sin(theta_here)*base_unitCell[1][1];
+            unitCell[1][1] = sin(theta_here)*base_unitCell[1][0] + cos(theta_here)*base_unitCell[1][1];
 
-			std::vector< std::vector<double> > sc_here;
-			sc_here.resize(2);
-			sc_here[0].resize(2);
-			sc_here[1].resize(2);
+            std::vector< std::vector<double> > sc_here;
+            sc_here.resize(2);
+            sc_here[0].resize(2);
+            sc_here[1].resize(2);
 
-			sc_here[0][0] = A1_num_a1*unitCell[0][0] + A1_num_a2*unitCell[1][0];
-			sc_here[0][1] = A1_num_a1*unitCell[0][1] + A1_num_a2*unitCell[1][1];
-			sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
-			sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
+            sc_here[0][0] = A1_num_a1*unitCell[0][0] + A1_num_a2*unitCell[1][0];
+            sc_here[0][1] = A1_num_a1*unitCell[0][1] + A1_num_a2*unitCell[1][1];
+            sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
+            sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
 
-			std::vector< std::vector<int> > sc_stride_here;
-			sc_stride_here.resize(2);
-			sc_stride_here[0].resize(2);
-			sc_stride_here[1].resize(2);
+            std::vector< std::vector<int> > sc_stride_here;
+            sc_stride_here.resize(2);
+            sc_stride_here[0].resize(2);
+            sc_stride_here[1].resize(2);
 
-			sc_stride_here[0][0] = A1_num_a1;
-			sc_stride_here[0][1] = A1_num_a2;
-			sc_stride_here[1][0] = A2_num_a1;
-			sc_stride_here[1][1] = A2_num_a2;
+            sc_stride_here[0][0] = A1_num_a1;
+            sc_stride_here[0][1] = A1_num_a2;
+            sc_stride_here[1][0] = A2_num_a1;
+            sc_stride_here[1][1] = A2_num_a2;
 
-			/*
-			std::vector< std::vector<double> > local_sc_here;
-			local_sc_here.resize(2);
-			local_sc_here[0].resize(2);
-			local_sc_here[1].resize(2);
+            /*
+             std::vector< std::vector<double> > local_sc_here;
+             local_sc_here.resize(2);
+             local_sc_here[0].resize(2);
+             local_sc_here[1].resize(2);
 
-			double theta_here = -angles[i];
+             double theta_here = -angles[i];
 
-			local_sc_here[0][0] = cos(theta_here)*sc_here[0][0] - sin(theta_here)*sc_here[0][1];
-			local_sc_here[0][1] = sin(theta_here)*sc_here[0][0] + cos(theta_here)*sc_here[0][1];
-			local_sc_here[1][0] = cos(theta_here)*sc_here[1][0] - sin(theta_here)*sc_here[1][1];
-			local_sc_here[1][1] = sin(theta_here)*sc_here[1][0] + cos(theta_here)*sc_here[1][1];
-			*/
-			printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
-			printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
-			//printf("local_supercell = [%lf %lf; %lf %lf]\n", local_sc_here[0][0], local_sc_here[0][1], local_sc_here[1][0], local_sc_here[1][1]);
-			printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
-
-
-			sdata[i].supercell = sc_here;
-			sdata[i].supercell_stride = sc_stride_here;
-
-			// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
-			if (i == 0){
-				opts.setParam("supercell",sc_here);
-
-				int matrix_pos_save = opts.getInt("matrix_pos_save");
-				if (matrix_pos_save == 1){
-
-					string job_name = opts.getString("job_name");
-					const char* extension = "_supercell.dat";
-
-					ofstream outFile;
-					outFile.open ((job_name + extension).c_str());
-					outFile << 	"0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
-											"0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
-											sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
-											sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
-											sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
-											sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
-					outFile.close();
-				}
-			}
-
-		}
+             local_sc_here[0][0] = cos(theta_here)*sc_here[0][0] - sin(theta_here)*sc_here[0][1];
+             local_sc_here[0][1] = sin(theta_here)*sc_here[0][0] + cos(theta_here)*sc_here[0][1];
+             local_sc_here[1][0] = cos(theta_here)*sc_here[1][0] - sin(theta_here)*sc_here[1][1];
+             local_sc_here[1][1] = sin(theta_here)*sc_here[1][0] + cos(theta_here)*sc_here[1][1];
+             */
+            printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+            printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+            //printf("local_supercell = [%lf %lf; %lf %lf]\n", local_sc_here[0][0], local_sc_here[0][1], local_sc_here[1][0], local_sc_here[1][1]);
+            printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
 
 
-	} else if (type == 2) { // (X,Y) Grid type
+            sdata[i].supercell = sc_here;
+            sdata[i].supercell_stride = sc_stride_here;
 
-		int X = opts.getInt("x_supercell");
-		int Y = opts.getInt("y_supercell");
+            // Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
+            if (i == 0){
+                opts.setParam("supercell",sc_here);
 
-		std::array<std::array<double, 2>, 2> unitCell;
-		if (mat_from_file == 0){
-			unitCell = Materials::lattice(sdata[0].mat);
-		} else {
-			unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
-		}
+                int matrix_pos_save = opts.getInt("matrix_pos_save");
+                if (matrix_pos_save == 1){
 
-		std::vector< std::vector<double> > sc_here;
-		sc_here.resize(2);
-		sc_here[0].resize(2);
-		sc_here[1].resize(2);
+                    string job_name = opts.getString("job_name");
+                    const char* extension = "_supercell.dat";
 
-		sc_here[0][0] = X*unitCell[0][0];
-		sc_here[0][1] = X*unitCell[0][1];
-		sc_here[1][0] = Y*unitCell[1][0];
-		sc_here[1][1] = Y*unitCell[1][1];
+                    ofstream outFile;
+                    outFile.open ((job_name + extension).c_str());
+                    outFile <<     "0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+                    "0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+                    sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+                    sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+                    sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+                    sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+                    outFile.close();
+                }
+            }
 
-		std::vector< std::vector<int> > sc_stride_here;
-		sc_stride_here.resize(2);
-		sc_stride_here[0].resize(2);
-		sc_stride_here[1].resize(2);
+        }
 
-		sc_stride_here[0][0] = X;
-		sc_stride_here[0][1] = 0;
-		sc_stride_here[1][0] = 0;
-		sc_stride_here[1][1] = Y;
+    } else if (type == 2) { // (X,Y) Grid type
 
-		for (int i = 0; i < (int)sdata.size(); ++i){
+        int X = opts.getInt("x_supercell");
+        int Y = opts.getInt("y_supercell");
 
-			double theta = angles[i];
-			std::vector< std::vector<double> > sc_rot;
-			sc_rot.resize(2);
-			sc_rot[0].resize(2);
-			sc_rot[1].resize(2);
+        std::array<std::array<double, 2>, 2> unitCell;
+        if (mat_from_file == 0){
+            unitCell = Materials::lattice(sdata[0].mat);
+        } else {
+            unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
+        }
 
-			sc_rot[0][0] =  sc_here[0][0]*cos(theta) + sc_here[0][1]*sin(theta);
-			sc_rot[0][1] = -sc_here[0][0]*sin(theta) + sc_here[0][1]*cos(theta);
-			sc_rot[1][0] =  sc_here[1][0]*cos(theta) + sc_here[1][1]*sin(theta);
-			sc_rot[1][1] = -sc_here[1][0]*sin(theta) + sc_here[1][1]*cos(theta);
+        std::vector< std::vector<double> > sc_here;
+        sc_here.resize(2);
+        sc_here[0].resize(2);
+        sc_here[1].resize(2);
 
-			std::vector< std::vector<int> > sc_stride_rot;
-			sc_stride_rot.resize(2);
-			sc_stride_rot[0].resize(2);
-			sc_stride_rot[1].resize(2);
+        sc_here[0][0] = X*unitCell[0][0];
+        sc_here[0][1] = X*unitCell[0][1];
+        sc_here[1][0] = Y*unitCell[1][0];
+        sc_here[1][1] = Y*unitCell[1][1];
 
-			sc_stride_rot[0][0] =  sc_stride_here[0][0]*cos(theta) + sc_stride_here[0][1]*sin(theta);
-			sc_stride_rot[0][1] = -sc_stride_here[0][0]*sin(theta) + sc_stride_here[0][1]*cos(theta);
-			sc_stride_rot[1][0] =  sc_stride_here[1][0]*cos(theta) + sc_stride_here[1][1]*sin(theta);
-			sc_stride_rot[1][1] = -sc_stride_here[1][0]*sin(theta) + sc_stride_here[1][1]*cos(theta);
+        std::vector< std::vector<int> > sc_stride_here;
+        sc_stride_here.resize(2);
+        sc_stride_here[0].resize(2);
+        sc_stride_here[1].resize(2);
+
+        sc_stride_here[0][0] = X;
+        sc_stride_here[0][1] = 0;
+        sc_stride_here[1][0] = 0;
+        sc_stride_here[1][1] = Y;
+
+        for (int i = 0; i < (int)sdata.size(); ++i){
+
+            double theta = angles[i];
+            std::vector< std::vector<double> > sc_rot;
+            sc_rot.resize(2);
+            sc_rot[0].resize(2);
+            sc_rot[1].resize(2);
+
+            sc_rot[0][0] =  sc_here[0][0]*cos(theta) + sc_here[0][1]*sin(theta);
+            sc_rot[0][1] = -sc_here[0][0]*sin(theta) + sc_here[0][1]*cos(theta);
+            sc_rot[1][0] =  sc_here[1][0]*cos(theta) + sc_here[1][1]*sin(theta);
+            sc_rot[1][1] = -sc_here[1][0]*sin(theta) + sc_here[1][1]*cos(theta);
+
+            std::vector< std::vector<int> > sc_stride_rot;
+            sc_stride_rot.resize(2);
+            sc_stride_rot[0].resize(2);
+            sc_stride_rot[1].resize(2);
+
+            sc_stride_rot[0][0] =  sc_stride_here[0][0]*cos(theta) + sc_stride_here[0][1]*sin(theta);
+            sc_stride_rot[0][1] = -sc_stride_here[0][0]*sin(theta) + sc_stride_here[0][1]*cos(theta);
+            sc_stride_rot[1][0] =  sc_stride_here[1][0]*cos(theta) + sc_stride_here[1][1]*sin(theta);
+            sc_stride_rot[1][1] = -sc_stride_here[1][0]*sin(theta) + sc_stride_here[1][1]*cos(theta);
+
+            //printf("unitCell  %d = [%lf %lf; %lf %lf]\n",i, unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+            printf("supercell %d = [%lf %lf; %lf %lf]\n", i, sc_rot[0][0], sc_rot[0][1], sc_rot[1][0], sc_rot[1][1]);
+            printf("sc_stride %d = [%d %d; %d %d]\n", i, sc_stride_rot[0][0], sc_stride_rot[0][1], sc_stride_rot[1][0], sc_stride_rot[1][1]);
+
+            sdata[i].supercell = sc_rot;
+            sdata[i].supercell = sc_rot;
+            sdata[i].supercell_stride = sc_stride_here;
+        }
+
+        // Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
+        opts.setParam("supercell",sc_here);
+
+        int matrix_pos_save = opts.getInt("matrix_pos_save");
+        if (matrix_pos_save == 1){
+
+            string job_name = opts.getString("job_name");
+            const char* extension = "_supercell.dat";
+
+            ofstream outFile;
+            outFile.open ((job_name + extension).c_str());
+            outFile <<     "0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+            "0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+            sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+            sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+            sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+            sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+            outFile.close();
+        }
+
+    } else if (type == 3) { // (M,N) type, trilayer, helical/chiral case
+        std::vector<int> sc_groups;
+
+        if ((int)sdata.size() < 4){
+            sc_groups.resize(3); // matches the number of layers
+            sc_groups[0] = 0;
+            sc_groups[1] = 1;
+            sc_groups[2] = 2;
+            opts.setParam("sc_groups",sc_groups);
+        } else {
+            sc_groups = opts.getIntVec("sc_groups");
+
+            printf("sc_groups = ");
+            for (int i = 0; i < sc_groups.size(); ++i){
+                printf("%d , ",sc_groups[i]);
+            }
+            printf("\n");
+        }
+
+        int M = opts.getInt("m_supercell");
+        int N = opts.getInt("n_supercell");
+
+        double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+        if (M < N){
+            theta = -theta;
+        }
+        printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+        // we assume unitCell is same for both sheets...
+        for (int i = 0; i < sdata.size(); ++i){
+
+            std::array<std::array<double, 2>, 2> base_unitCell;
+            if (mat_from_file == 0){
+                base_unitCell = Materials::lattice(sdata[0].mat);
+            } else {
+                base_unitCell = ReadMat::getLattice(loadedMatData, sdata[0]);
+            }
+
+            int A1_num_a1;
+            int A1_num_a2;
+            int A2_num_a1;
+            int A2_num_a2; // so far same as bilayer
+
+            int sc_group_here = sc_groups[i];
+
+            if (sc_group_here == 0){
+                angles[i] = -theta;
+                A1_num_a1 = pow(N,2) - pow(M,2);
+                A1_num_a2 = pow(M,2) + 2*M*N;
+                A2_num_a1 = -(pow(M,2) + 2*M*N);
+                A2_num_a2 = pow(N,2) + 2*M*N;
+            } else if (sc_group_here == 1){
+                angles[i] = 0;
+                A1_num_a1 = 0;
+                A1_num_a2 = pow(M,2) + (M*N) + pow(N,2);
+                A2_num_a1 = -(pow(N,2) + (M*N) + pow(M,2));
+                A2_num_a2 = pow(N,2)+ M*N + pow(M,2);
+            } else if (sc_group_here == 2){
+                angles[i] = theta;
+                A1_num_a1 = pow(M,2) - pow(N,2);
+                A1_num_a2 = pow(N,2) + 2*M*N;
+                A2_num_a1 = -(pow(N,2) + (2*M*N));
+                A2_num_a2 = pow(M,2) + (2*M*N);
+            }
+
+            std::vector< std::vector<double> > unitCell;
+            unitCell.resize(2);
+            unitCell[0].resize(2);
+            unitCell[1].resize(2);
+
+            // Not updating the twist-angle is correct, as this will make sure the supercell is always
+            // saved in coordinates relative to the individual sheet, not the overall heterostructure.
+            double theta_here = 0.0;
+
+            unitCell[0][0] = cos(theta_here)*base_unitCell[0][0] - sin(theta_here)*base_unitCell[0][1];
+            unitCell[0][1] = sin(theta_here)*base_unitCell[0][0] + cos(theta_here)*base_unitCell[0][1];
+            unitCell[1][0] = cos(theta_here)*base_unitCell[1][0] - sin(theta_here)*base_unitCell[1][1];
+            unitCell[1][1] = sin(theta_here)*base_unitCell[1][0] + cos(theta_here)*base_unitCell[1][1];
+
+            std::vector< std::vector<double> > sc_here;
+            sc_here.resize(2);
+            sc_here[0].resize(2);
+            sc_here[1].resize(2);
+
+            sc_here[0][0] = A1_num_a1*unitCell[0][0] + A1_num_a2*unitCell[1][0];
+            sc_here[0][1] = A1_num_a1*unitCell[0][1] + A1_num_a2*unitCell[1][1];
+            sc_here[1][0] = A2_num_a1*unitCell[0][0] + A2_num_a2*unitCell[1][0];
+            sc_here[1][1] = A2_num_a1*unitCell[0][1] + A2_num_a2*unitCell[1][1];
+
+            std::vector< std::vector<int> > sc_stride_here;
+            sc_stride_here.resize(2);
+            sc_stride_here[0].resize(2);
+            sc_stride_here[1].resize(2);
+
+            sc_stride_here[0][0] = A1_num_a1;
+            sc_stride_here[0][1] = A1_num_a2;
+            sc_stride_here[1][0] = A2_num_a1;
+            sc_stride_here[1][1] = A2_num_a2;
+
+            printf("unitCell  = [%lf %lf; %lf %lf]\n",unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
+            printf("supercell = [%lf %lf; %lf %lf]\n", sc_here[0][0], sc_here[0][1], sc_here[1][0], sc_here[1][1]);
+
+            printf("sc_stride = [%d %d; %d %d]\n", sc_stride_here[0][0], sc_stride_here[0][1], sc_stride_here[1][0], sc_stride_here[1][1]);
 
 
-			//printf("unitCell  %d = [%lf %lf; %lf %lf]\n",i, unitCell[0][0],unitCell[0][1],unitCell[1][0],unitCell[1][1]);
-			printf("supercell %d = [%lf %lf; %lf %lf]\n", i, sc_rot[0][0], sc_rot[0][1], sc_rot[1][0], sc_rot[1][1]);
-			printf("sc_stride %d = [%d %d; %d %d]\n", i, sc_stride_rot[0][0], sc_stride_rot[0][1], sc_stride_rot[1][0], sc_stride_rot[1][1]);
+            sdata[i].supercell = sc_here;
+            sdata[i].supercell_stride = sc_stride_here;
 
-			sdata[i].supercell = sc_rot;
-			sdata[i].supercell = sc_rot;
-			sdata[i].supercell_stride = sc_stride_here;
-		}
+            // Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
+            if (i == 0){
+                opts.setParam("supercell",sc_here);
 
-		// Since sheet[0] has 0 twist, we can use it's supercell as the supercell for hstruct!!
-		opts.setParam("supercell",sc_here);
+                int matrix_pos_save = opts.getInt("matrix_pos_save");
+                if (matrix_pos_save == 1){
 
-		int matrix_pos_save = opts.getInt("matrix_pos_save");
-		if (matrix_pos_save == 1){
+                    string job_name = opts.getString("job_name");
+                    const char* extension = "_supercell.dat";
 
-			string job_name = opts.getString("job_name");
-			const char* extension = "_supercell.dat";
+                    ofstream outFile;
+                    outFile.open ((job_name + extension).c_str());
+                    outFile <<     "0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+                    "0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+                    sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+                    sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+                    sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+                    sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+                    outFile.close();
+                }
+            }
 
-			ofstream outFile;
-			outFile.open ((job_name + extension).c_str());
-			outFile << 	"0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
-									"0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
-									sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
-									sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
-									sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
-									sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
-			outFile.close();
-		}
+        }
 
-	} // emd sc_type == 2
+    }
+
 }
 
 void Locality::getVacanciesFromFile(std::vector<std::vector<int> > &v, std::vector<std::vector<int> > &t, Job_params opts_in){
@@ -701,7 +831,7 @@ void Locality::constructGeom(){
 			std::vector<int> temp_v_work;
 			temp_v_work.push_back(-1);
 			v_work.push_back(temp_v_work);
-            //v_work = h.getVacancyList(center_index[0],nShifts);
+			//v_work = h.getVacancyList(center_index[0],nShifts);
 			*/
 		}
 
@@ -804,6 +934,7 @@ void Locality::constructGeom(){
 			inter_supercell_vecs_j = new int[max_inter_pairs];
 		}
 
+
 		for(int x = 0; x < max_inter_pairs; ++x){
 			inter_pairs_i[x] = inter_pairs_vec[x][0];
 			inter_pairs_j[x] = inter_pairs_vec[x][1];
@@ -819,7 +950,7 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			intra_supercell_vecs_i = new int[max_intra_pairs];
 			intra_supercell_vecs_j = new int[max_intra_pairs];
-		}
+		}
 		for(int x = 0; x < max_intra_pairs; ++x){
 
 			intra_pairs_i[x] = intra_pairs_vec_i[x];
@@ -844,7 +975,6 @@ void Locality::constructGeom(){
 
 		// POSITION DEBUG PRINT
 		/*
-
 		for (int k = 0; k < max_index; ++k)
 			printf("%lf, %lf, %lf \n",index_to_pos_x[k],index_to_pos_y[k],index_to_pos_z[k]);
 		*/
@@ -869,7 +999,7 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			inter_supercell_vecs_i = new int[max_inter_pairs];
 			inter_supercell_vecs_j = new int[max_inter_pairs];
-		}
+		}
 
 		intra_pairs_i = new int[max_intra_pairs];
 		intra_pairs_j = new int[max_intra_pairs];
@@ -877,7 +1007,7 @@ void Locality::constructGeom(){
 		if (boundary_condition == 1){
 			intra_supercell_vecs_i = new int[max_intra_pairs];
 			intra_supercell_vecs_j = new int[max_intra_pairs];
-		}
+		}
 
 		index_to_pos_x = new double[max_index];
 		index_to_pos_y = new double[max_index];
@@ -901,7 +1031,7 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_i, max_inter_pairs, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(inter_supercell_vecs_j, max_inter_pairs, MPI_INT, root);
-	}
+	}
 
 	MPI::COMM_WORLD.Bcast(intra_pairs_i, max_intra_pairs, MPI_INT, root);
 	MPI::COMM_WORLD.Bcast(intra_pairs_j, max_intra_pairs, MPI_INT, root);
@@ -909,7 +1039,7 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_i, max_intra_pairs, MPI_INT, root);
 		MPI::COMM_WORLD.Bcast(intra_supercell_vecs_j, max_intra_pairs, MPI_INT, root);
-	}
+	}
 
 	MPI::COMM_WORLD.Bcast(index_to_pos_x, max_index, MPI_DOUBLE, root);
 	MPI::COMM_WORLD.Bcast(index_to_pos_y, max_index, MPI_DOUBLE, root);
@@ -938,7 +1068,7 @@ void Locality::constructGeom(){
 	std::vector< std::vector<int> > inter_sc_vecs;
 	if (boundary_condition == 1){
 		inter_sc_vecs.resize(max_inter_pairs);
-	}
+	}
 	for (int x = 0; x < max_inter_pairs; ++x){
 		inter_pairs[x*2 + 0] = inter_pairs_i[x];
 		inter_pairs[x*2 + 1] = inter_pairs_j[x];
@@ -954,7 +1084,7 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		delete inter_supercell_vecs_i;
 		delete inter_supercell_vecs_j;
-	}
+	}
 
 	int* intra_pairs = new int[2*max_intra_pairs];
 
@@ -962,7 +1092,7 @@ void Locality::constructGeom(){
 	std::vector< std::vector<int> > intra_sc_vecs;
 	if (boundary_condition == 1){
 		intra_sc_vecs.resize(max_intra_pairs);
-	}
+	}
 
 	for (int x = 0; x < max_intra_pairs; ++x){
 		intra_pairs[x*2 + 0] = intra_pairs_i[x];
@@ -979,7 +1109,7 @@ void Locality::constructGeom(){
 	if (boundary_condition == 1){
 		delete intra_supercell_vecs_i;
 		delete intra_supercell_vecs_j;
-	}
+	}
 
 	double* index_to_pos = new double[3*max_index];
 
@@ -1016,6 +1146,7 @@ void Locality::constructGeom(){
 	delete inter_pairs;
 	delete intra_pairs;
 	delete intra_pairs_t;
+
 
 }
 
@@ -1781,6 +1912,267 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 					jobArray = k_jobArray;
+
+				} else if (k_type == 4){
+				// zoe: sampling around the trilayer supercell BZ (commensurated only)
+
+					int num_k1 = opts.getInt("num_k1");
+					maxJobs = 3*num_k1;
+
+					int type = opts.getInt("supercell_type");   // type 1: bilayer; type 3: trilayer
+
+					if ( (type != 1) && (type != 3)){
+							printf("You need to have a supercell for this type of the k sampling!");
+					}
+
+
+					int M = opts.getInt("m_supercell");
+					int N = opts.getInt("n_supercell");
+
+					double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+
+					std::vector<int> sc_groups = opts.getIntVec("sc_groups");
+
+					int A11;
+					int A12;
+					int A21;
+					int A22;
+
+					if (sc_groups.size() == 2){
+
+							if(M>N){
+
+									A11 = N;
+									A12 = M;
+									A21 = -M;
+									A22 = (M+N);
+
+							} else {
+
+									A11 = M;
+									A12 = N;
+									A21 = -N;
+									A22 = (M+N);
+							}
+
+
+					} else if (sc_groups.size() == 3) {
+
+							A11 = 0;
+							A12 = pow(M,2) + (M*N) + pow(N,2);
+							A21 = -(pow(N,2) + (M*N) + pow(M,2));
+							A22 = pow(N,2)+ M*N + pow(M,2);
+
+					}
+
+					// Unit cell vector
+					std::vector< std::vector<double> > unitCell = sdata[0].a;
+
+					std::vector< std::vector<double> > sc_here;
+					sc_here.resize(2);
+					sc_here[0].resize(2);
+					sc_here[1].resize(2);
+
+					sc_here[0][0] = A11*unitCell[0][0] + A12*unitCell[1][0];
+					sc_here[0][1] = A11*unitCell[0][1] + A12*unitCell[1][1];
+					sc_here[1][0] = A21*unitCell[0][0] + A22*unitCell[1][0];
+					sc_here[1][1] = A21*unitCell[0][1] + A22*unitCell[1][1];
+
+					std::vector< std::vector<double> > b_sc = getReciprocal(sc_here);
+
+					// define high symmetry points
+					double k[2];
+					double m[2];
+					double gamma[2];
+
+					double r3 = sqrt(3);
+					double alpha = M_PI/6;
+					std::vector< std::vector<double> > rot30;
+					rot30.resize(2);
+					rot30[0].resize(2);
+					rot30[0].resize(2);
+
+					rot30[0] = {cos(alpha), sin(alpha)};
+					rot30[1] = {-sin(alpha), cos(alpha)};
+
+
+					for(int i = 0; i < 2; i++){
+							m[i] = 0.5*(b_sc[0][i] + b_sc[1][i]);
+					}
+
+
+					for(int i = 0; i < 2; i++){
+							k[i] = 0;
+							for(int j = 0; j < 2; j++){
+									k[i] = k[i] + rot30[i][j] * b_sc[1][j] / r3;
+							}
+					}
+
+					gamma[0] = 0;
+					gamma[1] = 0;
+
+					printf("\n");
+					printf("b_sc = [%lf %lf; %lf %lf] \n",b_sc[0][0],b_sc[0][1],b_sc[1][0],b_sc[1][1]);
+					std::cout << "K = [" << k[0] << "," << k[1] << "]\n";
+					std::cout << "M = [" << m[0] << "," << m[1] << "]\n";
+					std::cout << "Gamma = [" << gamma[0] << "," << gamma[1] << "]\n";
+
+
+					double s1 = (k[1] - gamma[1]) / (k[0] - gamma[0]);
+					double s2 = (m[1] - k[1]) / (m[0] - k[0]);
+					double s3 = (gamma[1] - m[1]) / (gamma[0] - m[0]);
+
+					double b1 = (k[0]*gamma[1] - gamma[0]*k[1]) / (k[0] - gamma[0]);
+					double b2 = (m[0]*k[1] - k[0]*m[1]) / (m[0] - k[0]);
+					double b3 = (gamma[0]*m[1] - m[0]*gamma[1]) / (gamma[0] - m[0]);
+
+					double l1 = k[0]-gamma[0];
+					double l2 = m[0]-k[0] ;
+					double l3 = gamma[0] - m[0];
+
+					// create and save k line data
+					int k_jobID = 1;
+					std::vector<Job_params> k_jobArray;
+
+
+					double kx[maxJobs];
+					double ky[maxJobs];
+
+					for (int j = 0; j < (int) jobArray.size(); ++j){
+							for (int i = 0; i < maxJobs; ++i){
+
+									if (i < num_k1){
+											// Line 1
+											kx[i] = gamma[0] + i * l1 / num_k1;
+											ky[i] = gamma[1] + s1 * i * l1 / num_k1 + b1;
+
+									} else if (i < num_k1*2){
+											// Line 2
+											int n = i - num_k1;
+											kx[i] = k[0] + n * l2 / num_k1;
+											ky[i] = k[1] + s2 * n * l2 / num_k1;
+									} else {
+											// Line 3
+											int n = i - 2*num_k1;
+											if (m[0] ==m [1]){
+													double len = gamma[1] - m[1];
+													kx[i] = m[0];
+													ky[i] = m[1] +  n * len / num_k1;
+											} else{
+													kx[i] = m[0] + n * l3 / num_k1;
+													ky[i] = m[1] + s3 * n * l3 / num_k1 + b3;
+											}
+									}
+
+
+									Job_params tempJob(jobArray[j]);
+
+									tempJob.setParam("jobID",k_jobID);
+
+									std::vector<double> k_vec;
+									k_vec.resize(2);
+									k_vec[0] = kx[i];
+									k_vec[1] = ky[i];
+									printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+									tempJob.setParam("k_vec",k_vec);
+
+									k_jobArray.push_back(tempJob);
+									++k_jobID;
+
+							}
+					}
+
+					jobArray = k_jobArray;
+
+				} else if (k_type == 5){ // Connecting the three Dirac points of the trilayer
+						int num_k1 = opts.getInt("num_k1");
+						maxJobs = 2*num_k1;
+
+						int type = opts.getInt("supercell_type");   // type 3: trilayer
+
+						if ( (type != 3)){
+								printf("You don't have a trilayer supercell!");
+						}
+
+						int M = opts.getInt("m_supercell");
+						int N = opts.getInt("n_supercell");
+
+						double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+
+						std::vector< std::vector<double> > b1 = getReciprocal(0);
+						std::vector< std::vector<double> > b2 = getReciprocal(1);
+						std::vector< std::vector<double> > b3 = getReciprocal(2); // reciprocal lattice of the monolayers
+
+						printf("b1 = [%lf %lf; %lf %lf] \n",b1[0][0],b1[0][1],b1[1][0],b1[1][1]);
+						printf("b2 = [%lf %lf; %lf %lf] \n",b2[0][0],b2[0][1],b2[1][0],b2[1][1]);
+						printf("b3 = [%lf %lf; %lf %lf] \n",b3[0][0],b3[0][1],b3[1][0],b3[1][1]);
+
+						// K points of each layer
+						double k_1[2];
+						double k_2[2];
+						double k_3[2];
+
+						for(int i = 0; i < 2; i++){
+								k_1[i] = 1.0/3.0*(2.0*b1[0][i]+b1[1][i]);
+								k_2[i] = 1.0/3.0*(2.0*b2[0][i]+b2[1][i]);
+								k_3[i] = 1.0/3.0*(2.0*b3[0][i]+b3[1][i]);
+						}
+
+						printf("K_L1 = [%lf %lf] \n", k_1[0], k_1[1]);
+						printf("K_L2 = [%lf %lf] \n", k_2[0], k_2[1]);
+						printf("K_L3 = [%lf %lf] \n", k_3[0], k_3[1]);
+
+						// create and save k line data
+						int k_jobID = 1;
+						std::vector<Job_params> k_jobArray;
+
+						double s1 = (k_2[1]-k_1[1])/(k_2[0]-k_1[0]);
+						double s2 = (k_3[1]-k_2[1])/(k_3[0]-k_2[0]);
+						double m1 = k_2[1] - s1*k_2[0];
+						double m2 = k_3[1] - s2*k_3[0];
+						double l1 = k_2[0]-k_1[0];
+						double l2 = k_3[0]-k_2[0];
+						printf("[%lf %lf] \n", s2, m2);
+
+						double kx[maxJobs+1];
+						double ky[maxJobs+1]; // add one because we need to include K_L3
+
+						for (int j = 0; j < (int) jobArray.size(); ++j){
+								for (int i = 0; i < maxJobs+1; ++i){
+
+										if (i < num_k1){
+												// Line 1, K_L1 to K_L2
+												kx[i] = k_1[0] + i * l1 / num_k1;
+												ky[i] = s1 * kx[i] + m1;
+
+										} else if (i < maxJobs){
+												// Line 2, K_L2 to K_L3
+												int n = i - num_k1;
+												kx[i] = k_2[0] + n * l2 / num_k1;
+												ky[i] = s2 * kx[i] + m2;
+
+										} else{
+												kx[i] = k_3[0];
+												ky[i] = k_3[1];
+										}
+
+										Job_params tempJob(jobArray[j]);
+
+										tempJob.setParam("jobID",k_jobID);
+
+										std::vector<double> k_vec;
+										k_vec.resize(2);
+										k_vec[0] = kx[i];
+										k_vec[1] = ky[i];
+										printf("k = [%lf, %lf]\n",k_vec[0],k_vec[1]);
+										tempJob.setParam("k_vec",k_vec);
+
+										k_jobArray.push_back(tempJob);
+										++k_jobID;
+								}
+						}
+
+						jobArray = k_jobArray;
 				}
 
 		}
@@ -2625,6 +3017,7 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			// !!!!
 
 		} else if (diagonalize == 0){
+
 			if (observable_type == 0){
 
 					std::vector< std::vector<double> > cheb_coeffs;
@@ -2650,12 +3043,12 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 					}
 
 					// need a different transformation technique for kpm trace (average over moments before idct!)
-					if (kpm_trace == 1) {
+					if (kpm_trace == 1){
 						int num_vac = jobIn.getInt("num_vacancies");
 						double num_dofs = local_max_index - num_vac;
 
-						Param_tools::densityTransformTrace(results_out, 1.0/num_dofs);
-					}
+							Param_tools::densityTransformTrace(results_out, 1.0/num_dofs);
+						}
 
 			} else if (observable_type == 1){
 

@@ -15,6 +15,7 @@
 #include "matrix/spmatrix.h"
 #include "matrix/dmatrix.h"
 #include "params/job_params.h"
+#include "params/param_tools.h"
 #include "mlmc/mlmc_handler.h"
 #include "materials/loaded_mat.h"
 
