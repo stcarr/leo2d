@@ -575,16 +575,21 @@ int main(int argc, char** argv) {
 					opts.setParam("uniform_strain",atoi(in_string.c_str()));
 				}
 
-				if (in_string == "UNIFORM_STRAIN_X"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					opts.setParam("uniform_strain_x",atof(in_string.c_str()));
-				}
-
-				if (in_string == "UNIFORM_STRAIN_Y"){
-					getline(in_line,in_string,' ');
-					getline(in_line,in_string,' ');
-					opts.setParam("uniform_strain_y",atof(in_string.c_str()));
+				if (in_string == "UNIFORM_STRAIN_MAT"){
+					// expects:
+					// UNIFORM_STRAIN_MAT = u_xx u_xy u_yx u_yy
+					getline(in_line,in_string,' '); // skip "="
+					std::vector< std::vector<double> > u_ij;
+					u_ij.resize(2);
+					u_ij[0].resize(2);
+					u_ij[1].resize(2);
+					for (int i = 0; i < 2; ++i){
+						for (int j = 0; j < 2; ++j){
+							getline(in_line,in_string,' ');
+							u_ij[i][j] = atof(in_string.c_str());
+						}
+					}
+					opts.setParam("u_ij",u_ij);
 				}
 
 				if (in_string == "GSFE_Z_ON"){

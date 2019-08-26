@@ -274,6 +274,7 @@ void Locality::setupSupercell(){
             if (i == 0){
                 opts.setParam("supercell",sc_here);
 
+								/*
                 int matrix_pos_save = opts.getInt("matrix_pos_save");
                 if (matrix_pos_save == 1){
 
@@ -290,6 +291,7 @@ void Locality::setupSupercell(){
                     sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
                     outFile.close();
                 }
+								*/
             }
 
         }
@@ -2910,19 +2912,38 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 
 		// rescale supercell if using uniform strain method
 		if (boundary_condition == 1 && uniform_strain == 1){
-			std::vector< std::vector<double> > supercell = jobIn.getDoubleMat("supercell");
-			double uniform_strain_x = jobIn.getDouble("uniform_strain_x");
-			double uniform_strain_y = jobIn.getDouble("uniform_strain_y");
+			std::vector< std::vector<double> > supercell_orig = jobIn.getDoubleMat("supercell");
+			std::vector< std::vector<double> > u_ij = opts.getDoubleMat("u_ij");
+			std::vector< std::vector<double> > supercell;
+			supercell = supercell_orig; // going to overwrite, just gives correct size
 
-			for (int sc_idx = 0; sc_idx < 2; ++sc_idx){
-				supercell[sc_idx][0] = uniform_strain_x*supercell[sc_idx][0];
-				supercell[sc_idx][1] = uniform_strain_y*supercell[sc_idx][1];
-
+			for (int i = 0; i < 2; ++i){
+				supercell[i][0] = (1.0+u_ij[0][0])*supercell_orig[i][0] + u_ij[0][1]*supercell_orig[i][1];
+				supercell[i][1] = u_ij[1][0]*supercell_orig[i][0] + (1.0+u_ij[1][1])*supercell_orig[i][1];
 			}
 
 			jobIn.setParam("supercell",supercell);
 
 		}
+
+		int matrix_pos_save = jobIn.getInt("matrix_pos_save");
+		if (boundary_condition == 1 && matrix_pos_save == 1 && jobID == 1){
+
+				std::vector< std::vector<double> > sc_here = jobIn.getDoubleMat("supercell");
+				string job_name = jobIn.getString("job_name");
+				const char* extension = "_supercell.dat";
+
+				ofstream outFile;
+				outFile.open ((job_name + extension).c_str());
+				outFile <<     "0, 0, 0, " << sc_here[0][0] << ", " << sc_here[0][1] << ", 0\n" <<
+				"0, 0, 0, " << sc_here[1][0] << ", " << sc_here[1][1] << ", 0\n" <<
+				sc_here[0][0] << ", " << sc_here[0][1] << ", 0, " <<
+				sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n" <<
+				sc_here[1][0] << ", " << sc_here[1][1] << ", 0, " <<
+				sc_here[0][0]+sc_here[1][0] << ", " << sc_here[0][1]+sc_here[1][1] << ", 0\n";
+				outFile.close();
+		}
+
 
 		clock_t timePos;
 		timePos = clock();
@@ -3519,8 +3540,10 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 	int global_shifts_on = jobIn.getInt("global_shifts_on");
 
 	int uniform_strain = jobIn.getInt("uniform_strain");
-	double uniform_strain_x = jobIn.getDouble("uniform_strain_x");
-	double uniform_strain_y = jobIn.getDouble("uniform_strain_y");
+	std::vector< std::vector<double> > u_ij;
+	if (uniform_strain == 1){
+		 u_ij = jobIn.getDoubleMat("u_ij");
+	}
 
 	std::vector< std::vector<double> > shifts = jobIn.getDoubleMat("shifts");
 
@@ -3782,8 +3805,11 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 			// uniform strain applied last
 			if (uniform_strain == 1){
 
-				i2pos[i*3 + 0] = uniform_strain_x*i2pos[i*3 + 0];
-				i2pos[i*3 + 1] = uniform_strain_y*i2pos[i*3 + 1];
+				double tempx = i2pos[i*3 + 0];
+				double tempy = i2pos[i*3 + 1];
+
+				i2pos[i*3 + 0] = (1.0+u_ij[0][0])*tempx + u_ij[0][1]*tempy;
+				i2pos[i*3 + 1] = u_ij[1][0]*tempx + (1.0+u_ij[1][1])*tempy;
 
 			}
 
@@ -3983,8 +4009,8 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				  // we correct the grid values by the supercell_stride when there are periodic BCs
 				  if (boundary_condition == 1){
-					grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
-					grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
+						grid_disp[0] = grid_disp[0] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][0] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][0];
+						grid_disp[1] = grid_disp[1] - intra_sc_vecs[intra_counter][0]*sdata[s0].supercell_stride[0][1] - intra_sc_vecs[intra_counter][1]*sdata[s0].supercell_stride[1][1];
 				  }
 
 					// take strain as avg of both orbital strains
@@ -3997,63 +4023,88 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 							// for now we turn off the strain term... it is not implemented for Fourier samp yet.
 							//strain_here[i][j] = (strain[k_i][i][j]  + strain[new_k][i][j])/2.0;
 							strain_here[i][j] = 0.0;
+
 						}
 					}
 
-					// we need to find the bonding angle relative the u_ij definitions:
-					std::array<double, 2> strain_dir;
+					if (uniform_strain == 1){
+						strain_here = opts.getDoubleMat("u_ij");
+					}
 
-					strain_dir[0] = xh - x1;
-					strain_dir[1] = yh - y1;
+					// we need to find the bonding angle relative to the u_ij definitions:
+					std::vector<double> hop_dir;
+					hop_dir.resize(2);
 
-					double strain_dir_norm = sqrt(strain_dir[0]*strain_dir[0] + strain_dir[1]*strain_dir[1]);
+					hop_dir[0] = xh - x1;
+					hop_dir[1] = yh - y1;
+
+					double hop_dir_norm = sqrt(hop_dir[0]*hop_dir[0] + hop_dir[1]*hop_dir[1]);
 
 					// angle (counter-clockwise) from a bonding direction of +x
-					double strain_theta = 0;
+					//double hop_theta = 0;
 
-					if (strain_dir_norm != 0){
-						strain_dir[0] = strain_dir[0]/strain_dir_norm;
-						strain_dir[1] = strain_dir[1]/strain_dir_norm;
+					if (hop_dir_norm != 0){
+						hop_dir[0] = hop_dir[0]/hop_dir_norm;
+						hop_dir[1] = hop_dir[1]/hop_dir_norm;
 
-						if (strain_dir[0] == 0.0){
-							if (strain_dir[1] > 0){
-								strain_theta = PI_2;
+						/*
+						if (hop_dir[0] == 0.0){
+							if (hop_dir[1] > 0){
+								hop_theta = PI_2;
 							} else {
-								strain_theta = -PI_2;
+								hop_theta = -PI_2;
 							}
 						} else {
-							double ratio = strain_dir[1]/strain_dir[0];
-							strain_theta = atan(ratio);
-							if (strain_dir[0] < 0){
-								strain_theta = strain_theta + PI;
+							double ratio = hop_dir[1]/hop_dir[0];
+							hop_theta = atan(ratio);
+							if (hop_dir[0] < 0){
+								hop_theta = hop_theta + PI;
 							}
 						}
+						*/
 					}
 
 					// now rotate;
+					/*
 					std::vector< std::vector<double> > strain_rot;
 					strain_rot.resize(2);
 					strain_rot[0].resize(2);
 					strain_rot[1].resize(2);
 
-					strain_rot[0][0] =  strain_here[0][0]*cos(strain_theta)*cos(strain_theta) +
-									    strain_here[1][1]*sin(strain_theta)*sin(strain_theta) +
-									    strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
-					strain_rot[1][1] =  strain_here[0][0]*sin(strain_theta)*sin(strain_theta) +
-									    strain_here[1][1]*cos(strain_theta)*cos(strain_theta) +
-									 -2*strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
-					strain_rot[0][1] =  (strain_here[1][1] - strain_here[0][0])*sin(strain_theta)*cos(strain_theta) +
-									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
-					strain_rot[1][0] = strain_rot[0][1];
+					// rotate local strain field
+					double uxx = strain_here[0][0];
+					double uxy = strain_here[0][1];
+					double uyx = strain_here[1][0];
+					double uyy = strain_here[1][1];
 
+					strain_rot[0][0] =  uxx*cos(strain_theta)*cos(strain_theta) +
+									   					uyy*sin(strain_theta)*sin(strain_theta) +
+									    				(uxy + uyx)*sin(strain_theta)*cos(strain_theta);
+					strain_rot[1][1] =  uxx*sin(strain_theta)*sin(strain_theta) +
+									    				uyy*cos(strain_theta)*cos(strain_theta) -
+									   					(uyx + uxy)*sin(strain_theta)*cos(strain_theta);
+					strain_rot[0][1] =  uxy*cos(strain_theta)*cos(strain_theta) -
+									   					uyx*sin(strain_theta)*sin(strain_theta) -
+															(uxx - uyy)*sin(strain_theta)*cos(strain_theta);
+					strain_rot[0][1] =  uyx*cos(strain_theta)*cos(strain_theta) -
+									   					uxy*sin(strain_theta)*sin(strain_theta) -
+															(uxx - uyy)*sin(strain_theta)*cos(strain_theta);
+					*/
 					Materials::Mat mat = sdata[s0].mat;
 
-					double raw_t;
+					/*
+					TODO: Add new intralayer term function for strain to TMDCs (already did for graphene):
+					needs to:
+					1) Hard-code in reference information from strain paper (alpha,beta,default bonding dir, U_R)
+					2) Compute angle relative to reference bonding direction (using grid_disp, a bit annoying!)
+					3) Use representation-invariant quantities (u_xx+u_yy, u_xx-u_yy, u_xy+u_yx).
+					*/
 
 					if (mat_from_file == 0){
 						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
-						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
-
+						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
+						double theta_here = angles[s0];
+						raw_t =  Materials::intralayer_term(l0, lh, grid_disp, hop_dir, strain_here, theta_here, mat);
 						//raw_t = intra_pairs_t[intra_counter];
 
 					} else {
@@ -4679,61 +4730,85 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 						}
 					}
 
-					// we need to find the bonding angle relative the u_ij definitions:
-					std::array<double, 2> strain_dir;
+					if (uniform_strain == 1){
+						strain_here = opts.getDoubleMat("u_ij");
+					}
 
-					strain_dir[0] = xh - x1;
-					strain_dir[1] = yh - y1;
+					// we need to find the bonding angle relative to the u_ij definitions:
+					std::vector<double> hop_dir;
+					hop_dir.resize(2);
 
-					double strain_dir_norm = sqrt(strain_dir[0]*strain_dir[0] + strain_dir[1]*strain_dir[1]);
+					hop_dir[0] = xh - x1;
+					hop_dir[1] = yh - y1;
+
+					double hop_dir_norm = sqrt(hop_dir[0]*hop_dir[0] + hop_dir[1]*hop_dir[1]);
 
 					// angle (counter-clockwise) from a bonding direction of +x
-					double strain_theta = 0;
+					//double hop_theta = 0;
 
-					if (strain_dir_norm != 0){
-						strain_dir[0] = strain_dir[0]/strain_dir_norm;
-						strain_dir[1] = strain_dir[1]/strain_dir_norm;
+					if (hop_dir_norm != 0){
+						hop_dir[0] = hop_dir[0]/hop_dir_norm;
+						hop_dir[1] = hop_dir[1]/hop_dir_norm;
 
-						if (strain_dir[0] == 0.0){
-							if (strain_dir[1] > 0){
-								strain_theta = PI_2;
+						/*
+						if (hop_dir[0] == 0.0){
+							if (hop_dir[1] > 0){
+								hop_theta = PI_2;
 							} else {
-								strain_theta = -PI_2;
+								hop_theta = -PI_2;
 							}
 						} else {
-							double ratio = strain_dir[1]/strain_dir[0];
-							strain_theta = atan(ratio);
-							if (strain_dir[0] < 0){
-								strain_theta = strain_theta + PI;
+							double ratio = hop_dir[1]/hop_dir[0];
+							hop_theta = atan(ratio);
+							if (hop_dir[0] < 0){
+								hop_theta = hop_theta + PI;
 							}
 						}
+						*/
 					}
 
 					// now rotate;
+					/*
 					std::vector< std::vector<double> > strain_rot;
 					strain_rot.resize(2);
 					strain_rot[0].resize(2);
 					strain_rot[1].resize(2);
 
-					strain_rot[0][0] =  strain_here[0][0]*cos(strain_theta)*cos(strain_theta) +
-									    strain_here[1][1]*sin(strain_theta)*sin(strain_theta) +
-									    strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
-					strain_rot[1][1] =  strain_here[0][0]*sin(strain_theta)*sin(strain_theta) +
-									    strain_here[1][1]*cos(strain_theta)*cos(strain_theta) +
-									 -2*strain_here[0][1]*sin(strain_theta)*cos(strain_theta);
-					strain_rot[0][1] =  (strain_here[1][1] - strain_here[0][0])*sin(strain_theta)*cos(strain_theta) +
-									     strain_here[0][1]*(cos(strain_theta)*cos(strain_theta) - sin(strain_theta)*sin(strain_theta));
-					strain_rot[1][0] = strain_rot[0][1];
+					// rotate local strain field
+					double uxx = strain_here[0][0];
+					double uxy = strain_here[0][1];
+					double uyx = strain_here[1][0];
+					double uyy = strain_here[1][1];
 
+					strain_rot[0][0] =  uxx*cos(strain_theta)*cos(strain_theta) +
+									   					uyy*sin(strain_theta)*sin(strain_theta) +
+									    				(uxy + uyx)*sin(strain_theta)*cos(strain_theta);
+					strain_rot[1][1] =  uxx*sin(strain_theta)*sin(strain_theta) +
+									    				uyy*cos(strain_theta)*cos(strain_theta) -
+									   					(uyx + uxy)*sin(strain_theta)*cos(strain_theta);
+					strain_rot[0][1] =  uxy*cos(strain_theta)*cos(strain_theta) -
+									   					uyx*sin(strain_theta)*sin(strain_theta) -
+															(uxx - uyy)*sin(strain_theta)*cos(strain_theta);
+					strain_rot[0][1] =  uyx*cos(strain_theta)*cos(strain_theta) -
+									   					uxy*sin(strain_theta)*sin(strain_theta) -
+															(uxx - uyy)*sin(strain_theta)*cos(strain_theta);
+					*/
 					Materials::Mat mat = sdata[s0].mat;
 
+					/*
+					TODO: Add new intralayer term function for strain to TMDCs (already did for graphene):
+					needs to:
+					1) Hard-code in reference information from strain paper (alpha,beta,default bonding dir, U_R)
+					2) Compute angle relative to reference bonding direction (using grid_disp, a bit annoying!)
+					3) Use representation-invariant quantities (u_xx+u_yy, u_xx-u_yy, u_xy+u_yx).
+					*/
+
 					if (mat_from_file == 0){
-						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat)/energy_rescale;
-
+						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_rot, mat);
+						//raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
+						double theta_here = angles[s0];
+						raw_t =  Materials::intralayer_term(l0, lh, grid_disp, hop_dir, strain_here, theta_here, mat);
 						//raw_t = intra_pairs_t[intra_counter];
-
-						// use bonding length only
-						raw_t = Materials::intralayer_term(l0, lh, grid_disp, strain_dir_norm, mat);
 
 					} else {
 						raw_t = ReadMat::intralayer_term(l0, lh, grid_disp, loadedMatData, sdata[s0]);
@@ -4774,6 +4849,8 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				phase = phase + k_vec[0]*(x2-x1) + k_vec[1]*(y2-y1);
 
 				//t_cpx = t_cpx + std::polar(t, phase);
+				//printf("t = %lf \n",t);
+
 					t_cpx = std::polar(t, phase);
 				//printf("sc_vec = [%lf, %lf], phase = %lf\n",-new_pos_shift_x,-new_pos_shift_y,phase);
 				if (t_cpx != std::complex<double>(0.0)){
@@ -7043,10 +7120,15 @@ std::vector< std::vector<double> > Locality::getReciprocal(int s){
 	}
 
 	if (opts.getInt("boundary_condition") == 1 && opts.getInt("uniform_strain") == 1){
+		std::vector< std::vector<double> > u_ij = opts.getDoubleMat("u_ij");
+		std::vector< std::vector<double> > a_temp;
+		a_temp = a;
+
 		for (int i = 0; i < 2; ++i){
-			a[i][0] = opts.getDouble("uniform_strain_x")*a[i][0];
-			a[i][1] = opts.getDouble("uniform_strain_y")*a[i][1];
+			a[i][0] = (1.0+u_ij[0][0])*a_temp[i][0] + u_ij[0][1]*a_temp[i][1];
+			a[i][1] = u_ij[1][0]*a_temp[i][0] + (1.0+u_ij[1][1])*a_temp[i][1];
 		}
+
 	}
 
 	std::vector< std::vector<double> > b;
