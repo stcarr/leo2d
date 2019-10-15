@@ -57,6 +57,8 @@ Job_params::Job_params() {
 	setParam("global_shifts_on",i_zero);
 	setParam("mat_from_file",i_zero);
 	setParam("mat_filename", "test_data");
+	setParam("mat_intra_r_cutoff", 99999.0);
+
 
 	// Strain settings
 	setParam("strain_type",i_zero);

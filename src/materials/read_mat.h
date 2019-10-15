@@ -104,6 +104,12 @@ namespace ReadMat {
      * The real-space vector goes FROM the 'row' orbital site TO the 'column' orbital site.
      */
 
+     // assumes simple 3-fold rotation symmetry (graphene, hBN)
+     double interlayer_term_basic_c3_sym(int orbital_row, int orbital_col,
+                     std::array<double, 3>& vector,
+                     double angle_row, double angle_col,
+                     LoadedMat& mat,  Sdata& sheet_data1, Sdata& sheet_data2);
+
      // has xy symm for TMDC loaded mats baked in.
      double interlayer_term_xy_sym(int orbital_row, int orbital_col,
                      std::array<double, 3>& vector,
@@ -119,7 +125,11 @@ namespace ReadMat {
     * Also a method to read all the info for a loaded material from file
     */
 
-    LoadedMat loadMat(std::string filename, std::vector<Sdata> sdata);
+    LoadedMat loadMat(std::string filename, std::vector<Sdata> sdata, double intra_rsq_cutoff);
+
+    // Method to symmetrize mat[target_index]'s intralayer coeffs
+    void monolayerSym(LoadedMat& mat, int target_index);
+
 
 }   /* End namespace ReadMat */
 #endif

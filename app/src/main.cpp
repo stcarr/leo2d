@@ -211,6 +211,12 @@ int main(int argc, char** argv) {
 					opts.setParam("mat_filename", in_string);
 				}
 
+				if (in_string == "MAT_INTRA_R_CUTOFF"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mat_intra_r_cutoff", atof(in_string.c_str()) );
+				}
+
 				if (in_string == "NUM_SHEETS") {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');

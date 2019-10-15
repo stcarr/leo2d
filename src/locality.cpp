@@ -61,7 +61,14 @@ void Locality::setup(Job_params opts_in){
 		opts.printParams();
 		if (mat_from_file == 1){
 
-			loadedMatData = ReadMat::loadMat(opts.getString("mat_filename"),sdata);
+			double r_cutoff = opts.getDouble("mat_intra_r_cutoff");
+			double rsq_cutoff = r_cutoff*r_cutoff;
+
+			loadedMatData = ReadMat::loadMat(opts.getString("mat_filename"),sdata, rsq_cutoff);
+
+			// graphene symmetrization
+			//ReadMat::monolayerSym(loadedMatData,0);
+
 			// For testing interlayer coupling terms from loadedMatData
 			/*
 			int o1 = 7;
@@ -1770,8 +1777,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					gamma[1] = 0.0;
 					m[0] = b1[0][0]/2.0;
 					m[1] = b1[0][1]/2.0;
+					// works independent of b-vector orientations!
 					k[0] = (m[0]*cos(phi/2.0) - m[1]*sin(phi/2.0))/cos(phi/2.0);
 					k[1] = (m[0]*sin(phi/2.0) + m[1]*cos(phi/2.0))/cos(phi/2.0);
+					//k[0] = (1.0/3.0)*(2.0*b1[0][0] + b1[1][0]);
+					//k[1] = (1.0/3.0)*(2.0*b1[0][1] + b1[1][1]);
+
+
 					/*
 					double k[2];
 					double k_prime[2];
@@ -4235,6 +4247,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				if (mat_from_file == 1){
 					int s1 = index_to_grid[k_i*4 + 3];
 					int s2 = index_to_grid[new_k*4 + 3];
+					//t = ReadMat::interlayer_term_basic_c3_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
 					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
 					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
 
@@ -4990,6 +5003,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				if (mat_from_file == 1){
 				  int s1 = index_to_grid[k_i*4 + 3];
 					int s2 = index_to_grid[new_k*4 + 3];
+					//t = ReadMat::interlayer_term_basic_c3_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
 					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
 					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
 

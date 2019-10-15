@@ -60,7 +60,7 @@ double ReadMat::orbital_pos(LoadedMat& mat, int idx, int dim, Sdata& sheet_data)
 }
 
 double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int, 2>& vector, LoadedMat& mat,  Sdata& sheet_data){
-  
+
   int sheet = -1;
   for (int i = 0; i < mat.intra_data.size(); ++i){
     if (sheet_data.lmat_name.compare(mat.intra_data[i].name) == 0){
@@ -87,6 +87,77 @@ double ReadMat::intralayer_term(int orbital_row, int orbital_col, std::array<int
   return mat.intra_data[sheet].intralayer_terms[vector[0]+c][vector[1]+c][orbital_row][orbital_col];
 
 }
+
+double ReadMat::interlayer_term_basic_c3_sym(int orbital_row, int orbital_col, std::array<double, 3>& vector, double angle_row, double angle_col,
+                                       LoadedMat& mat, Sdata& sheet_data1, Sdata& sheet_data2){
+
+  double t_temp = 0;
+  std::array<double, 3> vector_here{0.0, 0.0, 0.0};
+  vector_here[2] = vector[2];
+
+  int r_max = 3;//3;
+  int c2_max = 2;//2;
+  double inter_r_cutoff = 5.0;
+
+  double r_sq = vector[0]*vector[0] + vector[1]*vector[1];
+
+  double t_here;
+  // 3 fold rotational symm
+  for (int r_idx = 0; r_idx < r_max; ++r_idx){
+
+    double rot_theta = ((double)r_idx)*2.0*M_PI/3.0;
+    vector_here[0] = cos(rot_theta)*vector[0] - sin(rot_theta)*vector[1];
+    vector_here[1] = sin(rot_theta)*vector[0] + cos(rot_theta)*vector[1];
+
+    // c2 sym, swaps A<->B orbitals
+    for (int c2_idx = 0; c2_idx < c2_max; ++c2_idx){
+
+      if (c2_idx == 0){
+        t_here = interlayer_term(orbital_row, orbital_col, vector_here, angle_row, angle_col, mat, sheet_data1, sheet_data2);
+      } else {
+
+
+        // c2 operation
+        vector_here[0] = -vector_here[0];
+        vector_here[1] = -vector_here[1];
+
+        // swap the orbitals
+        int o_row_here;
+        int o_col_here;
+
+        if (orbital_row == 0)
+          o_row_here = 1;
+        else
+          o_row_here = 0;
+        if (orbital_col == 0)
+          o_col_here = 1;
+        else
+          o_col_here = 0;
+
+        t_here = interlayer_term(o_row_here, o_col_here, vector_here, angle_row, angle_col, mat, sheet_data1, sheet_data2);
+
+
+
+      }
+
+      t_temp += t_here;
+
+      if (abs(t_here) > .2){
+      //printf("[%d,%d] [%lf, %lf, %lf]: adding %lf \n",r_idx,m_idx,vector[0],vector[1],vector[2],t_here);
+      }
+    }
+  }
+
+  if (r_sq < inter_r_cutoff*inter_r_cutoff) {
+    //printf("[%lf, %lf, %lf]: returning %lf \n",vector[0],vector[1],vector[2],t_temp/6.0);
+  } else{
+    t_temp = 0.0;
+  }
+  return t_temp/((double) r_max*c2_max);
+
+
+}
+
 
 double ReadMat::interlayer_term_xy_sym(int orbital_row, int orbital_col, std::array<double, 3>& vector, double angle_row, double angle_col,
                                        LoadedMat& mat, Sdata& sheet_data1, Sdata& sheet_data2){
@@ -359,7 +430,7 @@ double ReadMat::interlayer_term(int orbital_row, int orbital_col, std::array<dou
   */
 }
 
-LoadedMat ReadMat::loadMat(std::string filename, std::vector<Sdata> sdata){
+LoadedMat ReadMat::loadMat(std::string filename, std::vector<Sdata> sdata, double intra_rsq_cutoff){
 
   // do some parsing of sdata to get list of monolayer info and interayer info desired
 
@@ -485,11 +556,18 @@ LoadedMat ReadMat::loadMat(std::string filename, std::vector<Sdata> sdata){
 
         fileIn >> R_i;
         fileIn >> R_j;
-        fileIn >> o1;
-        fileIn >> o2;
+        fileIn >> o1; // FROM o1
+        fileIn >> o2; // TO o2
         fileIn >> t;
 
-        intralayer_terms[R_i + big_R][R_j + big_R][o1-1][o2-1] = t;
+        double delta_x = R_i*lattice[0][0] + R_j*lattice[1][0] + orb_pos[o2-1][0] - orb_pos[o1-1][0];
+        double delta_y = R_i*lattice[0][1] + R_j*lattice[1][1] + orb_pos[o2-1][1] - orb_pos[o1-1][1];
+        double delta_rsq = delta_x*delta_x + delta_y*delta_y;
+
+        if (delta_rsq < intra_rsq_cutoff){
+          //printf("[%d, %d, %d, %d] = %lf added \n",R_i, R_j, o1,o2,t);
+          intralayer_terms[R_i + big_R][R_j + big_R][o1-1][o2-1] = t;
+        }
 
       }
 
@@ -717,5 +795,167 @@ LoadedMat ReadMat::loadMat(std::string filename, std::vector<Sdata> sdata){
   outMat.intra_data = intra_data;
   outMat.inter_data = inter_data;
   return outMat;
+
+}
+
+void ReadMat::monolayerSym(LoadedMat& mat, int target_index){
+
+
+  std::vector< std::vector< std::vector< std::vector<double> > > > intralayer_terms = mat.intra_data[target_index].intralayer_terms;
+  int max_r = intralayer_terms.size();
+  //max_R = big_R*2 + 1;
+  int big_R = (max_r - 1) / 2;
+
+  std::vector< std::vector< std::vector< std::vector<double> > > > intralayer_terms_sym;
+  std::vector< std::vector< std::vector< std::vector<double> > > > intralayer_terms_sym_temp;
+  intralayer_terms_sym = intralayer_terms;
+  intralayer_terms_sym_temp = intralayer_terms;
+
+  //intralayer_terms[R_x+big_R][R_y+big_R][o1][o2] = t;
+  int R_x_size = intralayer_terms.size();
+  int R_y_size = intralayer_terms[0].size();
+  int o1_size  = intralayer_terms[0][0].size();
+  int o2_size  = intralayer_terms[0][0][0].size();
+
+  int num_sym_ops = 2;
+
+  // Row-major, A_C3[0][1] = first row, second col
+  std::vector <std::vector<int> > A_C3 = {{ -1 , -1},{ 1 , 0}};
+  std::vector <std::vector<int> > sitemap_C3 = { {0,0,0,1}, {1,-1,0,1}};
+  int C3_order = 2;
+
+  std::vector <std::vector<int> >  A_M = {{ 0 , -1},{ -1 , 0}};
+  std::vector <std::vector<int> >  sitemap_M = { {1,0,0,1}, {0,0,0,1}};
+  int M_order = 1;
+
+  int tot_order = 1 + C3_order + M_order;
+  //double rescale = 1.0/( (double) tot_order);
+
+  /*
+  intralayer_terms_sym.resize(R_x_size);
+
+  for (int R_x_idx = 0; R_x_idx < R_x_size; R_x_idx++){
+    intralayer_terms_sym[R_x_idx].resize(R_y_size);
+    for (int R_y_idx = 0; R_y_idx < R_y_size; R_y_idx++){
+      intralayer_terms_sym[R_x_idx][R_y_idx].resize(o1_size);
+      for (int o1 = 0; o1 < o1_size; o1++){
+        intralayer_terms_sym[R_x_idx][R_y_idx][o1].resize(o2_size);
+
+        for (int o2 = 0; o2 < o2_size; o2++){
+
+          double t_here = intralayer_terms[R_x_idx][R_y_idx][o1][o2];
+          intralayer_terms_sym[R_x_idx][R_y_idx][o1][o2] = t_here;
+
+        }
+
+      }
+    }
+  }
+  */
+
+
+  // go over each symmetry condition
+  for (int sym_idx = 0; sym_idx < num_sym_ops; sym_idx++){
+
+    std::vector <std::vector<int> >  A;
+    std::vector <std::vector<int> >  sitemap;
+    int order;
+
+    if (sym_idx == 0) {
+      // C3 symmetry
+      A = A_C3;
+      sitemap = sitemap_C3;
+      order = C3_order;
+
+    } else {
+      // Mirror symmetry
+      A = A_M;
+      sitemap = sitemap_M;
+      order = M_order;
+
+    }
+
+    for (int R_x_idx = 0; R_x_idx < R_x_size; R_x_idx++){
+      for (int R_y_idx = 0; R_y_idx < R_y_size; R_y_idx++){
+        for (int o1 = 0; o1 < o1_size; o1++){
+          for (int o2 = 0; o2 < o2_size; o2++){
+
+            int sym_R_x;
+            int sym_R_y;
+            int sym_o1;
+            int sym_o2;
+
+            double t_here = intralayer_terms_sym[R_x_idx][R_y_idx][o1][o2];
+            int R_x_h = R_x_idx - big_R;
+            int R_y_h = R_y_idx - big_R;
+            int o1_h = o1;
+            int o2_h = o2;
+
+            int R_x_new;
+            int R_y_new;
+            int o1_new;
+            int o2_new;
+
+            for (int idx = 0; idx < order; ++idx){
+
+              //printf("idx = %d \n", idx);
+
+              // hopping: FROM o1, TO o2
+              R_x_new = A[0][0]*R_x_h + A[0][1]*R_y_h + sitemap[o2_h][1] - sitemap[o1_h][1];
+              R_y_new = A[1][0]*R_x_h + A[1][1]*R_y_h + sitemap[o2_h][2] - sitemap[o1_h][2];
+              o1_new = sitemap[o1_h][0];
+              o2_new = sitemap[o2_h][0];
+
+              //printf("new loc = [%d][%d][%d][%d] \n", R_x_new+big_R, R_y_new+big_R, o1_new, o2_new);
+
+              if (R_x_new + big_R < R_x_size && R_x_new + big_R > 0 && R_y_new + big_R < R_y_size && R_y_new + big_R > 0) {
+
+                double t_new = intralayer_terms_sym[R_x_new + big_R][R_y_new + big_R][o1_new][o2_new];
+                if (abs(t_new) > 2){
+                  //printf("[%d, %d]: averaging %lf with %lf: [%d, %d, %d, %d] to [%d, %d, %d, %d] \n",sym_idx, idx, t_here, t_new, R_x_h, R_y_h, o1_h+1, o2_h+1, R_x_new, R_y_new, o1_new+1, o2_new+1);
+                }
+
+                t_here += t_new;
+
+              }
+
+              R_x_h = R_x_new;
+              R_y_h = R_y_new;
+              o1_h = o1_new;
+              o2_h = o2_new;
+
+            }
+
+            intralayer_terms_sym_temp[R_x_idx][R_y_idx][o1][o2] = t_here/( (double) 1 + order);
+
+          }
+
+
+        }
+      }
+    }
+
+    intralayer_terms_sym = intralayer_terms_sym_temp;
+
+  }
+
+  /*
+  for (int R_x_idx = 0; R_x_idx < R_x_size; R_x_idx++){
+    for (int R_y_idx = 0; R_y_idx < R_y_size; R_y_idx++){
+      for (int o1 = 0; o1 < o1_size; o1++){
+        for (int o2 = 0; o2 < o2_size; o2++){
+
+          double t_here = intralayer_terms_sym[R_x_idx][R_y_idx][o1][o2];
+          if (abs(t_here) > 1e-10){
+            printf("symmetrized [%d, %d, %d, %d] = %.20f \n", R_x_idx - big_R, R_y_idx - big_R, o1+1,o2+1, t_here);
+          }
+
+        }
+      }
+    }
+  }
+  */
+
+  mat.intra_data[target_index].intralayer_terms = intralayer_terms_sym;
 
 }
