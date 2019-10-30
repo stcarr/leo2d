@@ -199,23 +199,60 @@ int main(int argc, char** argv) {
 					opts.setParam("num_k2",atoi(in_string.c_str()));
 				}
 
+				// boolean, whether to load tight-binding information from a file
 				if (in_string == "MAT_FROM_FILE"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("mat_from_file", atoi(in_string.c_str()));
 				}
 
+				// name of .lmat file to load tight-binding terms from
 				if (in_string == "MAT_FILENAME"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("mat_filename", in_string);
 				}
 
+				// maximum range, in Angstroms, to keep intralayer coupling terms (default = 99999.0, e.g. no cutoff)
 				if (in_string == "MAT_INTRA_R_CUTOFF"){
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("mat_intra_r_cutoff", atof(in_string.c_str()) );
 				}
+
+				// mat_inter_sym: 0 -> use raw data, 1 -> do x-y orbital symmetrization for TMDC lmats (default 0)
+				if (in_string == "MAT_INTER_SYM"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mat_inter_sym", atoi(in_string.c_str()) );
+				}
+
+				// turn spin orbit-coupling on (hardcoded for loadmat TMDCs!!)
+				if (in_string == "MAT_SOC_ON"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("mat_soc_on", atoi(in_string.c_str()) );
+				}
+
+				// Spin direction
+				if (in_string == "SPIN"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					if (in_string == "UP"){
+						opts.setParam("spin_val",  0.5);
+					} else if (in_string == "DOWN"){
+						opts.setParam("spin_val", -0.5);
+					}
+				}
+
+				// spin-orbit coupling lambda factor
+				if (in_string == "SOC_LAMBDA_M"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("soc_lambda_val", atof(in_string.c_str()) );
+				}
+
+
 
 				if (in_string == "NUM_SHEETS") {
 					getline(in_line,in_string,' ');
@@ -856,7 +893,7 @@ int main(int argc, char** argv) {
 							double var = atof(in_string.c_str());
 							temp_shifts[i][d] = var;
 						}
-						printf("global_shifts[%d] = [%lf, %lf, %lf] \n",i,temp_shifts[i][0], temp_shifts[i][1], temp_shifts[i][2] );
+						//printf("global_shifts[%d] = [%lf, %lf, %lf] \n",i,temp_shifts[i][0], temp_shifts[i][1], temp_shifts[i][2] );
 
 					}
 

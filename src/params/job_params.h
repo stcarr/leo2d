@@ -17,6 +17,9 @@ using namespace std;
 class Job_params {
     private:
 
+    string vers_number = "0.0.1";
+    string vers_date = "2019-10-29";
+
 		vector<int> int_params;
 		vector<string> int_param_tags;
 
@@ -43,7 +46,7 @@ class Job_params {
 
 		vector< vector< vector< complex<double> > > > cpx_double_mat_params;
 		vector<string> cpx_double_mat_param_tags;
-		
+
 	public:
         Job_params();
         Job_params(const Job_params& orig);
@@ -72,8 +75,8 @@ class Job_params {
 		vector< vector<int> > getIntMat(string) const;
 		vector< vector<double> > getDoubleMat(string) const;
 		vector< vector< complex<double> > > getCpxDoubleMat(string) const;
-		
-		
+
+
 		vector<string> getParamTags(string) const;
 
 		void printParams();

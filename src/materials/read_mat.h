@@ -116,6 +116,7 @@ namespace ReadMat {
                      double angle_row, double angle_col,
                      LoadedMat& mat,  Sdata& sheet_data1, Sdata& sheet_data2);
 
+     // default, no symmetry constraints
      double interlayer_term(int orbital_row, int orbital_col,
                     std::array<double, 3>& vector,
                     double angle_row, double angle_col,
