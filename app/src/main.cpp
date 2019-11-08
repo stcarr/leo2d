@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 				}
 
 				if (in_string == "K_TYPE") {
-					// 0 -> Grid sampling of layer 1's Hexagonal BZ
+					// 0 -> Grid sampling of periodic supercell BZ
 					// 1 -> LC sampling of twisted supercell Hexagonal BZ
 					// 2 -> LC sampling of layer 1's Hexagonal BZ ()
 					// 3 -> LC sampling for sandwich project (twisted supercell, both K,K')
@@ -283,6 +283,13 @@ int main(int argc, char** argv) {
 					getline(in_line,in_string,' ');
 					getline(in_line,in_string,' ');
 					opts.setParam("hex_supercell_modify", atoi(in_string.c_str()));
+				}
+
+				// set to 1 to rotate TMDC's by 180 (e.g. 2H-type phase)
+				if (in_string == "H_SUPERCELL_MODIFY"){
+					getline(in_line,in_string,' ');
+					getline(in_line,in_string,' ');
+					opts.setParam("h_supercell_modify", atoi(in_string.c_str()));
 				}
 
 				if (in_string == "TRILAYER_SUPERCELL"){

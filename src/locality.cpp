@@ -174,6 +174,15 @@ void Locality::setupSupercell(){
         if (M < N){
             theta = -theta;
         }
+
+				// rotate by 180 for the 2H TMDCs
+				double h_fac = 1.0;
+				int h_supercell_modify = opts.getInt("h_supercell_modify");
+				if (h_supercell_modify == 1){
+					theta = theta + M_PI;
+					h_fac = -1.0; // rotates basis elements by 180 too
+				}
+
         printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
         // we assume unitCell is same for both sheets...
         for (int i = 0; i < sdata.size(); ++i){
@@ -200,10 +209,10 @@ void Locality::setupSupercell(){
                 A2_num_a2 = (M+N);
             } else if (sc_group_here == 1){
                 angles[i] = theta;
-                A1_num_a1 = M;
-                A1_num_a2 = N;
-                A2_num_a1 = -N;
-                A2_num_a2 = (M+N);
+                A1_num_a1 = h_fac*M;
+                A1_num_a2 = h_fac*N;
+                A2_num_a1 = -h_fac*N;
+                A2_num_a2 = h_fac*(M+N);
             }
 
 						// TMDC have unit-cell defined differently, need to modify!
@@ -1652,6 +1661,14 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					throw std::runtime_error("Locality::rootChebSolve() cannot use K_TYPE == 1 (twisted BZ) for a single layer! \n");
 				}
 
+				// allocate supercell high-sym points
+				double k[2];
+				double gamma[2];
+				double m[2];
+
+				// old method, based on monolayer cells
+				// doesn't work in the 180-degree TMDC case, so we now use the  supercell directly
+				/*
 				int type = opts.getInt("supercell_type");
 				int base_s1 = 0;
 				int base_s2 = 1;
@@ -1678,23 +1695,18 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				double k_2[2];
 
 				// k_1 = K of layer 1, k_2 = K of layer 2
-				/*
-				k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
-				k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
 
-				k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
-				k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
-				*/
+				//k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+				//k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+				//k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+				//k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+
 
 				k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
 				k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
 
 				k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
 				k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
-
-				double k[2];
-				double gamma[2];
-				double m[2];
 
 				k[0] = k_1[0];
 				k[1] = k_1[1];
@@ -1715,6 +1727,31 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				m[1] = k[1] + d*y_dir[1];
 
 				printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+				*/
+
+				// method based on actual supercell
+				std::vector< std::vector<double> > a = opts.getDoubleMat("supercell");
+				std::vector< std::vector<double> > b = getReciprocal(a);
+				printf("b = [%lf %lf ; %lf %lf] \n",b[0][0],b[0][1],b[1][0],b[1][1]);
+
+				gamma[0] = 0.0;
+				gamma[1] = 0.0;
+
+				k[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(-M_PI/6)*b[1][0] - sin(-M_PI/6)*b[1][1]);
+				k[1] = (1.0/(2.0*cos(M_PI/6)))*(sin(-M_PI/6)*b[1][0] + cos(-M_PI/6)*b[1][1]);
+
+				// kpoint of second layer
+				//k_2[0] = cos(-M_PI/3)*k_1[0] - sin(-M_PI/3)*k_1[1];
+				//k_2[1] = sin(-M_PI/3)*k_1[0] + cos(-M_PI/3)*k_1[1];
+
+				m[0] = b[1][0]/2.0;
+				m[1] = b[1][1]/2.0;
+
+				//printf("gamma = [%lf, %lf], m = [%lf, %lf], k_1 = [%lf, %lf], k_2 = [%lf, %lf] \n",gamma[0],gamma[1],m[0],m[1],k_1[0],k_1[1],k_2[0],k_2[1]);
+				printf("gamma = [%lf, %lf], m = [%lf, %lf], k = [%lf, %lf] \n",gamma[0],gamma[1],m[0],m[1],k[0],k[1]);
+
+
+
 
 				int k_jobID = 1;
 				std::vector<Job_params> k_jobArray;
