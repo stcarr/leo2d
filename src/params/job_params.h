@@ -17,8 +17,8 @@ using namespace std;
 class Job_params {
     private:
 
-    string vers_number = "0.0.1";
-    string vers_date = "2019-10-29";
+    string vers_number = "0.0.2";
+    string vers_date = "2020-02-25";
 
 		vector<int> int_params;
 		vector<string> int_param_tags;
