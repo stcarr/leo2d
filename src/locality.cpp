@@ -8,7 +8,8 @@
 #include "locality.h"
 #include "tools/numbers.h"
 #include "params/param_tools.h"
-#include "materials/read_mat.h"
+#include "materials/read_mat.h" // for reading loadedMat objects
+#include "materials/spin_orbit.h" // for adding spin-orbit coupling
 #include "mpi/mat_comm.h"
 
 //#include "transport/ballistic.h"
@@ -62,7 +63,14 @@ void Locality::setup(Job_params opts_in){
 		opts.printParams();
 		if (mat_from_file == 1){
 
-			loadedMatData = ReadMat::loadMat(opts.getString("mat_filename"),sdata);
+			double r_cutoff = opts.getDouble("mat_intra_r_cutoff");
+			double rsq_cutoff = r_cutoff*r_cutoff;
+
+			loadedMatData = ReadMat::loadMat(opts.getString("mat_filename"),sdata, rsq_cutoff);
+
+			// graphene symmetrization
+			//ReadMat::monolayerSym(loadedMatData,0);
+
 			// For testing interlayer coupling terms from loadedMatData
 			/*
 			int o1 = 7;
@@ -167,6 +175,15 @@ void Locality::setupSupercell(){
         if (M < N){
             theta = -theta;
         }
+
+				// rotate by 180 for the 2H TMDCs
+				double h_fac = 1.0;
+				int h_supercell_modify = opts.getInt("h_supercell_modify");
+				if (h_supercell_modify == 1){
+					theta = theta + M_PI;
+					h_fac = -1.0; // rotates basis elements by 180 too
+				}
+
         printf("supercell theta = %lf degrees (acos(%lf) )\n",360.0*theta/(2.0*M_PI), (N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
         // we assume unitCell is same for both sheets...
         for (int i = 0; i < sdata.size(); ++i){
@@ -193,10 +210,10 @@ void Locality::setupSupercell(){
                 A2_num_a2 = (M+N);
             } else if (sc_group_here == 1){
                 angles[i] = theta;
-                A1_num_a1 = M;
-                A1_num_a2 = N;
-                A2_num_a1 = -N;
-                A2_num_a2 = (M+N);
+                A1_num_a1 = h_fac*M;
+                A1_num_a2 = h_fac*N;
+                A2_num_a1 = -h_fac*N;
+                A2_num_a2 = h_fac*(M+N);
             }
 
 						// TMDC have unit-cell defined differently, need to modify!
@@ -1285,11 +1302,11 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 	int num_sheets = (int)sdata.size();
 
 	// Make job arrays
-
 	if (solver_space == 0) {
 
 		// Uniform sample over a grid
 		if (solver_type == 1) {
+
 			nShifts = opts.getInt("nShifts");
 			int num_shift_sheets = opts.getInt("num_shift_sheets");
 			std::vector<int> shift_sheets = opts.getIntVec("shift_sheets");
@@ -1640,6 +1657,19 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				double num_k1 = opts.getInt("num_k1");
 				maxJobs = num_k1;
 
+				int num_sheets = opts.getInt("num_sheets");
+				if (num_sheets < 2){
+					throw std::runtime_error("Locality::rootChebSolve() cannot use K_TYPE == 1 (twisted BZ) for a single layer! \n");
+				}
+
+				// allocate supercell high-sym points
+				double k[2];
+				double gamma[2];
+				double m[2];
+
+				// old method, based on monolayer cells
+				// doesn't work in the 180-degree TMDC case, so we now use the  supercell directly
+				/*
 				int type = opts.getInt("supercell_type");
 				int base_s1 = 0;
 				int base_s2 = 1;
@@ -1666,23 +1696,18 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				double k_2[2];
 
 				// k_1 = K of layer 1, k_2 = K of layer 2
-				/*
-				k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
-				k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
 
-				k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
-				k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
-				*/
+				//k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b1[1][0] + sin(M_PI/6)*b1[1][1]);
+				//k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b1[1][0] + cos(M_PI/6)*b1[1][1]);
+				//k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/6)*b2[1][0] + sin(M_PI/6)*b2[1][1]);
+				//k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/6)*b2[1][0] + cos(M_PI/6)*b2[1][1]);
+
 
 				k_1[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b1[1][0] + sin(M_PI/2)*b1[1][1]);
 				k_1[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b1[1][0] + cos(M_PI/2)*b1[1][1]);
 
 				k_2[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(M_PI/2)*b2[1][0] + sin(M_PI/2)*b2[1][1]);
 				k_2[1] = (1.0/(2.0*cos(M_PI/6)))*(-1.0*sin(M_PI/2)*b2[1][0] + cos(M_PI/2)*b2[1][1]);
-
-				double k[2];
-				double gamma[2];
-				double m[2];
 
 				k[0] = k_1[0];
 				k[1] = k_1[1];
@@ -1703,6 +1728,31 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 				m[1] = k[1] + d*y_dir[1];
 
 				printf("k = [%lf, %lf], gamma = [%lf, %lf], m = [%lf, %lf] \n",k[0],k[1],gamma[0],gamma[1],m[0],m[1]);
+				*/
+
+				// method based on actual supercell
+				std::vector< std::vector<double> > a = opts.getDoubleMat("supercell");
+				std::vector< std::vector<double> > b = getReciprocal(a);
+				printf("b = [%lf %lf ; %lf %lf] \n",b[0][0],b[0][1],b[1][0],b[1][1]);
+
+				gamma[0] = 0.0;
+				gamma[1] = 0.0;
+
+				k[0] = (1.0/(2.0*cos(M_PI/6)))*(cos(-M_PI/6)*b[1][0] - sin(-M_PI/6)*b[1][1]);
+				k[1] = (1.0/(2.0*cos(M_PI/6)))*(sin(-M_PI/6)*b[1][0] + cos(-M_PI/6)*b[1][1]);
+
+				// kpoint of second layer
+				//k_2[0] = cos(-M_PI/3)*k_1[0] - sin(-M_PI/3)*k_1[1];
+				//k_2[1] = sin(-M_PI/3)*k_1[0] + cos(-M_PI/3)*k_1[1];
+
+				m[0] = b[1][0]/2.0;
+				m[1] = b[1][1]/2.0;
+
+				//printf("gamma = [%lf, %lf], m = [%lf, %lf], k_1 = [%lf, %lf], k_2 = [%lf, %lf] \n",gamma[0],gamma[1],m[0],m[1],k_1[0],k_1[1],k_2[0],k_2[1]);
+				printf("gamma = [%lf, %lf], m = [%lf, %lf], k = [%lf, %lf] \n",gamma[0],gamma[1],m[0],m[1],k[0],k[1]);
+
+
+
 
 				int k_jobID = 1;
 				std::vector<Job_params> k_jobArray;
@@ -1771,8 +1821,13 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 					gamma[1] = 0.0;
 					m[0] = b1[0][0]/2.0;
 					m[1] = b1[0][1]/2.0;
+					// works independent of b-vector orientations!
 					k[0] = (m[0]*cos(phi/2.0) - m[1]*sin(phi/2.0))/cos(phi/2.0);
 					k[1] = (m[0]*sin(phi/2.0) + m[1]*cos(phi/2.0))/cos(phi/2.0);
+					//k[0] = (1.0/3.0)*(2.0*b1[0][0] + b1[1][0]);
+					//k[1] = (1.0/3.0)*(2.0*b1[0][1] + b1[1][1]);
+
+
 					/*
 					double k[2];
 					double k_prime[2];
@@ -2264,7 +2319,7 @@ void Locality::rootChebSolve(int* index_to_grid, double* index_to_pos,
 		int mom_vf_only = opts.getInt("mom_vf_only");
 		int num_mom_groups = opts.getInt("num_mom_groups");
 		if (num_mom_groups != 2){
-			printf("!!LEO2D ERROR!! Momentum-space only supported for NUM_MOM_GROUPS = 2 \n");
+			//printf("!!LEO2D ERROR!! Momentum-space only supported for NUM_MOM_GROUPS = 2 \n");
 			throw std::runtime_error("Locality::rootChevSolve Momentum-space only supported for NUM_MOM_GROUPS = 2!!");
 		}
 		std::vector< std::vector<int> > mom_groups = opts.getIntMat("mom_groups");
@@ -2814,30 +2869,6 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		fftw_inter.fft_setup(L_x,L_y,length_x,length_y,fft_file);
 	}
 
-	// For testing how LAPACK returns eigenvectors...
-	/*
-	double vals[9];
-	vals[0] = 1.0;
-	vals[1] = 6.0;
-	vals[2] = 3.0;
-	vals[3] = 6.0;
-	vals[4] = 2.0;
-	vals[5] = 1.0;
-	vals[6] = 3.0;
-	vals[7] = 1.0;
-	vals[8] = 3.0;
-	DMatrix test_mat;
-	test_mat.setup(3,3,vals);
-	test_mat.debugPrint();
-
-	std::vector<double> vls;
-	vls.resize(3);
-	DMatrix vcs;
-
-	test_mat.eigenSolve(vls, vcs, 'V', 'A', 0, 3);
-	vcs.debugPrint();
-	*/
-
 	while (1) {
 
 		Job_params jobIn;
@@ -2868,10 +2899,11 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 		int k_sampling = jobIn.getInt("k_sampling");
 		int ballistic_transport = jobIn.getInt("ballistic_transport");
 		int kpm_trace = jobIn.getInt("kpm_trace");
+		int mat_soc_on = opts.getInt("mat_soc_on");
 
 		int complex_matrix = 0;
 
-		if (magOn == 1 || solver_space == 1 || k_sampling == 1 || chiral_on == 1 || ballistic_transport == 1){
+		if (magOn == 1 || solver_space == 1 || k_sampling == 1 || chiral_on == 1 || ballistic_transport == 1 || mat_soc_on == 1){
 			complex_matrix = 1;
 		}
 
@@ -2998,6 +3030,14 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 			*/
 		}
 
+		// generate SOC terms
+		std::vector< std::vector<int> > soc_pairs;
+		std::vector< std::complex<double> > soc_terms;
+		if (mat_soc_on == 1){
+			SpinOrbit::generateSOC(soc_pairs, soc_terms, index_to_grid, max_index, local_max_index, current_index_reduction, jobIn);
+			//SpinOrbit::addSOCtoH(H, soc_pairs, soc_terms);
+		}
+
 
 		// -----------------------
 		// Build the Sparse matrix
@@ -3026,11 +3066,13 @@ void Locality::workerChebSolve(int* index_to_grid, double* index_to_pos,
 						J_B_x, J_B_y,J_T_x, J_T_y, J_TB_x, J_TB_y,
 						alpha_0_x_arr, alpha_0_y_arr, jobIn, index_to_grid, i2pos,
 						inter_pairs, inter_sc_vecs, intra_pairs, intra_pairs_t,
+						soc_pairs, soc_terms,
 						intra_sc_vecs, strain, current_index_reduction, local_max_index);
 			}
 		} else if (solver_space == 1){
 			generateMomH(H, jobIn, index_to_grid, i2pos, inter_pairs, intra_pairs, intra_pairs_t, current_index_reduction, local_max_index);
 		}
+
 
 		clock_t timeMat;
 		timeMat = clock();
@@ -3866,6 +3908,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 	int boundary_condition = jobIn.getInt("boundary_condition");
 	int strain_type = jobIn.getInt("strain_type");
 	int mat_from_file = jobIn.getInt("mat_from_file");
+	int mat_inter_sym = jobIn.getInt("mat_inter_sym");
 
 	int diagonalize = jobIn.getInt("diagonalize");
 	int elecOn = jobIn.getInt("elecOn");
@@ -4236,8 +4279,12 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 				if (mat_from_file == 1){
 					int s1 = index_to_grid[k_i*4 + 3];
 					int s2 = index_to_grid[new_k*4 + 3];
-					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
-					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					//t = ReadMat::interlayer_term_basic_c3_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
+					if (mat_inter_sym == 1){ // xy-symmetrizing method
+						t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
+					} else { // default method
+						t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
+					}
 
 				} else {
 					t = Materials::interlayer_term(orbit1, orbit2, disp, theta1, theta2, mat1, mat2)/energy_rescale;
@@ -4439,11 +4486,14 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 			SpMatrix &J_B_x, SpMatrix &J_B_y, SpMatrix &J_T_x, SpMatrix &J_T_y, SpMatrix &J_TB_x, SpMatrix &J_TB_y,
 			double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
 			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
+			std::vector< std::vector<int> > soc_pairs, std::vector< std::complex<double> > soc_terms,
 			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index){
 
 	int intra_searchsize = opts.getInt("intra_searchsize");
 
 	int mat_from_file = opts.getInt("mat_from_file");
+	int mat_inter_sym = opts.getInt("mat_inter_sym");
+	int mat_soc_on = opts.getInt("mat_soc_on");
 
 	int solver_type = jobIn.getInt("solver_type");
 	int observable_type = jobIn.getInt("observable_type");
@@ -4831,7 +4881,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				// if it is the diagonal element, we "shift" the matrix up or down in energy scale (to make sure the spectrum fits in [-1,1] for the Chebyshev method)
 				// Also, if electric field is included (elecOn == 1) we add in an on-site offset due to this gate voltage.
 
-				if (new_k == k_i){
+				if (new_k == k_i && sc_i == 0 && sc_j == 0){
 					if (elecOn == 1){
 						t = (raw_t + energy_shift + onSiteE(x1,y1,z1,E))/energy_rescale;
 					} else if (elecOn == 0)
@@ -4852,8 +4902,29 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				//t_cpx = t_cpx + std::polar(t, phase);
 				//printf("t = %lf \n",t);
 
-					t_cpx = std::polar(t, phase);
+				t_cpx = std::polar(t, phase);
 				//printf("sc_vec = [%lf, %lf], phase = %lf\n",-new_pos_shift_x,-new_pos_shift_y,phase);
+
+				// add SOC terms
+				//printf("mat_soc_on = %d, sc_i = %d, sc_j = %d \n", sc_i, sc_j);
+
+				// intra_pairs does not seem to have onsite terms...
+				if (mat_soc_on == 1 && sc_i == 0 && sc_j == 0){
+					int num_soc_pairs = soc_pairs.size();
+					for (int soc_idx = 0; soc_idx < num_soc_pairs; ++soc_idx){
+						if (k == soc_pairs[soc_idx][0]){
+							//printf("looking for [%d, %d] soc pair \n", soc_pairs[soc_idx][0], soc_pairs[soc_idx][1]);
+							//printf("[k,new_k] = [%d, %d] \n", k, new_k);
+							if (new_k == soc_pairs[soc_idx][1]){
+								//printf("adding soc term [%d, %d]: %lf + %lfi \n",k,new_k,soc_terms[soc_idx].real(), soc_terms[soc_idx].imag());
+								t_cpx = t_cpx + soc_terms[soc_idx]/energy_rescale;
+							}
+
+						}
+					}
+
+				}
+
 				if (t_cpx != std::complex<double>(0.0)){
 					//printf("intra coupling (%d, %d) [%lf, %lf, %lf] -> [%lf, %lf, %lf] (%lf, %lf) = %lf \n",k_i,new_k,x1,y1,z1,x2,y2,z2,new_pos_shift_x,new_pos_shift_y,t);
 
@@ -4991,8 +5062,12 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				if (mat_from_file == 1){
 				  int s1 = index_to_grid[k_i*4 + 3];
 					int s2 = index_to_grid[new_k*4 + 3];
-					t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
-					//t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData)/energy_rescale;
+					//t = ReadMat::interlayer_term_basic_c3_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
+					if (mat_inter_sym == 1){ // xy-symmetrizing method
+						t = ReadMat::interlayer_term_xy_sym(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
+					} else { // default method
+						t = ReadMat::interlayer_term(orbit1, orbit2, disp, theta1, theta2, loadedMatData, sdata[s1], sdata[s2])/energy_rescale;
+					}
 
 					// get H terms at K point of monolayer (for debugging)
 				  /*

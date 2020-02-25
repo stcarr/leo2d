@@ -21,6 +21,7 @@
 
 
 #include "fftw3.h"
+#include <random>
 
 #include <time.h>
 #include <math.h>
@@ -162,6 +163,7 @@ class Locality {
       			SpMatrix &J_B_x, SpMatrix &J_B_y, SpMatrix &J_T_x, SpMatrix &J_T_y, SpMatrix &J_TB_x, SpMatrix &J_TB_y,
       			double* alpha_0_x_arr, double* alpha_0_y_arr, Job_params jobIn, int* index_to_grid, double* i2pos,
       			int* inter_pairs, std::vector< std::vector<int> > inter_sc_vecs, int* intra_pairs, double* intra_pairs_t,
+            std::vector< std::vector<int> > soc_pairs, std::vector< std::complex<double> > soc_terms,
       			std::vector< std::vector<int> > intra_sc_vecs, std::vector< std::vector< std::vector<double> > > strain, std::vector<int> current_index_reduction, int local_max_index);
 
   		// Creates and returns SpMatrix object representing H for a specific Momentum-space job

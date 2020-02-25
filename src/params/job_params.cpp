@@ -53,10 +53,19 @@ Job_params::Job_params() {
 	setParam("num_sheets",i_one);
 	setParam("boundary_condition",i_zero);
 	setParam("hex_supercell_modify",i_zero);
+	setParam("h_supercell_modify",i_zero);
 	setParam("sc_search_size", i_one);
 	setParam("global_shifts_on",i_zero);
 	setParam("mat_from_file",i_zero);
 	setParam("mat_filename", "test_data");
+	setParam("mat_intra_r_cutoff", 99999.0);
+	setParam("mat_inter_sym",i_zero);
+
+	// spin-orbit coupling settings (for lmat)
+	setParam("mat_soc_on", i_zero); // no SOC by default
+	setParam("spin_val",0.5); // spin up by default
+	setParam("soc_lambda_val",0.0); // SOC-lambda value, 0 by default.
+
 
 	// Strain settings
 	setParam("strain_type",i_zero);
@@ -547,6 +556,7 @@ vector<string> Job_params::getParamTags(std::string name) const{
 
 void Job_params::printParams(){
 
+	printf("Running LEO2D-dev, v%s (%s) \n",vers_number.c_str(),vers_date.c_str());
 	printf(" T Input parameters for Locality object: \n");
 	for(int i = 0; i < int_param_tags.size(); ++i){
 		printf(" | %s = %d\n",int_param_tags[i].c_str(),int_params[i]);

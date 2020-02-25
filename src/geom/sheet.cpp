@@ -727,15 +727,17 @@ void Sheet::getIntraPairs(std::vector<int> &array_i, std::vector<int> &array_j, 
                   }
 
     							//if ( (t != 0 || (kh == k2 && dx == 0 && dy == 0)) && dist_skipper == 0){
-                  if ( t != 0 || (kh == k2 && dx == 0 && dy == 0) ){
+                  //if ( t != 0 || (kh == k2 && dx == 0 && dy == 0) ){
+                  if ( t != 0 || (dx == 0 && dy == 0) ){ // keep all possible onsite terms
 
     								 //if (kh == 0 || k2 == 0)
+                     //if(dx == 0 && dy == 0 && kh < 5 && k2 < 5) // onsite d terms for TMDCs
     								   //printf("adding term at search [i,j,l] = [%d, %d, %d]: [%d,%d] = %lf \n",i,j,l,kh,k2,t);
 
     								 kh_array_i.push_back(kh + start_index);
     								 kh_array_j.push_back(k2 + start_index);
     								 kh_array_t.push_back(t);
-									 kh_sc_vecs.push_back(sc_vec);
+									   kh_sc_vecs.push_back(sc_vec);
     							}
 
     						}

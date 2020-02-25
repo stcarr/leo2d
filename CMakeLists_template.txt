@@ -25,7 +25,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/module/")
 
 # (WITH MKL, INTEL)
 if(MKL_INTEL)
-	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -DUSE_MKL -I$ENV{MKLROOT}/include")
+	SET(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-std=c++11 -cxx=icpc -DUSE_MKL -I$ENV{MKLROOT}/include")
 endif()
 
 # (WITH MKL, GNU)
