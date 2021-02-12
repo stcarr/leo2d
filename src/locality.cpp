@@ -171,6 +171,7 @@ void Locality::setupSupercell(){
         int N = opts.getInt("n_supercell");
 
         double theta = acos((N*N + 4*N*M + M*M)/(2.0*(N*N + N*M + M*M)));
+				angles[1] = theta; // store twist angle as second element of the angles array
         if (M < N){
             theta = -theta;
         }
@@ -3653,7 +3654,7 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				}
 			}
 			*/
-			if (strain_type == 1 || strain_type == 6){
+			if (strain_type == 1 || strain_type > 5){
 
 				// sample strain from a supercell grid
 				std::vector< std::vector<double> > sc = jobIn.getDoubleMat("supercell");
@@ -3698,8 +3699,12 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 			if (strain_type == 1){
 				disp_here = strainInfo.fourierStrainDisp_sc(r, b1, b2, s);
 				//printf("disp_here = [%lf, %lf, %lf] \n",disp_here[0], disp_here[1], disp_here[2]);
-			} else if (strain_type == 6){
-				disp_here = strainInfo.supercellDisp(r, b1, b2, s);
+			} else if (strain_type > 5){
+				// 6: graphene sandwich
+				// 7: simple double bilayer
+				// 8: interior/exterior dependent double bilayer
+				double theta = 180.0*angles[1]/M_PI; // angle, in degrees
+				disp_here = strainInfo.supercellDisp(r, b1, b2, s, theta, strain_type);
 			}
 				// old Supercell methods...
 				//std::vector<double> disp_here = strainInfo.supercellDisp(sc_pos, s, orbit);
@@ -4030,7 +4035,7 @@ void Locality::generateRealH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH, double* 
 
 				double raw_t;
 
-				if (strain_type == 1 || strain_type == 6 || uniform_strain == 1){
+				if (strain_type == 1 || strain_type > 5 || uniform_strain == 1){
 
 				 int i0 = index_to_grid[k_i*4 + 0];
 				 int j0 = index_to_grid[k_i*4 + 1];
@@ -4740,7 +4745,7 @@ void Locality::generateCpxH(SpMatrix &H, SpMatrix &dxH, SpMatrix &dyH,
 				double t;
 				double raw_t;
 
-				if (strain_type == 1 || strain_type == 6 || uniform_strain == 1){
+				if (strain_type == 1 || strain_type > 5 || uniform_strain == 1){
 
 				 int i0 = index_to_grid[k_i*4 + 0];
 				 int j0 = index_to_grid[k_i*4 + 1];

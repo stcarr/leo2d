@@ -66,7 +66,7 @@ Sheet::Sheet(Sdata input){
 	// Set indexing
 
 	// no strain, position strain, or basic supercell strain
-	if (strain_type == 0 || strain_type == 1 || strain_type == 3 || strain_type == 6) {
+	if (strain_type == 0 || strain_type == 1 || strain_type == 3 || strain_type > 5) {
 		setIndex();
 
 	}

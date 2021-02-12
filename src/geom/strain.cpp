@@ -753,9 +753,10 @@ double StrainCalc::interp_4point(double x, double y, double v1, double v2, doubl
   return value;
 }
 
-std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2, int s){
+std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2, int s, double theta, int type){
 
   // hardcoded for graphene sandwich system
+  // theta should be supplied IN DEGREES
 
 	std::vector<double> disp;
 	disp.resize(3);
@@ -763,17 +764,81 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
   double in_plane_fac = 1.0;
   double out_of_plane_fac = 1.0;
 
-  // relaxation coeffs for 1.47 degrees
-  if (s == 2){
-    out_of_plane_fac = -1.0;
+  coeffs.resize(3);
+  double y2_term = 0.0;
+  double y3_term = 0.0;
 
-  } else if (s == 1) {
-    in_plane_fac = -2.0;
-    out_of_plane_fac = 0.0;
+  double z1_term = 0.0;
+  double z2_term = 0.0;
+  double z3_term = 0.0;
+  double z4_term = 0.0;
+
+  if (type == 6){ // graphene sandwich, from Zoe Zhu
+
+    y2_term = -0.0151*pow(theta,2) + 0.0681*theta - 0.0875;
+    y3_term = -0.0040*pow(theta,2) + 0.0148*theta - 0.0140;
+
+  //printf("theta = %lf, y2_term = %lf \n",theta,y2_term);
+
+    z1_term =  0.0161*pow(theta,2) - 0.0765*theta + 0.0158;
+    z2_term =  0.0061*pow(theta,2) - 0.0255*theta + 0.0023;
+    z3_term = -0.0017*pow(theta,2) + 0.0096*theta - 0.0146;
+    z4_term = -0.0002*pow(theta,2) + 0.0034*theta - 0.0072;
+
+    // relaxation symmetry for sandwich
+    if (s == 2){
+      out_of_plane_fac = -1.0;
+
+    } else if (s == 1) {
+      in_plane_fac = -2.0;
+      out_of_plane_fac = 0.0;
+
+    }
+
+  } else if (type == 7) { // simple double bilayer, from Dorri Halbertal
+
+    y2_term = -0.0319;
+    y3_term = -0.0013;
+
+    z1_term = -0.0622;
+    z2_term = -0.0232;
+    z3_term = -0.0060;
+    z4_term = -0.0032;
+
+    // relaxation symmetry for simple double bilayer
+    if (s > 1){
+      out_of_plane_fac = -1.0;
+      in_plane_fac = -1.0;
+    }
+
+  } else if (type == 8) { // interior/exterior double bilayer, from Dorri Halbertal
+
+    if (s == 0 || s == 3){ // exterior layers
+      y2_term = -0.0106;
+      y3_term = -0.0003;
+
+      z1_term = -0.0017 + -0.0510;
+      z2_term = -0.0004 + -0.0199;
+      z3_term =  0.0003 + -0.0075;
+      z4_term =  0.0002 + -0.0042;
+    } else { // interior layers
+      y2_term = -0.0457;
+      y3_term = -0.0038;
+
+      z1_term = -0.0510;
+      z2_term = -0.0199;
+      z3_term = -0.0075;
+      z4_term = -0.0042;
+    }
+
+    // relaxation symmetry for double bilayer
+    if (s > 1){ // if 3rd or 4th layer, invert strength
+      out_of_plane_fac = -1.0;
+      in_plane_fac = -1.0;
+    }
 
   }
 
-  coeffs.resize(3);
 
   std::vector<double> coeffs_x;
   coeffs_x.resize(4);
@@ -784,17 +849,17 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
 
   std::vector<double> coeffs_y;
   coeffs_y.resize(4);
-  coeffs_y[0] = in_plane_fac* 0.0;
-  coeffs_y[1] = in_plane_fac*-0.019951155162081;
-  coeffs_y[2] = in_plane_fac*-0.000806807799645;
-  coeffs_y[3] = in_plane_fac* 0.0;
+  coeffs_y[0] = in_plane_fac*0.0;
+  coeffs_y[1] = in_plane_fac*y2_term;
+  coeffs_y[2] = in_plane_fac*y3_term;
+  coeffs_y[3] = in_plane_fac*0.0;
 
   std::vector<double> coeffs_z;
   coeffs_z.resize(4);
-  coeffs_z[0] = out_of_plane_fac*-0.061901691526695;
-  coeffs_z[1] = out_of_plane_fac*-0.0220634404118861;
-  coeffs_z[2] = out_of_plane_fac*-0.004100201789620;
-  coeffs_z[3] = out_of_plane_fac*-0.002676762110702;
+  coeffs_z[0] = out_of_plane_fac*z1_term;
+  coeffs_z[1] = out_of_plane_fac*z2_term;
+  coeffs_z[2] = out_of_plane_fac*z3_term;
+  coeffs_z[3] = out_of_plane_fac*z4_term;
 
   coeffs[0] = coeffs_x;
   coeffs[1] = coeffs_y;

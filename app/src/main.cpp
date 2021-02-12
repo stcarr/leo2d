@@ -608,8 +608,12 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",4);
 					} else if (in_string[0] == 'P'){ // STRAIN_TYPE = PLANE WAVES (Fourier comp. in Config space)
 						opts.setParam("strain_type",5);
-					} else if (in_string[0] == 'D'){ // STRAIN_TYPE = DIRECT PLANE WAVES (Fourier comp. on supercell)
+					} else if (in_string[0] == '6'){ // STRAIN_TYPE = Sandwich (Fourier comp. on supercell)
 						opts.setParam("strain_type",6);
+					} else if (in_string[0] == '7'){ // STRAIN_TYPE = Simple double bilayer (Fourier comp. on supercell)
+						opts.setParam("strain_type",7);
+					} else if (in_string[0] == '8'){ // STRAIN_TYPE = interior/exterior double bilayer (Fourier comp. on supercell)
+						opts.setParam("strain_type",8);
 					}
 				}
 
