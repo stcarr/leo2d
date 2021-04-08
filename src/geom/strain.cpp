@@ -773,17 +773,17 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
   double z3_term = 0.0;
   double z4_term = 0.0;
 
-  if (type == 6){ // graphene sandwich, from Zoe Zhu
+  if (type == 6){ // graphene sandwich, from Zoe Zhu, for theta in [1,5] DEGREES
 
-    y2_term = -0.0151*pow(theta,2) + 0.0681*theta - 0.0875;
-    y3_term = -0.0040*pow(theta,2) + 0.0148*theta - 0.0140;
+    y2_term = 0.001*(-36.71*pow(theta,-1.71) );
+    y3_term = 0.001*( -3.39*pow(theta,-3.72) );
 
   //printf("theta = %lf, y2_term = %lf \n",theta,y2_term);
 
-    z1_term =  0.0161*pow(theta,2) - 0.0765*theta + 0.0158;
-    z2_term =  0.0061*pow(theta,2) - 0.0255*theta + 0.0023;
-    z3_term = -0.0017*pow(theta,2) + 0.0096*theta - 0.0146;
-    z4_term = -0.0002*pow(theta,2) + 0.0034*theta - 0.0072;
+    z1_term =  0.001*(  1.11*pow(theta,2) - 10.8*theta + 47.3 - 106.78*tanh(theta) );
+    z2_term =  0.001*( 0.066*pow(theta,2) - 0.71*theta + 9.27 -  33.78*tanh(theta) );
+    z3_term =  0.001*(-0.245*pow(theta,2) + 2.34*theta - 20.2 +  14.73*tanh(theta) );
+    z4_term =  0.001*(-0.276*pow(theta,2) + 2.24*theta - 11.6 +   7.10*tanh(theta) );
 
     // relaxation symmetry for sandwich
     if (s == 2){
@@ -797,13 +797,21 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
 
   } else if (type == 7) { // simple double bilayer, from Dorri Halbertal
 
-    y2_term = -0.0319;
-    y3_term = -0.0013;
+    //y2_term = -0.0319;
+    //y3_term = -0.0013;
+    y2_term = 0.001*(-31.44*pow(theta,-1.53) );
+    y3_term = 0.001*( -1.24*pow(theta,-4.11) );
+    //printf("theta = %lf, y2_term = %lf, y3_term = %lf \n",theta,y2_term,y3_term);
 
-    z1_term = -0.0622;
-    z2_term = -0.0232;
-    z3_term = -0.0060;
-    z4_term = -0.0032;
+    //z1_term = -0.0622;
+    //z2_term = -0.0232;
+    //z3_term = -0.0060;
+    //z4_term = -0.0032;
+    z1_term =  0.5*0.001*(-1.79*pow(theta,2) +  7.53*theta + 19.7 - 115.17*tanh(theta) );
+    z2_term =  0.5*0.001*(-9.32*pow(theta,2) + 35.55*theta +  4.4 -  70.77*tanh(theta) );
+    z3_term =  0.5*0.001*(-3.88*pow(theta,2) + 12.32*theta - 14.6 +   0.15*tanh(theta) );
+    z4_term =  0.5*0.001*(-7.31*pow(theta,2) + 27.38*theta -  7.6 -  20.66*tanh(theta) );
+
 
     // relaxation symmetry for simple double bilayer
     if (s > 1){
@@ -814,21 +822,36 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
   } else if (type == 8) { // interior/exterior double bilayer, from Dorri Halbertal
 
     if (s == 0 || s == 3){ // exterior layers
-      y2_term = -0.0106;
-      y3_term = -0.0003;
+      //y2_term = -0.0106;
+      //y3_term = -0.0003;
+      y2_term = 0.001*(-10.25*pow(theta,-2.65) );
+      y3_term = 0.001*( -0.33*pow(theta,-3.78) );
 
-      z1_term = -0.0017 + -0.0510;
-      z2_term = -0.0004 + -0.0199;
-      z3_term =  0.0003 + -0.0075;
-      z4_term =  0.0002 + -0.0042;
+      //z1_term = -0.0017 + -0.0510;
+      //z2_term = -0.0004 + -0.0199;
+      //z3_term =  0.0003 + -0.0075;
+      //z4_term =  0.0002 + -0.0042;
+      z1_term =  0.5*0.001*( (16.68 - 0.65)*pow(theta,2) + (-75.04 + 3.56)*theta + (7.29 - 4.60) );
+      z2_term =  0.5*0.001*( (8.46 - 0.52)*pow(theta,2) + (-31.78 + 1.83)*theta + (3.39 - 1.70) );
+      z3_term =  0.5*0.001*( (-0.12 - 0.04)*pow(theta,2) + (2.97 - 0.17)*theta +  (-10.30 + 0.46) );
+      z4_term =  0.5*0.001*( (2.20 - 0.23)*pow(theta,2) +  (-3.18 + 0.38)*theta +  (-3.20 + 0.08) );
+
+
     } else { // interior layers
-      y2_term = -0.0457;
-      y3_term = -0.0038;
+      //y2_term = -0.0457;
+      //y3_term = -0.0038;
+      y2_term = 0.001*(-44.76*pow(theta,-1.19) );
+      y3_term = 0.001*( -3.62*pow(theta,-3.08) );
 
-      z1_term = -0.0510;
-      z2_term = -0.0199;
-      z3_term = -0.0075;
-      z4_term = -0.0042;
+      //z1_term = -0.0510;
+      //z2_term = -0.0199;
+      //z3_term = -0.0075;
+      //z4_term = -0.0042;
+      z1_term =  0.5*0.001*( 16.68*pow(theta,2) - 75.04*theta +  7.29 );
+      z2_term =  0.5*0.001*(  8.46*pow(theta,2) - 31.78*theta +  3.39 );
+      z3_term =  0.5*0.001*( -0.12*pow(theta,2) +  2.97*theta - 10.30 );
+      z4_term =  0.5*0.001*(  2.20*pow(theta,2) -  3.18*theta -  3.20 );
+
     }
 
     // relaxation symmetry for double bilayer
@@ -837,7 +860,25 @@ std::vector<double> StrainCalc::supercellDisp(double* r, double* b1, double* b2,
       in_plane_fac = -1.0;
     }
 
-  }
+  }   if (type == 9){ // for TBG, from Zoe Zhu, for theta in [1,5] DEGREES
+
+      y2_term = 0.001*(-41.04*pow(theta,-1.83) );
+      y3_term = 0.001*(-2.715*pow(theta,-3.87) );
+
+    //printf("theta = %lf, y2_term = %lf \n",theta,y2_term);
+
+      z1_term =  0.5*0.001*( 0.477*pow(theta,2) - 5.08*theta + 28.1 - 101.50*tanh(theta) );
+      z2_term =  0.5*0.001*(-0.002*pow(theta,2) - 0.08*theta - 0.84 -  25.24*tanh(theta) );
+      z3_term =  0.5*0.001*(-0.102*pow(theta,2) + 1.13*theta - 18.9 +  16.36*tanh(theta) );
+      z4_term =  0.5*0.001*(-0.133*pow(theta,2) + 0.99*theta - 13.1 +  11.54*tanh(theta) );
+
+      // relaxation symmetry for TBG
+      if (s == 1){
+        out_of_plane_fac = -1.0;
+        in_plane_fac = -1.0;
+      }
+
+    }
 
 
   std::vector<double> coeffs_x;

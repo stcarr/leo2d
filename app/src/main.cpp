@@ -614,6 +614,8 @@ int main(int argc, char** argv) {
 						opts.setParam("strain_type",7);
 					} else if (in_string[0] == '8'){ // STRAIN_TYPE = interior/exterior double bilayer (Fourier comp. on supercell)
 						opts.setParam("strain_type",8);
+					} else if (in_string[0] == '9'){ // STRAIN_TYPE = TBG
+						opts.setParam("strain_type",9);
 					}
 				}
 

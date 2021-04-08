@@ -3704,6 +3704,9 @@ void Locality::setConfigPositions(double* i2pos, double* index_to_pos, int* inde
 				// 7: simple double bilayer
 				// 8: interior/exterior dependent double bilayer
 				double theta = 180.0*angles[1]/M_PI; // angle, in degrees
+				if (strain_type > 6){ // double bilayer, need to take 3rd layer's twist
+					theta = 180.0*angles[2]/M_PI;
+				}
 				disp_here = strainInfo.supercellDisp(r, b1, b2, s, theta, strain_type);
 			}
 				// old Supercell methods...
